@@ -1,0 +1,354 @@
+{
+  "Case": {},
+  "Party": {
+    "identity_evidence": [
+      "Evidence"
+    ],
+    "verification_decision": [
+      "Decision"
+    ]
+  },
+  "Institution": {},
+  "Proceeding": {
+    "institution": [
+      "Institution"
+    ],
+    "participants.party": [
+      "Party"
+    ],
+    "participants.represented_by": [
+      "Party"
+    ],
+    "parent_proceeding": [
+      "Proceeding"
+    ]
+  },
+  "Filing": {
+    "proceeding": [
+      "Proceeding"
+    ],
+    "recipient": [
+      "Institution",
+      "Party"
+    ],
+    "authors": [
+      "Party"
+    ]
+  },
+  "Fact": {
+    "evidence": [
+      "Evidence"
+    ],
+    "subjects": [
+      "Party",
+      "Institution"
+    ],
+    "acceptance": [
+      "Decision"
+    ]
+  },
+  "Evidence": {
+    "submitted_in": [
+      "Proceeding"
+    ]
+  },
+  "Issue": {
+    "facts": [
+      "Fact"
+    ],
+    "rules": [
+      "LegalRule"
+    ],
+    "resolution": [
+      "Decision"
+    ]
+  },
+  "LegalSource": {},
+  "LegalRule": {
+    "sources": [
+      "LegalSource"
+    ],
+    "review_decision": [
+      "Decision"
+    ]
+  },
+  "Claim": {
+    "claimant": [
+      "Party"
+    ],
+    "issues": [
+      "Issue"
+    ],
+    "facts": [
+      "Fact"
+    ],
+    "rules": [
+      "LegalRule"
+    ],
+    "adoption": [
+      "Decision"
+    ]
+  },
+  "Defence": {
+    "claim": [
+      "Claim"
+    ],
+    "party": [
+      "Party"
+    ],
+    "facts": [
+      "Fact"
+    ],
+    "rules": [
+      "LegalRule"
+    ],
+    "adoption": [
+      "Decision"
+    ]
+  },
+  "Argument": {
+    "target": [
+      "Claim",
+      "Defence"
+    ],
+    "premises": [
+      "Fact",
+      "Claim",
+      "Argument"
+    ],
+    "rules": [
+      "LegalRule"
+    ],
+    "assessments.basis": [
+      "Fact",
+      "Evidence",
+      "LegalRule",
+      "CounterArgument"
+    ]
+  },
+  "CounterArgument": {
+    "target_argument": [
+      "Argument"
+    ],
+    "premises": [
+      "Fact",
+      "Claim",
+      "LegalRule"
+    ],
+    "response_argument": [
+      "Argument"
+    ]
+  },
+  "Request": {
+    "filing": [
+      "Filing"
+    ],
+    "claims": [
+      "Claim"
+    ],
+    "evidence": [
+      "Evidence"
+    ],
+    "approval": [
+      "Decision"
+    ]
+  },
+  "Deadline": {
+    "proceeding": [
+      "Proceeding"
+    ],
+    "filing": [
+      "Filing"
+    ],
+    "trigger": [
+      "Fact"
+    ],
+    "rules": [
+      "LegalRule"
+    ],
+    "satisfaction": [
+      "Filing",
+      "Decision"
+    ]
+  },
+  "Risk": {
+    "affected": [
+      "Case",
+      "Party",
+      "Institution",
+      "Proceeding",
+      "Filing",
+      "Fact",
+      "Evidence",
+      "Issue",
+      "LegalSource",
+      "LegalRule",
+      "Claim",
+      "Defence",
+      "Argument",
+      "CounterArgument",
+      "Request",
+      "Deadline",
+      "Risk",
+      "Citation",
+      "DocumentPlan",
+      "Section",
+      "Draft",
+      "ValidationFinding",
+      "Decision"
+    ],
+    "mitigation": [
+      "Decision",
+      "Request"
+    ],
+    "acceptance": [
+      "Decision"
+    ]
+  },
+  "Citation": {
+    "source": [
+      "LegalSource"
+    ],
+    "supported": [
+      "LegalRule",
+      "Argument",
+      "Claim",
+      "Section"
+    ]
+  },
+  "DocumentPlan": {
+    "filing": [
+      "Filing"
+    ],
+    "objectives": [
+      "Request"
+    ],
+    "recipient": [
+      "Institution",
+      "Party"
+    ],
+    "argument_order": [
+      "Argument"
+    ],
+    "evidence": [
+      "Evidence"
+    ],
+    "section_order": [
+      "Section"
+    ],
+    "approval": [
+      "Decision"
+    ]
+  },
+  "Section": {
+    "filing": [
+      "Filing"
+    ],
+    "arguments": [
+      "Argument"
+    ],
+    "contract.allowed_inputs": [
+      "Fact",
+      "Evidence",
+      "LegalRule",
+      "Argument",
+      "Claim",
+      "Request",
+      "Citation"
+    ],
+    "contract.required_inputs": [
+      "Fact",
+      "Evidence",
+      "LegalRule",
+      "Argument",
+      "Claim",
+      "Request",
+      "Citation"
+    ],
+    "contract.allowed_claims": [
+      "Claim"
+    ]
+  },
+  "Draft": {
+    "plan": [
+      "DocumentPlan"
+    ],
+    "sections.section": [
+      "Section"
+    ],
+    "sections.statements.refs": [
+      "Fact",
+      "Evidence",
+      "LegalRule",
+      "Claim",
+      "Argument",
+      "Request"
+    ],
+    "sections.statements.citations": [
+      "Citation"
+    ],
+    "supersedes": [
+      "Draft"
+    ]
+  },
+  "ValidationFinding": {
+    "target": [
+      "Case",
+      "Party",
+      "Institution",
+      "Proceeding",
+      "Filing",
+      "Fact",
+      "Evidence",
+      "Issue",
+      "LegalSource",
+      "LegalRule",
+      "Claim",
+      "Defence",
+      "Argument",
+      "CounterArgument",
+      "Request",
+      "Deadline",
+      "Risk",
+      "Citation",
+      "DocumentPlan",
+      "Section",
+      "Draft",
+      "ValidationFinding",
+      "Decision"
+    ],
+    "resolution": [
+      "Decision"
+    ]
+  },
+  "Decision": {
+    "targets": [
+      "Case",
+      "Party",
+      "Institution",
+      "Proceeding",
+      "Filing",
+      "Fact",
+      "Evidence",
+      "Issue",
+      "LegalSource",
+      "LegalRule",
+      "Claim",
+      "Defence",
+      "Argument",
+      "CounterArgument",
+      "Request",
+      "Deadline",
+      "Risk",
+      "Citation",
+      "DocumentPlan",
+      "Section",
+      "Draft",
+      "ValidationFinding",
+      "Decision"
+    ],
+    "supersedes": [
+      "Decision"
+    ]
+  }
+}

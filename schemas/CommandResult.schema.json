@@ -1,0 +1,165 @@
+{
+  "$defs": {
+    "DomainError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "SCHEMA_INVALID",
+            "INVALID_TRANSITION",
+            "BROKEN_REFERENCE",
+            "CROSS_CASE",
+            "PROVENANCE_MISSING",
+            "UNSUPPORTED",
+            "STALE",
+            "CONFLICT",
+            "IDEMPOTENCY_CONFLICT",
+            "FORBIDDEN",
+            "GATE_DENIED",
+            "UNKNOWN",
+            "DUPLICATE",
+            "INVALID_HASH",
+            "CYCLE"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "correlation_id": {
+          "format": "uuid",
+          "title": "Correlation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "path",
+        "message",
+        "retryable",
+        "correlation_id"
+      ],
+      "title": "DomainError",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "command_id": {
+      "format": "uuid",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "APPLIED",
+        "REPLAYED",
+        "REJECTED"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "case_sequence": {
+      "minimum": 0,
+      "title": "Case Sequence",
+      "type": "integer"
+    },
+    "refs": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Refs",
+      "type": "array"
+    },
+    "event_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Event Ids",
+      "type": "array"
+    },
+    "errors": {
+      "items": {
+        "$ref": "#/$defs/DomainError"
+      },
+      "title": "Errors",
+      "type": "array"
+    }
+  },
+  "required": [
+    "command_id",
+    "state",
+    "case_sequence",
+    "refs",
+    "event_ids",
+    "errors"
+  ],
+  "title": "CommandResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:CommandResult:1.0.0"
+}

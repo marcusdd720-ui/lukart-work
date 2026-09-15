@@ -1,0 +1,211 @@
+{
+  "$defs": {
+    "CheckResult": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "schema",
+            "facts",
+            "evidence",
+            "legal_basis",
+            "procedure",
+            "contradictions",
+            "citations",
+            "requests",
+            "language",
+            "document",
+            "adversarial",
+            "render"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN",
+            "NOT_RUN"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "validator": {
+          "$ref": "#/$defs/VersionPin"
+        }
+      },
+      "required": [
+        "check",
+        "outcome",
+        "validator"
+      ],
+      "title": "CheckResult",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "draft": {
+      "$ref": "#/$defs/Ref"
+    },
+    "draft_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Draft Hash",
+      "type": "string"
+    },
+    "snapshot_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Snapshot Hash",
+      "type": "string"
+    },
+    "policy": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/CheckResult"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "render_hashes": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Render Hashes",
+      "type": "array"
+    },
+    "execution_manifest_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Execution Manifest Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "case_id",
+    "draft",
+    "draft_hash",
+    "snapshot_hash",
+    "policy",
+    "completed_at",
+    "checks",
+    "findings",
+    "render_hashes",
+    "execution_manifest_hash"
+  ],
+  "title": "ValidationRun",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ValidationRun:1.0.0"
+}

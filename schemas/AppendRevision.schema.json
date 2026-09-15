@@ -1,0 +1,4078 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "Address": {
+      "additionalProperties": false,
+      "properties": {
+        "country": {
+          "pattern": "^[A-Z]{2}$",
+          "title": "Country",
+          "type": "string"
+        },
+        "lines": {
+          "items": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Lines",
+          "type": "array"
+        },
+        "postal_code": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Postal Code"
+        }
+      },
+      "required": [
+        "country",
+        "lines"
+      ],
+      "title": "Address",
+      "type": "object"
+    },
+    "Argument": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Argument",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROPOSED",
+            "REVIEWED",
+            "ADOPTED",
+            "CHALLENGED",
+            "WITHDRAWN"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/Ref"
+        },
+        "polarity": {
+          "enum": [
+            "SUPPORTS",
+            "OPPOSES"
+          ],
+          "title": "Polarity",
+          "type": "string"
+        },
+        "conclusion": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Conclusion",
+          "type": "string"
+        },
+        "premises": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Premises",
+          "type": "array"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "support": {
+          "enum": [
+            "SOURCE_BACKED",
+            "INFERRED",
+            "UNSUPPORTED"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "assessments": {
+          "items": {
+            "$ref": "#/$defs/Assessment"
+          },
+          "title": "Assessments",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "target",
+        "polarity",
+        "conclusion",
+        "premises",
+        "rules",
+        "support",
+        "assessments"
+      ],
+      "title": "Argument",
+      "type": "object"
+    },
+    "Assessment": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "enum": [
+            "LEGAL_SUPPORT",
+            "FACTUAL_SUPPORT",
+            "EVIDENCE_SUPPORT",
+            "COUNTERARGUMENT_EXPOSURE",
+            "PROCEDURAL_RELEVANCE",
+            "OVERALL_CONFIDENCE"
+          ],
+          "title": "Dimension",
+          "type": "string"
+        },
+        "level": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "UNKNOWN"
+          ],
+          "title": "Level",
+          "type": "string"
+        },
+        "basis": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Basis",
+          "type": "array"
+        },
+        "rationale": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dimension",
+        "level",
+        "basis",
+        "rationale"
+      ],
+      "title": "Assessment",
+      "type": "object"
+    },
+    "Case": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Case",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "OPEN",
+            "SUSPENDED",
+            "CLOSED",
+            "ARCHIVED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "jurisdiction": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Jurisdiction",
+          "type": "string"
+        },
+        "owner_id": {
+          "format": "uuid",
+          "title": "Owner Id",
+          "type": "string"
+        },
+        "retention_policy": {
+          "$ref": "#/$defs/VersionPin"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "title",
+        "jurisdiction",
+        "owner_id",
+        "retention_policy"
+      ],
+      "title": "Case",
+      "type": "object"
+    },
+    "Citation": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Citation",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROPOSED",
+            "BOUND",
+            "VERIFIED",
+            "INVALID"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/Ref"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        },
+        "supported": {
+          "$ref": "#/$defs/Ref"
+        },
+        "quotation": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quotation"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "source",
+        "locator",
+        "supported"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Claim",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROPOSED",
+            "REVIEWED",
+            "ADOPTED",
+            "DISPUTED",
+            "WITHDRAWN",
+            "RESOLVED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "claim_type": {
+          "enum": [
+            "ASSERTION",
+            "REMEDY"
+          ],
+          "title": "Claim Type",
+          "type": "string"
+        },
+        "statement": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "claimant": {
+          "$ref": "#/$defs/Ref"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Issues",
+          "type": "array"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "support": {
+          "enum": [
+            "SOURCE_BACKED",
+            "INFERRED",
+            "UNSUPPORTED"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "amount": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Money"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "adoption": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "claim_type",
+        "statement",
+        "claimant",
+        "issues",
+        "facts",
+        "rules",
+        "support"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "CommandMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "command_id": {
+          "format": "uuid",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "format": "uuid",
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "expected_case_sequence": {
+          "minimum": 0,
+          "title": "Expected Case Sequence",
+          "type": "integer"
+        },
+        "correlation_id": {
+          "format": "uuid",
+          "title": "Correlation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_id",
+        "tenant_id",
+        "case_id",
+        "idempotency_key",
+        "expected_case_sequence",
+        "correlation_id"
+      ],
+      "title": "CommandMeta",
+      "type": "object"
+    },
+    "CounterArgument": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "CounterArgument",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "IDENTIFIED",
+            "REVIEWED",
+            "ANSWERED",
+            "UNRESOLVED",
+            "DISMISSED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "target_argument": {
+          "$ref": "#/$defs/Ref"
+        },
+        "statement": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "premises": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Premises",
+          "type": "array"
+        },
+        "support": {
+          "enum": [
+            "SOURCE_BACKED",
+            "INFERRED",
+            "UNSUPPORTED"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "response_argument": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "target_argument",
+        "statement",
+        "premises",
+        "support"
+      ],
+      "title": "CounterArgument",
+      "type": "object"
+    },
+    "Deadline": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Deadline",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "UNKNOWN",
+            "CALCULATED",
+            "VERIFIED",
+            "SATISFIED",
+            "EXPIRED",
+            "CANCELLED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "proceeding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "filing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "trigger": {
+          "$ref": "#/$defs/Ref"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "due_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Due At"
+        },
+        "timezone": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        },
+        "calendar_pin": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "computation_trace": {
+          "items": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Computation Trace",
+          "type": "array"
+        },
+        "satisfaction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "trigger",
+        "rules",
+        "timezone",
+        "calendar_pin",
+        "computation_trace"
+      ],
+      "title": "Deadline",
+      "type": "object"
+    },
+    "Decision": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Decision",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROPOSED",
+            "RECORDED",
+            "SUPERSEDED",
+            "REVOKED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "decision_type": {
+          "enum": [
+            "IDENTITY",
+            "FACT_ACCEPTANCE",
+            "STRATEGY",
+            "REQUEST_APPROVAL",
+            "INTERPRETATION",
+            "PLAN_APPROVAL",
+            "DOCUMENT_APPROVAL",
+            "RISK_ACCEPTANCE",
+            "FINDING_RESOLUTION",
+            "SNAPSHOT_ACCEPTANCE",
+            "CERTIFICATION"
+          ],
+          "title": "Decision Type",
+          "type": "string"
+        },
+        "targets": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Targets",
+          "type": "array"
+        },
+        "outcome": {
+          "enum": [
+            "ACCEPT",
+            "REJECT",
+            "ABSTAIN"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "decided_by": {
+          "$ref": "#/$defs/Actor"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "decision_type",
+        "targets",
+        "outcome",
+        "rationale",
+        "decided_by"
+      ],
+      "title": "Decision",
+      "type": "object"
+    },
+    "Defence": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Defence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROPOSED",
+            "REVIEWED",
+            "ADOPTED",
+            "WITHDRAWN",
+            "RESOLVED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "claim": {
+          "$ref": "#/$defs/Ref"
+        },
+        "party": {
+          "$ref": "#/$defs/Ref"
+        },
+        "statement": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "adoption": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "claim",
+        "party",
+        "statement",
+        "facts",
+        "rules"
+      ],
+      "title": "Defence",
+      "type": "object"
+    },
+    "DocumentPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "DocumentPlan",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROPOSED",
+            "REVIEWED",
+            "APPROVED",
+            "SUPERSEDED",
+            "REJECTED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "filing": {
+          "$ref": "#/$defs/Ref"
+        },
+        "input_snapshot_id": {
+          "format": "uuid",
+          "title": "Input Snapshot Id",
+          "type": "string"
+        },
+        "input_snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Snapshot Hash",
+          "type": "string"
+        },
+        "objectives": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Objectives",
+          "type": "array"
+        },
+        "recipient": {
+          "$ref": "#/$defs/Ref"
+        },
+        "position_scope": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Position Scope",
+          "type": "string"
+        },
+        "argument_order": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Argument Order",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "section_order": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Section Order",
+          "type": "array"
+        },
+        "approval": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "filing",
+        "input_snapshot_id",
+        "input_snapshot_hash",
+        "objectives",
+        "recipient",
+        "position_scope",
+        "argument_order",
+        "evidence",
+        "section_order"
+      ],
+      "title": "DocumentPlan",
+      "type": "object"
+    },
+    "Draft": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Draft",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PLANNED",
+            "GENERATED",
+            "VALIDATED",
+            "APPROVED",
+            "RENDERED",
+            "CERTIFIED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "plan": {
+          "$ref": "#/$defs/Ref"
+        },
+        "snapshot_id": {
+          "format": "uuid",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/SectionText"
+          },
+          "title": "Sections",
+          "type": "array"
+        },
+        "reproduction": {
+          "$ref": "#/$defs/ReproductionManifest"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "plan",
+        "snapshot_id",
+        "snapshot_hash",
+        "sections",
+        "reproduction"
+      ],
+      "title": "Draft",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Evidence",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "REGISTERED",
+            "REVIEWED",
+            "ACCEPTED",
+            "CHALLENGED",
+            "EXCLUDED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "evidence_type": {
+          "enum": [
+            "DOCUMENT",
+            "TESTIMONY",
+            "IMAGE",
+            "RECORDING",
+            "OTHER"
+          ],
+          "title": "Evidence Type",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/SourceAnchor"
+        },
+        "authenticity": {
+          "enum": [
+            "UNKNOWN",
+            "VERIFIED",
+            "DISPUTED"
+          ],
+          "title": "Authenticity",
+          "type": "string"
+        },
+        "submitted_in": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "evidence_type",
+        "description",
+        "source",
+        "authenticity"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Fact": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Fact",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "CANDIDATE",
+            "EXTRACTED",
+            "REVIEWED",
+            "CONFIRMED",
+            "DISPUTED",
+            "REJECTED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "statement": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "support": {
+          "enum": [
+            "SOURCE_BACKED",
+            "INFERRED",
+            "UNSUPPORTED"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "subjects": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Subjects",
+          "type": "array"
+        },
+        "event_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Event Date"
+        },
+        "amount": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Money"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "key_fact": {
+          "title": "Key Fact",
+          "type": "boolean"
+        },
+        "acceptance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "statement",
+        "support",
+        "evidence",
+        "subjects",
+        "key_fact"
+      ],
+      "title": "Fact",
+      "type": "object"
+    },
+    "Filing": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Filing",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PLANNED",
+            "PREPARING",
+            "READY",
+            "SUBMITTED",
+            "ACKNOWLEDGED",
+            "WITHDRAWN"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "document_type": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "direction": {
+          "enum": [
+            "INCOMING",
+            "OUTGOING"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "proceeding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "recipient": {
+          "$ref": "#/$defs/Ref"
+        },
+        "authors": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Authors",
+          "type": "array"
+        },
+        "submitted_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Submitted At"
+        },
+        "submission_receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceAnchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "document_type",
+        "direction",
+        "recipient",
+        "authors"
+      ],
+      "title": "Filing",
+      "type": "object"
+    },
+    "Institution": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Institution",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "UNVERIFIED",
+            "VERIFIED",
+            "INACTIVE"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "institution_type": {
+          "enum": [
+            "COURT",
+            "AUTHORITY",
+            "OMBUDSMAN",
+            "OTHER",
+            "UNKNOWN"
+          ],
+          "title": "Institution Type",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "jurisdiction": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Jurisdiction",
+          "type": "string"
+        },
+        "address": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Address"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "registry_identifier": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Registry Identifier"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "institution_type",
+        "name",
+        "jurisdiction"
+      ],
+      "title": "Institution",
+      "type": "object"
+    },
+    "Issue": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Issue",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "IDENTIFIED",
+            "ANALYZING",
+            "UNRESOLVED",
+            "RESOLVED",
+            "CLOSED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "question": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Question",
+          "type": "string"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "question",
+        "facts",
+        "rules"
+      ],
+      "title": "Issue",
+      "type": "object"
+    },
+    "LegalRule": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "LegalRule",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROPOSED",
+            "REVIEWED",
+            "ACTIVE",
+            "SUPERSEDED",
+            "WITHDRAWN"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "rule_type": {
+          "enum": [
+            "SUBSTANTIVE",
+            "PROCEDURAL",
+            "INTERPRETIVE"
+          ],
+          "title": "Rule Type",
+          "type": "string"
+        },
+        "statement": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "jurisdiction": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Jurisdiction",
+          "type": "string"
+        },
+        "effective_period": {
+          "$ref": "#/$defs/TimeRange"
+        },
+        "applicable_document_types": {
+          "items": {
+            "$ref": "#/$defs/VersionPin"
+          },
+          "title": "Applicable Document Types",
+          "type": "array"
+        },
+        "requirement": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Requirement"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "interpretation": {
+          "enum": [
+            "SETTLED",
+            "DISPUTED",
+            "UNKNOWN"
+          ],
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "review_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "rule_type",
+        "statement",
+        "sources",
+        "jurisdiction",
+        "effective_period",
+        "applicable_document_types",
+        "interpretation"
+      ],
+      "title": "LegalRule",
+      "type": "object"
+    },
+    "LegalSource": {
+      "additionalProperties": false,
+      "description": "Case-local pinned admission of a knowledge registry source revision.",
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "LegalSource",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "REGISTERED",
+            "VERIFIED",
+            "SUPERSEDED",
+            "RETRACTED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "registry_pin": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "jurisdiction": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Jurisdiction",
+          "type": "string"
+        },
+        "source_type": {
+          "enum": [
+            "LAW",
+            "CASE_LAW",
+            "OFFICIAL_GUIDANCE",
+            "DOCTRINE",
+            "SECONDARY_SOURCE",
+            "USER_MATERIAL"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "identifier": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Identifier",
+          "type": "string"
+        },
+        "effective_period": {
+          "$ref": "#/$defs/TimeRange"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "source_uri": {
+          "pattern": "^https?://[^\\s]+$",
+          "title": "Source Uri",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "authority_level": {
+          "enum": [
+            "BINDING",
+            "PERSUASIVE",
+            "INFORMATIONAL",
+            "UNKNOWN"
+          ],
+          "title": "Authority Level",
+          "type": "string"
+        },
+        "anchor": {
+          "$ref": "#/$defs/SourceAnchor"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "registry_pin",
+        "jurisdiction",
+        "source_type",
+        "title",
+        "identifier",
+        "effective_period",
+        "retrieved_at",
+        "source_uri",
+        "content_hash",
+        "authority_level",
+        "anchor"
+      ],
+      "title": "LegalSource",
+      "type": "object"
+    },
+    "Locator": {
+      "additionalProperties": false,
+      "description": "A source location must be nonempty and address immutable source bytes.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "PAGE",
+            "PARAGRAPH",
+            "ARTICLE",
+            "BYTE_RANGE",
+            "RECORD"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "fragment_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fragment Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "value",
+        "fragment_hash"
+      ],
+      "title": "Locator",
+      "type": "object"
+    },
+    "Money": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,4})?$",
+          "title": "Amount",
+          "type": "string"
+        },
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "title": "Money",
+      "type": "object"
+    },
+    "Participation": {
+      "additionalProperties": false,
+      "properties": {
+        "party": {
+          "$ref": "#/$defs/Ref"
+        },
+        "role": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "represented_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "party",
+        "role"
+      ],
+      "title": "Participation",
+      "type": "object"
+    },
+    "Party": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Party",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "UNVERIFIED",
+            "VERIFIED",
+            "DISPUTED",
+            "INACTIVE"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "party_type": {
+          "enum": [
+            "PERSON",
+            "ORGANIZATION",
+            "UNKNOWN"
+          ],
+          "title": "Party Type",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "address": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Address"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "identity_evidence": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Identity Evidence",
+          "type": "array"
+        },
+        "verification_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "party_type",
+        "display_name",
+        "identity_evidence"
+      ],
+      "title": "Party",
+      "type": "object"
+    },
+    "Proceeding": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Proceeding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PLANNED",
+            "PENDING",
+            "STAYED",
+            "CONCLUDED",
+            "CANCELLED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "proceeding_type": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Proceeding Type",
+          "type": "string"
+        },
+        "institution": {
+          "$ref": "#/$defs/Ref"
+        },
+        "participants": {
+          "items": {
+            "$ref": "#/$defs/Participation"
+          },
+          "minItems": 1,
+          "title": "Participants",
+          "type": "array"
+        },
+        "reference_number": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reference Number"
+        },
+        "parent_proceeding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "proceeding_type",
+        "institution",
+        "participants"
+      ],
+      "title": "Proceeding",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "operation_id": {
+          "format": "uuid",
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "method": {
+          "enum": [
+            "MANUAL",
+            "EXTRACTION",
+            "DERIVATION",
+            "IMPORT",
+            "VALIDATION"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "anchors": {
+          "items": {
+            "$ref": "#/$defs/SourceAnchor"
+          },
+          "title": "Anchors",
+          "type": "array"
+        },
+        "rationale": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionPin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "actor",
+        "operation_id",
+        "method",
+        "inputs",
+        "anchors",
+        "rationale"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "ReproductionManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "knowledge": {
+          "items": {
+            "$ref": "#/$defs/VersionPin"
+          },
+          "title": "Knowledge",
+          "type": "array"
+        },
+        "rule_set": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "prompts": {
+          "items": {
+            "$ref": "#/$defs/VersionPin"
+          },
+          "title": "Prompts",
+          "type": "array"
+        },
+        "models": {
+          "items": {
+            "$ref": "#/$defs/VersionPin"
+          },
+          "title": "Models",
+          "type": "array"
+        },
+        "provider": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "model_parameters_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Parameters Hash",
+          "type": "string"
+        },
+        "generator": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "validators": {
+          "items": {
+            "$ref": "#/$defs/VersionPin"
+          },
+          "title": "Validators",
+          "type": "array"
+        },
+        "render_profile": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "input_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Hash",
+          "type": "string"
+        },
+        "raw_output_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Raw Output Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "knowledge",
+        "rule_set",
+        "prompts",
+        "models",
+        "provider",
+        "model_parameters_hash",
+        "generator",
+        "validators",
+        "render_profile",
+        "input_hash",
+        "raw_output_hash"
+      ],
+      "title": "ReproductionManifest",
+      "type": "object"
+    },
+    "Request": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Request",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PROPOSED",
+            "REVIEWED",
+            "APPROVED",
+            "WITHDRAWN",
+            "RESOLVED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "filing": {
+          "$ref": "#/$defs/Ref"
+        },
+        "request_type": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Request Type",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "claims": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Claims",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "approval": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "amount": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Money"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "filing",
+        "request_type",
+        "text",
+        "claims",
+        "evidence"
+      ],
+      "title": "Request",
+      "type": "object"
+    },
+    "Requirement": {
+      "additionalProperties": false,
+      "properties": {
+        "operator": {
+          "enum": [
+            "PRESENT",
+            "EQUALS",
+            "MIN_ITEMS"
+          ],
+          "title": "Operator",
+          "type": "string"
+        },
+        "field_path": {
+          "pattern": "^/[A-Za-z0-9_/-]+$",
+          "title": "Field Path",
+          "type": "string"
+        },
+        "operand": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operand"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operator",
+        "field_path",
+        "severity"
+      ],
+      "title": "Requirement",
+      "type": "object"
+    },
+    "Risk": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Risk",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "OPEN",
+            "MITIGATING",
+            "ACCEPTED",
+            "RESOLVED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "FACTUAL",
+            "EVIDENTIARY",
+            "LEGAL",
+            "PROCEDURAL",
+            "PRIVACY",
+            "OPERATIONAL"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "affected": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Affected",
+          "type": "array"
+        },
+        "mitigation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "acceptance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "category",
+        "description",
+        "severity",
+        "affected"
+      ],
+      "title": "Risk",
+      "type": "object"
+    },
+    "Section": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "Section",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PLANNED",
+            "READY",
+            "RETIRED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "filing": {
+          "$ref": "#/$defs/Ref"
+        },
+        "section_type": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Section Type",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "arguments": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Arguments",
+          "type": "array"
+        },
+        "contract": {
+          "$ref": "#/$defs/SectionContract"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "filing",
+        "section_type",
+        "title",
+        "arguments",
+        "contract"
+      ],
+      "title": "Section",
+      "type": "object"
+    },
+    "SectionContract": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_inputs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Allowed Inputs",
+          "type": "array"
+        },
+        "required_inputs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Required Inputs",
+          "type": "array"
+        },
+        "allowed_claims": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Allowed Claims",
+          "type": "array"
+        },
+        "forbidden": {
+          "items": {
+            "enum": [
+              "UNSUPPORTED_ASSERTION",
+              "UNMARKED_INFERENCE",
+              "NEW_FACT",
+              "NEW_LEGAL_RULE"
+            ],
+            "type": "string"
+          },
+          "title": "Forbidden",
+          "type": "array"
+        },
+        "requirements": {
+          "items": {
+            "enum": [
+              "CHRONOLOGICAL",
+              "CITATIONS",
+              "REQUESTS",
+              "ATTACHMENTS"
+            ],
+            "type": "string"
+          },
+          "title": "Requirements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "allowed_inputs",
+        "required_inputs",
+        "allowed_claims",
+        "forbidden",
+        "requirements"
+      ],
+      "title": "SectionContract",
+      "type": "object"
+    },
+    "SectionText": {
+      "additionalProperties": false,
+      "properties": {
+        "section": {
+          "$ref": "#/$defs/Ref"
+        },
+        "statements": {
+          "items": {
+            "$ref": "#/$defs/Statement"
+          },
+          "minItems": 1,
+          "title": "Statements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "section",
+        "statements"
+      ],
+      "title": "SectionText",
+      "type": "object"
+    },
+    "SourceAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Hash",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_hash",
+        "locator"
+      ],
+      "title": "SourceAnchor",
+      "type": "object"
+    },
+    "Statement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "statement_type": {
+          "enum": [
+            "FACTUAL",
+            "LEGAL",
+            "REQUEST",
+            "INFERENCE",
+            "STRUCTURAL"
+          ],
+          "title": "Statement Type",
+          "type": "string"
+        },
+        "support": {
+          "enum": [
+            "SOURCE_BACKED",
+            "INFERRED",
+            "UNSUPPORTED"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "refs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Refs",
+          "type": "array"
+        },
+        "citations": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "inference_label": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inference Label"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "statement_type",
+        "support",
+        "refs",
+        "citations"
+      ],
+      "title": "Statement",
+      "type": "object"
+    },
+    "TimeRange": {
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "format": "date",
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "title": "TimeRange",
+      "type": "object"
+    },
+    "ValidationFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "1.0.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "kind": {
+          "const": "ValidationFinding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "OPEN",
+            "RESOLVED",
+            "FALSE_POSITIVE"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "run_id": {
+          "format": "uuid",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/Ref"
+        },
+        "target_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Target Hash",
+          "type": "string"
+        },
+        "layer": {
+          "enum": [
+            "V1",
+            "V2",
+            "V3",
+            "V4",
+            "V5",
+            "V6",
+            "V7",
+            "V8",
+            "V9",
+            "V10",
+            "RENDER"
+          ],
+          "title": "Layer",
+          "type": "string"
+        },
+        "code": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "tenant_id",
+        "case_id",
+        "revision",
+        "previous_hash",
+        "created_at",
+        "recorded_at",
+        "provenance",
+        "kind",
+        "status",
+        "run_id",
+        "target",
+        "target_hash",
+        "layer",
+        "code",
+        "severity",
+        "message",
+        "path"
+      ],
+      "title": "ValidationFinding",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "operation": {
+      "const": "AppendRevision",
+      "title": "Operation",
+      "type": "string"
+    },
+    "meta": {
+      "$ref": "#/$defs/CommandMeta"
+    },
+    "expected_revision": {
+      "minimum": 0,
+      "title": "Expected Revision",
+      "type": "integer"
+    },
+    "entity": {
+      "discriminator": {
+        "mapping": {
+          "Argument": "#/$defs/Argument",
+          "Case": "#/$defs/Case",
+          "Citation": "#/$defs/Citation",
+          "Claim": "#/$defs/Claim",
+          "CounterArgument": "#/$defs/CounterArgument",
+          "Deadline": "#/$defs/Deadline",
+          "Decision": "#/$defs/Decision",
+          "Defence": "#/$defs/Defence",
+          "DocumentPlan": "#/$defs/DocumentPlan",
+          "Draft": "#/$defs/Draft",
+          "Evidence": "#/$defs/Evidence",
+          "Fact": "#/$defs/Fact",
+          "Filing": "#/$defs/Filing",
+          "Institution": "#/$defs/Institution",
+          "Issue": "#/$defs/Issue",
+          "LegalRule": "#/$defs/LegalRule",
+          "LegalSource": "#/$defs/LegalSource",
+          "Party": "#/$defs/Party",
+          "Proceeding": "#/$defs/Proceeding",
+          "Request": "#/$defs/Request",
+          "Risk": "#/$defs/Risk",
+          "Section": "#/$defs/Section",
+          "ValidationFinding": "#/$defs/ValidationFinding"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/Case"
+        },
+        {
+          "$ref": "#/$defs/Party"
+        },
+        {
+          "$ref": "#/$defs/Institution"
+        },
+        {
+          "$ref": "#/$defs/Proceeding"
+        },
+        {
+          "$ref": "#/$defs/Filing"
+        },
+        {
+          "$ref": "#/$defs/Fact"
+        },
+        {
+          "$ref": "#/$defs/Evidence"
+        },
+        {
+          "$ref": "#/$defs/Issue"
+        },
+        {
+          "$ref": "#/$defs/LegalSource"
+        },
+        {
+          "$ref": "#/$defs/LegalRule"
+        },
+        {
+          "$ref": "#/$defs/Claim"
+        },
+        {
+          "$ref": "#/$defs/Defence"
+        },
+        {
+          "$ref": "#/$defs/Argument"
+        },
+        {
+          "$ref": "#/$defs/CounterArgument"
+        },
+        {
+          "$ref": "#/$defs/Request"
+        },
+        {
+          "$ref": "#/$defs/Deadline"
+        },
+        {
+          "$ref": "#/$defs/Risk"
+        },
+        {
+          "$ref": "#/$defs/Citation"
+        },
+        {
+          "$ref": "#/$defs/DocumentPlan"
+        },
+        {
+          "$ref": "#/$defs/Section"
+        },
+        {
+          "$ref": "#/$defs/Draft"
+        },
+        {
+          "$ref": "#/$defs/ValidationFinding"
+        },
+        {
+          "$ref": "#/$defs/Decision"
+        }
+      ],
+      "title": "Entity"
+    }
+  },
+  "required": [
+    "operation",
+    "meta",
+    "expected_revision",
+    "entity"
+  ],
+  "title": "AppendRevision",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:AppendRevision:1.0.0"
+}

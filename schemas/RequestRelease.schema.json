@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "CommandMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "command_id": {
+          "format": "uuid",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "format": "uuid",
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "expected_case_sequence": {
+          "minimum": 0,
+          "title": "Expected Case Sequence",
+          "type": "integer"
+        },
+        "correlation_id": {
+          "format": "uuid",
+          "title": "Correlation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_id",
+        "tenant_id",
+        "case_id",
+        "idempotency_key",
+        "expected_case_sequence",
+        "correlation_id"
+      ],
+      "title": "CommandMeta",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "operation": {
+      "const": "RequestRelease",
+      "title": "Operation",
+      "type": "string"
+    },
+    "meta": {
+      "$ref": "#/$defs/CommandMeta"
+    },
+    "draft": {
+      "$ref": "#/$defs/Ref"
+    },
+    "render_hashes": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Render Hashes",
+      "type": "array"
+    },
+    "run_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Run Ids",
+      "type": "array"
+    },
+    "approval": {
+      "$ref": "#/$defs/Ref"
+    }
+  },
+  "required": [
+    "operation",
+    "meta",
+    "draft",
+    "render_hashes",
+    "run_ids",
+    "approval"
+  ],
+  "title": "RequestRelease",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:RequestRelease:1.0.0"
+}

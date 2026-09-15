@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "target": {
+      "$ref": "#/$defs/Ref"
+    },
+    "snapshot_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Snapshot Hash",
+      "type": "string"
+    },
+    "current_case_sequence": {
+      "minimum": 1,
+      "title": "Current Case Sequence",
+      "type": "integer"
+    },
+    "state": {
+      "enum": [
+        "CURRENT",
+        "STALE",
+        "UNKNOWN"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "changed_inputs": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Changed Inputs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "target",
+    "snapshot_hash",
+    "current_case_sequence",
+    "state",
+    "changed_inputs"
+  ],
+  "title": "FreshnessAssessment",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:FreshnessAssessment:1.0.0"
+}

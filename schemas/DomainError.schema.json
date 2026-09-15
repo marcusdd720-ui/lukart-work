@@ -1,0 +1,56 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "enum": [
+        "SCHEMA_INVALID",
+        "INVALID_TRANSITION",
+        "BROKEN_REFERENCE",
+        "CROSS_CASE",
+        "PROVENANCE_MISSING",
+        "UNSUPPORTED",
+        "STALE",
+        "CONFLICT",
+        "IDEMPOTENCY_CONFLICT",
+        "FORBIDDEN",
+        "GATE_DENIED",
+        "UNKNOWN",
+        "DUPLICATE",
+        "INVALID_HASH",
+        "CYCLE"
+      ],
+      "title": "Code",
+      "type": "string"
+    },
+    "path": {
+      "title": "Path",
+      "type": "string"
+    },
+    "message": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Message",
+      "type": "string"
+    },
+    "retryable": {
+      "title": "Retryable",
+      "type": "boolean"
+    },
+    "correlation_id": {
+      "format": "uuid",
+      "title": "Correlation Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "code",
+    "path",
+    "message",
+    "retryable",
+    "correlation_id"
+  ],
+  "title": "DomainError",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:DomainError:1.0.0"
+}

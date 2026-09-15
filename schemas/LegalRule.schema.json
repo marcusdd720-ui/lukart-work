@@ -1,0 +1,476 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "Locator": {
+      "additionalProperties": false,
+      "description": "A source location must be nonempty and address immutable source bytes.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "PAGE",
+            "PARAGRAPH",
+            "ARTICLE",
+            "BYTE_RANGE",
+            "RECORD"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "fragment_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fragment Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "value",
+        "fragment_hash"
+      ],
+      "title": "Locator",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "operation_id": {
+          "format": "uuid",
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "method": {
+          "enum": [
+            "MANUAL",
+            "EXTRACTION",
+            "DERIVATION",
+            "IMPORT",
+            "VALIDATION"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "anchors": {
+          "items": {
+            "$ref": "#/$defs/SourceAnchor"
+          },
+          "title": "Anchors",
+          "type": "array"
+        },
+        "rationale": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionPin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "actor",
+        "operation_id",
+        "method",
+        "inputs",
+        "anchors",
+        "rationale"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "Requirement": {
+      "additionalProperties": false,
+      "properties": {
+        "operator": {
+          "enum": [
+            "PRESENT",
+            "EQUALS",
+            "MIN_ITEMS"
+          ],
+          "title": "Operator",
+          "type": "string"
+        },
+        "field_path": {
+          "pattern": "^/[A-Za-z0-9_/-]+$",
+          "title": "Field Path",
+          "type": "string"
+        },
+        "operand": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operand"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "operator",
+        "field_path",
+        "severity"
+      ],
+      "title": "Requirement",
+      "type": "object"
+    },
+    "SourceAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Hash",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_hash",
+        "locator"
+      ],
+      "title": "SourceAnchor",
+      "type": "object"
+    },
+    "TimeRange": {
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "format": "date",
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "title": "TimeRange",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "previous_hash": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Previous Hash"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "kind": {
+      "const": "LegalRule",
+      "title": "Kind",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "PROPOSED",
+        "REVIEWED",
+        "ACTIVE",
+        "SUPERSEDED",
+        "WITHDRAWN"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "rule_type": {
+      "enum": [
+        "SUBSTANTIVE",
+        "PROCEDURAL",
+        "INTERPRETIVE"
+      ],
+      "title": "Rule Type",
+      "type": "string"
+    },
+    "statement": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Statement",
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "minItems": 1,
+      "title": "Sources",
+      "type": "array"
+    },
+    "jurisdiction": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Jurisdiction",
+      "type": "string"
+    },
+    "effective_period": {
+      "$ref": "#/$defs/TimeRange"
+    },
+    "applicable_document_types": {
+      "items": {
+        "$ref": "#/$defs/VersionPin"
+      },
+      "title": "Applicable Document Types",
+      "type": "array"
+    },
+    "requirement": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Requirement"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "interpretation": {
+      "enum": [
+        "SETTLED",
+        "DISPUTED",
+        "UNKNOWN"
+      ],
+      "title": "Interpretation",
+      "type": "string"
+    },
+    "review_decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Ref"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "tenant_id",
+    "case_id",
+    "revision",
+    "previous_hash",
+    "created_at",
+    "recorded_at",
+    "provenance",
+    "kind",
+    "status",
+    "rule_type",
+    "statement",
+    "sources",
+    "jurisdiction",
+    "effective_period",
+    "applicable_document_types",
+    "interpretation"
+  ],
+  "title": "LegalRule",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:LegalRule:1.0.0"
+}

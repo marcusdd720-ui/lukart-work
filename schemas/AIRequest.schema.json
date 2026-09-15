@@ -1,0 +1,227 @@
+{
+  "$defs": {
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "SectionContract": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_inputs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Allowed Inputs",
+          "type": "array"
+        },
+        "required_inputs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Required Inputs",
+          "type": "array"
+        },
+        "allowed_claims": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Allowed Claims",
+          "type": "array"
+        },
+        "forbidden": {
+          "items": {
+            "enum": [
+              "UNSUPPORTED_ASSERTION",
+              "UNMARKED_INFERENCE",
+              "NEW_FACT",
+              "NEW_LEGAL_RULE"
+            ],
+            "type": "string"
+          },
+          "title": "Forbidden",
+          "type": "array"
+        },
+        "requirements": {
+          "items": {
+            "enum": [
+              "CHRONOLOGICAL",
+              "CITATIONS",
+              "REQUESTS",
+              "ATTACHMENTS"
+            ],
+            "type": "string"
+          },
+          "title": "Requirements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "allowed_inputs",
+        "required_inputs",
+        "allowed_claims",
+        "forbidden",
+        "requirements"
+      ],
+      "title": "SectionContract",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "request_id": {
+      "format": "uuid",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "task": {
+      "enum": [
+        "EXTRACTION",
+        "LEGAL_REASONING",
+        "DRAFTING",
+        "ADVERSARIAL_REVIEW",
+        "LANGUAGE_REVIEW"
+      ],
+      "title": "Task",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "format": "uuid",
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "snapshot_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Snapshot Hash",
+      "type": "string"
+    },
+    "input_refs": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Input Refs",
+      "type": "array"
+    },
+    "section_contract": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SectionContract"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "prompt": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "output_contract": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "data_policy": {
+      "$ref": "#/$defs/VersionPin"
+    }
+  },
+  "required": [
+    "request_id",
+    "tenant_id",
+    "case_id",
+    "task",
+    "snapshot_id",
+    "snapshot_hash",
+    "input_refs",
+    "section_contract",
+    "prompt",
+    "output_contract",
+    "data_policy"
+  ],
+  "title": "AIRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:AIRequest:1.0.0"
+}

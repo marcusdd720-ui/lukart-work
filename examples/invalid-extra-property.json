@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "id": "00000000-0000-0000-0000-000000000001",
+  "tenant_id": "00000000-0000-0000-0000-0000000003e8",
+  "case_id": "00000000-0000-0000-0000-000000000001",
+  "revision": 1,
+  "previous_hash": null,
+  "created_at": "2026-09-14T00:00:00Z",
+  "recorded_at": "2026-09-14T00:00:00Z",
+  "provenance": {
+    "actor": {
+      "id": "00000000-0000-0000-0000-000000000384",
+      "kind": "HUMAN"
+    },
+    "operation_id": "00000000-0000-0000-0000-000000000385",
+    "method": "MANUAL",
+    "inputs": [],
+    "anchors": [],
+    "rationale": "Synthetic test input",
+    "tool": null
+  },
+  "kind": "Case",
+  "status": "OPEN",
+  "title": "Synthetic case",
+  "jurisdiction": "PL",
+  "owner_id": "00000000-0000-0000-0000-000000000384",
+  "retention_policy": {
+    "id": "fixture",
+    "version": "1.0.0",
+    "content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "ui_state": "FINAL"
+}

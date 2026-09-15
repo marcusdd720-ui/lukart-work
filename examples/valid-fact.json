@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0.0",
+  "id": "00000000-0000-0000-0000-000000000004",
+  "tenant_id": "00000000-0000-0000-0000-0000000003e8",
+  "case_id": "00000000-0000-0000-0000-000000000001",
+  "revision": 1,
+  "previous_hash": null,
+  "created_at": "2026-09-14T00:00:00Z",
+  "recorded_at": "2026-09-14T00:00:00Z",
+  "provenance": {
+    "actor": {
+      "id": "00000000-0000-0000-0000-000000000384",
+      "kind": "HUMAN"
+    },
+    "operation_id": "00000000-0000-0000-0000-000000000385",
+    "method": "MANUAL",
+    "inputs": [],
+    "anchors": [
+      {
+        "document_id": "00000000-0000-0000-0000-000000000064",
+        "document_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "locator": {
+          "unit": "RECORD",
+          "value": "1",
+          "fragment_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    ],
+    "rationale": "Synthetic test input",
+    "tool": null
+  },
+  "kind": "Fact",
+  "status": "CANDIDATE",
+  "statement": "Payment asserted",
+  "support": "SOURCE_BACKED",
+  "evidence": [
+    {
+      "kind": "Evidence",
+      "id": "00000000-0000-0000-0000-000000000003",
+      "revision": 1
+    }
+  ],
+  "subjects": [
+    {
+      "kind": "Party",
+      "id": "00000000-0000-0000-0000-000000000002",
+      "revision": 1
+    }
+  ],
+  "event_date": null,
+  "amount": null,
+  "key_fact": true,
+  "acceptance": null
+}

@@ -1,0 +1,28 @@
+{
+  "stage": "01 — Domain Model & Contracts",
+  "package_version": "0.1.0",
+  "baseline_sha256": "3c980207dd77cb2b0139a710d4446c76408c90ceff0f1d124eba853afdaebe83",
+  "designed": true,
+  "implemented": "SCOPED_CONTRACTS_AND_SELECTED_CHECKS",
+  "executed": {
+    "unittest": {
+      "tests": 57,
+      "failures": 0,
+      "errors": 0
+    },
+    "package_checks": 53,
+    "json_files_parsed": 54,
+    "compileall": "PASS"
+  },
+  "validated": "LOCAL_CONTRACT_SCOPE_ONLY",
+  "entities": 23,
+  "supporting_contracts": 27,
+  "json_schemas": 52,
+  "definition_of_done": "NOT_MET",
+  "merge": "NOT_EXECUTED",
+  "post_merge": "NOT_EXECUTED",
+  "recommendation": "CONDITIONAL_GO_FOR_02_IMPLEMENTATION",
+  "production_final": "NO_GO",
+  "python": "3.12.14",
+  "pydantic": "2.13.5"
+}

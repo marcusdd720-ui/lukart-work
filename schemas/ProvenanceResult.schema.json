@@ -1,0 +1,172 @@
+{
+  "$defs": {
+    "Locator": {
+      "additionalProperties": false,
+      "description": "A source location must be nonempty and address immutable source bytes.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "PAGE",
+            "PARAGRAPH",
+            "ARTICLE",
+            "BYTE_RANGE",
+            "RECORD"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "fragment_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fragment Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "value",
+        "fragment_hash"
+      ],
+      "title": "Locator",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "SourceAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Hash",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_hash",
+        "locator"
+      ],
+      "title": "SourceAnchor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "result_type": {
+      "const": "PROVENANCE",
+      "title": "Result Type",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "target": {
+      "$ref": "#/$defs/Ref"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/SourceAnchor"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "revisions": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Revisions",
+      "type": "array"
+    },
+    "completeness": {
+      "enum": [
+        "COMPLETE",
+        "INCOMPLETE",
+        "UNKNOWN"
+      ],
+      "title": "Completeness",
+      "type": "string"
+    }
+  },
+  "required": [
+    "result_type",
+    "tenant_id",
+    "case_id",
+    "target",
+    "sources",
+    "revisions",
+    "completeness"
+  ],
+  "title": "ProvenanceResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ProvenanceResult:1.0.0"
+}
