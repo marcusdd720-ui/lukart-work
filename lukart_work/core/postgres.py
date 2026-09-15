@@ -1,0 +1,177 @@
+"""Scoped PostgreSQL unit of work. Runtime credentials must not own the tables.
+
+Deployment/migration is explicit; constructing a repository never runs DDL.
+The transaction lock serializes one case, including first creation. RLS is an
+additional boundary beneath mandatory application authorization.
+"""
+from contextlib import contextmanager
+from hashlib import sha256
+import json
+from pathlib import Path
+
+from lukart_work.domain.models import ENTITIES
+from lukart_work.contracts.messages import SourceDocument, Snapshot, Decision, DomainEvent, CommandResult
+from lukart_work.contracts.versions import contract_version
+from lukart_work.validation.rules import digest, ref, Violation
+
+
+def canonical(value):
+    if hasattr(value, 'model_dump'):
+        value = value.model_dump(mode='json')
+    return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False)
+
+
+def key(target):
+    return f'{target.kind}:{target.id}:{target.revision}'
+
+
+def urn(cls):
+    return f'urn:lukart:work:{cls.__name__}:{contract_version(cls.__name__)}'
+
+
+def decode(row, cls):
+    contract, raw, content_hash = row
+    # Verify the saved representation BEFORE parsing a historical payload.
+    if contract != urn(cls):
+        raise Violation('UNKNOWN')
+    if sha256(raw.encode('utf-8')).hexdigest() != content_hash:
+        raise Violation('INVALID_HASH')
+    return cls.model_validate_json(raw)
+
+
+class PostgresRepository:
+    def __init__(self, dsn):
+        self._dsn = dsn
+
+    # Internal CaseRepository port; public reads go through CommandService.query.
+    def get_revision(self, tenant_id, case_id, target):
+        with self.transaction(tenant_id, case_id) as tx:
+            entity = tx.records().get(target)
+            if entity is None:
+                raise Violation('BROKEN_REFERENCE')
+            return entity
+
+    def get_heads(self, tenant_id, case_id):
+        with self.transaction(tenant_id, case_id) as tx:
+            return tx.sequence(), tuple(ref(e) for e in tx.heads())
+
+    def get_snapshot(self, tenant_id, case_id, snapshot_id):
+        with self.transaction(tenant_id, case_id) as tx:
+            return tx.object('snapshot', snapshot_id, Snapshot)
+
+    @contextmanager
+    def transaction(self, tenant_id, case_id):
+        import psycopg
+        with psycopg.connect(self._dsn) as connection:
+            with connection.transaction():
+                # A superuser or BYPASSRLS runtime would invalidate the isolation proof.
+                role = connection.execute('SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname=current_user').fetchone()
+                if role is None or any(role):
+                    raise Violation('FORBIDDEN')
+                if connection.execute("SELECT 1 FROM pg_tables WHERE schemaname='lw_core' AND tableowner=current_user LIMIT 1").fetchone():
+                    raise Violation('FORBIDDEN')
+                connection.execute("SELECT set_config('lw.tenant', %s, true), set_config('lw.case', %s, true)", (str(tenant_id), str(case_id)))
+                lock = int.from_bytes(sha256(f'{tenant_id}/{case_id}'.encode()).digest()[:8], 'big', signed=True)
+                connection.execute('SELECT pg_advisory_xact_lock(%s)', (lock,))
+                yield UnitOfWork(connection, tenant_id, case_id)
+
+
+class UnitOfWork:
+    def __init__(self, connection, tenant_id, case_id):
+        self.connection = connection
+        self.scope = (tenant_id, case_id)
+
+    def sequence(self):
+        row = self.connection.execute('SELECT sequence FROM lw_core.cases WHERE tenant_id=%s AND case_id=%s', self.scope).fetchone()
+        return row[0] if row else 0
+
+    def set_sequence(self, sequence):
+        self.connection.execute('INSERT INTO lw_core.cases VALUES (%s,%s,%s) ON CONFLICT (tenant_id,case_id) DO UPDATE SET sequence=EXCLUDED.sequence', (*self.scope, sequence))
+
+    def records(self):
+        types = {c.__name__: c for c in ENTITIES}
+        rows = self.connection.execute('SELECT revision_key,kind,entity_id,revision,contract,payload,content_hash FROM lw_core.revisions WHERE tenant_id=%s AND case_id=%s ORDER BY revision', self.scope).fetchall()
+        records = {}
+        for revision_key, kind, entity_id, revision, *row in rows:
+            if kind not in types:
+                raise Violation('UNKNOWN')
+            entity = decode(row, types[kind])
+            if (entity.tenant_id, entity.case_id) != self.scope:
+                raise Violation('CROSS_CASE')
+            if (key(ref(entity)), entity.id, entity.revision) != (revision_key, entity_id, revision):
+                raise Violation('INVALID_HASH')
+            records[ref(entity)] = entity
+        return records
+
+    def heads(self):
+        rows = self.connection.execute('SELECT revision_key FROM lw_core.heads WHERE tenant_id=%s AND case_id=%s ORDER BY kind, entity_id', self.scope).fetchall()
+        records = {key(r): e for r, e in self.records().items()}
+        return tuple(records[row[0]] for row in rows)
+
+    def append(self, entity):
+        raw = canonical(entity)
+        self.connection.execute('INSERT INTO lw_core.revisions VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)', (*self.scope, key(ref(entity)), entity.kind, entity.id, entity.revision, urn(type(entity)), raw, digest(entity)))
+        self.connection.execute('INSERT INTO lw_core.heads VALUES (%s,%s,%s,%s,%s) ON CONFLICT (tenant_id,case_id,kind,entity_id) DO UPDATE SET revision_key=EXCLUDED.revision_key', (*self.scope, entity.kind, entity.id, key(ref(entity))))
+
+    def objects(self, category, cls):
+        rows = self.connection.execute('SELECT contract,payload,content_hash FROM lw_core.objects WHERE tenant_id=%s AND case_id=%s AND category=%s', (*self.scope, category)).fetchall()
+        return tuple(decode(row, cls) for row in rows)
+
+    def object(self, category, object_id, cls):
+        row = self.connection.execute('SELECT contract,payload,content_hash FROM lw_core.objects WHERE tenant_id=%s AND case_id=%s AND category=%s AND object_id=%s', (*self.scope, category, object_id)).fetchone()
+        if row is None:
+            raise Violation('BROKEN_REFERENCE')
+        value = decode(row, cls)
+        if hasattr(value, 'tenant_id') and (value.tenant_id, value.case_id) != self.scope:
+            raise Violation('CROSS_CASE')
+        if category in ('source', 'snapshot') and value.id != object_id:
+            raise Violation('INVALID_HASH')
+        return value
+
+    def put_object(self, category, object_id, value, source_bytes=None):
+        self.connection.execute('INSERT INTO lw_core.objects VALUES (%s,%s,%s,%s,%s,%s,%s,%s)', (*self.scope, category, object_id, urn(type(value)), canonical(value), digest(value), source_bytes))
+
+    def source_bytes(self, object_id):
+        source = self.object('source', object_id, SourceDocument)
+        row = self.connection.execute("SELECT original_bytes FROM lw_core.objects WHERE tenant_id=%s AND case_id=%s AND category='source' AND object_id=%s", (*self.scope, object_id)).fetchone()
+        data = bytes(row[0]) if row and row[0] is not None else None
+        if data is None or len(data) != source.byte_length or sha256(data).hexdigest() != source.content_hash:
+            raise Violation('PROVENANCE_MISSING')
+        return data
+
+    def replay(self, idempotency_key, input_hash):
+        row = self.connection.execute('SELECT input_hash,payload FROM lw_core.commands WHERE tenant_id=%s AND case_id=%s AND idempotency_key=%s', (*self.scope, idempotency_key)).fetchone()
+        if row is None:
+            return None
+        if row[0] != input_hash:
+            raise Violation('IDEMPOTENCY_CONFLICT')
+        return CommandResult.model_validate_json(row[1])
+
+    def finish(self, request, input_hash, result, events):
+        self.connection.execute('INSERT INTO lw_core.commands VALUES (%s,%s,%s,%s,%s)', (*self.scope, request.meta.idempotency_key, input_hash, canonical(result)))
+        for event in events:
+            raw = canonical(event)
+            self.connection.execute('INSERT INTO lw_core.events VALUES (%s,%s,%s,%s,%s,%s)', (*self.scope, event.audit.event_id, event.audit.sequence, raw, digest(event)))
+            self.connection.execute('INSERT INTO lw_core.outbox VALUES (%s,%s,%s)', (*self.scope, event.audit.event_id))
+
+    def last_event_hash(self):
+        row = self.connection.execute('SELECT content_hash FROM lw_core.events WHERE tenant_id=%s AND case_id=%s ORDER BY sequence DESC, event_order DESC LIMIT 1', self.scope).fetchone()
+        return row[0] if row else None
+
+    def events(self):
+        rows = self.connection.execute('SELECT payload,content_hash FROM lw_core.events WHERE tenant_id=%s AND case_id=%s ORDER BY sequence,event_order', self.scope).fetchall()
+        result = []
+        previous = None
+        for raw, expected in rows:
+            if sha256(raw.encode()).hexdigest() != expected:
+                raise Violation('INVALID_HASH')
+            event = DomainEvent.model_validate_json(raw)
+            if event.audit.previous_event_hash != previous:
+                raise Violation('INVALID_HASH')
+            result.append(event)
+            previous = expected
+        return tuple(result)
+
+    def outbox(self):
+        rows = self.connection.execute('SELECT e.payload FROM lw_core.outbox o JOIN lw_core.events e USING (tenant_id,case_id,event_id) WHERE o.tenant_id=%s AND o.case_id=%s ORDER BY e.sequence,e.event_order', self.scope).fetchall()
+        return tuple(DomainEvent.model_validate_json(row[0]) for row in rows)

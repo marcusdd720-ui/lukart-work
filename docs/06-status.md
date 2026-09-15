@@ -1,5 +1,7 @@
 # Wynik etapu 01 i Definition of Done
 
+Status Stage 02 jest prowadzony osobno w `10-stage02-acceptance.md` i `reports/stage02-status.json`. Poniższy raport Stage 01 zachowano jako historię; nie opisuje obecnej implementacji Case Core.
+
 ## Aktualizacja — Stage 01 remediation, 2026-09-15
 
 Naprawy AGR-01-001–007, nowe kontrakty i testy opisuje 07-stage01-remediation.md. Bieżące wyniki wykonania zapisano w reports/status.json, reports/package-validation.json i reports/unittest.txt. Nie rozpoczęto Stage 02 i nie przyznano GO. Następny krok: osobny niezależny Architecture Gate Review na commicie remediation.

@@ -8,11 +8,12 @@ import platform
 from pydantic import TypeAdapter, ValidationError
 from lukart_work.domain.models import ENTITIES,EntityPayload
 from lukart_work.contracts.messages import CONTRACTS,Command
+from lukart_work.core.requests import CoreRequest,CoreQuery
 from lukart_work.contracts.versions import contract_version
 from lukart_work.validation.rules import parse_entity
 ROOT=Path(__file__).parent
 checks=[]
-for cls in ENTITIES+CONTRACTS:
+for cls in ENTITIES+CONTRACTS+(CoreRequest,CoreQuery):
     schema=json.loads((ROOT/'schemas'/f'{cls.__name__}.schema.json').read_text())
     expected=cls.model_json_schema()
     assert {k:v for k,v in schema.items() if k not in ('$id','$schema')}==expected

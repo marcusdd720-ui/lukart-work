@@ -4,10 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lukart-work-domain-contracts"
-version = "0.1.1"
-description = "Architecture 00 stage 01 domain contracts and deterministic checks"
+version = "0.2.0"
+description = "Architecture 00 domain contracts and transactional Case Core"
 requires-python = ">=3.11"
 dependencies = ["pydantic==2.13.5"]
 
+[project.optional-dependencies]
+postgres = ["psycopg[binary]==3.3.3"]
+
 [tool.setuptools.packages.find]
 include = ["lukart_work*"]
+
+[tool.setuptools.package-data]
+"lukart_work.core" = ["migration.sql"]

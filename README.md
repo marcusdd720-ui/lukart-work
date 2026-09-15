@@ -1,4 +1,6 @@
-# LUKART WORK — 01 Domain Model & Contracts
+# LUKART WORK — Domain Contracts + Stage 02 Case Core
+
+Stage 02 (pakiet 0.2.0): uwierzytelniony serwis intencji, trwały PostgreSQL, rewizje append-only, snapshoty, decyzje i atomowy audit/outbox. Opis i granice: [docs/09-stage02-implementation.md](docs/09-stage02-implementation.md). Wynik odbioru Stage 02 wymaga bieżących testów i niezależnego review; nie wynika z historycznego raportu Stage 01 poniżej.
 
 Pakiet wykonawczy rozwijający zatwierdzoną Architekturę 00. Zawiera 23 encje, wspólne typy, lifecycle, relacje, kontrakty, generowane JSON Schema, deterministyczne kontrole i syntetyczne testy.
 
@@ -30,4 +32,4 @@ Lokalnie wykorzystano zainstalowany Pydantic; polecenie pip install nie było po
 
 Entry points: domain/models.py, contracts/messages.py, contracts/ports.py, validation/rules.py. Schematy są eksportem, nie osobno edytowanym źródłem. RevisionLedger to sekwencyjny test harness, nie repozytorium produkcyjne. `evaluate_release` przyjmuje zaufane rekordy załadowane przez przyszły serwis, nie payload klienta.
 
-Do etapu 02 trzeba wdrożyć pełną orkiestrację guardów, authorization, transakcje, trwałe CAS/idempotency/outbox oraz integracyjne testy bezpieczeństwa. Ten pakiet nie zmienia repozytorium LUKART ROS.
+Usługi Stage 02 znajdują się w `lukart_work/core/`. Instalacja opcjonalnego adaptera: `python -m pip install '.[postgres]'`. Pełna kontrola Stage 02: `python -B -X utf8 scripts/verify_stage02.py` — każdy SKIP jest brakiem dowodu i powoduje FAIL. Repozytorium LUKART ROS pozostaje poza zakresem.

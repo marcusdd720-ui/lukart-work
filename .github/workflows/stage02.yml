@@ -1,0 +1,33 @@
+name: Stage 02 Case Core
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: disposable-ci-password
+          POSTGRES_DB: lukart_stage02_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
+      LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
+      LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_core_runtime password=disposable-runtime-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python -m pip install '.[postgres]'
+      - run: python -B -X utf8 scripts/prepare_ci_database.py
+      - run: python -B -X utf8 verify_package.py
+      - run: python -B -X utf8 scripts/verify_stage02.py
+      - run: git diff --check
