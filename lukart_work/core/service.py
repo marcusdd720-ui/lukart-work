@@ -85,7 +85,10 @@ class CommandService:
                     now = instant.astimezone(timezone.utc)
                     tx.set_sequence(sequence + 1)
                     subjects, event_type, output = self._apply(request, principal, tx, records, heads, now)
-                    event_id = uuid5(request.meta.command_id, 'event')
+                    # Client command IDs are only unique within an authorized scope.
+                    # Consumers deduplicate globally by event_id, so include that scope.
+                    event_namespace = uuid5(request.meta.command_id, f'{principal.tenant_id}/{principal.case_id}')
+                    event_id = uuid5(event_namespace, 'event')
                     event = wire.DomainEvent(event_type=event_type, subjects=subjects, audit=wire.AuditEvent(
                         event_id=event_id, tenant_id=principal.tenant_id, case_id=principal.case_id,
                         sequence=sequence + 1, actor=principal.actor, timestamp=now,
@@ -104,7 +107,7 @@ class CommandService:
                         invalidated = tuple(sorted(affected(changed_targets, edges), key=lambda r: (r.kind, str(r.id), r.revision)))
                         if invalidated:
                             audit = event.audit.model_dump(mode='json')
-                            audit.update(event_id=str(uuid5(request.meta.command_id, 'invalidated')), previous_event_hash=digest(event),
+                            audit.update(event_id=str(uuid5(event_namespace, 'invalidated')), previous_event_hash=digest(event),
                                          output_hash=digest([r.model_dump(mode='json') for r in invalidated]))
                             events.append(wire.DomainEvent(event_type='DependenciesInvalidated', subjects=invalidated,
                                                           audit=wire.AuditEvent.model_validate_json(json.dumps(audit))))

@@ -33,6 +33,14 @@ Minimalna poprawka: jawny, autoryzowany SupersedePlan dla człowieka, korzystaj�
 
 Regresje: `test_review_r2_revoke_plan_then_supersede_and_approve_replacement` obejmuje cały przepływ cofnięcie → supersede → zmiana danych → nowy snapshot → nowy zaakceptowany plan oraz zachowanie historycznego planu. `test_review_r2_supersede_plan_requires_human_and_legal_transition` sprawdza odmowę aktorowi SERVICE i odrzucenie SUPERSEDED→APPROVED.
 
-Niezależne re-review drugiej poprawki oczekuje na zamrożony commit. Łącznie rozpoczęto dwie iteracje naprawcze po pierwszym review implementacji. Limit zadania: maksymalnie trzy.
+Niezależny recenzent potwierdził poprawki na `5efe940b4a68a128b682e23a3403df989ac6370b`. Dodatkowa kontrola przed merge wykazała poniższy blocker i wycofała wcześniejszy techniczny GO dla tego SHA.
+
+## Iteracja naprawcza 3 (ostatnia)
+
+**S02-R3-01, P1:** event_id zależał wyłącznie od klientowskiego command_id oraz etykiety event/invalidated (service.py:88,107 na SHA 5efe940). Idempotency jest ograniczone do tenant/case, a spec wymaga deduplikacji odbiorcy po event_id. Brak gwarancji globalnej unikalności command_id pozwalał na zgubienie odrębnego zdarzenia innej sprawy; nie jest to dowód odczytu cudzych danych.
+
+Minimalna poprawka: przestrzeń UUID obu zdarzeń zawiera zaufane tenant_id i case_id. Zapisany replay oraz historyczne zdarzenia pozostają niezmienione. Test `test_review_r3_event_ids_distinguish_scopes_and_preserve_replay` powiela command_id w dwóch sprawach jednej organizacji oraz w trzeciej sprawie innej organizacji. Sprawdza odrębność zwykłych zdarzeń i DependenciesInvalidated, zgodność outbox oraz identyczny replay.
+
+Test przed poprawką: FAIL w 10.751 s przy kolizji drugiej sprawy. Ten sam test po poprawce: PASS w 20.154 s. Pełna regresja i niezależny re-review zamrożonego commita są osobnymi dowodami. Wykorzystano trzy z trzech dopuszczonych iteracji naprawczych.
 
 Formalne kryteria odbioru nadal obejmują końcowy SHA, merge/post-merge oraz CI. Zakaz push pozostaje w mocy; workflow nie jest dowodem jego wykonania.

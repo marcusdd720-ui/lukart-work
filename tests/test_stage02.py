@@ -153,6 +153,37 @@ class Stage02Tests(unittest.TestCase):
         plan = self.apply('ApprovePlan', {'decision': decision.model_dump(mode='json')}, plan)[0].refs[0]
         return fact, party, source_id, plan, snapshot_decision
 
+    def test_review_r3_event_ids_distinguish_scopes_and_preserve_replay(self):
+        create_command, dispute_command = uuid4(), uuid4()
+        tenant = uuid4()
+        seen = set()
+        for scope_tenant in (tenant, tenant, uuid4()):
+            self.tenant, self.case_id = scope_tenant, uuid4()
+            self.principal = Principal(self.actor, self.tenant, self.case_id, ACTIONS)
+            self.token = self.authority.provision(self.principal)
+            self.sequence = 0
+            request = self.request('CreateCase', {'title': 'Scoped events', 'jurisdiction': 'PL', 'retention_policy': PIN})
+            request['meta']['command_id'] = str(create_command)
+            result = self.run_request(request)
+            self.assertIsInstance(result, CommandResult, result)
+            self.assertEqual(self.run_request(request), result)
+            self.assertTrue(seen.isdisjoint(result.event_ids))
+            seen.update(result.event_ids)
+            self.sequence, self.case_ref = result.case_sequence, result.refs[0]
+            fact, _, _, _, _ = self.approved_plan()
+            request = self.request('DisputeFact', target=fact)
+            request['meta']['command_id'] = str(dispute_command)
+            result = self.run_request(request)
+            self.assertIsInstance(result, CommandResult, result)
+            self.assertEqual(len(result.event_ids), 2)
+            self.assertEqual(self.run_request(request), result)
+            self.assertTrue(seen.isdisjoint(result.event_ids))
+            seen.update(result.event_ids)
+            with self.repo.transaction(self.tenant, self.case_id) as tx:
+                self.assertEqual(tx.events(), tx.outbox())
+                self.assertEqual(tuple(e.audit.event_id for e in tx.events()[-2:]), result.event_ids)
+        self.assertEqual(len(seen), 9)
+
     def test_full_core_golden_all_guards_and_plan_approval(self):
         fact, party, source_id, plan, _ = self.approved_plan()
         self.assertEqual(self.get(plan).status, 'APPROVED')
