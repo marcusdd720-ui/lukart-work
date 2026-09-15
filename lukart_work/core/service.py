@@ -15,6 +15,7 @@ from lukart_work.validation.rules import (
     validate_state, validate_snapshot, validate_snapshot_acceptance, strict_json, affected,
 )
 from .requests import parse_request, CoreQuery
+from .policy import rule_pin
 
 ADD = {
     'CreateCase': m.Case, 'AddParty': m.Party, 'AddInstitution': m.Institution,
@@ -35,7 +36,6 @@ CHANGE = {
 APPROVAL = {'VerifyParty': 'verification_decision', 'ConfirmFact': 'acceptance', 'ApprovePlan': 'approval'}
 METADATA = set(m.Entity.model_fields) | {'kind', 'status'}
 MANAGED = METADATA | {'verification_decision', 'acceptance', 'approval', 'adoption', 'resolution', 'review_decision'}
-RULE_PIN = m.VersionPin(id='lukart-work-case-core', version='1.0.0', content_hash=sha256(b'case-core-policy-v1').hexdigest())
 ERROR_CODES = set(wire.DomainError.model_fields['code'].annotation.__args__)
 
 
@@ -92,7 +92,7 @@ class CommandService:
                         correlation_id=correlation, input_hash=input_hash, output_hash=digest(output),
                         previous_event_hash=tx.last_event_hash(),
                         source_versions=tuple(sorted(set(request.inputs) | set(walk(output, m.Ref)), key=lambda r: (r.kind, str(r.id), r.revision))),
-                        model_provider=None, rule_version=RULE_PIN,
+                        model_provider=None, rule_version=rule_pin(),
                     ))
                     events = [event]
                     changed_targets = (request.target,) if request.target is not None else ()
@@ -179,7 +179,10 @@ class CommandService:
         validate_graph(tuple(candidate.values()), sources)
         for anchor in walk(entity, m.SourceAnchor):
             tx.source_bytes(anchor.document_id)
-        for target in walk(entity, m.Ref):
+        # Provenance describes historical inputs, not active approval authority.
+        authority_refs = (r for name in type(entity).model_fields if name != 'provenance'
+                          for r in walk(getattr(entity, name), m.Ref))
+        for target in authority_refs:
             if target.kind == 'Decision':
                 if entity.kind == 'Decision' and target == entity.supersedes:
                     continue
@@ -245,7 +248,9 @@ class CommandService:
             sources = tuple(tx.object('source', i, wire.SourceDocument) for i in sorted(source_ids, key=str))
             for current in heads.values():
                 if current.kind != 'Decision':
-                    for target in walk(current, m.Ref):
+                    targets = (r for name in type(current).model_fields if name != 'provenance'
+                               for r in walk(getattr(current, name), m.Ref))
+                    for target in targets:
                         if target.kind == 'Decision':
                             self._live_decision(target, records, heads, principal)
             for source in sources:
@@ -327,6 +332,10 @@ class CommandService:
             body = old.model_dump(mode='json')
             body.update(self._metadata(request, principal, now, old.kind, old))
             body['status'] = status
+            if operation == 'DisputeParty':
+                body['verification_decision'] = None
+            elif operation == 'DisputeFact':
+                body['acceptance'] = None
             if operation in APPROVAL:
                 if principal.actor.kind != 'HUMAN':
                     raise Violation('FORBIDDEN')
@@ -344,6 +353,12 @@ class CommandService:
             inputs = {member.ref: member.content_hash for member in snapshot.members}
             if entity.approval is not None:
                 inputs[entity.approval] = digest(records[entity.approval])
+            # Acceptance is necessarily recorded after the frozen snapshot.
+            # Its withdrawal invalidates plans even though it is not a member.
+            acceptance = next((d for d in tx.objects('acceptance', m.Decision)
+                               if d.snapshot_target and d.snapshot_target.snapshot_id == snapshot.id), None)
+            if acceptance is not None:
+                inputs[ref(acceptance)] = digest(acceptance)
             for target, content_hash in inputs.items():
                 edge = wire.DependencyEdge(source=target, target=ref(entity), input_hash=content_hash)
                 tx.put_object('dependency', uuid5(request.meta.command_id, digest(edge)), edge)

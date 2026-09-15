@@ -7,10 +7,9 @@ additional boundary beneath mandatory application authorization.
 from contextlib import contextmanager
 from hashlib import sha256
 import json
-from pathlib import Path
 
 from lukart_work.domain.models import ENTITIES
-from lukart_work.contracts.messages import SourceDocument, Snapshot, Decision, DomainEvent, CommandResult
+from lukart_work.contracts.messages import SourceDocument, Snapshot, DomainEvent, CommandResult
 from lukart_work.contracts.versions import contract_version
 from lukart_work.validation.rules import digest, ref, Violation
 
@@ -140,38 +139,42 @@ class UnitOfWork:
         return data
 
     def replay(self, idempotency_key, input_hash):
-        row = self.connection.execute('SELECT input_hash,payload FROM lw_core.commands WHERE tenant_id=%s AND case_id=%s AND idempotency_key=%s', (*self.scope, idempotency_key)).fetchone()
+        row = self.connection.execute('SELECT input_hash,contract,payload,content_hash FROM lw_core.commands WHERE tenant_id=%s AND case_id=%s AND idempotency_key=%s', (*self.scope, idempotency_key)).fetchone()
         if row is None:
             return None
         if row[0] != input_hash:
             raise Violation('IDEMPOTENCY_CONFLICT')
-        return CommandResult.model_validate_json(row[1])
+        return decode(row[1:], CommandResult)
 
     def finish(self, request, input_hash, result, events):
-        self.connection.execute('INSERT INTO lw_core.commands VALUES (%s,%s,%s,%s,%s)', (*self.scope, request.meta.idempotency_key, input_hash, canonical(result)))
+        self.connection.execute('INSERT INTO lw_core.commands VALUES (%s,%s,%s,%s,%s,%s,%s)', (*self.scope, request.meta.idempotency_key, input_hash, urn(CommandResult), canonical(result), digest(result)))
         for event in events:
             raw = canonical(event)
-            self.connection.execute('INSERT INTO lw_core.events VALUES (%s,%s,%s,%s,%s,%s)', (*self.scope, event.audit.event_id, event.audit.sequence, raw, digest(event)))
+            self.connection.execute('INSERT INTO lw_core.events (tenant_id,case_id,event_id,sequence,contract,payload,content_hash) VALUES (%s,%s,%s,%s,%s,%s,%s)', (*self.scope, event.audit.event_id, event.audit.sequence, urn(DomainEvent), raw, digest(event)))
             self.connection.execute('INSERT INTO lw_core.outbox VALUES (%s,%s,%s)', (*self.scope, event.audit.event_id))
 
     def last_event_hash(self):
-        row = self.connection.execute('SELECT content_hash FROM lw_core.events WHERE tenant_id=%s AND case_id=%s ORDER BY sequence DESC, event_order DESC LIMIT 1', self.scope).fetchone()
-        return row[0] if row else None
+        self.events()  # Validate the chain before extending it.
+        row = self.connection.execute('SELECT content_hash FROM lw_core.events WHERE tenant_id=%s AND case_id=%s ORDER BY sequence DESC,event_order DESC LIMIT 1', self.scope).fetchone()
+        return row[0] if row else None  # Preserve the original stored representation.
 
     def events(self):
-        rows = self.connection.execute('SELECT payload,content_hash FROM lw_core.events WHERE tenant_id=%s AND case_id=%s ORDER BY sequence,event_order', self.scope).fetchall()
+        rows = self.connection.execute('SELECT event_id,sequence,contract,payload,content_hash FROM lw_core.events WHERE tenant_id=%s AND case_id=%s ORDER BY sequence,event_order', self.scope).fetchall()
         result = []
         previous = None
-        for raw, expected in rows:
-            if sha256(raw.encode()).hexdigest() != expected:
+        for event_id, sequence, *row in rows:
+            event = decode(row, DomainEvent)
+            if (event.audit.tenant_id, event.audit.case_id) != self.scope or (event.audit.event_id, event.audit.sequence) != (event_id, sequence):
                 raise Violation('INVALID_HASH')
-            event = DomainEvent.model_validate_json(raw)
             if event.audit.previous_event_hash != previous:
                 raise Violation('INVALID_HASH')
             result.append(event)
-            previous = expected
+            previous = row[2]
         return tuple(result)
 
     def outbox(self):
-        rows = self.connection.execute('SELECT e.payload FROM lw_core.outbox o JOIN lw_core.events e USING (tenant_id,case_id,event_id) WHERE o.tenant_id=%s AND o.case_id=%s ORDER BY e.sequence,e.event_order', self.scope).fetchall()
-        return tuple(DomainEvent.model_validate_json(row[0]) for row in rows)
+        # The shared path checks contract, bytes and the complete predecessor chain.
+        events = self.events()
+        rows = self.connection.execute('SELECT event_id FROM lw_core.outbox WHERE tenant_id=%s AND case_id=%s', self.scope).fetchall()
+        ids = {row[0] for row in rows}
+        return tuple(event for event in events if event.audit.event_id in ids)

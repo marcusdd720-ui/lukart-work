@@ -1,7 +1,7 @@
 {
   "stage": "02 Case Core",
   "python": "3.14.7",
-  "tests": 100,
+  "tests": 106,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -17,18 +17,19 @@
     "lukart_work/contracts/ports.py": "58a01de5231d4bab03d533be7171f2a0e2e422009026ed6daafc4c8edf1dc93b",
     "lukart_work/contracts/versions.py": "e79eb04261167e147f70848166f73a349ce1238d8ba45f8b4b0746c64ade37b8",
     "lukart_work/core/__init__.py": "83ff4b13ef18736d1ac3d45c688b063abc6597b777c119f4512b98410052454f",
-    "lukart_work/core/migration.sql": "759bf22f6d85d07ce3654b83abf502064f441500db7ee38a37537f586bb7338e",
-    "lukart_work/core/postgres.py": "aad445fd57dbb063a9d5e49808cd6d4a6adf9244c55beddf9dfc0b1855101802",
+    "lukart_work/core/migration.sql": "3a2fc27d6cf24c53082142b83528053ebb57d822cff9889e0345052dad29f35e",
+    "lukart_work/core/policy.py": "325ad5f528b926366f324a99ccb277cd851a1a40f56144f886c24c4e10a399c3",
+    "lukart_work/core/postgres.py": "47b7715c06cd065034fb0a2b23cb082fa769ce29b1e3e5c8614c5b19af54fc68",
     "lukart_work/core/requests.py": "c6fb0db883abe1a7e4cc1b7c151451bf883728f8fbed1e983e9d1b3b3034534f",
     "lukart_work/core/security.py": "08c1fe3667abe9e862b34be5d63745762d96cbf33b2327897f084e8624345eda",
-    "lukart_work/core/service.py": "658a3cf4faf031a93e16791a59f409e2a27a226800ac69ac03e0c2a87c3d5f8c",
+    "lukart_work/core/service.py": "6eb7e262e313aa2cb10a012e0e14c23453d2aa731c0198a1b4f89de308be0066",
     "lukart_work/domain/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "lukart_work/domain/lifecycle.py": "95db72dbfbf21d5c1f0162ad99770ccbf8ffd7bf8a10bd0764b90dfc28b9227d",
     "lukart_work/domain/models.py": "d10a2882feacc0b1f4a0a16cb99f6382dbaa3c04d94c9871587a041fb5dc760f",
     "lukart_work/validation/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "lukart_work/validation/rules.py": "7c4f3a515042ca9cc2589c1b5b4347e9c3dc6bf7073dd440b6c33daf8c7da5c5",
     "scripts/prepare_ci_database.py": "a3964429e2a06ffbb68f99254f00405efef684b9764bfedbbc8145d15eff9b9c",
-    "scripts/prepare_stage02_database.py": "6a69816a1a787280e6c1370db44a0981796eea91d104090593eb925fa85d5087",
+    "scripts/prepare_stage02_database.py": "62a595b7c26b33619d7ca76ed8eae50553c5270ba7c9f372365175ed2fcfd559",
     "scripts/refresh_manifest.py": "e0da509cd0f2f27eeddfe8598a8878070a8f91c683893211c8af7a322da0c476",
     "scripts/start_stage02_postgres.ps1": "49a7c29522606d091080901c6d0a4fe2b8e0401b551b77079f414571e6d21065",
     "scripts/verify_stage02.py": "8b20f55fe41ee3cc4c23e089c33d868856c5a35dc22c12fadb266446173c9d73",
@@ -38,6 +39,6 @@
     "tests/test_boundaries.py": "a94da4c12d5f051fae2dcae7a548ed884714e19a96ce114c478bcfceee75c15f",
     "tests/test_contracts.py": "4a29bcbdadf428fad7d11d83cad04da62cbc67bcc42b2bbdc238f7acb84eff8a",
     "tests/test_remediation.py": "cb4dad854cfb7a38d15be60d969eee483deabc3303c0bf41a35e6eed61c0d8d2",
-    "tests/test_stage02.py": "aae9a5b1515c674bbb369fabd0ef54d553f117b3d2df428b841745c5e12ba13c"
+    "tests/test_stage02.py": "15cf095015332ee3fe700509708e98b0ae88929dbd6717a6c20e9582dde314d8"
   }
 }

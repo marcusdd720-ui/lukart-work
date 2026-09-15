@@ -26,13 +26,13 @@ CREATE TABLE lw_core.objects (
 );
 CREATE TABLE lw_core.commands (
     tenant_id uuid NOT NULL, case_id uuid NOT NULL, idempotency_key uuid NOT NULL,
-    input_hash text NOT NULL, payload text NOT NULL,
+    input_hash text NOT NULL, contract text NOT NULL, payload text NOT NULL, content_hash text NOT NULL,
     PRIMARY KEY (tenant_id,case_id,idempotency_key),
     FOREIGN KEY (tenant_id,case_id) REFERENCES lw_core.cases
 );
 CREATE TABLE lw_core.events (
     tenant_id uuid NOT NULL, case_id uuid NOT NULL, event_id uuid NOT NULL, sequence bigint NOT NULL,
-    payload text NOT NULL, content_hash text NOT NULL,
+    contract text NOT NULL, payload text NOT NULL, content_hash text NOT NULL,
     event_order bigint GENERATED ALWAYS AS IDENTITY,
     PRIMARY KEY (tenant_id,case_id,event_id),
     FOREIGN KEY (tenant_id,case_id) REFERENCES lw_core.cases

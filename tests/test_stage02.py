@@ -123,7 +123,7 @@ class Stage02Tests(unittest.TestCase):
         self.assertEqual(result.code, code)
         return result
 
-    def test_full_core_golden_all_guards_and_plan_approval(self):
+    def approved_plan(self):
         fact, party, evidence, source_id = self.fact()
         identity = self.decision('IDENTITY', [party])
         party = self.apply('VerifyParty', {'decision': identity.model_dump(mode='json')}, party)[0].refs[0]
@@ -144,13 +144,17 @@ class Stage02Tests(unittest.TestCase):
         self.assertEqual(self.repo.get_snapshot(self.tenant, self.case_id, snapshot.id), snapshot)
         self.assertEqual(self.repo.get_revision(self.tenant, self.case_id, fact), self.get(fact))
         self.assertEqual(self.repo.get_heads(self.tenant, self.case_id)[0], self.sequence)
-        self.accept(snapshot)
+        snapshot_decision = self.accept(snapshot)
         plan = self.apply('AddPlan', dict(filing=filing.model_dump(mode='json'), objectives=[request.model_dump(mode='json')], recipient=party.model_dump(mode='json'),
                          argument_order=[], evidence=[evidence.model_dump(mode='json')], section_order=[section.model_dump(mode='json')],
                          position_scope='Synthetic scope', input_snapshot_id=str(snapshot.id), input_snapshot_hash=digest(snapshot)))[0].refs[0]
         plan = self.apply('ReviewPlan', target=plan)[0].refs[0]
         decision = self.decision('PLAN_APPROVAL', [plan])
         plan = self.apply('ApprovePlan', {'decision': decision.model_dump(mode='json')}, plan)[0].refs[0]
+        return fact, party, source_id, plan, snapshot_decision
+
+    def test_full_core_golden_all_guards_and_plan_approval(self):
+        fact, party, source_id, plan, _ = self.approved_plan()
         self.assertEqual(self.get(plan).status, 'APPROVED')
         self.assertEqual(self.query('GetSource', object_id=source_id), b'Synthetic payment receipt.')
         self.assertEqual(self.query('GetProvenance', fact).completeness, 'COMPLETE')
@@ -389,3 +393,103 @@ class Stage02Tests(unittest.TestCase):
         machine = self.authority.provision(Principal(Actor(id=uuid4(), kind='SERVICE'), self.tenant, self.case_id, ACTIONS))
         request = self.request('RecordDecision', dict(decision_type='IDENTITY', targets=[party.model_dump(mode='json')], outcome='ACCEPT', rationale='Machine assertion'))
         self.assert_error(request, 'FORBIDDEN', token=machine)
+
+    def test_review_r1_dispute_party_after_revocation_preserves_history(self):
+        party = self.party()
+        decision = self.decision('IDENTITY', [party])
+        verified = self.apply('VerifyParty', {'decision': decision.model_dump(mode='json')}, party)[0].refs[0]
+        original = self.get(verified)
+        self.apply('RevokeDecision', target=decision)
+        disputed = self.apply('DisputeParty', target=verified)[0].refs[0]
+        self.assertEqual(self.get(disputed).status, 'DISPUTED')
+        self.assertIsNone(self.get(disputed).verification_decision)
+        self.assertEqual(self.get(verified), original)
+        replacement = self.decision('IDENTITY', [disputed])
+        renewed = self.apply('VerifyParty', {'decision': replacement.model_dump(mode='json')}, disputed)[0].refs[0]
+        self.assertEqual(self.get(renewed).status, 'VERIFIED')
+
+    def test_review_r1_dispute_fact_after_revocation_preserves_sources(self):
+        fact, _, _, _ = self.fact()
+        reviewed = self.apply('ReviewFact', target=fact)[0].refs[0]
+        decision = self.decision('FACT_ACCEPTANCE', [reviewed])
+        confirmed = self.apply('ConfirmFact', {'decision': decision.model_dump(mode='json')}, reviewed)[0].refs[0]
+        original = self.get(confirmed)
+        self.apply('RevokeDecision', target=decision)
+        disputed = self.apply('DisputeFact', target=confirmed)[0].refs[0]
+        self.assertEqual(self.get(disputed).status, 'DISPUTED')
+        self.assertIsNone(self.get(disputed).acceptance)
+        self.assertEqual(self.get(disputed).provenance.anchors, original.provenance.anchors)
+        self.assertEqual(self.get(confirmed), original)
+
+    def test_review_r1_snapshot_acceptance_revocation_invalidates_plan(self):
+        _, _, _, plan, acceptance = self.approved_plan()
+        self.apply('RevokeDecision', target=acceptance)
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            events = tx.events()
+            self.assertEqual(events[-1].event_type, 'DependenciesInvalidated')
+            self.assertIn(plan, events[-1].subjects)
+            self.assertEqual(events[-1].audit.sequence, self.sequence)
+            self.assertEqual(tx.outbox(), events)
+        self.assertEqual(self.get(plan).status, 'APPROVED')
+
+    def test_review_r1_replay_rejects_unknown_contract_and_changed_bytes(self):
+        from lukart_work.core.postgres import canonical, urn
+        from lukart_work.core.requests import CoreRequest
+        for contract, saved_hash, expected in (
+            ('urn:lukart:work:CommandResult:99.0.0', None, 'UNKNOWN'),
+            (urn(CommandResult), '0' * 64, 'INVALID_HASH'),
+        ):
+            with self.subTest(expected=expected):
+                request = self.request('AddParty', dict(party_type='PERSON', display_name='Synthetic', identity_evidence=[]))
+                parsed = CoreRequest.model_validate_json(json.dumps(request))
+                input_hash = digest({'request': parsed.model_dump(mode='json'), 'actor': self.actor.model_dump(mode='json')})
+                result = CommandResult(command_id=parsed.meta.command_id, state='APPLIED', case_sequence=self.sequence,
+                                       refs=(), event_ids=(), errors=())
+                raw = canonical(result)
+                with self.repo.transaction(self.tenant, self.case_id) as tx:
+                    tx.connection.execute('INSERT INTO lw_core.commands VALUES (%s,%s,%s,%s,%s,%s,%s)',
+                        (self.tenant, self.case_id, parsed.meta.idempotency_key, input_hash, contract, raw, saved_hash or digest(result)))
+                self.assert_error(request, expected)
+                with self.repo.transaction(self.tenant, self.case_id) as tx:
+                    self.assertEqual(tx.connection.execute('SELECT payload FROM lw_core.commands WHERE idempotency_key=%s', (parsed.meta.idempotency_key,)).fetchone()[0], raw)
+
+    def test_review_r1_outbox_validates_event_contract_hash_and_chain(self):
+        from lukart_work.core.postgres import canonical, urn
+        from lukart_work.contracts.messages import DomainEvent
+        from lukart_work.validation.rules import Violation
+        for mode, expected in (('contract', 'UNKNOWN'), ('hash', 'INVALID_HASH'), ('chain', 'INVALID_HASH')):
+            with self.subTest(mode=mode), self.repo.transaction(self.tenant, self.case_id) as tx:
+                # Savepoint contains the deliberate corrupt synthetic row; no original is modified.
+                tx.connection.execute('SAVEPOINT corrupt_event')
+                template = tx.events()[-1].model_dump(mode='json')
+                template['audit'].update(event_id=str(uuid4()), sequence=self.sequence + 1,
+                                          previous_event_hash='0' * 64 if mode == 'chain' else tx.last_event_hash())
+                event = DomainEvent.model_validate_json(json.dumps(template))
+                raw = canonical(event)
+                contract = 'urn:lukart:work:DomainEvent:99.0.0' if mode == 'contract' else urn(DomainEvent)
+                saved_hash = '0' * 64 if mode == 'hash' else digest(event)
+                tx.connection.execute('INSERT INTO lw_core.events (tenant_id,case_id,event_id,sequence,contract,payload,content_hash) VALUES (%s,%s,%s,%s,%s,%s,%s)',
+                    (self.tenant, self.case_id, event.audit.event_id, event.audit.sequence, contract, raw, saved_hash))
+                tx.connection.execute('INSERT INTO lw_core.outbox VALUES (%s,%s,%s)', (self.tenant, self.case_id, event.audit.event_id))
+                with self.assertRaises(Violation) as raised:
+                    tx.outbox()
+                self.assertEqual(raised.exception.code, expected)
+                tx.connection.execute('ROLLBACK TO SAVEPOINT corrupt_event')
+
+    def test_review_r1_audit_pin_covers_real_rule_artifact(self):
+        from lukart_work.core.policy import policy_artifact, rule_pin, POLICY_FILES
+        import tempfile
+        root = ROOT / 'lukart_work'
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            self.assertEqual(tx.events()[0].audit.rule_version, rule_pin())
+        self.assertEqual(rule_pin().content_hash, digest(policy_artifact()))
+        with tempfile.TemporaryDirectory() as folder:
+            changed = Path(folder)
+            for name in POLICY_FILES:
+                destination = changed / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes((root / name).read_bytes())
+            self.assertEqual(rule_pin(changed), rule_pin())
+            path = changed / 'validation/rules.py'
+            path.write_bytes(path.read_bytes() + b'\n# synthetic policy change\n')
+            self.assertNotEqual(rule_pin(changed).content_hash, rule_pin().content_hash)

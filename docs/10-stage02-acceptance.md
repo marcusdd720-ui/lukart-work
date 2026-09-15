@@ -1,10 +1,12 @@
 # Stage 02 — odbiór Case Core
 
-## Stan przed niezależnym review implementacji
+## Stan odbioru implementacji
 
 Punkt wejścia: e278b97521731b8dc0395560db17e0e601a1d714, main, tylko zastany egg-info poza repo oraz raport gotowości z poprzedniej tury. Implementacja rozwija macierz w `08-stage02-readiness.md`. Nie zmieniono Architektury 00, 23 encji, kontraktów historycznych ani repozytorium ROS.
 
 Wykonano lokalną implementację i testy. **Zamknięcie: NO-GO do czasu pełnego odbioru.** Ten dokument nie zastępuje niezależnego review na konkretnym końcowym SHA.
+
+Pierwszy review kodu na `6acd6e8c38a62b04547f6280a0aa753e981d03a8` zgłosił konkretne problemy i został przerwany limitem użycia przed werdyktem. Wykonano iterację naprawczą 1; root causes, poprawki i sześć osobnych regresji opisuje `11-stage02-review.md`. Nie przypisujemy zatwierdzenia pierwszego snapshotu zmienionemu kodowi.
 
 ## Macierz bieżącego stanu
 

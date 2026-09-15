@@ -1,6 +1,6 @@
 # Stage 02 — Case Core implementation
 
-Status: IN PROGRESS. `08-stage02-readiness.md` pozostaje historycznym wynikiem kontroli wejściowej SHA e278b97521731b8dc0395560db17e0e601a1d714; nie jest raportem odbioru obecnych zmian.
+Status: IMPLEMENTED, w odbiorze. `08-stage02-readiness.md` pozostaje historycznym wynikiem kontroli wejściowej SHA e278b97521731b8dc0395560db17e0e601a1d714; nie jest raportem odbioru obecnych zmian. Review i naprawy: `11-stage02-review.md`.
 
 ## Zakres
 
@@ -24,9 +24,13 @@ Jedno połączenie i transakcja obejmują scoped advisory lock sprawy, autoryzac
 
 Payloady zapisujemy jako niezmienny tekst JSON LW-CJSON-1, wraz z pełnym URN i SHA-256 tych dokładnych UTF-8 bytes. Odczyt sprawdza hash i znaną wersję przed parsowaniem; nie dokonuje cichej migracji ani regeneracji historycznego hasha. Źródła zachowują oryginalne bytes oraz ich osobny hash. Core sprawdza integralność całego źródła; ocena znaczenia fragmentu/cytatu należy do późniejszych validatorów.
 
+Obowiązek URN/hash obejmuje także CommandResult w replay oraz DomainEvent w audycie/outbox. Outbox korzysta ze wspólnej walidacji całego łańcucha poprzedników. Pin reguł 1.0.1 jest hashem jawnego manifestu plików implementacji w `core/policy.py`, z reprezentacją LF niezależną od platformy; nie jest hashem umownej nazwy reguły. Pakiet źródłowy używany przez uruchomiony proces powinien być niezmienny.
+
+DisputeParty/DisputeFact usuwa aktywny link akceptacji tylko w nowej rewizji, dzięki czemu jawne zakwestionowanie działa także po revocation. Historyczna zatwierdzona rewizja i jej źródła pozostają zachowane. Dane provenance mogą wskazywać historyczne decyzje; nie nadaje im to aktualnych uprawnień zatwierdzania.
+
 Snapshot wybiera bieżące heads i domyka historyczne Ref, przypina źródła i wersje reguł/policy. Jest zapisywany przed jego akceptacją. Akceptacja rozwiązuje autorytatywną, aktualną decyzję i dokładny hash snapshotu; zmieniony input head blokuje nowe dopuszczenie. Nowe decyzje po zamrożeniu nie zmieniają snapshotu. Historia pozostaje odczytywalna także po odwołaniu akceptacji.
 
-Dependency DAG jest oddzielony od relacji KG. Powstaje dla planu z jawnych wejść zamrożonego snapshotu oraz akceptacji, nie z dowolnych semantycznych relacji. Zmiana użytej rewizji zapisuje DependenciesInvalidated atomowo z rewizją. Brak kompletnego indeksu przyszłych draftów skutkuje UNKNOWN, nigdy CURRENT ani FINAL.
+Dependency DAG jest oddzielony od relacji KG. Powstaje dla planu z jawnych wejść zamrożonego snapshotu, decyzji akceptującej snapshot oraz decyzji zatwierdzającej plan, nie z dowolnych semantycznych relacji. Zmiana użytej rewizji zapisuje DependenciesInvalidated atomowo z rewizją. Brak kompletnego indeksu przyszłych draftów skutkuje UNKNOWN, nigdy CURRENT ani FINAL.
 
 ## Lokalna baza testowa
 
@@ -43,6 +47,8 @@ Po rozpakowaniu archiwum do `.local-stage02/runtime`:
 ```
 
 Alternatywnie LUKART_TEST_DSN wskazuje izolowaną bazę ze schematem migration.sql i ograniczonym runtime role. Brak konfiguracji powoduje jawny SKIP testów integracyjnych i nie pozwala zamknąć etapu. Testy nie czyszczą obcych danych: każda metoda ma nowy tenant/case UUID.
+
+Po pierwszym review uruchomiono schemat odbiorowy w nowej bazie `lukart_stage02_test_review1` przez `prepare_stage02_database.py --database lukart_stage02_test_review1`. Poprzednia baza syntetyczna pozostała bez zmian. `migration.sql` jest bootstrapem nowej bazy, nie automatycznym upgradem starszych payloadów bez wersji; produkcyjna migracja takich danych nie należy do tego etapu.
 
 ## Kryteria i dowody
 
