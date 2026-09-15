@@ -28,6 +28,8 @@ Obowiązek URN/hash obejmuje także CommandResult w replay oraz DomainEvent w au
 
 DisputeParty/DisputeFact usuwa aktywny link akceptacji tylko w nowej rewizji, dzięki czemu jawne zakwestionowanie działa także po revocation. Historyczna zatwierdzona rewizja i jej źródła pozostają zachowane. Dane provenance mogą wskazywać historyczne decyzje; nie nadaje im to aktualnych uprawnień zatwierdzania.
 
+SupersedePlan realizuje już istniejące przejście APPROVED→SUPERSEDED wyłącznie dla uprawnionego człowieka. Zachowuje frozen treść i historyczny link approval, także po jego cofnięciu. Taki plan nie nadaje już aktywnego dopuszczenia i nie blokuje nowego snapshotu; zastąpienie wymaga nowego plan ID, snapshotu oraz nowej decyzji. To rozwinięcie nieopublikowanego jeszcze CoreRequest Stage 02, bez zmiany kontraktów Stage 01 i kanonicznego lifecycle.
+
 Snapshot wybiera bieżące heads i domyka historyczne Ref, przypina źródła i wersje reguł/policy. Jest zapisywany przed jego akceptacją. Akceptacja rozwiązuje autorytatywną, aktualną decyzję i dokładny hash snapshotu; zmieniony input head blokuje nowe dopuszczenie. Nowe decyzje po zamrożeniu nie zmieniają snapshotu. Historia pozostaje odczytywalna także po odwołaniu akceptacji.
 
 Dependency DAG jest oddzielony od relacji KG. Powstaje dla planu z jawnych wejść zamrożonego snapshotu, decyzji akceptującej snapshot oraz decyzji zatwierdzającej plan, nie z dowolnych semantycznych relacji. Zmiana użytej rewizji zapisuje DependenciesInvalidated atomowo z rewizją. Brak kompletnego indeksu przyszłych draftów skutkuje UNKNOWN, nigdy CURRENT ani FINAL.

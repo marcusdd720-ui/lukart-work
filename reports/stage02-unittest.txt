@@ -91,6 +91,8 @@ test_review_r1_dispute_party_after_revocation_preserves_history (tests.test_stag
 test_review_r1_outbox_validates_event_contract_hash_and_chain (tests.test_stage02.Stage02Tests.test_review_r1_outbox_validates_event_contract_hash_and_chain) ... ok
 test_review_r1_replay_rejects_unknown_contract_and_changed_bytes (tests.test_stage02.Stage02Tests.test_review_r1_replay_rejects_unknown_contract_and_changed_bytes) ... ok
 test_review_r1_snapshot_acceptance_revocation_invalidates_plan (tests.test_stage02.Stage02Tests.test_review_r1_snapshot_acceptance_revocation_invalidates_plan) ... ok
+test_review_r2_revoke_plan_then_supersede_and_approve_replacement (tests.test_stage02.Stage02Tests.test_review_r2_revoke_plan_then_supersede_and_approve_replacement) ... ok
+test_review_r2_supersede_plan_requires_human_and_legal_transition (tests.test_stage02.Stage02Tests.test_review_r2_supersede_plan_requires_human_and_legal_transition) ... ok
 test_revoked_decision_rejected_for_verification (tests.test_stage02.Stage02Tests.test_revoked_decision_rejected_for_verification) ... ok
 test_revoked_token_cannot_replay (tests.test_stage02.Stage02Tests.test_revoked_token_cannot_replay) ... ok
 test_revoking_superseding_decision_does_not_resurrect_old (tests.test_stage02.Stage02Tests.test_revoking_superseding_decision_does_not_resurrect_old) ... ok
@@ -106,6 +108,6 @@ test_untrusted_actor_and_metadata_rejected (tests.test_stage02.Stage02Tests.test
 test_verified_party_cannot_be_edited_in_place (tests.test_stage02.Stage02Tests.test_verified_party_cannot_be_edited_in_place) ... ok
 
 ----------------------------------------------------------------------
-Ran 106 tests in 41.083s
+Ran 108 tests in 66.461s
 
 OK

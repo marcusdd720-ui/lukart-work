@@ -17,7 +17,7 @@ Operation = Literal[
     'AddInstitution', 'AddProceeding', 'AddFiling', 'AddEvidence',
     'AddFact', 'EditFact', 'ReviewFact', 'ConfirmFact', 'DisputeFact',
     'AddIssue', 'AddClaim', 'AddRequest', 'AddSection', 'PrepareSection',
-    'AddPlan', 'ReviewPlan', 'ApprovePlan',
+    'AddPlan', 'ReviewPlan', 'ApprovePlan', 'SupersedePlan',
     'RecordDecision', 'RevokeDecision', 'RegisterSource', 'CreateSnapshot', 'AcceptSnapshot',
     'GenerateDocument', 'ValidateDraft', 'RequestRelease',
 ]

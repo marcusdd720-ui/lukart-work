@@ -1,7 +1,7 @@
 {
   "stage": "02 Case Core",
   "python": "3.14.7",
-  "tests": 106,
+  "tests": 108,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -20,9 +20,9 @@
     "lukart_work/core/migration.sql": "3a2fc27d6cf24c53082142b83528053ebb57d822cff9889e0345052dad29f35e",
     "lukart_work/core/policy.py": "325ad5f528b926366f324a99ccb277cd851a1a40f56144f886c24c4e10a399c3",
     "lukart_work/core/postgres.py": "47b7715c06cd065034fb0a2b23cb082fa769ce29b1e3e5c8614c5b19af54fc68",
-    "lukart_work/core/requests.py": "c6fb0db883abe1a7e4cc1b7c151451bf883728f8fbed1e983e9d1b3b3034534f",
+    "lukart_work/core/requests.py": "3f11a6304b14d6288f3bd1aae40d0f4f7b75938db4d39415e7016803b845d077",
     "lukart_work/core/security.py": "08c1fe3667abe9e862b34be5d63745762d96cbf33b2327897f084e8624345eda",
-    "lukart_work/core/service.py": "6eb7e262e313aa2cb10a012e0e14c23453d2aa731c0198a1b4f89de308be0066",
+    "lukart_work/core/service.py": "6836ff6a307423e572bc3f077cd5cebe55cd11457cb65cd21fff3a992f912c29",
     "lukart_work/domain/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "lukart_work/domain/lifecycle.py": "95db72dbfbf21d5c1f0162ad99770ccbf8ffd7bf8a10bd0764b90dfc28b9227d",
     "lukart_work/domain/models.py": "d10a2882feacc0b1f4a0a16cb99f6382dbaa3c04d94c9871587a041fb5dc760f",
@@ -39,6 +39,6 @@
     "tests/test_boundaries.py": "a94da4c12d5f051fae2dcae7a548ed884714e19a96ce114c478bcfceee75c15f",
     "tests/test_contracts.py": "4a29bcbdadf428fad7d11d83cad04da62cbc67bcc42b2bbdc238f7acb84eff8a",
     "tests/test_remediation.py": "cb4dad854cfb7a38d15be60d969eee483deabc3303c0bf41a35e6eed61c0d8d2",
-    "tests/test_stage02.py": "15cf095015332ee3fe700509708e98b0ae88929dbd6717a6c20e9582dde314d8"
+    "tests/test_stage02.py": "57871dba68736f56749e00f346d88c0df88aa18281fedbad65bf014c4915da1b"
   }
 }

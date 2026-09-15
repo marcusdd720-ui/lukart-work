@@ -23,6 +23,16 @@ Nową strukturę persistence utworzono w osobnej syntetycznej bazie testowej. St
 
 ## Re-review
 
-Oczekuje na zamrożony commit napraw i niezależny werdykt. Łącznie rozpoczęto jedną iterację naprawczą po pierwszym review implementacji. Limit zadania: maksymalnie trzy.
+Recenzent wznowił pełną ocenę na `56faafec9f37da067ee1c3821a5f21e1dd148485`. Potwierdził naprawy S02-R1-01–04, zgodność hashy testowanych źródeł i diff check. Raport 106 PASS był dowodem głównego agenta; recenzent nie deklarował osobnego wykonania testów. Werdykt: NO-GO do merge, z nowym blockerem opisanym poniżej.
+
+## Iteracja naprawcza 2
+
+**S02-R2-01, P1:** po cofnięciu decyzji plan.approval istniejący APPROVED plan pozostaje head. CreateSnapshot odrzuca jego cofnięte approval, a serwis nie udostępniał żadnej ścieżki przejścia planu do SUPERSEDED. To blokowało utworzenie aktualnego snapshotu i nowego planu po zmianie danych. Dowód recenzenta na SHA 56faafe: service.py:249–255 oraz brak operacji w service.py:33 / requests.py:19–21.
+
+Minimalna poprawka: jawny, autoryzowany SupersedePlan dla człowieka, korzystający z istniejącego lifecycle APPROVED→SUPERSEDED. Historia i frozen approval pozostają w nowej rewizji, ale nie są traktowane jako aktywne dopuszczenie przy tworzeniu snapshotu. Stan terminalny nie może zostać ponownie zatwierdzony; nowy plan ma nowy ID.
+
+Regresje: `test_review_r2_revoke_plan_then_supersede_and_approve_replacement` obejmuje cały przepływ cofnięcie → supersede → zmiana danych → nowy snapshot → nowy zaakceptowany plan oraz zachowanie historycznego planu. `test_review_r2_supersede_plan_requires_human_and_legal_transition` sprawdza odmowę aktorowi SERVICE i odrzucenie SUPERSEDED→APPROVED.
+
+Niezależne re-review drugiej poprawki oczekuje na zamrożony commit. Łącznie rozpoczęto dwie iteracje naprawcze po pierwszym review implementacji. Limit zadania: maksymalnie trzy.
 
 Formalne kryteria odbioru nadal obejmują końcowy SHA, merge/post-merge oraz CI. Zakaz push pozostaje w mocy; workflow nie jest dowodem jego wykonania.

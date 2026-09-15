@@ -8,6 +8,8 @@ Wykonano lokalną implementację i testy. **Zamknięcie: NO-GO do czasu pełnego
 
 Pierwszy review kodu na `6acd6e8c38a62b04547f6280a0aa753e981d03a8` zgłosił konkretne problemy i został przerwany limitem użycia przed werdyktem. Wykonano iterację naprawczą 1; root causes, poprawki i sześć osobnych regresji opisuje `11-stage02-review.md`. Nie przypisujemy zatwierdzenia pierwszego snapshotu zmienionemu kodowi.
 
+Re-review na `56faafec9f37da067ee1c3821a5f21e1dd148485` potwierdził te poprawki, ale zgłosił blokadę odzyskania workflow po cofnięciu plan.approval. Iteracja 2 dodaje przewidziany w lifecycle SupersedePlan oraz dwa testy całego scenariusza i autoryzacji. Szczegóły i aktualny stan niezależnej oceny: `11-stage02-review.md`.
+
 ## Macierz bieżącego stanu
 
 | Wymaganie i źródło | Implementacja | Dowód | Stan |

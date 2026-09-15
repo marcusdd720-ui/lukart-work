@@ -31,6 +31,7 @@ CHANGE = {
     'ReviewFact': ('Fact', 'REVIEWED'), 'ConfirmFact': ('Fact', 'CONFIRMED'),
     'DisputeFact': ('Fact', 'DISPUTED'), 'PrepareSection': ('Section', 'READY'),
     'ReviewPlan': ('DocumentPlan', 'REVIEWED'), 'ApprovePlan': ('DocumentPlan', 'APPROVED'),
+    'SupersedePlan': ('DocumentPlan', 'SUPERSEDED'),
     'RevokeDecision': ('Decision', 'REVOKED'),
 }
 APPROVAL = {'VerifyParty': 'verification_decision', 'ConfirmFact': 'acceptance', 'ApprovePlan': 'approval'}
@@ -135,7 +136,7 @@ class CommandService:
             raise Violation('GATE_DENIED')
         elif case.status == 'CLOSED' and request.operation not in ('ReopenCase', 'ArchiveCase'):
             raise Violation('GATE_DENIED')
-        if request.operation in ('ReopenCase', 'ArchiveCase', 'RevokeDecision') and principal.actor.kind != 'HUMAN':
+        if request.operation in ('ReopenCase', 'ArchiveCase', 'RevokeDecision', 'SupersedePlan') and principal.actor.kind != 'HUMAN':
             raise Violation('FORBIDDEN')
 
     def _metadata(self, request, principal, now, kind, old=None):
@@ -182,6 +183,8 @@ class CommandService:
         # Provenance describes historical inputs, not active approval authority.
         authority_refs = (r for name in type(entity).model_fields if name != 'provenance'
                           for r in walk(getattr(entity, name), m.Ref))
+        if entity.kind == 'DocumentPlan' and entity.status == 'SUPERSEDED':
+            authority_refs = ()  # Preserve immutable historical approval, without reusing its authority.
         for target in authority_refs:
             if target.kind == 'Decision':
                 if entity.kind == 'Decision' and target == entity.supersedes:
@@ -247,7 +250,7 @@ class CommandService:
             source_ids = {a.document_id for target in ordered for a in walk(records[target], m.SourceAnchor)}
             sources = tuple(tx.object('source', i, wire.SourceDocument) for i in sorted(source_ids, key=str))
             for current in heads.values():
-                if current.kind != 'Decision':
+                if current.kind != 'Decision' and not (current.kind == 'DocumentPlan' and current.status == 'SUPERSEDED'):
                     targets = (r for name in type(current).model_fields if name != 'provenance'
                                for r in walk(getattr(current, name), m.Ref))
                     for target in targets:

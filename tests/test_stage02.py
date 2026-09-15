@@ -493,3 +493,38 @@ class Stage02Tests(unittest.TestCase):
             path = changed / 'validation/rules.py'
             path.write_bytes(path.read_bytes() + b'\n# synthetic policy change\n')
             self.assertNotEqual(rule_pin(changed).content_hash, rule_pin().content_hash)
+
+    def test_review_r2_revoke_plan_then_supersede_and_approve_replacement(self):
+        _, _, _, plan, _ = self.approved_plan()
+        original = self.get(plan)
+        self.apply('RevokeDecision', target=original.approval)
+        self.assert_error(self.request('CreateSnapshot', dict(rule_set=PIN, policy=PIN, knowledge_pins=[])), 'GATE_DENIED')
+        superseded = self.apply('SupersedePlan', target=plan)[0].refs[0]
+        retired = self.get(superseded)
+        self.assertEqual(retired.status, 'SUPERSEDED')
+        self.assertEqual(retired.approval, original.approval)
+        self.assertEqual(self.get(plan), original)
+        self.case_ref = self.apply('EditCase', {'title': 'New information'}, self.case_ref)[0].refs[0]
+        snapshot = self.snapshot()
+        self.accept(snapshot)
+        data = original.model_dump(mode='json')
+        # This test uses the original factual plan content, while independently
+        # requesting a new identity and a new frozen input through the public service.
+        metadata = {'schema_version', 'id', 'tenant_id', 'case_id', 'revision', 'previous_hash',
+                    'created_at', 'recorded_at', 'provenance', 'kind', 'status', 'approval'}
+        data = {name: value for name, value in data.items() if name not in metadata}
+        data.update(input_snapshot_id=str(snapshot.id), input_snapshot_hash=digest(snapshot))
+        replacement = self.apply('AddPlan', data)[0].refs[0]
+        reviewed = self.apply('ReviewPlan', target=replacement)[0].refs[0]
+        approval = self.decision('PLAN_APPROVAL', [reviewed])
+        approved = self.apply('ApprovePlan', {'decision': approval.model_dump(mode='json')}, reviewed)[0].refs[0]
+        self.assertEqual(self.get(approved).status, 'APPROVED')
+        self.assertNotEqual(approved.id, plan.id)
+        self.assertEqual(self.get(plan), original)
+
+    def test_review_r2_supersede_plan_requires_human_and_legal_transition(self):
+        _, _, _, plan, _ = self.approved_plan()
+        token = self.authority.provision(Principal(Actor(id=uuid4(), kind='SERVICE'), self.tenant, self.case_id, ACTIONS))
+        self.assert_error(self.request('SupersedePlan', target=plan), 'FORBIDDEN', token=token)
+        retired = self.apply('SupersedePlan', target=plan)[0].refs[0]
+        self.assert_error(self.request('ApprovePlan', {'decision': self.get(plan).approval.model_dump(mode='json')}, retired), 'INVALID_TRANSITION')
