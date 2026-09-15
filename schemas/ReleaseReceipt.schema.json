@@ -1,0 +1,201 @@
+{
+  "$defs": {
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "RenderTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "format": "uuid",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "draft_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Draft Hash",
+          "type": "string"
+        },
+        "render_hashes": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Render Hashes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "case_id",
+        "snapshot_id",
+        "snapshot_hash",
+        "draft",
+        "draft_hash",
+        "render_hashes"
+      ],
+      "title": "RenderTarget",
+      "type": "object"
+    },
+    "ValidationRunPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "content_hash"
+      ],
+      "title": "ValidationRunPin",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Immutable evaluation evidence; persistence/authentication belong to the future service.",
+  "properties": {
+    "target": {
+      "$ref": "#/$defs/RenderTarget"
+    },
+    "approval": {
+      "$ref": "#/$defs/Ref"
+    },
+    "approval_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Approval Hash",
+      "type": "string"
+    },
+    "runs": {
+      "items": {
+        "$ref": "#/$defs/ValidationRunPin"
+      },
+      "minItems": 1,
+      "title": "Runs",
+      "type": "array"
+    },
+    "policy": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "case_sequence": {
+      "minimum": 1,
+      "title": "Case Sequence",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "target",
+    "approval",
+    "approval_hash",
+    "runs",
+    "policy",
+    "case_sequence"
+  ],
+  "title": "ReleaseReceipt",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ReleaseReceipt:1.0.0"
+}

@@ -7,7 +7,8 @@ from pathlib import Path
 import platform
 from pydantic import TypeAdapter, ValidationError
 from lukart_work.domain.models import ENTITIES,EntityPayload
-from lukart_work.contracts.messages import CONTRACTS
+from lukart_work.contracts.messages import CONTRACTS,Command
+from lukart_work.contracts.versions import contract_version
 from lukart_work.validation.rules import parse_entity
 ROOT=Path(__file__).parent
 checks=[]
@@ -16,7 +17,13 @@ for cls in ENTITIES+CONTRACTS:
     expected=cls.model_json_schema()
     assert {k:v for k,v in schema.items() if k not in ('$id','$schema')}==expected
     assert schema.get('additionalProperties') is False
+    assert schema['$id']==f'urn:lukart:work:{cls.__name__}:{contract_version(cls.__name__)}'
     checks.append({'check':'schema-export:'+cls.__name__,'result':'PASS'})
+for name,typ in (('Entity',EntityPayload),('Command',Command)):
+    schema=json.loads((ROOT/'schemas'/f'{name}.schema.json').read_text())
+    assert {k:v for k,v in schema.items() if k not in ('$id','$schema')}==TypeAdapter(typ).json_schema()
+    assert schema['$id']==f'urn:lukart:work:{name}:{contract_version(name)}'
+    checks.append({'check':'schema-export:'+name,'result':'PASS'})
 for p in (ROOT/'schemas').glob('*.json'):json.loads(p.read_text())
 parse_entity((ROOT/'examples/valid-fact.json').read_text())
 for name in ('invalid-confirmed-fact.json','invalid-extra-property.json'):

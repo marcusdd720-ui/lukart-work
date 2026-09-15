@@ -1,5 +1,11 @@
 # Wynik etapu 01 i Definition of Done
 
+## Aktualizacja — Stage 01 remediation, 2026-09-15
+
+Naprawy AGR-01-001–007, nowe kontrakty i testy opisuje 07-stage01-remediation.md. Bieżące wyniki wykonania zapisano w reports/status.json, reports/package-validation.json i reports/unittest.txt. Nie rozpoczęto Stage 02 i nie przyznano GO. Następny krok: osobny niezależny Architecture Gate Review na commicie remediation.
+
+**Dalsza treść jest historycznym raportem pakietu 0.1.0 sprzed niezależnego review. Historyczne liczby, brak merge i rekomendacje CONDITIONAL GO nie opisują bieżącego stanu i nie stanowią upoważnienia do Stage 02.**
+
 ## Executive Summary
 
 Utworzono działający pakiet kontraktów dla 23 kanonicznych encji LUKART WORK oraz 27 supporting/message contracts. Wygenerowano 52 JSON Schema (23 encje, 27 kontraktów, union Entity i Command), osobne pliki lifecycle/relations, dokumentację pól, macierz relacji, macierz zgodności, jawne ADR, specyfikację testów, przykłady payloadów i minimalny syntetyczny golden case.

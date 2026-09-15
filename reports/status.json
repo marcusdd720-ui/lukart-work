@@ -1,28 +1,38 @@
 {
-  "stage": "01 — Domain Model & Contracts",
-  "package_version": "0.1.0",
-  "baseline_sha256": "3c980207dd77cb2b0139a710d4446c76408c90ceff0f1d124eba853afdaebe83",
+  "stage": "01 Domain Model & Contracts - remediation AGR-01-001 through AGR-01-007",
+  "package_version": "0.1.1",
+  "reviewed_base": "c10be82ebbbea0368d3e66889a184699946a9af7",
+  "baseline_sha256": "834c576cb3324dc6b0d2d701f2df68f95c8183af4a0a0d18fbb0ea473e274ecc",
   "designed": true,
-  "implemented": "SCOPED_CONTRACTS_AND_SELECTED_CHECKS",
+  "implemented": "SCOPED_CONTRACTS_AND_DETERMINISTIC_GUARDS",
   "executed": {
     "unittest": {
-      "tests": 57,
+      "tests": 72,
       "failures": 0,
       "errors": 0
     },
-    "package_checks": 53,
-    "json_files_parsed": 54,
-    "compileall": "PASS"
+    "focused_remediation_methods": 15,
+    "package_checks": 59,
+    "json_files_parsed": 58
   },
-  "validated": "LOCAL_CONTRACT_SCOPE_ONLY",
   "entities": 23,
-  "supporting_contracts": 27,
-  "json_schemas": 52,
-  "definition_of_done": "NOT_MET",
-  "merge": "NOT_EXECUTED",
-  "post_merge": "NOT_EXECUTED",
-  "recommendation": "CONDITIONAL_GO_FOR_02_IMPLEMENTATION",
+  "supporting_contracts": 31,
+  "json_schemas": 56,
+  "findings": {
+    "AGR-01-001": "FIXED_IMPLEMENTATION_AND_REGRESSION",
+    "AGR-01-002": "FIXED_IMPLEMENTATION_AND_REGRESSION",
+    "AGR-01-003": "FIXED_IMPLEMENTATION_AND_REGRESSION",
+    "AGR-01-004": "FIXED_IMPLEMENTATION_AND_REGRESSION",
+    "AGR-01-005": "FIXED_IMPLEMENTATION_AND_REGRESSION",
+    "AGR-01-006": "FIXED_IMPLEMENTATION_AND_REGRESSION",
+    "AGR-01-007": "FIXED_IMPLEMENTATION_AND_REGRESSION"
+  },
+  "validated": "LOCAL_SYNTHETIC_CONTRACT_SCOPE_ONLY",
+  "definition_of_done": "NOT_MET_PRODUCT_SCOPE",
+  "independent_post_remediation_review": "NOT_EXECUTED",
+  "recommendation": "INDEPENDENT_ARCHITECTURE_GATE_REVIEW_REQUIRED",
+  "stage_02_started": false,
   "production_final": "NO_GO",
-  "python": "3.12.14",
+  "python": "3.14.7",
   "pydantic": "2.13.5"
 }

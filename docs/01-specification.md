@@ -1,6 +1,6 @@
 # 01 — Domain Model & Contracts
 
-Wersja pakietu: 0.1.0. Wersja kontraktów: 1.0.0. Data: 2026-09-14.
+Wersja pakietu: 0.1.1. Kontrakty zmienione przez AGR-01-001–007: URN 2.0.0; pozostałe: 1.0.0. Data remediation: 2026-09-15. Normatywne uzupełnienie poniższych reguł: `07-stage01-remediation.md`. Wspólny format metadanych Entity.schema_version pozostaje 1.0.0; nie oznacza wersji całego kontraktu domenowego. Nie reinterpretujemy historycznych akceptacji według nowych reguł.
 Baseline: pełny dokument `00-baseline.md`, sekcje 1–54. Status prac: DESIGNED + IMPLEMENTED (kontrakty i wybrane walidatory), lokalnie EXECUTED/VALIDATED w zakresie raportu. Nie jest to certyfikacja produktu ani zakończony Case Core.
 
 ## Executive Summary
@@ -206,4 +206,4 @@ Zmiana usuwająca pole/enum lub zaostrzająca ograniczenia wymaga nowej główne
 
 ## Rekomendacja
 
-CONDITIONAL GO do rozpoczęcia 02 — Case Core na podstawie kontraktów, po przyjęciu wskazanych ADR i z obowiązkowym wdrożeniem guard orchestration, autoryzacji oraz trwałych transakcji. Nie jest to zgoda na FINAL, certyfikację ani uznanie pełnego DoD §47. Merge i post-merge muszą zostać wykonane w świadomie wybranym repozytorium; bieżący pakiet nie jest zmianą w lukart-ros.
+Poprzednia rekomendacja CONDITIONAL GO została zastąpiona wynikiem niezależnego review NO-GO. Po remediation AGR-01-001–007 wymagany jest kolejny niezależny Architecture Gate Review. Ten pakiet nie przyznaje zgody na Stage 02, FINAL ani certyfikację i nie zmienia lukart-ros.

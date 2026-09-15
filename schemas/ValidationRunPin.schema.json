@@ -1,0 +1,23 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "content_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "content_hash"
+  ],
+  "title": "ValidationRunPin",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ValidationRunPin:1.0.0"
+}

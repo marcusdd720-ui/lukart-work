@@ -1,5 +1,7 @@
 # Architecture 00 compliance matrix
 
+Aktualizacja po remediation: deterministyczne poprawki AGR-01-001–007 i ich regresje opisuje 07-stage01-remediation.md. Poniższa macierz pozostaje opisem zakresu etapów, nie nową decyzją GO. Poprzedni niezależny review zakończył się NO-GO; po naprawie wymagany jest kolejny niezależny review.
+
 D = DESIGNED; I = IMPLEMENTED (lokalny zakres kontraktów); V = wykonane testy tego zakresu. „Boundary” nie oznacza implementacji danego silnika. Ścieżki względne względem pakietu.
 
 | Baseline | Wymóg | Odwzorowanie etapu 01 | Stan / ograniczenie |

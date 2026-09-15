@@ -55,8 +55,23 @@ test_missing_and_duplicate_checks (tests.test_contracts.GateTests.test_missing_a
 test_stale (tests.test_contracts.GateTests.test_stale) ... ok
 test_unsupported_final (tests.test_contracts.GateTests.test_unsupported_final) ... ok
 test_wrong_approval_target (tests.test_contracts.GateTests.test_wrong_approval_target) ... ok
+test_agr_001_snapshot_acceptance_exact_binding (tests.test_remediation.RemediationTests.test_agr_001_snapshot_acceptance_exact_binding) ... ok
+test_agr_001_snapshot_acceptance_requires_human_accept (tests.test_remediation.RemediationTests.test_agr_001_snapshot_acceptance_requires_human_accept) ... ok
+test_agr_002_approval_cannot_be_reused_for_another_render (tests.test_remediation.RemediationTests.test_agr_002_approval_cannot_be_reused_for_another_render) ... ok
+test_agr_002_receipt_and_approval_fail_closed (tests.test_remediation.RemediationTests.test_agr_002_receipt_and_approval_fail_closed) ... ok
+test_agr_003_finding_content_is_immutable (tests.test_remediation.RemediationTests.test_agr_003_finding_content_is_immutable) ... ok
+test_agr_003_resolution_requires_exact_human_decision (tests.test_remediation.RemediationTests.test_agr_003_resolution_requires_exact_human_decision) ... ok
+test_agr_004_participation_uniqueness_is_party_and_role (tests.test_remediation.RemediationTests.test_agr_004_participation_uniqueness_is_party_and_role) ... ok
+test_agr_004_reuse_fact_and_citation_across_statements (tests.test_remediation.RemediationTests.test_agr_004_reuse_fact_and_citation_across_statements) ... ok
+test_agr_005_required_citation_is_counted_in_ai_and_domain (tests.test_remediation.RemediationTests.test_agr_005_required_citation_is_counted_in_ai_and_domain) ... ok
+test_agr_006_plan_draft_snapshot_and_acceptance (tests.test_remediation.RemediationTests.test_agr_006_plan_draft_snapshot_and_acceptance) ... ok
+test_agr_006_snapshot_source_closure (tests.test_remediation.RemediationTests.test_agr_006_snapshot_source_closure) ... ok
+test_agr_006_used_input_must_belong_to_snapshot (tests.test_remediation.RemediationTests.test_agr_006_used_input_must_belong_to_snapshot) ... ok
+test_agr_007_deadline_satisfaction (tests.test_remediation.RemediationTests.test_agr_007_deadline_satisfaction) ... ok
+test_agr_007_plan_filing_ownership (tests.test_remediation.RemediationTests.test_agr_007_plan_filing_ownership) ... ok
+test_agr_007_proceeding_parent_cycles (tests.test_remediation.RemediationTests.test_agr_007_proceeding_parent_cycles) ... ok
 
 ----------------------------------------------------------------------
-Ran 57 tests in 0.032s
+Ran 72 tests in 0.538s
 
 OK

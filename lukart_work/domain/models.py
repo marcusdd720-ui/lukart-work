@@ -392,6 +392,24 @@ class ValidationFinding(Entity):
     path: Text
     resolution: Ref | None = None
 
+class SnapshotTarget(Value):
+    """Exact immutable input approved by a human; not a new canonical entity."""
+    tenant_id: UUID
+    case_id: UUID
+    snapshot_id: UUID
+    snapshot_hash: Hash
+
+class RenderTarget(SnapshotTarget):
+    draft: Ref
+    draft_hash: Hash
+    render_hashes: Annotated[tuple[Hash, ...], Field(min_length=1)]
+
+    @model_validator(mode='after')
+    def binding(self):
+        if self.draft.kind != 'Draft': raise ValueError('REFERENCE_TYPE')
+        if len(set(self.render_hashes)) != len(self.render_hashes): raise ValueError('DUPLICATE_RENDER')
+        return self
+
 class Decision(Entity):
     kind: Literal['Decision']
     status: Literal['PROPOSED','RECORDED','SUPERSEDED','REVOKED']
@@ -401,6 +419,21 @@ class Decision(Entity):
     rationale: Text
     decided_by: Actor
     supersedes: Ref | None = None
+    snapshot_target: SnapshotTarget | None = None
+    render_target: RenderTarget | None = None
+
+    @model_validator(mode='after')
+    def artifact_target(self):
+        if (self.decision_type == 'SNAPSHOT_ACCEPTANCE') != (self.snapshot_target is not None):
+            raise ValueError('SNAPSHOT_TARGET_REQUIRED')
+        if (self.decision_type == 'DOCUMENT_APPROVAL') != (self.render_target is not None):
+            raise ValueError('RENDER_TARGET_REQUIRED')
+        for target in (self.snapshot_target, self.render_target):
+            if target is not None and (target.tenant_id, target.case_id) != (self.tenant_id, self.case_id):
+                raise ValueError('CROSS_CASE')
+        if self.render_target is not None and self.targets != (self.render_target.draft,):
+            raise ValueError('APPROVAL_TARGET_MISMATCH')
+        return self
 
 ENTITIES = (Case,Party,Institution,Proceeding,Filing,Fact,Evidence,Issue,LegalSource,LegalRule,Claim,Defence,Argument,CounterArgument,Request,Deadline,Risk,Citation,DocumentPlan,Section,Draft,ValidationFinding,Decision)
 EntityPayload = Annotated[Union[tuple(ENTITIES)], Field(discriminator='kind')]

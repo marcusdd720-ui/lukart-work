@@ -1,0 +1,36 @@
+{
+  "additionalProperties": false,
+  "description": "Exact immutable input approved by a human; not a new canonical entity.",
+  "properties": {
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "format": "uuid",
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "snapshot_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Snapshot Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "case_id",
+    "snapshot_id",
+    "snapshot_hash"
+  ],
+  "title": "SnapshotTarget",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:SnapshotTarget:1.0.0"
+}

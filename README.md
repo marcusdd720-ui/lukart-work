@@ -2,6 +2,8 @@
 
 Pakiet wykonawczy rozwijający zatwierdzoną Architekturę 00. Zawiera 23 encje, wspólne typy, lifecycle, relacje, kontrakty, generowane JSON Schema, deterministyczne kontrole i syntetyczne testy.
 
+Stage 01 remediation AGR-01-001–007: pakiet 0.1.1. Zmienione kontrakty mają URN 2.0.0; format wspólnych metadanych Entity.schema_version pozostaje 1.0.0. Szczegóły, migracja i mapa regresji: [docs/07-stage01-remediation.md](docs/07-stage01-remediation.md). Wymagany jest osobny niezależny Architecture Gate Review; nie jest to zgoda na Stage 02.
+
 **Nie jest produkcyjnym Case Core ani certyfikowanym generatorem pism.** Szczegółowy status: docs/06-status.md i reports/status.json.
 
 ## Czytanie

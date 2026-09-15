@@ -1,5 +1,9 @@
 # Test specification / adversarial boundaries
 
+## Stage 01 remediation AGR-01-001–007
+
+Dodano 15 niezależnych metod regresyjnych w tests/test_remediation.py, obejmujących wszystkie siedem findingów, z pozytywnymi scenariuszami i kontrprzykładami. Mapa root cause → fix → test znajduje się w 07-stage01-remediation.md. Dotychczasowe 57 testów pozostaje w regresji. Weryfikator dodatkowo porównuje oba union schemas i sprawdza wersje URN zmienionych kontraktów. Wyniki bieżącego przebiegu: reports/status.json oraz reports/unittest.txt.
+
 Wszystkie dane fixtures są syntetyczne. Żaden wynik nie stanowi testu prawdziwej sprawy, poprawności przepisów ani jakości LLM. Aktualny log wykonania: reports/unittest.txt. Testy standardowego unittest nie wymagają pytest. Wszystkie testy local muszą być PASS; brak wykonania nie może być zamieniony na PASS.
 
 | ID | Scenariusz / wejście | Oczekiwany rezultat | Wykonanie w pakiecie |

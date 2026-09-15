@@ -40,6 +40,7 @@ class Snapshot(Value):
         if len(keys)!=len(set(keys)): raise ValueError('DUPLICATE_SNAPSHOT_MEMBER')
         if len({(r.kind,r.id) for r in self.heads})!=len(self.heads) or not set(self.heads)<=set(keys): raise ValueError('INVALID_SNAPSHOT_HEADS')
         if any((s.tenant_id,s.case_id)!=(self.tenant_id,self.case_id) for s in self.sources): raise ValueError('CROSS_CASE')
+        if len({s.id for s in self.sources}) != len(self.sources): raise ValueError('DUPLICATE_SOURCE')
         return self
 
 class KnowledgeEdge(Value):
@@ -222,12 +223,43 @@ class ValidationRun(Value):
     render_hashes: tuple[Hash, ...]
     execution_manifest_hash: Hash
 
+class ValidationRunPin(Value):
+    id: UUID
+    content_hash: Hash
+
+class ReleaseReceipt(Value):
+    """Immutable evaluation evidence; persistence/authentication belong to the future service."""
+    target: RenderTarget
+    approval: Ref
+    approval_hash: Hash
+    runs: Annotated[tuple[ValidationRunPin, ...], Field(min_length=1)]
+    policy: VersionPin
+    case_sequence: Positive
+
+    @model_validator(mode='after')
+    def bindings(self):
+        if self.approval.kind != 'Decision': raise ValueError('REFERENCE_TYPE')
+        if len({r.id for r in self.runs}) != len(self.runs): raise ValueError('DUPLICATE_RUN')
+        return self
+
 class ReleaseResult(Value):
     eligibility: Literal['FINAL','DRAFT']
     reasons: tuple[Text, ...]
     draft: Ref
     snapshot_hash: Hash
     render_hashes: tuple[Hash, ...]
+    receipt: ReleaseReceipt | None = None
+
+    @model_validator(mode='after')
+    def receipt_required(self):
+        if self.eligibility == 'FINAL':
+            if self.reasons or self.receipt is None: raise ValueError('RECEIPT_REQUIRED')
+            target = self.receipt.target
+            if (target.draft, target.snapshot_hash, target.render_hashes) != (self.draft, self.snapshot_hash, self.render_hashes):
+                raise ValueError('RECEIPT_MISMATCH')
+        elif self.receipt is not None:
+            raise ValueError('DENIED_RECEIPT')
+        return self
 
 class SemanticDocument(Value):
     tenant_id: UUID
@@ -281,3 +313,4 @@ class AffectedDraftsResult(Value):
     assessments: tuple[FreshnessAssessment, ...]
 
 CONTRACTS += (CaseHeadResult,RevisionResult,SnapshotResult,ProvenanceResult,AffectedDraftsResult)
+CONTRACTS += (SnapshotTarget,RenderTarget,ValidationRunPin,ReleaseReceipt)

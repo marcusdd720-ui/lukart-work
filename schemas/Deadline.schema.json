@@ -396,5 +396,5 @@
   "title": "Deadline",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:lukart:work:Deadline:1.0.0"
+  "$id": "urn:lukart:work:Deadline:2.0.0"
 }

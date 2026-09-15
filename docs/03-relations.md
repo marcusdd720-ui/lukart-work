@@ -79,3 +79,11 @@ Wszystkie relacje są kierunkowe, case-local, do dokładnej rewizji. `1` = requi
 Pola o max=1 oznaczają pojedynczą wartość, nie listę. Wielokrotne przypisanie źródła do różnego pisma przez Evidence może wymagać kolejnego case-local Evidence record lub supporting association na etapie 05; nie kopiujemy ani nie nadpisujemy oryginalnych bytes. LegalSource do Evidence nie ma implicit relacji: źródło prawa i dowód faktyczny mają odrębne role.
 
 Typed KG projection: FACT SUPPORTED_BY EVIDENCE; CLAIM SUPPORTED_BY FACT; CLAIM GOVERNED_BY LEGAL_RULE; ARGUMENT SUPPORTS/OPPOSES CLAIM/DEFENCE; COUNTERARGUMENT CHALLENGES ARGUMENT; REQUEST BASED_ON CLAIM; SECTION USES ARGUMENT; CITATION REFERS_TO LEGAL_SOURCE. Pozostałe relacje są ownership, provenance lub association, nie domyślną zależnością wykonawczą.
+
+## Doprecyzowanie po AGR-01-001–007
+
+Unikalność zagnieżdżonych refs obowiązuje osobno w każdej kolekcji liściowej, np. Statement.refs i Statement.citations. To samo Fact/Citation może wystąpić w wielu zdaniach. Participation ma klucz (party Ref, role); wspólny represented_by jest dozwolony. Reguła typów nie implikuje globalnej unikalności po spłaszczeniu całej encji.
+
+SectionContract required/allowed obejmuje sumę Statement.refs i Statement.citations. Citation pozostaje wyłącznie w citations; nie dopuszczamy go w refs. AI i domena używają tego samego guardu, a AI musi dodatkowo pozostać w request.input_refs.
+
+Decision.snapshot_target wiąże scope i snapshot ID/hash; targets zawiera dokładnie jeden Case Ref należący do snapshotu. Decision.render_target wiąże scope, snapshot ID/hash, Draft Ref/hash i uporządkowane unikalne hashe artefaktów; targets zawiera dokładnie ten Draft Ref. Te value objects nie powiększają zbioru 23 encji. ReleaseReceipt utrwala tę podstawę wraz z decyzją, runami, policy i case_sequence. Szczegóły: 07-stage01-remediation.md.

@@ -655,6 +655,8 @@ Inne przejścia są zabronione. Same-state revision wymaga zachowania ogranicze�
 | rationale | `{"maxLength": 20000, "minLength": 1, "type": "string"}` | tak |
 | decided_by | `{"$ref": "#/$defs/Actor"}` | tak |
 | supersedes | `{"anyOf": [{"$ref": "#/$defs/Ref"}, {"type": "null"}]}` | nie |
+| snapshot_target | `{"anyOf": [{"$ref": "#/$defs/SnapshotTarget"}, {"type": "null"}]}` | nie |
+| render_target | `{"anyOf": [{"$ref": "#/$defs/RenderTarget"}, {"type": "null"}]}` | nie |
 
 Stan początkowy: `PROPOSED`. Dozwolone przejścia:
 

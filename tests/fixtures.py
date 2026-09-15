@@ -30,7 +30,8 @@ def draft():
     return Draft(**common(10),kind='Draft',status='RENDERED',plan=Ref(kind='DocumentPlan',id=uid(20),revision=1),snapshot_id=uid(30),snapshot_hash=H,sections=(SectionText(section=Ref(kind='Section',id=uid(21),revision=1),statements=(statement,)),),reproduction=ReproductionManifest(knowledge=(),rule_set=PIN,prompts=(PIN,),models=(PIN,),provider=PIN,model_parameters_hash=H,generator=PIN,validators=(PIN,),render_profile=PIN,input_hash=H,raw_output_hash=H))
 def gate_inputs():
     d=draft()
-    a=Decision(**common(11),kind='Decision',status='RECORDED',decision_type='DOCUMENT_APPROVAL',targets=(ref(d),),outcome='ACCEPT',rationale='Synthetic acceptance',decided_by=ACTOR)
+    target=RenderTarget(tenant_id=d.tenant_id,case_id=d.case_id,snapshot_id=d.snapshot_id,snapshot_hash=d.snapshot_hash,draft=ref(d),draft_hash=digest(d),render_hashes=(H,))
+    a=Decision(**common(11),kind='Decision',status='RECORDED',decision_type='DOCUMENT_APPROVAL',targets=(ref(d),),outcome='ACCEPT',rationale='Synthetic acceptance',decided_by=ACTOR,render_target=target)
     run=ValidationRun(id=uid(50),tenant_id=d.tenant_id,case_id=d.case_id,draft=ref(d),draft_hash=digest(d),snapshot_hash=H,policy=PIN,completed_at=NOW,checks=tuple(CheckResult(check=x,outcome='PASS',validator=PIN) for x in REQUIRED_CHECKS),findings=(),render_hashes=(H,),execution_manifest_hash=H)
     fresh=FreshnessAssessment(target=ref(d),snapshot_hash=H,current_case_sequence=1,state='CURRENT',changed_inputs=())
     return [d,run,(),a,fresh,PIN,(H,)]
