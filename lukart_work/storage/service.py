@@ -33,6 +33,9 @@ class StorageService:
             raise
 
     def put(self, token, category, name, version, data, policy):
+        # Reserved for the trusted ingestion service; callers cannot forge its output.
+        if isinstance(name, str) and name.startswith('ingestion/'):
+            return safe_error('FORBIDDEN', UUID(int=0))
         return self._run(token, 'StorageWrite', lambda s, p, now: s.put(
             artifact_id(s.scope, category, name, version), category, name, version,
             data, policy, p.actor.id, now, self.repository.retention_policies or RetentionPolicies()))

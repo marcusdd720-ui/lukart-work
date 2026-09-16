@@ -1,0 +1,323 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "ExtractedFragment": {
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "minimum": 0,
+          "title": "Index",
+          "type": "integer"
+        },
+        "unit": {
+          "enum": [
+            "LINE",
+            "PARAGRAPH",
+            "PAGE",
+            "MIME_PART",
+            "HEADER"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "position": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Position",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 100000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "text_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Text Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "index",
+        "unit",
+        "position",
+        "text",
+        "text_hash"
+      ],
+      "title": "ExtractedFragment",
+      "type": "object"
+    },
+    "ExtractionBody": {
+      "additionalProperties": false,
+      "properties": {
+        "media_type": {
+          "title": "Media Type",
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "TEXT",
+            "DOCUMENT",
+            "EMAIL",
+            "PDF",
+            "IMAGE",
+            "UNKNOWN"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "EXTRACTED",
+            "NEEDS_OCR",
+            "UNSUPPORTED",
+            "FAILED",
+            "EMPTY"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "fragments": {
+          "items": {
+            "$ref": "#/$defs/ExtractedFragment"
+          },
+          "maxItems": 1000,
+          "title": "Fragments",
+          "type": "array"
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/IngestionCandidate"
+          },
+          "maxItems": 4000,
+          "title": "Candidates",
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "enum": [
+              "UNTRUSTED_SOURCE",
+              "REVIEW_REQUIRED",
+              "PARTIAL_EXTRACTION",
+              "OCR_REQUIRED",
+              "UNSUPPORTED_FORMAT",
+              "PARSER_REJECTED",
+              "NO_TEXT"
+            ],
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        },
+        "contradiction_check": {
+          "const": "NOT_RUN",
+          "default": "NOT_RUN",
+          "title": "Contradiction Check",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_type",
+        "classification",
+        "status",
+        "fragments",
+        "candidates",
+        "warnings"
+      ],
+      "title": "ExtractionBody",
+      "type": "object"
+    },
+    "IngestionCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "DATE",
+            "AMOUNT",
+            "PARTY",
+            "FACT",
+            "EVIDENCE"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "const": "CANDIDATE",
+          "default": "CANDIDATE",
+          "title": "Status",
+          "type": "string"
+        },
+        "fragment": {
+          "minimum": 0,
+          "title": "Fragment",
+          "type": "integer"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        },
+        "end": {
+          "exclusiveMinimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "quote": {
+          "maxLength": 100000,
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "fragment",
+        "start",
+        "end",
+        "quote"
+      ],
+      "title": "IngestionCandidate",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:IngestionResult:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "run_id": {
+      "format": "uuid",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "source_id": {
+      "format": "uuid",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Hash",
+      "type": "string"
+    },
+    "source_byte_length": {
+      "minimum": 0,
+      "title": "Source Byte Length",
+      "type": "integer"
+    },
+    "actor": {
+      "$ref": "#/$defs/Actor"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "extractor": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "parser": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "python_version": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Python Version",
+      "type": "string"
+    },
+    "body_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Body Hash",
+      "type": "string"
+    },
+    "body": {
+      "$ref": "#/$defs/ExtractionBody"
+    }
+  },
+  "required": [
+    "contract",
+    "tenant_id",
+    "case_id",
+    "run_id",
+    "source_id",
+    "source_hash",
+    "source_byte_length",
+    "actor",
+    "recorded_at",
+    "extractor",
+    "parser",
+    "python_version",
+    "body_hash",
+    "body"
+  ],
+  "title": "IngestionResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:IngestionResult:1.0.0"
+}

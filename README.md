@@ -1,4 +1,13 @@
-# LUKART WORK — Case Core + Storage and Versioning
+# LUKART WORK — Case Core, Storage and Ingestion
+
+Stage 04 (pakiet 0.4.0): ekstrakcja TXT, DOCX, e-mail i tekstowych PDF,
+wersjonowane wyniki z pochodzeniem i kandydatami bez automatycznych akceptacji.
+[Zakres i macierz](docs/18-stage04-readiness.md),
+[interfejs i ograniczenia](docs/19-stage04-implementation.md),
+[odbiór](docs/20-stage04-acceptance.md). Instalacja:
+`python -m pip install '.[postgres,ingestion]'`. Pełna kontrola:
+`python -B -X utf8 scripts/verify_stage04.py` (SKIP oznacza FAIL).
+Skany wymagają OCR; częściowa ekstrakcja jest jawna. Stage 05 nie rozpoczęto.
 
 [Stage 03 — odbiór GO i dowody zamknięcia](docs/17-stage03-closure.md).
 

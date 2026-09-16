@@ -1,5 +1,5 @@
 {
-  "python": "3.14.7",
+  "python": "3.12.14",
   "pydantic": "2.13.5",
   "baseline_sha256": "834c576cb3324dc6b0d2d701f2df68f95c8183af4a0a0d18fbb0ea473e274ecc",
   "checks": [
@@ -232,6 +232,10 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:IngestionResult",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -252,6 +256,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 61,
+  "json_files_parsed": 62,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }

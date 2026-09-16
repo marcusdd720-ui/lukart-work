@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lukart-work-domain-contracts"
-version = "0.3.0"
-description = "Architecture 00 Case Core with scoped storage and independent versioning"
+version = "0.4.0"
+description = "Architecture 00 Case Core, scoped storage and provenance-bound ingestion"
 requires-python = ">=3.11"
 dependencies = ["pydantic==2.13.5"]
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]==3.3.3"]
+ingestion = ["pypdf==6.10.0"]
 
 [tool.setuptools.packages.find]
 include = ["lukart_work*"]

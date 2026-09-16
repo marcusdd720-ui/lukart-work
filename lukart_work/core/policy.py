@@ -21,4 +21,4 @@ def policy_artifact(root=None):
 
 
 def rule_pin(root=None):
-    return VersionPin(id='lukart-work-case-core', version='1.0.2', content_hash=digest(policy_artifact(root)))
+    return VersionPin(id='lukart-work-case-core', version='1.0.3', content_hash=digest(policy_artifact(root)))
