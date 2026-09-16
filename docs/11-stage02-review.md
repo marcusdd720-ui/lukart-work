@@ -43,4 +43,10 @@ Minimalna poprawka: przestrzeń UUID obu zdarzeń zawiera zaufane tenant_id i ca
 
 Test przed poprawką: FAIL w 10.751 s przy kolizji drugiej sprawy. Ten sam test po poprawce: PASS w 20.154 s. Pełna regresja i niezależny re-review zamrożonego commita są osobnymi dowodami. Wykorzystano trzy z trzech dopuszczonych iteracji naprawczych.
 
-Formalne kryteria odbioru nadal obejmują końcowy SHA, merge/post-merge oraz CI. Zakaz push pozostaje w mocy; workflow nie jest dowodem jego wykonania.
+## Końcowy review kodu
+
+Osobny recenzent `stage02_code_review` po wznowieniu przerwanego limitem użycia przebiegu ocenił zamrożony `d9cabf319a30ee3f633f74df386899af317bd3df`. Werdykt: **GO do lokalnego merge; brak otwartych blockerów kodu w ocenionym zakresie Stage 02**. Potwierdził namespace obu event IDs ze zaufanego scope, zachowany replay i historię oraz regresję obejmującą trzy scope. Potwierdził 29/29 hashy źródeł, 116/116 wpisów manifestu, czyste śledzone drzewo i diff check. Raport 109 PASS był dowodem wykonawczym głównego agenta; recenzent nie przedstawiał go jako własnego uruchomienia.
+
+Recenzent potwierdził źródło wymogu CI: `docs/06-status.md:87` na bazowym SHA e278b97521731b8dc0395560db17e0e601a1d714 (obecnie linia 89). Wymaganie uzupełnia baseline §47; historyczny raport nie uchyla tego kryterium Stage 02. Wymagane jest CI na dokładnym SHA, bez narzuconego dostawcy. Ręczna lokalna regresja nie jest dowodem CI.
+
+Formalne zamknięcie: **NO-GO do wykonania CI na końcowym SHA albo jawnej zmiany kryterium**. Zakaz push pozostaje w mocy; workflow nie jest dowodem jego wykonania. Późniejszy commit raportów wymaga osobnej odczytowej oceny dokładnego SHA; powyższe zatwierdzenie dotyczy wyłącznie wskazanego commita kodu.

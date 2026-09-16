@@ -4,7 +4,9 @@
 
 Punkt wejścia: e278b97521731b8dc0395560db17e0e601a1d714, main, tylko zastany egg-info poza repo oraz raport gotowości z poprzedniej tury. Implementacja rozwija macierz w `08-stage02-readiness.md`. Nie zmieniono Architektury 00, 23 encji, kontraktów historycznych ani repozytorium ROS.
 
-Wykonano lokalną implementację i testy. **Zamknięcie: NO-GO do czasu pełnego odbioru.** Ten dokument nie zastępuje niezależnego review na konkretnym końcowym SHA.
+**Zamknięcie Stage 02: NO-GO — brak wykonanego CI na końcowym SHA.** Implementacja, niezależny review kodu, lokalny merge i testy po merge zostały wykonane. Ten dokument nie zastępuje niezależnego review na konkretnym końcowym SHA.
+
+Oceniony i scalony commit kodu: `d9cabf319a30ee3f633f74df386899af317bd3df`. Branch odbioru: `main`; merge fast-forward z `stage02/case-core`, bez push. Śledzone drzewo po merge było czyste; jedynym nieśledzonym katalogiem pozostaje zastany egg-info. Końcowy commit aktualizuje jedynie dokumentację, raporty i manifest; jego dokładny SHA zostanie wskazany w końcowym odczytowym review.
 
 Pierwszy review kodu na `6acd6e8c38a62b04547f6280a0aa753e981d03a8` zgłosił konkretne problemy i został przerwany limitem użycia przed werdyktem. Wykonano iterację naprawczą 1; root causes, poprawki i sześć osobnych regresji opisuje `11-stage02-review.md`. Nie przypisujemy zatwierdzenia pierwszego snapshotu zmienionemu kodowi.
 
@@ -24,11 +26,20 @@ Re-review na `56faafec9f37da067ee1c3821a5f21e1dd148485` potwierdził te poprawki
 | Atomic audit/outbox + izolacja; spec DomainEvent, I01–I04 | jedna transakcja, RLS/FK, runtime bez owner/superuser/BYPASSRLS | wymuszony błąd FK przy outbox cofa encję/head/sequence/audyt/result; read/write isolation | VERIFIED |
 | KG / DAG rozdzielone, aktualność | dependency records pochodzą z jawnego snapshotu planu; atomowe DependenciesInvalidated | golden: DisputeFact emituje invalidation planu, bez zmiany historycznego APPROVED | VERIFIED w zakresie planów; draft engines później |
 | Bezpieczne błędy, wersje i fail-closed | ścisły JSON, bounded request, whitelist operacji, hash przed parse, nieznany URN denied | unknown stored contract zachowuje raw payload; parser/PII tests; RequestRelease denied | VERIFIED lokalnie |
-| DoD baseline §47 | implementacja + testy syntetyczne/real DB + docs | niezależny review, końcowy SHA, merge/post-merge i CI wymagają osobnych dowodów | UNVERIFIED jako pełny odbiór |
+| DoD baseline §47 | implementacja + testy syntetyczne/real DB + docs + niezależny review kodu + lokalny merge/post-merge | GO recenzenta na d9cabf3, pełna regresja po merge | VERIFIED lokalnie; pełny odbiór UNVERIFIED z powodu CI |
+| CI na dokładnym SHA; docs/06-status.md:89 (87 w bazowym e278b97) | workflow .github/workflows/stage02.yml | workflow nie został uruchomiony; zakaz push | UNVERIFIED — jedyny pozostały blocker zamknięcia |
 
 ## Weryfikacja i ograniczenia
 
 Bieżące dane liczbowe i dokładne hashe testowanych plików źródłowych znajdują się w `reports/stage02-status.json`; pełny log w `reports/stage02-unittest.txt`. `reports/package-validation.json` zawiera bieżący wynik weryfikatora pakietu. Historyczne `reports/status.json` i `reports/unittest.txt` nadal dotyczą Stage 01.
+
+Wyniki końcowe na d9cabf3:
+
+- `python -B -X utf8 scripts/verify_stage02.py`: **109 PASS, 0 failures/errors/skips**, 94.373 s.
+- Po `git merge --ff-only stage02/case-core` do main: `python -B -X utf8 -m unittest discover -v`: **109 PASS**, 77.771 s; pełny log `reports/stage02-postmerge-unittest.txt`.
+- `python -B -X utf8 verify_package.py` przed i po merge: **61 kontroli PASS, 60 JSON**.
+- `git diff --check`, przegląd diff i staged: PASS. Niezależny review potwierdził 29/29 hashy źródeł i 116/116 wpisów ówczesnego manifestu. Manifest raportów jest aktualizowany osobno po dodaniu dowodu post-merge.
+- Trzy iteracje naprawcze; ostatnia regresja przed poprawką FAIL, po poprawce PASS. Recenzent nie zgłosił otwartych blockerów kodu.
 
 Pierwszy przebieg 23 testów Stage 02 na PostgreSQL wykazał dwa błędy tego samego pochodzenia: ReviewFact zastępował provenance pustymi listami. Poprawka zachowuje źródła przy zmianie statusu; osobny test `test_fact_transition_preserves_provenance` wykrywa pierwotny błąd. Kolejne 28 testów Stage 02 przeszło. Pełna regresja obejmuje 100 testów (72 wcześniejsze + 28 nowych), bez SKIP; ostateczny wynik należy odczytać z bieżącego raportu, a nie z tej historycznej liczby.
 
@@ -55,8 +66,8 @@ Przygotowano workflow `.github/workflows/stage02.yml`. **Nie uruchomiono zdalneg
 
 - [x] Przygotowano i sprawdzono izolowaną bazę PostgreSQL oraz runtime role.
 - [x] Wykonano scenariusz core i regresję provenance, transakcji, izolacji i replay.
-- [ ] Stage 02: niezależny review implementacji na dokładnym SHA i ewentualne poprawki; zależność: zamrożony commit; blokuje zamknięcie.
-- [ ] Stage 02: merge/post-merge na końcowym SHA; zależność: testy i review; blokuje zamknięcie.
+- [x] Stage 02: niezależny review implementacji na d9cabf319a30ee3f633f74df386899af317bd3df; trzy iteracje napraw zakończone, GO do merge.
+- [x] Stage 02: lokalny merge do main i pełna regresja po merge na tym samym SHA.
 - [ ] Stage 02: wykonanie CI na końcowym SHA; zależność: opublikowanie zmian, obecnie zabronione; blokuje bezwarunkowy odbiór.
 - [ ] Stage 03 i później: pełny storage/versioning, zewnętrzne identity/policy, validators/rendering/audit hardening; zależność: właściwe wcześniejsze etapy; nie poszerza Stage 02.
 - [ ] AGR-01-008–010: pozostają odłożone; treść i przypisanie do etapów nie są udokumentowane w tym repo; nie deklarujemy ich naprawy.
@@ -65,4 +76,4 @@ Przygotowano workflow `.github/workflows/stage02.yml`. **Nie uruchomiono zdalneg
 
 ## Krótki wniosek
 
-Implementacja Case Core ma lokalne dowody działania, ale pełny odbiór jest jeszcze otwarty. Następny krok to niezależny review końcowego commita i post-merge validation. Zdalne CI wymaga publikacji zmian, której obecna instrukcja zabrania.
+Kod Case Core przeszedł niezależny review i pełne testy po lokalnym scaleniu; Stage 03 nie został rozpoczęty. Następny krok do zamknięcia to wykonanie CI na końcowym SHA. Przygotowany workflow GitHub wymaga publikacji zmian, której obecna instrukcja zabrania.
