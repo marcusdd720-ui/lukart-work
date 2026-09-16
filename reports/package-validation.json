@@ -228,6 +228,10 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:ArtifactRecord",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -248,6 +252,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 60,
+  "json_files_parsed": 61,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }

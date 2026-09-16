@@ -17,3 +17,4 @@ include = ["lukart_work*"]
 
 [tool.setuptools.package-data]
 "lukart_work.core" = ["migration.sql"]
+"lukart_work.storage" = ["migration.sql"]

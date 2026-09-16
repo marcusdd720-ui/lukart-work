@@ -5,6 +5,7 @@ from pydantic import TypeAdapter
 from lukart_work.domain.models import ENTITIES,EntityPayload
 from lukart_work.contracts.messages import CONTRACTS,Command
 from lukart_work.core.requests import CoreRequest,CoreQuery
+from lukart_work.storage.objects import ArtifactRecord
 from lukart_work.contracts.versions import contract_version
 from lukart_work.domain.lifecycle import TRANSITIONS,INITIAL
 from lukart_work.validation.rules import RELATIONS
@@ -13,7 +14,7 @@ ROOT=Path(__file__).parent
 
 def write(path,obj):
     (ROOT/path).write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n')
-for cls in ENTITIES+CONTRACTS+(CoreRequest,CoreQuery):
+for cls in ENTITIES+CONTRACTS+(CoreRequest,CoreQuery,ArtifactRecord):
     schema=cls.model_json_schema();schema['$schema']='https://json-schema.org/draft/2020-12/schema';schema['$id']='urn:lukart:work:'+cls.__name__+':'+contract_version(cls.__name__)
     write('schemas/'+cls.__name__+'.schema.json',schema)
 for name,typ in [('Entity',EntityPayload),('Command',Command)]:

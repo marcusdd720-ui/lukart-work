@@ -39,8 +39,10 @@ def decode(row, cls):
 
 
 class PostgresRepository:
-    def __init__(self, dsn):
+    def __init__(self, dsn, *, storage=False, retention_policies=None):
         self._dsn = dsn
+        self.storage = storage
+        self.retention_policies = retention_policies
 
     # Internal CaseRepository port; public reads go through CommandService.query.
     def get_revision(self, tenant_id, case_id, target):
@@ -63,16 +65,20 @@ class PostgresRepository:
         import psycopg
         with psycopg.connect(self._dsn) as connection:
             with connection.transaction():
+                connection.execute("SET LOCAL TIME ZONE 'UTC'")
                 # A superuser or BYPASSRLS runtime would invalidate the isolation proof.
                 role = connection.execute('SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname=current_user').fetchone()
                 if role is None or any(role):
                     raise Violation('FORBIDDEN')
-                if connection.execute("SELECT 1 FROM pg_tables WHERE schemaname='lw_core' AND tableowner=current_user LIMIT 1").fetchone():
+                if connection.execute("SELECT 1 FROM pg_tables WHERE schemaname IN ('lw_core','lw_storage') AND tableowner=current_user LIMIT 1").fetchone():
                     raise Violation('FORBIDDEN')
                 connection.execute("SELECT set_config('lw.tenant', %s, true), set_config('lw.case', %s, true)", (str(tenant_id), str(case_id)))
                 lock = int.from_bytes(sha256(f'{tenant_id}/{case_id}'.encode()).digest()[:8], 'big', signed=True)
                 connection.execute('SELECT pg_advisory_xact_lock(%s)', (lock,))
-                yield UnitOfWork(connection, tenant_id, case_id)
+                tx = UnitOfWork(connection, tenant_id, case_id)
+                tx.storage = self.storage
+                tx.retention_policies = self.retention_policies
+                yield tx
 
 
 class UnitOfWork:
@@ -128,12 +134,21 @@ class UnitOfWork:
         return value
 
     def put_object(self, category, object_id, value, source_bytes=None):
+        if category == 'source' and getattr(self, 'storage', False):
+            from lukart_work.storage.objects import ObjectStore, RetentionPolicies
+            ObjectStore(self).put(object_id, 'source', str(object_id), '1', source_bytes,
+                value.retention_policy, value.actor.id, value.received_at,
+                self.retention_policies or RetentionPolicies())
+            source_bytes = None
         self.connection.execute('INSERT INTO lw_core.objects VALUES (%s,%s,%s,%s,%s,%s,%s,%s)', (*self.scope, category, object_id, urn(type(value)), canonical(value), digest(value), source_bytes))
 
     def source_bytes(self, object_id):
         source = self.object('source', object_id, SourceDocument)
         row = self.connection.execute("SELECT original_bytes FROM lw_core.objects WHERE tenant_id=%s AND case_id=%s AND category='source' AND object_id=%s", (*self.scope, object_id)).fetchone()
         data = bytes(row[0]) if row and row[0] is not None else None
+        if data is None and getattr(self, 'storage', False):
+            from lukart_work.storage.objects import ObjectStore
+            data = ObjectStore(self).read(object_id)
         if data is None or len(data) != source.byte_length or sha256(data).hexdigest() != source.content_hash:
             raise Violation('PROVENANCE_MISSING')
         return data

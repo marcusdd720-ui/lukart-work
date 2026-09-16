@@ -1,10 +1,10 @@
-name: Stage 02 Case Core
+name: Stage 03 Storage and regression
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
   core:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:18
@@ -26,8 +26,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
+      - name: PostgreSQL 18 backup tools
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+          echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
       - run: python -m pip install '.[postgres]'
+      - run: python -B -X utf8 scripts/check_stage03_integrity.py
       - run: python -B -X utf8 scripts/prepare_ci_database.py
       - run: python -B -X utf8 verify_package.py
-      - run: python -B -X utf8 scripts/verify_stage02.py
+      - run: python -B -X utf8 scripts/verify_stage03.py
       - run: git diff --check
