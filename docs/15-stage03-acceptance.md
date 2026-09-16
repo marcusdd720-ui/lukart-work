@@ -1,5 +1,8 @@
 # Stage 03 — odbiór i dowody
 
+Aktualny odbiór GO po review, CI i merge: [17-stage03-closure.md](17-stage03-closure.md).
+Poniższa część zachowuje historyczny punkt kontrolny przed pierwszym review.
+
 ## Stan przed niezależnym review
 
 Wejście: f80ac2efda722ff9a8a0ec1c986906f7c199a6bc, potwierdzone na main

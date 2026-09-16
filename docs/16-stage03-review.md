@@ -35,3 +35,21 @@ porażka CI nie jest ukrywana ani traktowana jako PASS.
 Wynik iteracji 1: **121 testów PASS, 0 failures/errors/skips, 110.880 s**;
 dwa testy ukierunkowane upgrade: PASS w 19.469 s. Pakiet: 62 kontrole/61 JSON
 PASS. Wykorzystano 1 z 3 iteracji. Odbiór nadal wymaga re-review i CI.
+
+## Re-review po iteracji 1
+
+Recenzent ocenił dokładny `b1e070867850c020340cd3368893fb7e9267c629`:
+**GO od strony niezależnego review, brak blockerów kodu**. S03-R1-01 zamknięty
+po porównaniu constraints/policies/triggerów/funkcji ze wzorcem i testach
+czterech klas dryfu. S03-R1-02 poprawiony przez kontrolę checkout przed pip.
+Recenzent wykonał statyczny przegląd commita, testów i raportów oraz diff check;
+nie uruchamiał ponownie regresji. Nie utożsamiamy tego z formalnym approval
+GitHub od drugiego konta; API main wskazuje brak wymaganych GitHub reviews.
+
+Główny agent potwierdził następnie SUCCESS CI dokładnego b1e0708:
+[push 35125334995](https://github.com/marcusdd720-ui/lukart-work/actions/runs/35125334995)
+oraz [PR 35125338713](https://github.com/marcusdd720-ui/lukart-work/actions/runs/35125338713).
+Log job 104892876059: 121 PASS, 0 failures/errors/skips, 12.277 s;
+62 kontrole pakietu/61 JSON i 134 wpisy manifestu PASS.
+Fast-forward main i GitHub PR #1 zachowały ten sam SHA. Kontrole post-merge
+oraz odbiór publikacji raportu są osobnymi dowodami w raporcie zamknięcia.
