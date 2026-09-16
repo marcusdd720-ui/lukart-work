@@ -245,6 +245,25 @@ class Stage03Tests(unittest.TestCase):
             with psycopg.connect(admin) as c:
                 with self.assertRaises(Violation): migrate(c)
 
+    def test_review_r1_adoption_rejects_weakened_legacy_schema(self):
+        admin, _ = fresh_database()
+        with psycopg.connect(admin) as c:
+            c.execute((ROOT/'lukart_work/core/migration.sql').read_text())
+        changes = (
+            'ALTER TABLE lw_core.revisions DISABLE TRIGGER immutable_record',
+            'CREATE POLICY bypass ON lw_core.revisions USING (true) WITH CHECK (true)',
+            'ALTER TABLE lw_core.objects DROP CONSTRAINT objects_tenant_id_case_id_fkey',
+            "CREATE OR REPLACE FUNCTION lw_core.immutable() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$",
+        )
+        for statement in changes:
+            with self.subTest(statement=statement), psycopg.connect(admin) as c:
+                c.execute(statement)
+                with self.assertRaises(Violation): migrate(c)
+                self.assertIsNone(c.execute("SELECT to_regclass('lw_migrations.ledger')").fetchone()[0])
+                c.rollback()
+        with psycopg.connect(admin) as c:
+            migrate(c)
+
 
 # Reuse setup helpers only, not Stage 02 test methods or expectations.
 for _name in ('request','run_request','apply','query','get','create_case','party','decision','fact','snapshot','accept','approved_plan'):

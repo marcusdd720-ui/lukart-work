@@ -1,12 +1,12 @@
 {
   "stage": "03 Storage + Versioning",
   "python": "3.14.7",
-  "tests": 120,
+  "tests": 121,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
   "result": "PASS",
-  "executed_commit": "f80ac2efda722ff9a8a0ec1c986906f7c199a6bc",
+  "executed_commit": "4df0160088c595265e97ec96acb4726069860df6",
   "ci_remote": "NOT_EXECUTED",
   "stage_03_closed": false,
   "tested_sources": {
@@ -28,11 +28,12 @@
     "lukart_work/storage/__init__.py": "834dc25215367ffa1b5154b3df409c7dfb1ef56cf2181843e88911ff14a79ed1",
     "lukart_work/storage/backup.py": "12442bdffa17a7758a9c17b7b0e00fc8a0e80d34e853098613220065b97ca8b5",
     "lukart_work/storage/migration.sql": "ff4633c2ed0da8578c5c0c1abd1806266388e1f5190ed472a754db656e603ad6",
-    "lukart_work/storage/migrations.py": "a6f483cadab12b2909c116d86f5a6bbedd9d863043284eb6b6f82d99da1187ed",
+    "lukart_work/storage/migrations.py": "ee679d9338d17f87d4e90d1d876c8374696e2da6e663bbcd046f5ce91b1e374b",
     "lukart_work/storage/objects.py": "d18e68830a278412a87385374af4d774193484b131a31e9e1fe1472628e4edee",
     "lukart_work/storage/service.py": "c5386363094575f8ce5363ef20d73979ee3836374e2d38c1d5018d7f5681d593",
     "lukart_work/validation/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "lukart_work/validation/rules.py": "7c4f3a515042ca9cc2589c1b5b4347e9c3dc6bf7073dd440b6c33daf8c7da5c5",
+    "scripts/check_stage03_integrity.py": "27f55fd57f27104dcbcb61c50b9b90d12ba2aa286be61635eca875484d26a363",
     "scripts/prepare_ci_database.py": "a3964429e2a06ffbb68f99254f00405efef684b9764bfedbbc8145d15eff9b9c",
     "scripts/prepare_stage02_database.py": "62a595b7c26b33619d7ca76ed8eae50553c5270ba7c9f372365175ed2fcfd559",
     "scripts/refresh_manifest.py": "e0da509cd0f2f27eeddfe8598a8878070a8f91c683893211c8af7a322da0c476",
@@ -46,6 +47,6 @@
     "tests/test_contracts.py": "4a29bcbdadf428fad7d11d83cad04da62cbc67bcc42b2bbdc238f7acb84eff8a",
     "tests/test_remediation.py": "cb4dad854cfb7a38d15be60d969eee483deabc3303c0bf41a35e6eed61c0d8d2",
     "tests/test_stage02.py": "6d6d0fd923f413747e6332f60ffd5b6dfbf448a9571dc2a96bf68f63962af7eb",
-    "tests/test_stage03.py": "b2f3c44d1ce6fa6707738f2f4cbc461afe56cd4f24940868476800c7819361fa"
+    "tests/test_stage03.py": "a8d2f4ed93cc3f29a5371d3450615e32b58692d725bd89499e1a9f5cb6f76a58"
   }
 }

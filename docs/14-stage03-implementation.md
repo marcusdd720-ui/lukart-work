@@ -41,7 +41,10 @@ zewnętrznie zakotwiczony audyt pozostaje Stage 12.
 ## Migracje i historia
 
 Ledger przechowuje kolejność i SHA-256 skryptów SQL po normalizacji LF.
-Upgrade przyjmuje strukturę Stage 02 po kontroli kolumn i RLS. Brak ledgeru
+Upgrade porównuje strukturę Stage 02 z pustym schematem wzorcowym utworzonym
+transakcyjnie z opublikowanego SQL: typy/kolumny, constraints, RLS/policies,
+aktywność triggerów i definicje funkcji. Schemat wzorcowy jest usuwany w tej
+samej transakcji; nie zawiera danych i ma nową losową nazwę. Brak ledgeru
 nie uprawnia do usunięcia istniejącej struktury. Powtórny migrate jest
 idempotentny; nieznana wersja/drift checksum blokują, błąd DDL cofa transakcję.
 Ledger jest administracyjny, bez grantów runtime. Nie jest dowodem ochrony

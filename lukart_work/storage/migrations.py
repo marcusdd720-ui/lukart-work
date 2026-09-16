@@ -1,10 +1,37 @@
 """Explicit owner-only, transactional, checksummed schema upgrade from Stage 02."""
 from hashlib import sha256
 from pathlib import Path
+from uuid import uuid4
 from lukart_work.validation.rules import Violation
 
 ROOT = Path(__file__).resolve().parent
 MIGRATIONS = ((1, ROOT.parent / 'core/migration.sql'), (2, ROOT / 'migration.sql'))
+
+
+def schema_fingerprint(connection, schema):
+    """Compare executable schema structure, not just table names and RLS flags."""
+    queries = (
+        "SELECT c.relname,c.relkind,c.relrowsecurity,c.relforcerowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=%s AND c.relkind IN ('r','p','v','m') ORDER BY c.relname",
+        "SELECT c.relname,a.attname,format_type(a.atttypid,a.atttypmod),a.attnotnull,a.attidentity,a.attgenerated,pg_get_expr(d.adbin,d.adrelid) FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace LEFT JOIN pg_attrdef d ON d.adrelid=c.oid AND d.adnum=a.attnum WHERE n.nspname=%s AND c.relkind IN ('r','p') AND a.attnum>0 AND NOT a.attisdropped ORDER BY c.relname,a.attnum",
+        "SELECT c.relname,t.conname,t.contype,t.convalidated,pg_get_constraintdef(t.oid,true) FROM pg_constraint t JOIN pg_class c ON c.oid=t.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=%s ORDER BY c.relname,t.conname",
+        "SELECT tablename,policyname,permissive,roles::text,cmd,qual,with_check FROM pg_policies WHERE schemaname=%s ORDER BY tablename,policyname",
+        "SELECT c.relname,t.tgname,t.tgenabled,pg_get_triggerdef(t.oid,true) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=%s AND NOT t.tgisinternal ORDER BY c.relname,t.tgname",
+        "SELECT p.proname,pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname=%s ORDER BY p.proname",
+    )
+    return tuple(tuple(tuple(value.replace(schema + '.', '__schema__.') if isinstance(value,str) else value for value in row)
+                       for row in connection.execute(query,(schema,)).fetchall()) for query in queries)
+
+
+def verify_legacy_schema(connection, script):
+    from psycopg import sql
+    probe = 'lw_stage03_probe_' + uuid4().hex
+    # This empty schema is created and removed inside the migration transaction.
+    # No user-provided names or existing objects are dropped.
+    connection.execute(script.replace('lw_core',probe))
+    matches = schema_fingerprint(connection,'lw_core') == schema_fingerprint(connection,probe)
+    connection.execute(sql.SQL('DROP SCHEMA {} CASCADE').format(sql.Identifier(probe)))
+    if not matches:
+        raise Violation('UNKNOWN')
 
 
 def migrate(connection):
@@ -24,24 +51,7 @@ def migrate(connection):
                     raise Violation('INVALID_HASH')
                 continue
             if version == 1 and connection.execute("SELECT to_regclass('lw_core.cases')").fetchone()[0]:
-                expected = {
-                    'cases': 'tenant_id case_id sequence',
-                    'revisions': 'tenant_id case_id revision_key kind entity_id revision contract payload content_hash',
-                    'heads': 'tenant_id case_id kind entity_id revision_key',
-                    'objects': 'tenant_id case_id category object_id contract payload content_hash original_bytes',
-                    'commands': 'tenant_id case_id idempotency_key input_hash contract payload content_hash',
-                    'events': 'tenant_id case_id event_id sequence contract payload content_hash event_order',
-                    'outbox': 'tenant_id case_id event_id',
-                }
-                actual = {}
-                for table, column in connection.execute("SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='lw_core' ORDER BY table_name,ordinal_position"):
-                    actual.setdefault(table, []).append(column)
-                if actual != {k: v.split() for k, v in expected.items()}:
-                    raise Violation('UNKNOWN')
-                # Do not certify an unprotected look-alike as the Stage 02 baseline.
-                protected = connection.execute("SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='lw_core' AND c.relkind='r' AND c.relrowsecurity AND c.relforcerowsecurity").fetchone()[0]
-                if protected != 7:
-                    raise Violation('FORBIDDEN')
+                verify_legacy_schema(connection,script)
             else:
                 connection.execute(script)
             connection.execute('INSERT INTO lw_migrations.ledger VALUES (%s,%s)', (version, checksum))

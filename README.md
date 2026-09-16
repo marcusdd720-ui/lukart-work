@@ -1,4 +1,6 @@
-# LUKART WORK — Domain Contracts + Stage 02 Case Core
+# LUKART WORK — Case Core + Storage and Versioning
+
+Stage 03 (pakiet 0.3.0): scoped storage oryginałów i artefaktów, niezależne wersje, jawne migracje, retencja/legal hold oraz sprawdzone backup/restore. [Zakres](docs/13-stage03-readiness.md), [interfejs i ograniczenia](docs/14-stage03-implementation.md), [odbiór](docs/15-stage03-acceptance.md), [niezależny review](docs/16-stage03-review.md). Włączenie storage jest jawne w konfiguracji hosta; etap nie uruchamia ingestion ani deploymentu.
 
 Stage 02 (pakiet 0.2.0): uwierzytelniony serwis intencji, trwały PostgreSQL, rewizje append-only, snapshoty, decyzje i atomowy audit/outbox. Opis i granice: [docs/09-stage02-implementation.md](docs/09-stage02-implementation.md). [Odbiór po CI](docs/12-stage02-closure.md): GO na afbd195, 109 testów PASS lokalnie i w GitHub Actions, pozytywny niezależny review oraz merge/post-merge. Końcowy commit raportu podlega własnemu review i CI.
 

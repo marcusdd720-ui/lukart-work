@@ -34,8 +34,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client-18
           echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
-      - run: python -m pip install '.[postgres]'
       - run: python -B -X utf8 scripts/check_stage03_integrity.py
+      - run: python -m pip install '.[postgres]'
       - run: python -B -X utf8 scripts/prepare_ci_database.py
       - run: python -B -X utf8 verify_package.py
       - run: python -B -X utf8 scripts/verify_stage03.py

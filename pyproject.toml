@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lukart-work-domain-contracts"
-version = "0.2.0"
-description = "Architecture 00 domain contracts and transactional Case Core"
+version = "0.3.0"
+description = "Architecture 00 Case Core with scoped storage and independent versioning"
 requires-python = ">=3.11"
 dependencies = ["pydantic==2.13.5"]
 
