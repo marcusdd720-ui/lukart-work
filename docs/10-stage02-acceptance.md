@@ -1,5 +1,7 @@
 # Stage 02 — odbiór Case Core
 
+**Aktualizacja 2026-09-16:** po zgodzie użytkownika opublikowano afbd195 i uzyskano CI SUCCESS. Aktualny odbiór GO i dowody: [12-stage02-closure.md](12-stage02-closure.md). Poniższy raport zachowuje stan sprzed publikacji, gdy brak CI rzeczywiście blokował zamknięcie.
+
 ## Stan odbioru implementacji
 
 Punkt wejścia: e278b97521731b8dc0395560db17e0e601a1d714, main, tylko zastany egg-info poza repo oraz raport gotowości z poprzedniej tury. Implementacja rozwija macierz w `08-stage02-readiness.md`. Nie zmieniono Architektury 00, 23 encji, kontraktów historycznych ani repozytorium ROS.

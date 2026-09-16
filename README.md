@@ -1,6 +1,6 @@
 # LUKART WORK — Domain Contracts + Stage 02 Case Core
 
-Stage 02 (pakiet 0.2.0): uwierzytelniony serwis intencji, trwały PostgreSQL, rewizje append-only, snapshoty, decyzje i atomowy audit/outbox. Opis i granice: [docs/09-stage02-implementation.md](docs/09-stage02-implementation.md). [Bieżący odbiór Stage 02](docs/10-stage02-acceptance.md): 109 testów PASS, pozytywny niezależny review kodu i lokalny merge/post-merge; zamknięcie NO-GO do wykonania CI na końcowym SHA.
+Stage 02 (pakiet 0.2.0): uwierzytelniony serwis intencji, trwały PostgreSQL, rewizje append-only, snapshoty, decyzje i atomowy audit/outbox. Opis i granice: [docs/09-stage02-implementation.md](docs/09-stage02-implementation.md). [Odbiór po CI](docs/12-stage02-closure.md): GO na afbd195, 109 testów PASS lokalnie i w GitHub Actions, pozytywny niezależny review oraz merge/post-merge. Końcowy commit raportu podlega własnemu review i CI.
 
 Pakiet wykonawczy rozwijający zatwierdzoną Architekturę 00. Zawiera 23 encje, wspólne typy, lifecycle, relacje, kontrakty, generowane JSON Schema, deterministyczne kontrole i syntetyczne testy.
 
