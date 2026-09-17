@@ -1,9 +1,9 @@
-name: Stage 05 Facts Evidence and regression
+name: Stage 06 Document Registry development
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  core:
+  registry:
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -34,9 +34,25 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client-18
           echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
-      - run: python -B -X utf8 scripts/check_stage05_integrity.py
       - run: python -m pip install '.[postgres,ingestion]'
+      - run: python -B -X utf8 export_contracts.py
       - run: python -B -X utf8 scripts/prepare_ci_database.py
+      - name: Focused Stage 06
+        run: python -B -X utf8 -m unittest -v tests.test_stage06
+      - name: Full regression
+        run: python -B -X utf8 scripts/verify_stage06.py
       - run: python -B -X utf8 verify_package.py
-      - run: python -B -X utf8 scripts/verify_stage05.py
       - run: git diff --check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage06-generated
+          path: |
+            schemas/RegistryRequest.schema.json
+            schemas/RegistryReceipt.schema.json
+            schemas/RegistryQuery.schema.json
+            schemas/FilingRegistryEntry.schema.json
+            schemas/RegistryProjection.schema.json
+            reports/stage06-status.json
+            reports/stage06-unittest.txt
+            reports/package-validation.json

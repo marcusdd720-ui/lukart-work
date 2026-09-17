@@ -1,0 +1,24 @@
+{
+  "case": "SYNTHETIC-STAGE06-REGISTRY",
+  "institution": "Synthetic Registry Authority",
+  "proceeding": "Synthetic Proceeding",
+  "incoming_artifact_text": "SYNTHETIC-IDENTICAL-BYTES",
+  "outgoing_artifact_text": "SYNTHETIC-IDENTICAL-BYTES",
+  "submission_receipt_text": "SYNTHETIC-SUBMISSION-RECEIPT",
+  "acknowledgement_receipt_text": "SYNTHETIC-ACKNOWLEDGEMENT-RECEIPT",
+  "expected_lifecycle": [
+    "REGISTERED",
+    "PREPARED",
+    "READY",
+    "SUBMITTED",
+    "ACKNOWLEDGED",
+    "WITHDRAWN"
+  ],
+  "forbidden": [
+    "SUBMITTED_WITHOUT_RECEIPT",
+    "ACKNOWLEDGED_WITHOUT_INDEPENDENT_RECEIPT",
+    "CROSS_CASE_RECEIPT",
+    "ARTIFACT_REPLACEMENT",
+    "LEGAL_EFFECT_INFERENCE"
+  ]
+}
