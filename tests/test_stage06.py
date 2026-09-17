@@ -114,15 +114,15 @@ class DocumentRegistryTests(unittest.TestCase):
         })
         return result.refs[0], source_id, author, recipient
 
-    def ready(self):
-        filing, artifact, author, recipient = self.register()
+    def make_ready(self, content=b'SYNTHETIC-FILING-BYTES'):
+        filing, artifact, author, recipient = self.register(content=content)
         filing = self.rapply('PrepareFiling', target=filing).refs[0]
         filing = self.rapply('MarkFilingReady', target=filing).refs[0]
         return filing, artifact, author, recipient
 
     def test_golden_registry_submission_acknowledgement_withdrawal_and_history(self):
         fixture = json.loads((Path(__file__).parent / 'golden_cases/document_registry.json').read_text())
-        filing, artifact, _, _ = self.ready()
+        filing, artifact, _, _ = self.make_ready()
         submission = self.source(fixture['submission_receipt_text'].encode())
         filing = self.rapply('RecordSubmission', {'receipt_source_id': str(submission)}, filing).refs[0]
         acknowledgement = self.source(fixture['acknowledgement_receipt_text'].encode())
@@ -150,19 +150,36 @@ class DocumentRegistryTests(unittest.TestCase):
         self.assertEqual(entries[first.id].artifact_source_id, artifact)
         self.assertEqual(entries[second.id].artifact_source_id, artifact)
 
-    def test_submission_and_acknowledgement_require_separate_receipt_evidence(self):
-        filing, artifact, _, _ = self.ready()
+    def test_receipt_evidence_is_distinct_by_id_hash_and_filing_scope(self):
+        filing, artifact, _, _ = self.make_ready()
         missing = self.rexecute(self.rrequest('RecordSubmission', {'receipt_source_id': str(uuid4())}, filing))
         self.assertIsInstance(missing, DomainError)
         self.assertEqual(missing.code, 'BROKEN_REFERENCE')
         same_artifact = self.rexecute(self.rrequest('RecordSubmission', {'receipt_source_id': str(artifact)}, filing))
         self.assertIsInstance(same_artifact, DomainError)
         self.assertEqual(same_artifact.code, 'GATE_DENIED')
-        submission = self.source(b'SYNTHETIC-SUBMISSION-RECEIPT')
+        cloned_artifact = self.source(b'SYNTHETIC-FILING-BYTES')
+        cloned = self.rexecute(self.rrequest('RecordSubmission', {'receipt_source_id': str(cloned_artifact)}, filing))
+        self.assertIsInstance(cloned, DomainError)
+        self.assertEqual(cloned.code, 'GATE_DENIED')
+
+        submission_bytes = b'SYNTHETIC-UNIQUE-SUBMISSION-RECEIPT'
+        submission = self.source(submission_bytes)
         filing = self.rapply('RecordSubmission', {'receipt_source_id': str(submission)}, filing).refs[0]
-        reused = self.rexecute(self.rrequest('RecordAcknowledgement', {'receipt_source_id': str(submission)}, filing))
+        cloned_submission = self.source(submission_bytes)
+        bad_ack = self.rexecute(self.rrequest('RecordAcknowledgement', {'receipt_source_id': str(cloned_submission)}, filing))
+        self.assertIsInstance(bad_ack, DomainError)
+        self.assertEqual(bad_ack.code, 'GATE_DENIED')
+
+        second, _, _, _ = self.make_ready(content=b'SYNTHETIC-SECOND-FILING')
+        reused = self.rexecute(self.rrequest('RecordSubmission', {'receipt_source_id': str(submission)}, second))
         self.assertIsInstance(reused, DomainError)
         self.assertEqual(reused.code, 'GATE_DENIED')
+        cloned_cross_filing = self.source(submission_bytes)
+        reused_clone = self.rexecute(self.rrequest('RecordSubmission', {'receipt_source_id': str(cloned_cross_filing)}, second))
+        self.assertIsInstance(reused_clone, DomainError)
+        self.assertEqual(reused_clone.code, 'GATE_DENIED')
+
         acknowledgement = self.source(b'SYNTHETIC-INDEPENDENT-ACK')
         filing = self.rapply('RecordAcknowledgement', {'receipt_source_id': str(acknowledgement)}, filing).refs[0]
         self.assertEqual(self.projection(filing_id=filing.id).filings[0].status, 'ACKNOWLEDGED')
@@ -209,7 +226,7 @@ class DocumentRegistryTests(unittest.TestCase):
         self.sequence = applied[0].case_sequence
 
     def test_cross_case_receipt_and_nonhuman_authority_are_denied(self):
-        filing, _, _, _ = self.ready()
+        filing, _, _, _ = self.make_ready()
         foreign_tenant, foreign_case = uuid4(), uuid4()
         foreign_actor = Actor(id=uuid4(), kind='HUMAN')
         actions = self.principal.actions

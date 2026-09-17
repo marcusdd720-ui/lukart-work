@@ -100,7 +100,7 @@ class DocumentRegistryService(CommandService):
         groups = {}
         for receipt in values:
             groups.setdefault(receipt.filing.id, []).append(receipt)
-        for filing_id, history in groups.items():
+        for history in groups.values():
             first = history[0]
             if first.sequence != 1 or first.event != 'REGISTERED' or first.filing.revision != 1:
                 raise Violation('INVALID_HASH')
@@ -130,6 +130,20 @@ class DocumentRegistryService(CommandService):
         if (source.content_hash, source.byte_length) != (first.artifact_hash, first.artifact_byte_length):
             raise Violation('INVALID_HASH')
         return history, source
+
+    @classmethod
+    def _ensure_unique_receipt_evidence(cls, tx, source, artifact):
+        # Evidence must be independent from the filed artifact and from every
+        # submission/acknowledgement receipt already consumed by this CASE.
+        # Exact command replay never reaches this method: Core replay resolves first.
+        if source.id == artifact.id or source.content_hash == artifact.content_hash:
+            raise Violation('GATE_DENIED')
+        for existing in cls._history(tx):
+            anchor = existing.evidence_anchor
+            if anchor is not None and (
+                anchor.document_id == source.id or anchor.document_hash == source.content_hash
+            ):
+                raise Violation('GATE_DENIED')
 
     def _append_receipt(self, request, principal, tx, filing, artifact, now, *, evidence_anchor=None):
         history = self._filing_history(tx, filing.id)
@@ -198,18 +212,18 @@ class DocumentRegistryService(CommandService):
 
         if request.operation == 'RecordSubmission':
             receipt_source, evidence_anchor = self._anchor(tx, request.data.receipt_source_id, 'SUBMISSION_RECEIPT')
-            if receipt_source.id == artifact.id:
-                raise Violation('GATE_DENIED')
+            self._ensure_unique_receipt_evidence(tx, receipt_source, artifact)
             body['submitted_at'] = now.isoformat()
             body['submission_receipt'] = evidence_anchor.model_dump(mode='json')
         elif request.operation == 'RecordAcknowledgement':
             if old.submission_receipt is None or old.submitted_at is None:
                 raise Violation('GATE_DENIED')
-            self._source(tx, old.submission_receipt.document_id)
+            submission_source = self._source(tx, old.submission_receipt.document_id)
             receipt_source, evidence_anchor = self._anchor(
                 tx, request.data.receipt_source_id, 'ACKNOWLEDGEMENT_RECEIPT'
             )
-            if receipt_source.id in (artifact.id, old.submission_receipt.document_id):
+            self._ensure_unique_receipt_evidence(tx, receipt_source, artifact)
+            if receipt_source.content_hash == submission_source.content_hash:
                 raise Violation('GATE_DENIED')
         elif request.operation in ('PrepareFiling', 'MarkFilingReady', 'WithdrawFiling'):
             if request.data.model_fields_set:
