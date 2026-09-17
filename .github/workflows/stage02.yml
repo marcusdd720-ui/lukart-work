@@ -65,7 +65,6 @@ jobs:
             schemas/FilingRegistryEntry.schema.json
             schemas/RegistryProjection.schema.json
             reports/stage06-status.json
-            reports/stage06-unittest.txt
             reports/stage06-schema-validation.json
             reports/package-validation.json
             reports/manifest.sha256.json
