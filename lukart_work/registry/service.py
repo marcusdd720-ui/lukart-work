@@ -94,7 +94,7 @@ class DocumentRegistryService(CommandService):
         if current.status!='ACCEPTED' or current.authenticity=='DISPUTED': raise Violation('GATE_DENIED')
         if current.source.document_id!=source.id or current.source.document_hash!=source.content_hash: raise Violation('GATE_DENIED')
         if records.get(evidence_ref)!=current: raise Violation('INVALID_HASH')
-        return evidence_ref
+        return current
 
     def _append_receipt(self,request,principal,tx,filing,artifact,now,*,evidence_anchor=None,evidence=None):
         history=self._filing_history(tx,filing.id); previous=history[-1] if history else None; event=STATUS_EVENT[filing.status]
@@ -122,17 +122,19 @@ class DocumentRegistryService(CommandService):
         body=old.model_dump(mode='json'); body.update(self._metadata(request,principal,now,old.kind,old)); body['status']=target_status
         evidence_anchor=evidence_ref=None
         if request.operation=='RecordSubmission':
-            receipt_source,evidence_anchor=self._anchor(tx,request.data.receipt_source_id,'SUBMISSION_RECEIPT')
+            receipt_source,_=self._anchor(tx,request.data.receipt_source_id,'SUBMISSION_RECEIPT')
             self._ensure_unique_receipt_evidence(tx,receipt_source,artifact)
-            evidence_ref=self._accepted_evidence(records,heads,request.data.evidence,receipt_source)
+            accepted=self._accepted_evidence(records,heads,request.data.evidence,receipt_source)
+            evidence_ref=ref(accepted); evidence_anchor=accepted.source
             body['submitted_at']=now.isoformat(); body['submission_receipt']=evidence_anchor.model_dump(mode='json')
         elif request.operation=='RecordAcknowledgement':
             if old.submission_receipt is None or old.submitted_at is None: raise Violation('GATE_DENIED')
             submission_source=self._source(tx,old.submission_receipt.document_id)
-            receipt_source,evidence_anchor=self._anchor(tx,request.data.receipt_source_id,'ACKNOWLEDGEMENT_RECEIPT')
+            receipt_source,_=self._anchor(tx,request.data.receipt_source_id,'ACKNOWLEDGEMENT_RECEIPT')
             self._ensure_unique_receipt_evidence(tx,receipt_source,artifact)
             if receipt_source.content_hash==submission_source.content_hash: raise Violation('GATE_DENIED')
-            evidence_ref=self._accepted_evidence(records,heads,request.data.evidence,receipt_source)
+            accepted=self._accepted_evidence(records,heads,request.data.evidence,receipt_source)
+            evidence_ref=ref(accepted); evidence_anchor=accepted.source
         elif request.operation in ('PrepareFiling','MarkFilingReady','WithdrawFiling'):
             if request.data.model_fields_set: raise Violation('SCHEMA_INVALID')
         else: raise Violation('FORBIDDEN')
