@@ -3,7 +3,6 @@ import hashlib
 import io
 import json
 from pathlib import Path
-import re
 import sys
 import unittest
 
@@ -12,10 +11,6 @@ sys.path.insert(0, str(ROOT))
 stream = io.StringIO()
 suite = unittest.defaultTestLoader.discover(str(ROOT / 'tests'), top_level_dir=str(ROOT))
 result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
-
-# Elapsed wall-clock time is runner-dependent and must not make tracked evidence drift.
-transcript = re.sub(r'Ran (\d+) tests in [0-9.]+s', r'Ran \1 tests', stream.getvalue())
-(ROOT / 'reports/stage06-unittest.txt').write_text(transcript, encoding='utf-8')
 files = [
     p for folder in ('lukart_work', 'tests', 'scripts')
     for p in (ROOT / folder).rglob('*')
@@ -36,6 +31,6 @@ report = dict(
     },
 )
 (ROOT / 'reports/stage06-status.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
-print(transcript)
+print(stream.getvalue())
 print(json.dumps({k: v for k, v in report.items() if k != 'tested_sources'}))
 sys.exit(0 if report['result'] == 'PASS' else 1)
