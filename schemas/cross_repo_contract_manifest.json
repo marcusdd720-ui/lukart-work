@@ -1,0 +1,35 @@
+{
+  "schema_id": "urn:lukart:crossrepo:ContractManifest",
+  "schema_version": "1.0.0",
+  "architecture": "shared-semantics-independent-implementations",
+  "canonical_serialization": {
+    "id": "utf8-json-sort-keys-no-whitespace-v1",
+    "encoding": "UTF-8",
+    "object_keys": "lexicographic Unicode code-point order",
+    "whitespace": "none outside JSON strings",
+    "ascii_escaping": false,
+    "duplicate_keys": "reject",
+    "non_finite_numbers": "reject",
+    "floating_point_numbers": "reject"
+  },
+  "digest_algorithms": ["sha-256", "sha-512"],
+  "contracts": [
+    {"schema_id": "urn:lukart:crossrepo:EvidenceEnvelope", "schema_version": "1.0.0", "json_schema": "schemas/CrossRepoEvidenceEnvelope.schema.json"},
+    {"schema_id": "urn:lukart:crossrepo:OperationResultEnvelope", "schema_version": "1.0.0", "json_schema": "schemas/CrossRepoOperationResultEnvelope.schema.json"}
+  ],
+  "source_contracts": [
+    "urn:lukart:work:Evidence:1.0.0",
+    "urn:lukart:work:CommandResult:1.0.0",
+    "urn:lukart:work:IngestionResult:1.0.0",
+    "lukart.operation-contract.v1@1.0"
+  ],
+  "migration_policy": {
+    "legacy_64_hex_digest": "interpret as sha-256 only for explicitly supported legacy lukart-work and lukart-ros adapters",
+    "unknown_digest_algorithm": "reject",
+    "unknown_schema_or_version": "reject",
+    "source_contract_rewrite": false
+  },
+  "reporting": {"machine_readable_ssot": "OperationResultEnvelope", "markdown_html_pdf": "derived-only"},
+  "runtime_dependency_on_lukart_ros": false,
+  "fixtures": "synthetic-only"
+}
