@@ -1,11 +1,9 @@
-"""Stage 06 acceptance: full regression, skip is failure; machine-readable evidence is canonical."""
+"""Stage 06 acceptance: full regression with deterministic machine-readable evidence."""
 import hashlib
 import io
 import json
-import os
 from pathlib import Path
-import platform
-import subprocess
+import re
 import sys
 import unittest
 
@@ -14,7 +12,10 @@ sys.path.insert(0, str(ROOT))
 stream = io.StringIO()
 suite = unittest.defaultTestLoader.discover(str(ROOT / 'tests'), top_level_dir=str(ROOT))
 result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
-(ROOT / 'reports/stage06-unittest.txt').write_text(stream.getvalue(), encoding='utf-8')
+
+# Elapsed wall-clock time is runner-dependent and must not make tracked evidence drift.
+transcript = re.sub(r'Ran (\d+) tests in [0-9.]+s', r'Ran \1 tests', stream.getvalue())
+(ROOT / 'reports/stage06-unittest.txt').write_text(transcript, encoding='utf-8')
 files = [
     p for folder in ('lukart_work', 'tests', 'scripts')
     for p in (ROOT / folder).rglob('*')
@@ -22,14 +23,12 @@ files = [
 ]
 report = dict(
     stage='06 Document Registry',
-    python=platform.python_version(),
     tests=result.testsRun,
     failures=len(result.failures),
     errors=len(result.errors),
     skipped=len(result.skipped),
     result='PASS' if result.wasSuccessful() and not result.skipped else 'FAIL',
-    executed_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
-    ci_remote='EXECUTED' if os.environ.get('GITHUB_ACTIONS') == 'true' else 'NOT_EXECUTED',
+    evidence_binding='TESTED_SOURCE_SHA256',
     stage_06_closed=False,
     tested_sources={
         p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
@@ -37,6 +36,6 @@ report = dict(
     },
 )
 (ROOT / 'reports/stage06-status.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
-print(stream.getvalue())
+print(transcript)
 print(json.dumps({k: v for k, v in report.items() if k != 'tested_sources'}))
 sys.exit(0 if report['result'] == 'PASS' else 1)

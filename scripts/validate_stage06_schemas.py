@@ -1,25 +1,24 @@
-"""Stage 06: deterministic Draft 2020-12 metaschema validation evidence."""
+"""Validate every exported JSON Schema with an independent Draft 2020-12 engine."""
 import hashlib
 import importlib.metadata
 import json
 from pathlib import Path
+
 from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[1]
+schemas = sorted((ROOT / 'schemas').glob('*.json'))
 hashes = {}
-for path in sorted((ROOT / 'schemas').glob('*.json')):
+for path in schemas:
     schema = json.loads(path.read_text(encoding='utf-8'))
     Draft202012Validator.check_schema(schema)
-    hashes[path.relative_to(ROOT).as_posix()] = hashlib.sha256(
-        path.read_bytes().replace(b'\r\n', b'\n')
-    ).hexdigest()
+    name = path.relative_to(ROOT).as_posix()
+    hashes[name] = hashlib.sha256(path.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+
 report = {
-    'stage': '06 Document Registry',
-    'engine': 'jsonschema',
-    'engine_version': importlib.metadata.version('jsonschema'),
-    'dialect': 'https://json-schema.org/draft/2020-12/schema',
-    'schemas': len(hashes),
     'result': 'PASS',
+    'engine': f"jsonschema {importlib.metadata.version('jsonschema')} Draft202012Validator",
+    'schemas_checked': len(schemas),
     'schema_hashes': hashes,
 }
 (ROOT / 'reports/stage06-schema-validation.json').write_text(
