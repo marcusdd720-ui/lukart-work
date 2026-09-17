@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lukart-work-domain-contracts"
-version = "0.4.0"
-description = "Architecture 00 Case Core, scoped storage and provenance-bound ingestion"
+version = "0.5.0"
+description = "Architecture 00 Case Core with human facts and evidence review"
 requires-python = ">=3.11"
 dependencies = ["pydantic==2.13.5"]
 

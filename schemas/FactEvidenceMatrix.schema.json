@@ -1,0 +1,438 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "CandidateReviewRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "run_id": {
+          "format": "uuid",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "source_id": {
+          "format": "uuid",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "result_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Result Hash",
+          "type": "string"
+        },
+        "candidate_index": {
+          "minimum": 0,
+          "title": "Candidate Index",
+          "type": "integer"
+        },
+        "candidate_kind": {
+          "enum": [
+            "FACT",
+            "EVIDENCE"
+          ],
+          "title": "Candidate Kind",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "disposition": {
+          "enum": [
+            "ADMIT",
+            "REJECT"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "anchor": {
+          "$ref": "#/$defs/SourceAnchor"
+        },
+        "created": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Created",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "tenant_id",
+        "case_id",
+        "run_id",
+        "source_id",
+        "result_hash",
+        "candidate_index",
+        "candidate_kind",
+        "revision",
+        "previous_hash",
+        "disposition",
+        "actor",
+        "recorded_at",
+        "rationale",
+        "anchor",
+        "created"
+      ],
+      "title": "CandidateReviewRecord",
+      "type": "object"
+    },
+    "EvidenceAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "$ref": "#/$defs/Ref"
+        },
+        "status": {
+          "enum": [
+            "REGISTERED",
+            "REVIEWED",
+            "ACCEPTED",
+            "CHALLENGED",
+            "EXCLUDED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "authenticity": {
+          "enum": [
+            "UNKNOWN",
+            "VERIFIED",
+            "DISPUTED"
+          ],
+          "title": "Authenticity",
+          "type": "string"
+        },
+        "source_available": {
+          "title": "Source Available",
+          "type": "boolean"
+        },
+        "provenance_available": {
+          "title": "Provenance Available",
+          "type": "boolean"
+        },
+        "issues": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evidence",
+        "status",
+        "authenticity",
+        "source_available",
+        "provenance_available",
+        "issues"
+      ],
+      "title": "EvidenceAssessment",
+      "type": "object"
+    },
+    "FactAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "fact": {
+          "$ref": "#/$defs/Ref"
+        },
+        "statement": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "CANDIDATE",
+            "EXTRACTED",
+            "REVIEWED",
+            "CONFIRMED",
+            "DISPUTED",
+            "REJECTED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "support": {
+          "enum": [
+            "SOURCE_BACKED",
+            "INFERRED",
+            "UNSUPPORTED"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "acceptance_live": {
+          "title": "Acceptance Live",
+          "type": "boolean"
+        },
+        "confirmation_current": {
+          "title": "Confirmation Current",
+          "type": "boolean"
+        },
+        "issues": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "used_in": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Used In",
+          "type": "array"
+        }
+      },
+      "required": [
+        "fact",
+        "statement",
+        "status",
+        "support",
+        "evidence",
+        "acceptance_live",
+        "confirmation_current",
+        "issues",
+        "used_in"
+      ],
+      "title": "FactAssessment",
+      "type": "object"
+    },
+    "Locator": {
+      "additionalProperties": false,
+      "description": "A source location must be nonempty and address immutable source bytes.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "PAGE",
+            "PARAGRAPH",
+            "ARTICLE",
+            "BYTE_RANGE",
+            "RECORD"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "fragment_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fragment Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "value",
+        "fragment_hash"
+      ],
+      "title": "Locator",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "SourceAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Hash",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_hash",
+        "locator"
+      ],
+      "title": "SourceAnchor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_sequence": {
+      "minimum": 1,
+      "title": "Case Sequence",
+      "type": "integer"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/FactAssessment"
+      },
+      "title": "Facts",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceAssessment"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "candidate_reviews": {
+      "items": {
+        "$ref": "#/$defs/CandidateReviewRecord"
+      },
+      "title": "Candidate Reviews",
+      "type": "array"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "case_id",
+    "case_sequence",
+    "facts",
+    "evidence",
+    "candidate_reviews"
+  ],
+  "title": "FactEvidenceMatrix",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:FactEvidenceMatrix:1.0.0"
+}

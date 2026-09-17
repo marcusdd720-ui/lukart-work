@@ -1,5 +1,11 @@
 # LUKART WORK — Case Core, Storage and Ingestion
 
+Stage 05 (pakiet 0.5.0): ludzki przegląd kandydatów, lifecycle faktów i dowodów,
+wersjonowane decyzje oraz macierz pochodzenia i aktualności potwierdzeń.
+[Zakres](docs/23-stage05-readiness.md), [interfejs](docs/24-stage05-implementation.md),
+[odbiór](docs/25-stage05-acceptance.md). Pełny runner:
+`python -B -X utf8 scripts/verify_stage05.py`. Stage 06 nie rozpoczęto.
+
 Stage 04 (pakiet 0.4.0): ekstrakcja TXT, DOCX, e-mail i tekstowych PDF,
 wersjonowane wyniki z pochodzeniem i kandydatami bez automatycznych akceptacji.
 [Zakres i macierz](docs/18-stage04-readiness.md),

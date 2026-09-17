@@ -1,0 +1,35 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:FactEvidenceQuery:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "operation": {
+      "const": "GetFactEvidenceMatrix",
+      "title": "Operation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract",
+    "tenant_id",
+    "case_id",
+    "operation"
+  ],
+  "title": "FactEvidenceQuery",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:FactEvidenceQuery:1.0.0"
+}

@@ -11,11 +11,12 @@ from lukart_work.contracts.messages import CONTRACTS,Command
 from lukart_work.core.requests import CoreRequest,CoreQuery
 from lukart_work.storage.objects import ArtifactRecord
 from lukart_work.ingestion.models import IngestionResult
+from lukart_work.facts.contracts import FactEvidenceRequest, CandidateReviewRecord, FactEvidenceQuery, FactEvidenceMatrix
 from lukart_work.contracts.versions import contract_version
 from lukart_work.validation.rules import parse_entity
 ROOT=Path(__file__).parent
 checks=[]
-for cls in ENTITIES+CONTRACTS+(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult):
+for cls in ENTITIES+CONTRACTS+(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEvidenceRequest,CandidateReviewRecord,FactEvidenceQuery,FactEvidenceMatrix):
     schema=json.loads((ROOT/'schemas'/f'{cls.__name__}.schema.json').read_text())
     expected=cls.model_json_schema()
     assert {k:v for k,v in schema.items() if k not in ('$id','$schema')}==expected

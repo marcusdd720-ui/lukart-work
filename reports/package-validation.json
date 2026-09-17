@@ -236,6 +236,22 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:FactEvidenceRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:CandidateReviewRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FactEvidenceQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FactEvidenceMatrix",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -256,6 +272,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 62,
+  "json_files_parsed": 66,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }
