@@ -9,6 +9,8 @@ wersjonowane wyniki z pochodzeniem i kandydatami bez automatycznych akceptacji.
 `python -B -X utf8 scripts/verify_stage04.py` (SKIP oznacza FAIL).
 Skany wymagają OCR; częściowa ekstrakcja jest jawna. Stage 05 nie rozpoczęto.
 
+[Stage 04 — odbiór GO i dowody zamknięcia](docs/22-stage04-closure.md).
+
 [Stage 03 — odbiór GO i dowody zamknięcia](docs/17-stage03-closure.md).
 
 Stage 03 (pakiet 0.3.0): scoped storage oryginałów i artefaktów, niezależne wersje, jawne migracje, retencja/legal hold oraz sprawdzone backup/restore. [Zakres](docs/13-stage03-readiness.md), [interfejs i ograniczenia](docs/14-stage03-implementation.md), [odbiór](docs/15-stage03-acceptance.md), [niezależny review](docs/16-stage03-review.md). Włączenie storage jest jawne w konfiguracji hosta; etap nie uruchamia ingestion ani deploymentu.

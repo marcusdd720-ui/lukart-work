@@ -1,5 +1,8 @@
 # Stage 04 — odbiór implementacji
 
+Aktualny odbiór po review, CI i merge: [22-stage04-closure.md](22-stage04-closure.md).
+Poniżej zachowano historyczny punkt kontrolny przed review.
+
 Punkt wejścia: `f69ed44211f306e873617d08427588db8214be8f`, Stage 03 GO.
 Macierz zakresu: 18-stage04-readiness.md. Interfejs: 19-stage04-implementation.md.
 
