@@ -1,4 +1,4 @@
-name: Stage 04 Ingestion and regression
+name: Stage 05 Facts Evidence and regression
 on: [push, pull_request]
 permissions:
   contents: read
@@ -34,9 +34,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client-18
           echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
-      - run: python -B -X utf8 scripts/check_stage04_integrity.py
+      - run: python -B -X utf8 scripts/check_stage05_integrity.py
       - run: python -m pip install '.[postgres,ingestion]'
       - run: python -B -X utf8 scripts/prepare_ci_database.py
       - run: python -B -X utf8 verify_package.py
-      - run: python -B -X utf8 scripts/verify_stage04.py
+      - run: python -B -X utf8 scripts/verify_stage05.py
       - run: git diff --check

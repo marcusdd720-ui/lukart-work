@@ -9,6 +9,7 @@ POLICY_FILES = (
     'core/postgres.py', 'core/migration.sql', 'domain/models.py', 'domain/lifecycle.py',
     'validation/rules.py', 'contracts/messages.py', 'contracts/versions.py',
     'storage/objects.py', 'storage/service.py', 'storage/migration.sql', 'storage/migrations.py',
+    'facts/contracts.py', 'facts/service.py',
 )
 
 
@@ -21,4 +22,4 @@ def policy_artifact(root=None):
 
 
 def rule_pin(root=None):
-    return VersionPin(id='lukart-work-case-core', version='1.0.3', content_hash=digest(policy_artifact(root)))
+    return VersionPin(id='lukart-work-case-core', version='1.0.4', content_hash=digest(policy_artifact(root)))

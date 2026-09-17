@@ -56,10 +56,13 @@ class CommandService:
         self.authority = authority
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
+    def _parse_request(self, raw):
+        return parse_request(raw)
+
     def execute(self, raw, token):
         correlation = UUID(int=0)
         try:
-            request = parse_request(raw)
+            request = self._parse_request(raw)
             correlation = request.meta.correlation_id
             with self.authority.session(token) as principal:
                 principal.require(request.meta.tenant_id, request.meta.case_id, request.operation)
