@@ -1,0 +1,1 @@
+{"operation":"AppendRevision","payload":{"case_sequence":7,"command_id":"00000000-0000-0000-0000-000000000201","errors":[],"event_ids":["00000000-0000-0000-0000-000000000203"],"refs":[{"id":"00000000-0000-0000-0000-000000000202","kind":"Fact","revision":1}],"state":"APPLIED"}}
