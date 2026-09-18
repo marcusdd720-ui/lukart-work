@@ -1,4 +1,5 @@
 """Stage 09 Controlled Drafting assurance on real PostgreSQL; synthetic data only."""
+from concurrent.futures import ThreadPoolExecutor
 import json
 import unittest
 from typing import get_args
@@ -408,6 +409,21 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.assertEqual(self.provider.calls, 1)
         self.assertEqual(len(self.draft_heads()), 1)
 
+    def test_concurrent_same_command_calls_model_once(self):
+        case = self.approved_planning_case()
+        self.provider.responder = lambda invocation: self.valid_output(case, invocation)
+        request = self.generate_request(case)
+        raw = json.dumps(request)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(
+                lambda _: self.drafting.generate(raw, self.token),
+                range(2),
+            ))
+        self.assertTrue(all(isinstance(result, CommandResult) for result in results))
+        self.assertEqual(results[0], results[1])
+        self.assertEqual(self.provider.calls, 1)
+        self.assertEqual(len(self.draft_heads()), 1)
+
     def test_abstain_stays_abstain_is_audited_and_replays_without_model_call(self):
         case = self.approved_planning_case()
         def responder(invocation):
@@ -613,6 +629,38 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.assertIsInstance(result, DomainError, result)
         self.assertEqual(result.code, 'GATE_DENIED')
         self.assertEqual(self.provider.calls, 0)
+        self.assertFalse(self.draft_heads())
+
+    def test_plan_approval_change_between_proposal_and_commit_is_conflict(self):
+        case = self.approved_planning_case()
+        mutated = {'done': False}
+        def responder(invocation):
+            if not mutated['done']:
+                mutated['done'] = True
+                self.apply('RevokeDecision', target=case['plan_approval'])
+            return self.valid_output(case, invocation)
+        self.provider.responder = responder
+        request = self.generate_request(case)
+        result = self.drafting.generate(json.dumps(request), self.token)
+        self.assertIsInstance(result, DomainError, result)
+        self.assertEqual(result.code, 'CONFLICT')
+        self.assertEqual(self.provider.calls, 1)
+        self.assertFalse(self.draft_heads())
+
+    def test_snapshot_acceptance_change_between_proposal_and_commit_is_conflict(self):
+        case = self.approved_planning_case()
+        mutated = {'done': False}
+        def responder(invocation):
+            if not mutated['done']:
+                mutated['done'] = True
+                self.apply('RevokeDecision', target=case['snapshot_acceptance'])
+            return self.valid_output(case, invocation)
+        self.provider.responder = responder
+        request = self.generate_request(case)
+        result = self.drafting.generate(json.dumps(request), self.token)
+        self.assertIsInstance(result, DomainError, result)
+        self.assertEqual(result.code, 'CONFLICT')
+        self.assertEqual(self.provider.calls, 1)
         self.assertFalse(self.draft_heads())
 
     def test_case_change_between_proposal_and_commit_is_conflict_without_draft(self):
