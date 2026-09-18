@@ -17,9 +17,12 @@ Published Stage 07 contracts:
 ## Canonical state and no second SSOT
 
 Legal source and rule lifecycle is stored only as existing `LegalSource` and `LegalRule` revisions.
-The binding object is auxiliary execution metadata for an exact LegalRule revision. It cannot have an
-independent lifecycle or change its spec/sources across LegalRule lifecycle revisions. Reads verify
-the entire binding chain against the canonical revision ledger before evaluating any rule.
+The full executable spec is serialized canonically into the LegalRule's existing `requirement`
+payload (`operator=EQUALS`, `field_path=/procedural_spec`, operand = canonical JSON). The binding
+object is therefore auxiliary execution metadata for an exact LegalRule revision, not a second
+authority. It cannot have an independent lifecycle or change its spec/sources across LegalRule
+lifecycle revisions. Reads verify the entire binding chain and require the binding spec to equal the
+canonical LegalRule serialization before evaluating any rule.
 
 Writes use the existing `CommandService.execute` transaction, therefore they inherit authenticated
 capability checks, HUMAN-only Stage 07 mutation, actor-bound idempotency, expected-case-sequence CAS,
