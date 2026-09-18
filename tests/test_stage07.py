@@ -406,7 +406,7 @@ class ProceduralEngineTests(unittest.TestCase):
         reviewed = self.papply('ReviewProceduralRule', target=rule).refs[0]
         wrong = self.decision('STRATEGY', [reviewed])
         denied = self.pexecute(self.prequest('ActivateProceduralRule', {'decision': wrong.model_dump(mode='json')}, reviewed))
-        self.assertEqual(denied.code, 'HUMAN_APPROVAL_REQUIRED')
+        self.assertEqual(denied.code, 'GATE_DENIED')
 
     def test_exact_replay_idempotency_conflict_and_concurrent_cas(self):
         source_id = self.source(b'SYNTHETIC REPLAY SOURCE')
