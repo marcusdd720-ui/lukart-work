@@ -80,6 +80,11 @@ class ProceduralEngineService(CommandService):
             rule = records.get(binding.rule)
             if rule is None or rule.kind != 'LegalRule' or tuple(rule.sources) != tuple(binding.sources):
                 raise Violation('INVALID_HASH')
+            if (rule.requirement is None or rule.requirement.operator != 'EQUALS'
+                    or rule.requirement.field_path != '/procedural_spec'
+                    or rule.requirement.operand != canonical(binding.spec)
+                    or rule.requirement.severity != binding.spec.severity):
+                raise Violation('INVALID_HASH')
             if old and (old.spec != binding.spec or old.sources != binding.sources):
                 raise Violation('INVALID_HASH')
             previous[binding.rule.id] = binding
@@ -183,6 +188,7 @@ class ProceduralEngineService(CommandService):
             except ZoneInfoNotFoundError:
                 raise Violation('SCHEMA_INVALID')
         intent = request.model_copy(update={'inputs': tuple(data.sources)})
+        spec_payload = canonical(data.spec)
         entity = entity_from(dict(
             **self._metadata(intent, principal, now, 'LegalRule'),
             status='PROPOSED',
@@ -193,9 +199,9 @@ class ProceduralEngineService(CommandService):
             effective_period=data.effective_period.model_dump(mode='json'),
             applicable_document_types=[p.model_dump(mode='json') for p in data.applicable_document_types],
             requirement={
-                'operator': 'PRESENT',
-                'field_path': '/procedural_binding',
-                'operand': None,
+                'operator': 'EQUALS',
+                'field_path': '/procedural_spec',
+                'operand': spec_payload,
                 'severity': data.spec.severity,
             },
             interpretation=data.interpretation,
