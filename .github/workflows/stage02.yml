@@ -59,6 +59,7 @@ jobs:
         with:
           name: stage09-generated
           path: |
+            schemas/DomainEvent.schema.json
             schemas/DraftingProfile.schema.json
             schemas/DraftingInvocation.schema.json
             schemas/DraftingTrace.schema.json
