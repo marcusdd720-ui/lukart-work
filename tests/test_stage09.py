@@ -160,8 +160,8 @@ class ControlledDraftingTests(core.Stage02Tests):
             status='PROPOSED',
             source=source,
             locator=m.Locator(
-                unit='SECTION',
-                value='synthetic-section-1',
+                unit='ARTICLE',
+                value='synthetic-article-1',
                 fragment_hash=source_entity.content_hash,
             ),
             supported=rule,
