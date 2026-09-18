@@ -101,16 +101,16 @@ class DocumentRegistryTests(unittest.TestCase):
         denied=self.rexecute(self.rrequest('RecordSubmission',self.submission_data(claim_source,claim_evidence),filing)); self.assertIsInstance(denied,DomainError); self.assertEqual(denied.code,'GATE_DENIED')
         accepted_source,accepted_evidence=self.evidence(b'ACCEPTED-BUT-DIFFERENT-SOURCE')
         missing_data=self.receipt_data(uuid4(),accepted_evidence); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',missing_data,filing)).code,'BROKEN_REFERENCE')
-        artifact_evidence_source,artifact_evidence=self.evidence(b'SYNTHETIC-FILING-BYTES'); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.receipt_data(artifact_evidence_source,artifact_evidence),filing)).code,'GATE_DENIED')
-        receipt_bytes=b'SYNTHETIC-UNIQUE-SUBMISSION-RECEIPT'; submission,se=self.evidence(receipt_bytes); filing=self.rapply('RecordSubmission',self.receipt_data(submission,se),filing).refs[0]
+        artifact_evidence_source,artifact_evidence=self.evidence(b'SYNTHETIC-FILING-BYTES'); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.submission_data(artifact_evidence_source,artifact_evidence),filing)).code,'GATE_DENIED')
+        receipt_bytes=b'SYNTHETIC-UNIQUE-SUBMISSION-RECEIPT'; submission,se=self.evidence(receipt_bytes); filing=self.rapply('RecordSubmission',self.submission_data(submission,se),filing).refs[0]
         cloned,clone_evidence=self.evidence(receipt_bytes); self.assertEqual(self.rexecute(self.rrequest('RecordAcknowledgement',self.receipt_data(cloned,clone_evidence),filing)).code,'GATE_DENIED')
-        second,_,_,_=self.ready(content=b'SYNTHETIC-SECOND-FILING'); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.receipt_data(submission,se),second)).code,'GATE_DENIED')
+        second,_,_,_=self.ready(content=b'SYNTHETIC-SECOND-FILING'); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.submission_data(submission,se),second)).code,'GATE_DENIED')
         ack,ae=self.evidence(b'SYNTHETIC-INDEPENDENT-ACK'); filing=self.rapply('RecordAcknowledgement',self.receipt_data(ack,ae),filing).refs[0]; self.assertEqual(self.projection(filing_id=filing.id).filings[0].status,'ACKNOWLEDGED')
 
     def test_stale_or_mismatched_evidence_revision_is_rejected(self):
         filing,_,_,_=self.ready(); source,evidence=self.evidence(b'SYNTHETIC-STALE-EVIDENCE')
-        stale=evidence.model_copy(update={'revision':evidence.revision-1}); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.receipt_data(source,stale),filing)).code,'STALE')
-        other_source,other_evidence=self.evidence(b'SYNTHETIC-OTHER-EVIDENCE'); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.receipt_data(source,other_evidence),filing)).code,'GATE_DENIED')
+        stale=evidence.model_copy(update={'revision':evidence.revision-1}); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.submission_data(source,stale),filing)).code,'STALE')
+        other_source,other_evidence=self.evidence(b'SYNTHETIC-OTHER-EVIDENCE'); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.submission_data(source,other_evidence),filing)).code,'GATE_DENIED')
 
     def test_illegal_transition_and_artifact_rows_are_database_immutable(self):
         filing,artifact,_,_=self.register(); self.assertEqual(self.rexecute(self.rrequest('MarkFilingReady',target=filing)).code,'INVALID_TRANSITION')
@@ -133,7 +133,7 @@ class DocumentRegistryTests(unittest.TestCase):
         self.assertIsInstance(self.service.execute(json.dumps(sr),foreign_token),CommandResult); foreign_source=uuid5(UUID(sr['meta']['command_id']),'source'); fake={'kind':'Evidence','id':str(uuid4()),'revision':1}
         self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',{'receipt_source_id':str(foreign_source),'evidence':fake,'submitted_at':'2026-09-17T14:03:00+02:00'},filing)).code,'BROKEN_REFERENCE')
         receipt,evidence=self.evidence(b'SYNTHETIC-AUTHORITY-RECEIPT'); service_token=self.authority.provision(Principal(Actor(id=uuid4(),kind='SERVICE'),self.tenant,self.case_id,actions))
-        self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.receipt_data(receipt,evidence),filing),service_token).code,'FORBIDDEN')
+        self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.submission_data(receipt,evidence),filing),service_token).code,'FORBIDDEN')
         ai_token=self.authority.provision(Principal(Actor(id=uuid4(),kind='AI'),self.tenant,self.case_id,actions)); self.assertEqual(self.projection(ai_token).code,'FORBIDDEN')
 
     def test_legacy_filing_is_explicitly_unregistered(self):
