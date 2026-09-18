@@ -213,45 +213,6 @@ class ProceduralEngineTests(unittest.TestCase):
         }).refs[0]
         return appellant, representative, institution, proceeding, filing
 
-    def confirmed_datum(self, key, value, subject):
-        content = ('SYNTHETIC EVIDENCE ' + key).encode()
-        source_id = self.source(content)
-        checksum = sha256(content).hexdigest()
-        anchor = {
-            'document_id': str(source_id),
-            'document_hash': checksum,
-            'locator': {'unit': 'RECORD', 'value': 'STAGE07_' + key.upper(), 'fragment_hash': checksum},
-        }
-        evidence = self.apply('AddEvidence', {
-            'evidence_type': 'DOCUMENT',
-            'description': 'Synthetic evidence for ' + key,
-            'source': anchor,
-            'authenticity': 'UNKNOWN',
-            'submitted_in': None,
-        }).refs[0]
-        evidence = self.fexecute('ReviewEvidence', evidence).refs[0]
-        evidence = self.fexecute('AcceptEvidence', evidence).refs[0]
-        fact = self.apply('AddFact', {
-            'statement': canonical({'key': key, 'value': value}),
-            'support': 'SOURCE_BACKED',
-            'evidence': [evidence.model_dump(mode='json')],
-            'subjects': [subject.model_dump(mode='json')],
-            'event_date': None,
-            'amount': None,
-            'key_fact': True,
-        }, target=None).refs[0]
-        # AddFact needs the immutable source anchor as provenance, supplied through a direct request.
-        # Replace the just-created invalid shortcut above if Core ever requires anchors before graph validation.
-        return self._confirm_existing_fact(fact, key, value, subject, evidence, anchor)
-
-    def _confirm_existing_fact(self, fact, key, value, subject, evidence, anchor):
-        # Current Core accepts the AddFact only when provenance is supplied. This helper exists for
-        # explicitness in tests that construct the request manually below.
-        reviewed = self.fexecute('ReviewFact', fact).refs[0]
-        decision = self.decision('FACT_ACCEPTANCE', [reviewed])
-        confirmed = self.fexecute('ConfirmFact', reviewed, {'decision': decision.model_dump(mode='json')}).refs[0]
-        return {'key': key, 'classification': 'FACT', 'value': value, 'facts': [confirmed.model_dump(mode='json')]}
-
     def fact_datum(self, key, value, subject):
         content = ('SYNTHETIC EVIDENCE ' + key).encode()
         source_id = self.source(content)
@@ -386,10 +347,6 @@ class ProceduralEngineTests(unittest.TestCase):
     def test_rule_applicability_covers_not_applicable_unknown_and_disputed_interpretation(self):
         _, _, _, _, filing = self.principals_and_filing()
         source = self.legal_source()
-        wrong_jurisdiction = self.register_rule(source, {
-            **self.requirement('JURISDICTION', 'WRONG-JURIS', '/case/status', 'EQUALS', 'OPEN'),
-        })
-        # Modify only the requested jurisdiction before registration through an explicit separate request.
         # A document-type mismatch provides a deterministic NOT_APPLICABLE without mutating canonical state.
         wrong_doc = {'id': 'synthetic-other', 'version': '1.0.0', 'content_hash': 'b' * 64}
         wrong_jurisdiction = self.activate_rule(self.register_rule(
