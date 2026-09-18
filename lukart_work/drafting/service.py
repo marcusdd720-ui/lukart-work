@@ -148,7 +148,7 @@ class ControlledDraftingService(CommandService):
         normalized_sections = []
         used_objectives = set()
         used_arguments = set()
-        for section_index, (ai_request, result, section) in enumerate(
+        for section_index, (invocation, result, section) in enumerate(
             zip(invocations, results, sections)
         ):
             ai_request = invocation.request
@@ -181,12 +181,17 @@ class ControlledDraftingService(CommandService):
                     if any(resolve(target, records, plan.tenant_id, plan.case_id).status != 'ACTIVE'
                            for target in rules):
                         raise Violation('GATE_DENIED')
+                    covered_rules = set()
                     for citation_ref in statement.citations:
                         citation = resolve(citation_ref, records, plan.tenant_id, plan.case_id)
                         if citation.kind != 'Citation' or citation.status != 'VERIFIED':
                             raise Violation('GATE_DENIED')
                         if citation.supported not in statement.refs and citation.supported != ref(section):
                             raise Violation('GATE_DENIED')
+                        if citation.supported.kind == 'LegalRule':
+                            covered_rules.add(citation.supported)
+                    if not set(rules) <= covered_rules:
+                        raise Violation('GATE_DENIED')
                 if statement.statement_type == 'REQUEST':
                     requests = {target for target in statement.refs if target.kind == 'Request'}
                     if not requests:
@@ -200,6 +205,29 @@ class ControlledDraftingService(CommandService):
                     f'statement:{section_index}:{statement_index}',
                 ))
                 statements.append(m.Statement.model_validate_json(json.dumps(body)))
+            requirements = set(section.contract.requirements)
+            if 'REQUESTS' in requirements and not any(
+                item.statement_type == 'REQUEST' for item in statements
+            ):
+                raise Violation('SECTION_CONTRACT')
+            if 'CITATIONS' in requirements and not any(item.citations for item in statements):
+                raise Violation('SECTION_CONTRACT')
+            if 'ATTACHMENTS' in requirements and not any(
+                target.kind == 'Evidence' for item in statements for target in item.refs
+            ):
+                raise Violation('SECTION_CONTRACT')
+            if 'CHRONOLOGICAL' in requirements:
+                dates = []
+                for item in statements:
+                    for target in item.refs:
+                        if target.kind == 'Fact':
+                            fact = resolve(target, records, plan.tenant_id, plan.case_id)
+                            if fact.event_date is None:
+                                raise Violation('SECTION_CONTRACT')
+                            dates.append(fact.event_date)
+                if not dates or dates != sorted(dates):
+                    raise Violation('SECTION_CONTRACT')
+
             normalized_sections.append(m.SectionText(
                 section=ref(section),
                 statements=tuple(statements),
@@ -280,7 +308,7 @@ class ControlledDraftingService(CommandService):
             )
 
     def _commit(
-        self, request, principal, input_hash, profile, invocations, results
+        self, request, principal, input_hash, profile, invocations, results, raw_outputs
     ):
         with self.repository.transaction(principal.tenant_id, principal.case_id) as tx:
             replay = tx.replay(request.meta.idempotency_key, input_hash)
@@ -310,9 +338,7 @@ class ControlledDraftingService(CommandService):
             trace_input_hash = digest([
                 item.model_dump(mode='json') for item in invocations
             ])
-            raw_output_hash = digest([
-                item.model_dump(mode='json') for item in results
-            ])
+            raw_output_hash = digest(raw_outputs)
             reproduction = m.ReproductionManifest(
                 knowledge=snapshot.knowledge_pins,
                 rule_set=snapshot.rule_set,
@@ -372,6 +398,7 @@ class ControlledDraftingService(CommandService):
                 profile=profile,
                 invocations=invocations,
                 results=results,
+                raw_outputs=raw_outputs,
                 input_hash=trace_input_hash,
                 raw_output_hash=raw_output_hash,
             )
@@ -463,16 +490,23 @@ class ControlledDraftingService(CommandService):
                     )
 
                 results = []
+                raw_outputs = []
                 for invocation in invocations:
-                    result = wire.AIResult.model_validate(
-                        self.model_provider.propose(invocation)
+                    raw_value = self.model_provider.propose(invocation)
+                    raw_json = json.dumps(
+                        raw_value, sort_keys=True, separators=(',', ':'),
+                        ensure_ascii=False, allow_nan=False,
                     )
+                    if len(raw_json.encode('utf-8')) > 2_000_000:
+                        raise Violation('SCHEMA_INVALID')
+                    result = wire.AIResult.model_validate_json(raw_json)
                     if result.disposition == 'ABSTAIN':
                         return result
                     results.append(result)
+                    raw_outputs.append(raw_json)
                 return self._commit(
                     request, principal, input_hash, profile,
-                    invocations, tuple(results),
+                    invocations, tuple(results), tuple(raw_outputs),
                 )
         except Violation as error:
             return safe_error(error.code, correlation)
