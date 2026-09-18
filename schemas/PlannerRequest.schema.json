@@ -1,0 +1,407 @@
+{
+  "$defs": {
+    "ApproveDocumentPlanData": {
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/Ref"
+        }
+      },
+      "required": [
+        "decision"
+      ],
+      "title": "ApproveDocumentPlanData",
+      "type": "object"
+    },
+    "CommandMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "command_id": {
+          "format": "uuid",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "format": "uuid",
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "expected_case_sequence": {
+          "minimum": 0,
+          "title": "Expected Case Sequence",
+          "type": "integer"
+        },
+        "correlation_id": {
+          "format": "uuid",
+          "title": "Correlation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_id",
+        "tenant_id",
+        "case_id",
+        "idempotency_key",
+        "expected_case_sequence",
+        "correlation_id"
+      ],
+      "title": "CommandMeta",
+      "type": "object"
+    },
+    "Locator": {
+      "additionalProperties": false,
+      "description": "A source location must be nonempty and address immutable source bytes.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "PAGE",
+            "PARAGRAPH",
+            "ARTICLE",
+            "BYTE_RANGE",
+            "RECORD"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "fragment_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fragment Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "value",
+        "fragment_hash"
+      ],
+      "title": "Locator",
+      "type": "object"
+    },
+    "PlanDocumentData": {
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_id": {
+          "format": "uuid",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "filing": {
+          "$ref": "#/$defs/Ref"
+        },
+        "objectives": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Objectives",
+          "type": "array"
+        },
+        "position_scope": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Position Scope",
+          "type": "string"
+        },
+        "argument_order": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Argument Order",
+          "type": "array"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/SectionBlueprint"
+          },
+          "minItems": 1,
+          "title": "Sections",
+          "type": "array"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "snapshot_hash",
+        "filing",
+        "objectives",
+        "position_scope",
+        "sections"
+      ],
+      "title": "PlanDocumentData",
+      "type": "object"
+    },
+    "PlannerTransitionData": {
+      "additionalProperties": false,
+      "properties": {},
+      "title": "PlannerTransitionData",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "SectionBlueprint": {
+      "additionalProperties": false,
+      "properties": {
+        "section_type": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Section Type",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "arguments": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Arguments",
+          "type": "array"
+        },
+        "allowed_inputs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Allowed Inputs",
+          "type": "array"
+        },
+        "required_inputs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Required Inputs",
+          "type": "array"
+        },
+        "allowed_claims": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Allowed Claims",
+          "type": "array"
+        },
+        "forbidden": {
+          "items": {
+            "enum": [
+              "UNSUPPORTED_ASSERTION",
+              "UNMARKED_INFERENCE",
+              "NEW_FACT",
+              "NEW_LEGAL_RULE"
+            ],
+            "type": "string"
+          },
+          "title": "Forbidden",
+          "type": "array"
+        },
+        "requirements": {
+          "default": [],
+          "items": {
+            "enum": [
+              "CHRONOLOGICAL",
+              "CITATIONS",
+              "REQUESTS",
+              "ATTACHMENTS"
+            ],
+            "type": "string"
+          },
+          "title": "Requirements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "section_type",
+        "title",
+        "forbidden"
+      ],
+      "title": "SectionBlueprint",
+      "type": "object"
+    },
+    "SourceAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Hash",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_hash",
+        "locator"
+      ],
+      "title": "SourceAnchor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:PlannerRequest:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "PlanDocument",
+        "ReviewDocumentPlan",
+        "ApproveDocumentPlan",
+        "SupersedeDocumentPlan"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "meta": {
+      "$ref": "#/$defs/CommandMeta"
+    },
+    "target": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Ref"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "data": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PlanDocumentData"
+        },
+        {
+          "$ref": "#/$defs/ApproveDocumentPlanData"
+        },
+        {
+          "$ref": "#/$defs/PlannerTransitionData"
+        }
+      ],
+      "title": "Data"
+    },
+    "inputs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
+    "anchors": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SourceAnchor"
+      },
+      "title": "Anchors",
+      "type": "array"
+    },
+    "rationale": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract",
+    "operation",
+    "meta",
+    "data",
+    "rationale"
+  ],
+  "title": "PlannerRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:PlannerRequest:1.0.0"
+}

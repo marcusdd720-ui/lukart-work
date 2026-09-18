@@ -209,9 +209,20 @@ class CommandService:
             validate_snapshot_acceptance(snapshot, decision, records)
             if digest(snapshot) != entity.input_snapshot_hash:
                 raise Violation('INVALID_HASH')
-            required = {entity.filing, entity.recipient, *entity.objectives, *entity.argument_order, *entity.evidence, *entity.section_order}
-            if not required <= {member.ref for member in snapshot.members}:
+            members = {member.ref for member in snapshot.members}
+            required = {entity.filing, entity.recipient, *entity.objectives, *entity.argument_order, *entity.evidence}
+            if not required <= members:
                 raise Violation('GATE_DENIED')
+            for section_ref in entity.section_order:
+                section = resolve(section_ref, records, entity.tenant_id, entity.case_id)
+                declared = {
+                    *section.arguments,
+                    *section.contract.allowed_inputs,
+                    *section.contract.required_inputs,
+                    *section.contract.allowed_claims,
+                }
+                if not declared <= members:
+                    raise Violation('GATE_DENIED')
             self._snapshot_heads(snapshot, heads)
         return entity
 

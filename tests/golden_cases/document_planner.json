@@ -1,0 +1,15 @@
+{
+  "case_name": "SYNTHETIC-STAGE08-DOCUMENT-PLANNER",
+  "position_scope": "Synthetic Stage 08 scope",
+  "section_type": "FACTUAL_BACKGROUND",
+  "section_title": "Factual basis",
+  "required_forbidden": [
+    "UNSUPPORTED_ASSERTION",
+    "UNMARKED_INFERENCE",
+    "NEW_FACT",
+    "NEW_LEGAL_RULE"
+  ],
+  "expected_plan_status": "PROPOSED",
+  "expected_section_status": "READY",
+  "drafts_expected": 0
+}

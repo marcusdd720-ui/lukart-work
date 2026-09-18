@@ -292,6 +292,18 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:PlannerRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:PlannerQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DocumentPlanProjection",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -312,6 +324,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 76,
+  "json_files_parsed": 79,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }

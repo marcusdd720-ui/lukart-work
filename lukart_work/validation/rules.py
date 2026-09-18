@@ -316,10 +316,13 @@ def validate_state(e,records,*,snapshot=None,snapshot_approval=None):
         if (snapshot.tenant_id,snapshot.case_id)!=(e.tenant_id,e.case_id):raise Violation('CROSS_CASE')
         if (snapshot.id,digest(snapshot))!=(e.snapshot_id,e.snapshot_hash):raise Violation('SNAPSHOT_MISMATCH')
         members={m.ref for m in snapshot.members}
-        plan_inputs={plan.filing,plan.recipient,*plan.objectives,*plan.argument_order,*plan.evidence,*plan.section_order}
+        plan_inputs={plan.filing,plan.recipient,*plan.objectives,*plan.argument_order,*plan.evidence}
         if not plan_inputs<=members:raise Violation('SNAPSHOT_NOT_CLOSED')
         if not e.sections or tuple(x.section for x in e.sections)!=plan.section_order:raise Violation('SECTION_ORDER')
         for section in e.sections:
-            contract=resolve(section.section,records,e.tenant_id,e.case_id).contract
+            section_entity=resolve(section.section,records,e.tenant_id,e.case_id)
+            contract=section_entity.contract
+            declared={*section_entity.arguments,*contract.allowed_inputs,*contract.required_inputs,*contract.allowed_claims}
+            if not declared<=members:raise Violation('SNAPSHOT_NOT_CLOSED')
             used=validate_section_inputs(section,contract)
             if not used<=members:raise Violation('SNAPSHOT_NOT_CLOSED')
