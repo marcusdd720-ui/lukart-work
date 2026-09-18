@@ -14,7 +14,7 @@ Before the provider call, Stage 09 checks tenant/case authorization, HUMAN actor
 
 After proposal generation, a new transaction repeats replay/CAS/live-authority/snapshot/plan/section validation. Any intervening case mutation, plan/snapshot/approval drift or invocation drift fails as STALE/CONFLICT and no Draft is committed.
 
-Sequential replay checks the idempotency record before any provider call.
+Sequential replay checks the idempotency record before any provider call. A PostgreSQL session advisory lock keyed by tenant/case/idempotency key serializes identical external-call commands across independent service/authority instances without holding the Case transaction open during the provider call. The terminal ABSTAIN outcome is persisted in the existing command/audit/outbox path so its exact replay also performs no second provider call.
 
 ## SectionContract enforcement
 
@@ -29,7 +29,7 @@ Sequential replay checks the idempotency record before any provider call.
 - `ATTACHMENTS`: at least one Evidence ref must be used;
 - `CHRONOLOGICAL`: referenced Facts must expose event_date and appear in nondecreasing order.
 
-Every legal Statement must reference at least one ACTIVE LegalRule and each used LegalRule must be covered by a VERIFIED Citation supporting that rule.
+Every legal Statement must reference at least one current ACTIVE LegalRule whose exact activation still has a live HUMAN INTERPRETATION approval. Each used LegalRule must be covered by a current VERIFIED Citation whose current VERIFIED LegalSource is one of that rule's sources. These authority checks run before the provider call and again before commit.
 
 ## Persistence
 
