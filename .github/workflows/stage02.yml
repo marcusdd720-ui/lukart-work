@@ -1,9 +1,9 @@
-name: Stage 08 Document Planner assurance
+name: Stage 09 Controlled Drafting assurance
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  planner:
+  drafting:
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -38,18 +38,18 @@ jobs:
       - name: Export contracts
         run: python -B -X utf8 export_contracts.py
       - run: python -B -X utf8 scripts/prepare_ci_database.py
-      - name: Focused Stage 08
-        run: python -B -X utf8 -m unittest -v tests.test_stage08
+      - name: Focused Stage 09
+        run: python -B -X utf8 -m unittest -v tests.test_stage09
       - name: Full regression
-        run: python -B -X utf8 scripts/verify_stage08.py
+        run: python -B -X utf8 scripts/verify_stage09.py
       - name: Independent JSON Schema validation
-        run: python -B -X utf8 scripts/validate_stage08_schemas.py
+        run: python -B -X utf8 scripts/validate_stage09_schemas.py
       - name: Package verification
         run: python -B -X utf8 verify_package.py
       - name: Refresh global integrity manifest
         run: python -B -X utf8 scripts/refresh_manifest.py
-      - name: Stage 08 integrity
-        run: python -B -X utf8 scripts/check_stage08_integrity.py
+      - name: Stage 09 integrity
+        run: python -B -X utf8 scripts/check_stage09_integrity.py
       - name: Whitespace check
         run: git diff --check
       - name: Generated evidence is reproducible
@@ -57,12 +57,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: stage08-generated
+          name: stage09-generated
           path: |
-            schemas/PlannerRequest.schema.json
-            schemas/PlannerQuery.schema.json
-            schemas/DocumentPlanProjection.schema.json
-            reports/stage08-status.json
-            reports/stage08-schema-validation.json
+            schemas/DraftingProfile.schema.json
+            schemas/DraftingInvocation.schema.json
+            schemas/DraftingTrace.schema.json
+            reports/stage09-status.json
+            reports/stage09-schema-validation.json
             reports/package-validation.json
             reports/manifest.sha256.json
