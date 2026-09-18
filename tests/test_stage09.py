@@ -1,6 +1,7 @@
 """Stage 09 Controlled Drafting assurance on real PostgreSQL; synthetic data only."""
 import json
 import unittest
+from typing import get_args
 from uuid import uuid4
 
 from lukart_work.contracts.messages import AIResult, CommandResult, DomainError
@@ -8,7 +9,7 @@ from lukart_work.core.security import Principal
 from lukart_work.domain.models import Actor
 from lukart_work.drafting.contracts import DraftingTrace
 from lukart_work.drafting.service import ControlledDraftingService
-from lukart_work.planner.contracts import stage08_actions
+from lukart_work.planner.contracts import PlannerOperation, stage08_actions
 from lukart_work.planner.service import DocumentPlannerService
 from lukart_work.validation.rules import digest
 from tests import test_stage02 as core
@@ -31,7 +32,7 @@ class ControlledDraftingTests(core.Stage02Tests):
     def setUp(self):
         super().setUp()
         self.authority.revoke(self.token)
-        actions = stage08_actions(self.principal.actions) | {'GetDocumentPlan'}
+        actions = self.principal.actions | frozenset(get_args(PlannerOperation)) | {'GetDocumentPlan'}
         self.principal = Principal(self.actor, self.tenant, self.case_id, actions)
         self.token = self.authority.provision(self.principal)
         self.planner = DocumentPlannerService(self.repo, self.authority)
