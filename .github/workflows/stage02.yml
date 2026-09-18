@@ -1,9 +1,9 @@
-name: Stage 06 Document Registry assurance
+name: Stage 07 Procedural Engine assurance
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  registry:
+  procedural:
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -38,18 +38,18 @@ jobs:
       - name: Export contracts
         run: python -B -X utf8 export_contracts.py
       - run: python -B -X utf8 scripts/prepare_ci_database.py
-      - name: Focused Stage 06
-        run: python -B -X utf8 -m unittest -v tests.test_stage06
+      - name: Focused Stage 07
+        run: python -B -X utf8 -m unittest -v tests.test_stage07
       - name: Full regression
-        run: python -B -X utf8 scripts/verify_stage06.py
+        run: python -B -X utf8 scripts/verify_stage07.py
       - name: Independent JSON Schema validation
-        run: python -B -X utf8 scripts/validate_stage06_schemas.py
+        run: python -B -X utf8 scripts/validate_stage07_schemas.py
       - name: Package verification
         run: python -B -X utf8 verify_package.py
       - name: Refresh global integrity manifest
         run: python -B -X utf8 scripts/refresh_manifest.py
-      - name: Stage 06 integrity
-        run: python -B -X utf8 scripts/check_stage06_integrity.py
+      - name: Stage 07 integrity
+        run: python -B -X utf8 scripts/check_stage07_integrity.py
       - name: Whitespace check
         run: git diff --check
       - name: Generated evidence is reproducible
@@ -57,14 +57,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: stage06-generated
+          name: stage07-generated
           path: |
-            schemas/RegistryRequest.schema.json
-            schemas/RegistryReceipt.schema.json
-            schemas/RegistryQuery.schema.json
-            schemas/FilingRegistryEntry.schema.json
-            schemas/RegistryProjection.schema.json
-            reports/stage06-status.json
-            reports/stage06-schema-validation.json
+            schemas/ProceduralRequest.schema.json
+            schemas/ProceduralRuleBinding.schema.json
+            schemas/ProceduralQuery.schema.json
+            schemas/ProceduralFinding.schema.json
+            schemas/ProceduralAssessment.schema.json
+            reports/stage07-status.json
+            reports/stage07-schema-validation.json
             reports/package-validation.json
             reports/manifest.sha256.json
