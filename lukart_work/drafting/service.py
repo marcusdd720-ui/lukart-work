@@ -66,6 +66,49 @@ class ControlledDraftingService(CommandService):
             (wire.CommandResult, wire.AIResult),
         )
 
+    def _legal_rule(self, target, records, heads, principal):
+        rule = resolve(target, records, principal.tenant_id, principal.case_id)
+        if (
+            rule.kind != 'LegalRule'
+            or rule.status != 'ACTIVE'
+            or heads.get(('LegalRule', rule.id)) != rule
+            or rule.review_decision is None
+        ):
+            raise Violation('GATE_DENIED')
+        approval = self._live_decision(
+            rule.review_decision, records, heads, principal
+        )
+        previous = m.Ref(
+            kind='LegalRule', id=rule.id, revision=rule.revision - 1
+        )
+        if (
+            approval.decision_type != 'INTERPRETATION'
+            or approval.outcome != 'ACCEPT'
+            or approval.decided_by.kind != 'HUMAN'
+            or previous not in approval.targets
+        ):
+            raise Violation('GATE_DENIED')
+        return rule
+
+    def _verified_citation(self, target, records, heads, principal):
+        citation = resolve(target, records, principal.tenant_id, principal.case_id)
+        if (
+            citation.kind != 'Citation'
+            or citation.status != 'VERIFIED'
+            or heads.get(('Citation', citation.id)) != citation
+        ):
+            raise Violation('GATE_DENIED')
+        source = resolve(
+            citation.source, records, principal.tenant_id, principal.case_id
+        )
+        if (
+            source.kind != 'LegalSource'
+            or source.status != 'VERIFIED'
+            or heads.get(('LegalSource', source.id)) != source
+        ):
+            raise Violation('GATE_DENIED')
+        return citation, source
+
     def _context(self, request, principal, tx):
         records = tx.records()
         heads = {(entity.kind, entity.id): entity for entity in tx.heads()}
@@ -127,6 +170,18 @@ class ControlledDraftingService(CommandService):
             }
             if not declared <= members:
                 raise Violation('SNAPSHOT_NOT_CLOSED')
+            for target in declared:
+                if target.kind == 'LegalRule':
+                    self._legal_rule(target, records, heads, principal)
+                elif target.kind == 'Citation':
+                    citation, _ = self._verified_citation(
+                        target, records, heads, principal
+                    )
+                    if (
+                        citation.supported.kind == 'LegalRule'
+                        and citation.supported not in declared
+                    ):
+                        raise Violation('GATE_DENIED')
             sections.append(section)
         return records, heads, snapshot, plan, tuple(sections), plan_approval, live_snapshot_decision
 
@@ -191,52 +246,20 @@ class ControlledDraftingService(CommandService):
                     rules = [target for target in statement.refs if target.kind == 'LegalRule']
                     if not rules or not statement.citations:
                         raise Violation('GATE_DENIED')
-                    rule_entities = {}
-                    for target in rules:
-                        rule = resolve(target, records, plan.tenant_id, plan.case_id)
-                        if (
-                            rule.status != 'ACTIVE'
-                            or heads.get(('LegalRule', rule.id)) != rule
-                            or rule.review_decision is None
-                        ):
-                            raise Violation('GATE_DENIED')
-                        approval = self._live_decision(
-                            rule.review_decision, records, heads, principal
-                        )
-                        previous_rule = m.Ref(
-                            kind='LegalRule', id=rule.id, revision=rule.revision - 1
-                        )
-                        if (
-                            approval.decision_type != 'INTERPRETATION'
-                            or approval.outcome != 'ACCEPT'
-                            or approval.decided_by.kind != 'HUMAN'
-                            or previous_rule not in approval.targets
-                        ):
-                            raise Violation('GATE_DENIED')
-                        rule_entities[target] = rule
+                    rule_entities = {
+                        target: self._legal_rule(target, records, heads, principal)
+                        for target in rules
+                    }
                     covered_rules = set()
                     for citation_ref in statement.citations:
-                        citation = resolve(citation_ref, records, plan.tenant_id, plan.case_id)
-                        if (
-                            citation.kind != 'Citation'
-                            or citation.status != 'VERIFIED'
-                            or heads.get(('Citation', citation.id)) != citation
-                        ):
-                            raise Violation('GATE_DENIED')
+                        citation, source = self._verified_citation(
+                            citation_ref, records, heads, principal
+                        )
                         if citation.supported not in statement.refs and citation.supported != ref(section):
                             raise Violation('GATE_DENIED')
                         if citation.supported.kind == 'LegalRule':
                             rule = rule_entities.get(citation.supported)
                             if rule is None or citation.source not in rule.sources:
-                                raise Violation('GATE_DENIED')
-                            source = resolve(
-                                citation.source, records, plan.tenant_id, plan.case_id
-                            )
-                            if (
-                                source.kind != 'LegalSource'
-                                or source.status != 'VERIFIED'
-                                or heads.get(('LegalSource', source.id)) != source
-                            ):
                                 raise Violation('GATE_DENIED')
                             covered_rules.add(citation.supported)
                     if not set(rules) <= covered_rules:
