@@ -153,8 +153,9 @@ class ControlledDraftingService(CommandService):
             for index, section in enumerate(sections)
         )
 
-    @staticmethod
-    def _validate_results(request, invocations, results, plan, sections, records):
+    def _validate_results(
+        self, request, principal, invocations, results, plan, sections, records, heads
+    ):
         if len(results) != len(sections):
             raise Violation('GATE_DENIED')
         normalized_sections = []
@@ -190,17 +191,53 @@ class ControlledDraftingService(CommandService):
                     rules = [target for target in statement.refs if target.kind == 'LegalRule']
                     if not rules or not statement.citations:
                         raise Violation('GATE_DENIED')
-                    if any(resolve(target, records, plan.tenant_id, plan.case_id).status != 'ACTIVE'
-                           for target in rules):
-                        raise Violation('GATE_DENIED')
+                    rule_entities = {}
+                    for target in rules:
+                        rule = resolve(target, records, plan.tenant_id, plan.case_id)
+                        if (
+                            rule.status != 'ACTIVE'
+                            or heads.get(('LegalRule', rule.id)) != rule
+                            or rule.review_decision is None
+                        ):
+                            raise Violation('GATE_DENIED')
+                        approval = self._live_decision(
+                            rule.review_decision, records, heads, principal
+                        )
+                        previous_rule = m.Ref(
+                            kind='LegalRule', id=rule.id, revision=rule.revision - 1
+                        )
+                        if (
+                            approval.decision_type != 'INTERPRETATION'
+                            or approval.outcome != 'ACCEPT'
+                            or approval.decided_by.kind != 'HUMAN'
+                            or previous_rule not in approval.targets
+                        ):
+                            raise Violation('GATE_DENIED')
+                        rule_entities[target] = rule
                     covered_rules = set()
                     for citation_ref in statement.citations:
                         citation = resolve(citation_ref, records, plan.tenant_id, plan.case_id)
-                        if citation.kind != 'Citation' or citation.status != 'VERIFIED':
+                        if (
+                            citation.kind != 'Citation'
+                            or citation.status != 'VERIFIED'
+                            or heads.get(('Citation', citation.id)) != citation
+                        ):
                             raise Violation('GATE_DENIED')
                         if citation.supported not in statement.refs and citation.supported != ref(section):
                             raise Violation('GATE_DENIED')
                         if citation.supported.kind == 'LegalRule':
+                            rule = rule_entities.get(citation.supported)
+                            if rule is None or citation.source not in rule.sources:
+                                raise Violation('GATE_DENIED')
+                            source = resolve(
+                                citation.source, records, plan.tenant_id, plan.case_id
+                            )
+                            if (
+                                source.kind != 'LegalSource'
+                                or source.status != 'VERIFIED'
+                                or heads.get(('LegalSource', source.id)) != source
+                            ):
+                                raise Violation('GATE_DENIED')
                             covered_rules.add(citation.supported)
                     if not set(rules) <= covered_rules:
                         raise Violation('GATE_DENIED')
@@ -445,7 +482,7 @@ class ControlledDraftingService(CommandService):
             if current_invocations != invocations:
                 raise Violation('STALE')
             normalized_sections = self._validate_results(
-                request, invocations, results, plan, sections, records
+                request, principal, invocations, results, plan, sections, records, heads
             )
 
             trace_input_hash = digest([
