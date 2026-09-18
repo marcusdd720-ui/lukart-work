@@ -15,7 +15,7 @@ from lukart_work.planner.contracts import PlannerOperation, stage08_actions
 from lukart_work.planner.service import DocumentPlannerService
 from lukart_work.procedural.contracts import ProceduralOperation
 from lukart_work.procedural.service import ProceduralEngineService
-from lukart_work.validation.rules import digest, ref, validate_revision
+from lukart_work.validation.rules import Violation, digest, ref, validate_revision
 from tests import test_stage02 as core
 
 
@@ -194,8 +194,7 @@ class ControlledDraftingTests(core.Stage02Tests):
         return source, rule, ref(verified), approval
 
     def approved_planning_case(
-        self, requirements=('REQUESTS', 'ATTACHMENTS'), *, legal=False,
-        revoke_legal_before_snapshot=False,
+        self, requirements=('REQUESTS', 'ATTACHMENTS'), *, legal=False
     ):
         fact, party, evidence, source_id = self.fact()
         filing = self.apply('AddFiling', {
@@ -230,8 +229,6 @@ class ControlledDraftingTests(core.Stage02Tests):
             legal_source, legal_rule, citation, legal_approval = (
                 self.legal_authority_fixture(source_id)
             )
-            if revoke_legal_before_snapshot:
-                self.apply('RevokeDecision', target=legal_approval)
         snapshot = self.snapshot()
         snapshot_acceptance = self.accept(snapshot)
         plan_data = {
@@ -620,14 +617,24 @@ class ControlledDraftingTests(core.Stage02Tests):
         case = self.approved_planning_case(
             requirements=('REQUESTS', 'ATTACHMENTS', 'CITATIONS'),
             legal=True,
-            revoke_legal_before_snapshot=True,
         )
+        self.apply('RevokeDecision', target=case['legal_approval'])
+        with self.authority.session(self.token) as principal:
+            with self.repo.transaction(self.tenant, self.case_id) as tx:
+                records = tx.records()
+                heads = {(item.kind, item.id): item for item in tx.heads()}
+                with self.assertRaises(Violation) as caught:
+                    self.drafting._legal_rule(
+                        case['legal_rule'], records, heads, principal
+                    )
+                self.assertEqual(caught.exception.code, 'GATE_DENIED')
+
         self.provider.responder = lambda invocation: self.valid_output(case, invocation)
         result = self.drafting.generate(
             json.dumps(self.generate_request(case)), self.token
         )
         self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertEqual(result.code, 'STALE')
         self.assertEqual(self.provider.calls, 0)
         self.assertFalse(self.draft_heads())
 
