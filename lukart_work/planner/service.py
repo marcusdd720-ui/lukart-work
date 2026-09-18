@@ -216,9 +216,13 @@ class DocumentPlannerService(CommandService):
                     approval_current = False
                     if plan.status == 'APPROVED' and plan.approval is not None:
                         try:
-                            decision = self._live_decision(plan.approval, records, {
-                                (e.kind, e.id): e for e in tx.heads()
-                            }, principal)
+                            heads = {(e.kind, e.id): e for e in tx.heads()}
+                            decision = self._live_decision(plan.approval, records, heads, principal)
+                            snapshot_acceptance = tx.object('acceptance', snapshot.id, m.Decision)
+                            live_snapshot_acceptance = self._live_decision(
+                                ref(snapshot_acceptance), records, heads, principal
+                            )
+                            validate_snapshot_acceptance(snapshot, live_snapshot_acceptance, records)
                             approval_current = (
                                 decision.decision_type == 'PLAN_APPROVAL'
                                 and decision.outcome == 'ACCEPT'
