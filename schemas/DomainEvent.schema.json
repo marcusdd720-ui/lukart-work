@@ -225,6 +225,7 @@
         "PlanApproved",
         "DraftGenerated",
         "DraftingAbstained",
+        "DraftingRejected",
         "DependenciesInvalidated",
         "ValidationCompleted",
         "ReleaseDenied",
@@ -253,5 +254,5 @@
   "title": "DomainEvent",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:lukart:work:DomainEvent:1.0.0"
+  "$id": "urn:lukart:work:DomainEvent:2.0.0"
 }

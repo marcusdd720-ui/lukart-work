@@ -316,6 +316,14 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:DraftingRejectionTrace",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ModelExecutionReceipt",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -336,6 +344,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 82,
+  "json_files_parsed": 84,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }

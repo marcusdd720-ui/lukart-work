@@ -266,6 +266,11 @@
         "section": {
           "$ref": "#/$defs/Ref"
         },
+        "evaluation_date": {
+          "format": "date",
+          "title": "Evaluation Date",
+          "type": "string"
+        },
         "request": {
           "$ref": "#/$defs/AIRequest"
         }
@@ -273,6 +278,7 @@
       "required": [
         "contract",
         "section",
+        "evaluation_date",
         "request"
       ],
       "title": "DraftingInvocation",
@@ -372,6 +378,45 @@
         "fragment_hash"
       ],
       "title": "Locator",
+      "type": "object"
+    },
+    "ModelExecutionReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "contract": {
+          "const": "urn:lukart:work:ModelExecutionReceipt:1.0.0",
+          "title": "Contract",
+          "type": "string"
+        },
+        "request_id": {
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "model": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "generator": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "model_parameters_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Parameters Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "contract",
+        "request_id",
+        "provider",
+        "model",
+        "generator",
+        "model_parameters_hash"
+      ],
+      "title": "ModelExecutionReceipt",
       "type": "object"
     },
     "Ref": {
@@ -689,6 +734,13 @@
       "title": "Results",
       "type": "array"
     },
+    "execution_receipts": {
+      "items": {
+        "$ref": "#/$defs/ModelExecutionReceipt"
+      },
+      "title": "Execution Receipts",
+      "type": "array"
+    },
     "raw_outputs": {
       "items": {
         "type": "string"
@@ -718,6 +770,7 @@
     "profile",
     "invocations",
     "results",
+    "execution_receipts",
     "raw_outputs",
     "input_hash",
     "raw_output_hash"

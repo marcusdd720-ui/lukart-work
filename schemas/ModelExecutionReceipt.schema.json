@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:ModelExecutionReceipt:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "request_id": {
+      "format": "uuid",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "provider": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "model": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "generator": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "model_parameters_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Parameters Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract",
+    "request_id",
+    "provider",
+    "model",
+    "generator",
+    "model_parameters_hash"
+  ],
+  "title": "ModelExecutionReceipt",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ModelExecutionReceipt:1.0.0"
+}

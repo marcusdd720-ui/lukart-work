@@ -1,6 +1,6 @@
 {
   "stage": "09 Controlled Drafting",
-  "tests": 298,
+  "tests": 304,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -10,24 +10,24 @@
   "tested_sources": {
     "lukart_work/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "lukart_work/contracts/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "lukart_work/contracts/messages.py": "11ededc54be097a2c4c32899a01c382cbbaa94d0762e46e54c6aa24e67a84f1c",
-    "lukart_work/contracts/ports.py": "58a01de5231d4bab03d533be7171f2a0e2e422009026ed6daafc4c8edf1dc93b",
-    "lukart_work/contracts/versions.py": "e79eb04261167e147f70848166f73a349ce1238d8ba45f8b4b0746c64ade37b8",
+    "lukart_work/contracts/messages.py": "6210cbaa50c5b5403e3a0ec363ebb80c64db99f8b0c5d938e8c207f568cf0307",
+    "lukart_work/contracts/ports.py": "3e286c208a19b1bdba83be3527663466f1133c6734365592a984530fc6b0b270",
+    "lukart_work/contracts/versions.py": "36e53c969f83d091db0f92ecc0df9f817e8a9a479eb9bb0d39f726a1cdbaef49",
     "lukart_work/convergence/__init__.py": "12a505839635248e82f7f0550d1193cfde24be4df7f630effcf0d5ed5242026d",
     "lukart_work/convergence/contract.py": "f25c84a006fa23bf6d695065fc85e7abcd823328e2365d53bd98cf1f1c316318",
     "lukart_work/core/__init__.py": "83ff4b13ef18736d1ac3d45c688b063abc6597b777c119f4512b98410052454f",
     "lukart_work/core/migration.sql": "3a2fc27d6cf24c53082142b83528053ebb57d822cff9889e0345052dad29f35e",
     "lukart_work/core/policy.py": "61260f8227f62db5eddf3041605c9bbe8420446ad41b32051a89819be7db4a4f",
-    "lukart_work/core/postgres.py": "a68375783c4a40e560374981448ebde833b73bb5bd3fd38c1949c4a090334e8d",
+    "lukart_work/core/postgres.py": "a5bc105f1fab750feb4f1f65bc423d70909a9952f3b8250630617d54b88b966d",
     "lukart_work/core/requests.py": "3f11a6304b14d6288f3bd1aae40d0f4f7b75938db4d39415e7016803b845d077",
     "lukart_work/core/security.py": "08c1fe3667abe9e862b34be5d63745762d96cbf33b2327897f084e8624345eda",
     "lukart_work/core/service.py": "e6a2cd72d738dbc758ff93c79cf7d3587f46d41b4226682de9061876cf0fe91f",
     "lukart_work/domain/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "lukart_work/domain/lifecycle.py": "95db72dbfbf21d5c1f0162ad99770ccbf8ffd7bf8a10bd0764b90dfc28b9227d",
     "lukart_work/domain/models.py": "d10a2882feacc0b1f4a0a16cb99f6382dbaa3c04d94c9871587a041fb5dc760f",
-    "lukart_work/drafting/__init__.py": "f4d314ec191824a62fa5064a26f903e35777b36321f2c3636acce03986f195c0",
-    "lukart_work/drafting/contracts.py": "37b7cf4ac5230cfea61def1d4e85346bfcd04e53fe3aefd7215ce5b74b81afa8",
-    "lukart_work/drafting/service.py": "4bca79b73f03666fd8265786f0a986fbfb2053ce941136d9c6e00f9528e25d2e",
+    "lukart_work/drafting/__init__.py": "340551610dd7ff02d4b7bdf4bf2999d0c98bc3d65be9e8345955f92de1dfe88e",
+    "lukart_work/drafting/contracts.py": "8a6a177db7c2a09993fb0f94cabd74fa6937657203aa691e2e45baa0fd81ecaf",
+    "lukart_work/drafting/service.py": "7fdd54c5bfe3bf1fbc4fe48dc508726f64fec5061a4e1e075a14f29bf93d9db8",
     "lukart_work/facts/__init__.py": "781d05bc570c5b702902caf0b47d152b7d311b62680e669a66b9a0fbdcca987a",
     "lukart_work/facts/contracts.py": "bde0111b031cc47ef309ffc5eed7aa7c76229a6eaf427f91c4242bed38b04a51",
     "lukart_work/facts/service.py": "685c06df834f1b8f68f727fd79152e234edd71e5d10741e29a4e1eb44b942f88",
@@ -92,6 +92,6 @@
     "tests/test_stage06.py": "c5453c7e382aef7b56685ea80c340dab2a20e64e86cdfa73264033a3c41dc4e2",
     "tests/test_stage07.py": "eef47126a8e6cef64eb24638b26c78d1ef77053550b37b6f654f46ca2a5e66ca",
     "tests/test_stage08.py": "ff7346746e9405846467fda75a11ca5e899f7fbb13b41741585c3db87eef05e8",
-    "tests/test_stage09.py": "54a0413031ab9a22991cbd3e6d4ed3d2ec52b3cc9d19b4fd5f421a8b2ace2771"
+    "tests/test_stage09.py": "7754b3eb145ff67a0e23bb1aba057b5bff14c8df39437b061b3761fe8d74d811"
   }
 }

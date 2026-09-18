@@ -234,6 +234,11 @@
     "section": {
       "$ref": "#/$defs/Ref"
     },
+    "evaluation_date": {
+      "format": "date",
+      "title": "Evaluation Date",
+      "type": "string"
+    },
     "request": {
       "$ref": "#/$defs/AIRequest"
     }
@@ -241,6 +246,7 @@
   "required": [
     "contract",
     "section",
+    "evaluation_date",
     "request"
   ],
   "title": "DraftingInvocation",
