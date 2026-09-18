@@ -58,13 +58,17 @@ Observed results:
 
 The generated workflow artifact from that exact run was downloaded and used as the materialization source for the generated Stage 07 schemas and reports. This document does not treat that earlier run as the final merge gate because later materialization commits change the PR head.
 
-## Red Team result incorporated before freeze
+## Red Team and exact-SHA review findings
 
-Red Team identified that an independently executable procedural spec stored only in auxiliary binding metadata could behave as a second authority.
+The pre-freeze Red Team identified that an independently executable procedural spec stored only in auxiliary binding metadata could behave as a second authority.
 
-Repair: the exact canonical serialized spec is now stored in the canonical `LegalRule.requirement`; execution verifies exact equality between that canonical payload and every binding revision. The golden test asserts this equality.
+Repair: the exact canonical serialized spec is stored in the canonical `LegalRule.requirement`; execution verifies exact equality between that canonical payload and every binding revision. The golden test asserts this equality.
 
-No remaining Red Team finding is accepted merely by documentation. Final acceptance still requires a clean exact-head CI and exact-SHA review.
+The first clean candidate `3a8abfd9579309fe31bee5732e357a427ef9903d` passed all CI gates, including reproducibility. The subsequent independent exact-SHA review identified a fail-closed lifecycle gap: an ACTIVE procedural LegalRule could still be assessed after its HUMAN INTERPRETATION approval Decision had later been revoked. Core intentionally preserves the historical ACTIVE revision while revocation invalidates the dependent approval.
+
+Repair: assessment now revalidates the rule's exact current live HUMAN INTERPRETATION ACCEPT decision before using the rule. A missing, revoked, superseded or otherwise non-current approval yields an auditable ABSTAIN finding (`PROCEDURAL_RULE_APPROVAL_NOT_CURRENT`) for that rule. A dedicated adversarial regression test revokes the activation decision after a successful assessment and verifies the rule is no longer used.
+
+This repair requires a new full exact-head CI and a fresh exact-SHA review before merge.
 
 ## Acceptance matrix
 
@@ -82,7 +86,7 @@ No remaining Red Team finding is accepted merely by documentation. Final accepta
 | Cross-scope and SERVICE/AI mutation denial | PASS |
 | Full regression / backwards compatibility | PASS on `d316bd1…` |
 | Final exact-head reproducibility | PENDING |
-| Independent exact-SHA review | PENDING |
+| Independent exact-SHA review | REPAIR LOOP — finding on `3a8abfd…`; fresh review pending |
 | Merge / exact-main post-merge verification | PENDING |
 
 ## Gate
