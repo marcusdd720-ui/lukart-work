@@ -166,6 +166,16 @@ class DomainEvent(Value):
     audit: AuditEvent
     subjects: tuple[Ref, ...]
 
+
+class LegacyDomainEventV1(Value):
+    event_type: Literal[
+        'RevisionAppended', 'SnapshotAccepted', 'PlanApproved', 'DraftGenerated',
+        'DependenciesInvalidated', 'ValidationCompleted', 'ReleaseDenied',
+        'ReleaseGranted', 'DecisionRecorded',
+    ]
+    audit: AuditEvent
+    subjects: tuple[Ref, ...]
+
 class AIProposal(Value):
     proposal_id: UUID
     proposed_kind: Literal['Fact','Evidence','Issue','Claim','Defence','Argument','CounterArgument','Request','Risk']

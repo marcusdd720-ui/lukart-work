@@ -11,7 +11,7 @@ from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.domain import models as m
 from lukart_work.domain.models import Actor
 from lukart_work.drafting.contracts import (
-    DraftingRejectionTrace, DraftingTrace,
+    DraftingRejectionTrace, DraftingTerminalResult, DraftingTrace,
 )
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.planner.contracts import PlannerOperation, stage08_actions
@@ -499,7 +499,7 @@ class ControlledDraftingTests(core.Stage02Tests):
         request = self.generate_request(case)
         before = self.sequence
         result = self.drafting.generate(json.dumps(request), self.token)
-        self.assertIsInstance(result, AIResult, result)
+        self.assertIsInstance(result, DraftingTerminalResult, result)
         self.assertEqual(result.disposition, 'ABSTAIN')
         self.assertEqual(self.provider.calls, 1)
         self.assertFalse(self.draft_heads())
@@ -516,6 +516,74 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.assertEqual(replay, result)
         self.assertEqual(self.provider.calls, 1)
         self.assertFalse(self.draft_heads())
+
+    def test_abstain_lost_sequence_cas_writes_no_terminal_event(self):
+        case = self.approved_planning_case()
+        changed = {'done': False}
+
+        def responder(invocation):
+            if not changed['done']:
+                changed['done'] = True
+                self.apply('AddParty', {
+                    'party_type': 'PERSON',
+                    'display_name': 'Synthetic concurrent ABSTAIN mutation',
+                    'identity_evidence': [],
+                })
+            return {
+                'request_id': str(invocation.request.request_id),
+                'snapshot_hash': invocation.request.snapshot_hash,
+                'disposition': 'ABSTAIN',
+                'proposals': [],
+                'section': None,
+                'missing_information': ['Synthetic concurrent mutation'],
+                'reason': 'Synthetic ABSTAIN after sequence change',
+            }
+
+        self.provider.responder = responder
+        request = self.generate_request(case)
+        result = self.drafting.generate(json.dumps(request), self.token)
+        self.assertIsInstance(result, DomainError, result)
+        self.assertEqual(result.code, 'CONFLICT')
+        self.assertEqual(self.provider.calls, 1)
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            self.assertFalse(any(
+                event.event_type == 'DraftingAbstained' for event in tx.events()
+            ))
+
+    def test_rejection_lost_sequence_cas_writes_no_terminal_event(self):
+        case = self.approved_planning_case()
+        changed = {'done': False}
+
+        def responder(invocation):
+            if not changed['done']:
+                changed['done'] = True
+                self.apply('AddParty', {
+                    'party_type': 'PERSON',
+                    'display_name': 'Synthetic concurrent rejection mutation',
+                    'identity_evidence': [],
+                })
+            output = self.valid_output(case, invocation)
+            output['proposals'] = [{
+                'proposal_id': str(uuid4()),
+                'proposed_kind': 'Fact',
+                'statement': 'Synthetic rejected proposal',
+                'support': 'SOURCE_BACKED',
+                'source_refs': [case['fact'].model_dump(mode='json')],
+                'anchors': [],
+                'uncertainty': 'LOW',
+            }]
+            return output
+
+        self.provider.responder = responder
+        request = self.generate_request(case)
+        result = self.drafting.generate(json.dumps(request), self.token)
+        self.assertIsInstance(result, DomainError, result)
+        self.assertEqual(result.code, 'CONFLICT')
+        self.assertEqual(self.provider.calls, 1)
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            self.assertFalse(any(
+                event.event_type == 'DraftingRejected' for event in tx.events()
+            ))
 
     def test_stage09_product_authority_can_draft_but_cannot_use_legacy_planning_bypass(self):
         case = self.approved_planning_case()
@@ -552,8 +620,8 @@ class ControlledDraftingTests(core.Stage02Tests):
         before = self.get(case['fact'])
         request = self.generate_request(case)
         result = self.drafting.generate(json.dumps(request), self.token)
-        self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.error.code, 'GATE_DENIED')
         self.assertEqual(self.get(case['fact']), before)
         self.assertEqual(self.provider.calls, 1)
         replay = self.drafting.generate(json.dumps(request), self.token)
@@ -574,8 +642,8 @@ class ControlledDraftingTests(core.Stage02Tests):
             return output
         self.provider.responder = responder
         result = self.drafting.generate(json.dumps(self.generate_request(case)), self.token)
-        self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.error.code, 'GATE_DENIED')
         self.assertFalse(self.draft_heads())
 
     def test_unmarked_inference_and_unsupported_statement_fail_closed(self):
@@ -601,8 +669,8 @@ class ControlledDraftingTests(core.Stage02Tests):
                 return output
             self.provider.responder = responder
             result = self.drafting.generate(json.dumps(self.generate_request(case)), self.token)
-            self.assertIsInstance(result, DomainError, result)
-            self.assertIn(result.code, {'GATE_DENIED', 'UNSUPPORTED'})
+            self.assertIsInstance(result, DraftingTerminalResult, result)
+            self.assertIn(result.error.code, {'GATE_DENIED', 'UNSUPPORTED'})
             self.assertFalse(self.draft_heads())
             self.sequence += 1
 
@@ -628,8 +696,8 @@ class ControlledDraftingTests(core.Stage02Tests):
                 request = self.generate_request(case)
                 before_calls = self.provider.calls
                 result = self.drafting.generate(json.dumps(request), self.token)
-                self.assertIsInstance(result, DomainError, result)
-                self.assertEqual(result.code, 'GATE_DENIED')
+                self.assertIsInstance(result, DraftingTerminalResult, result)
+                self.assertEqual(result.error.code, 'GATE_DENIED')
                 self.assertEqual(self.provider.calls, before_calls + 1)
                 replay = self.drafting.generate(json.dumps(request), self.token)
                 self.assertEqual(replay, result)
@@ -659,8 +727,8 @@ class ControlledDraftingTests(core.Stage02Tests):
         result = self.drafting.generate(
             json.dumps(self.generate_request(case)), self.token
         )
-        self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.error.code, 'GATE_DENIED')
         self.assertFalse(self.draft_heads())
 
     def test_legal_rule_must_be_currently_applicable_before_model_call(self):
@@ -704,8 +772,8 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.provider.receipt_overrides = {'model_parameters_hash': 'c' * 64}
         request = self.generate_request(case)
         result = self.drafting.generate(json.dumps(request), self.token)
-        self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.error.code, 'GATE_DENIED')
         self.assertEqual(self.provider.calls, 1)
         replay = self.drafting.generate(json.dumps(request), self.token)
         self.assertEqual(replay, result)
@@ -725,8 +793,8 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.provider.responder = explode
         request = self.generate_request(case)
         result = self.drafting.generate(json.dumps(request), self.token)
-        self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'UNKNOWN')
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.error.code, 'UNKNOWN')
         self.assertEqual(self.provider.calls, 1)
         replay = self.drafting.generate(json.dumps(request), self.token)
         self.assertEqual(replay, result)
@@ -748,6 +816,44 @@ class ControlledDraftingTests(core.Stage02Tests):
         )
         self.assertEqual(historical, event)
 
+    def test_domain_event_v1_rejects_v2_only_terminal_events(self):
+        case = self.approved_planning_case()
+        self.provider.responder = lambda invocation: self.valid_output(case, invocation)
+        result = self.drafting.generate(
+            json.dumps(self.generate_request(case)), self.token
+        )
+        self.assertIsInstance(result, CommandResult, result)
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            event = tx.events()[-1]
+        for event_type in ('DraftingRejected', 'DraftingAbstained'):
+            with self.subTest(event_type=event_type):
+                payload = event.model_dump(mode='json')
+                payload['event_type'] = event_type
+                with self.assertRaises(ValueError):
+                    decode(
+                        ('urn:lukart:work:DomainEvent:1.0.0',
+                         canonical(payload), digest(payload)),
+                        DomainEvent,
+                    )
+
+    def test_domain_event_v2_reader_accepts_drafting_rejected(self):
+        case = self.approved_planning_case()
+        self.provider.responder = lambda invocation: self.valid_output(case, invocation)
+        result = self.drafting.generate(
+            json.dumps(self.generate_request(case)), self.token
+        )
+        self.assertIsInstance(result, CommandResult, result)
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            event = tx.events()[-1]
+        payload = event.model_dump(mode='json')
+        payload['event_type'] = 'DraftingRejected'
+        decoded = decode(
+            (f'urn:lukart:work:DomainEvent:2.0.0',
+             canonical(payload), digest(payload)),
+            DomainEvent,
+        )
+        self.assertEqual(decoded.event_type, 'DraftingRejected')
+
     def test_reference_outside_approved_section_contract_is_rejected(self):
         case = self.approved_planning_case()
         outside = self.apply('AddRequest', {
@@ -763,8 +869,8 @@ class ControlledDraftingTests(core.Stage02Tests):
             return output
         self.provider.responder = responder
         result = self.drafting.generate(json.dumps(self.generate_request(case)), self.token)
-        self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.error.code, 'GATE_DENIED')
         self.assertFalse(self.draft_heads())
 
     def test_request_objective_cannot_disappear(self):
@@ -775,8 +881,8 @@ class ControlledDraftingTests(core.Stage02Tests):
             return output
         self.provider.responder = responder
         result = self.drafting.generate(json.dumps(self.generate_request(case)), self.token)
-        self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.error.code, 'GATE_DENIED')
         self.assertFalse(self.draft_heads())
 
     def test_legal_statement_requires_live_rule_verified_citation_and_verified_source(self):
@@ -924,8 +1030,8 @@ class ControlledDraftingTests(core.Stage02Tests):
             return output
         self.provider.responder = injected
         result = self.drafting.generate(json.dumps(self.generate_request(case)), self.token)
-        self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'SCHEMA_INVALID')
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.error.code, 'SCHEMA_INVALID')
         self.assertFalse(self.draft_heads())
 
     def test_transaction_rollback_covers_draft_trace_audit_and_outbox(self):
@@ -937,8 +1043,8 @@ class ControlledDraftingTests(core.Stage02Tests):
             raise RuntimeError('synthetic rollback')
         self.drafting._dependencies = fail_after_trace
         result = self.drafting.generate(json.dumps(self.generate_request(case)), self.token)
-        self.assertIsInstance(result, DomainError, result)
-        self.assertEqual(result.code, 'UNKNOWN')
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.error.code, 'UNKNOWN')
         with self.repo.transaction(self.tenant, self.case_id) as tx:
             self.assertFalse(any(item.kind == 'Draft' for item in tx.heads()))
             self.assertFalse(tx.objects('drafting_trace', DraftingTrace))

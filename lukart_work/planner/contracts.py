@@ -53,6 +53,8 @@ class SectionBlueprint(Value):
             raise ValueError('DUPLICATE_REFERENCE')
         if len(self.allowed_claims) != len(set(self.allowed_claims)):
             raise ValueError('DUPLICATE_REFERENCE')
+        if not set(self.arguments) <= set(self.allowed_inputs):
+            raise ValueError('ARGUMENT_NOT_ALLOWED')
         return self
 
 
@@ -82,6 +84,11 @@ class PlanDocumentData(Value):
         section_arguments = {r for s in self.sections for r in s.arguments}
         if not section_arguments <= set(self.argument_order):
             raise ValueError('SECTION_ARGUMENT_OUTSIDE_PLAN')
+        allowed = {r for section in self.sections for r in section.allowed_inputs}
+        if not set(self.objectives) <= allowed:
+            raise ValueError('OBJECTIVE_UNREACHABLE')
+        if not set(self.argument_order) <= allowed:
+            raise ValueError('ARGUMENT_UNREACHABLE')
         return self
 
 

@@ -9,7 +9,9 @@ from hashlib import sha256
 import json
 
 from lukart_work.domain.models import ENTITIES
-from lukart_work.contracts.messages import SourceDocument, Snapshot, DomainEvent, CommandResult
+from lukart_work.contracts.messages import (
+    SourceDocument, Snapshot, DomainEvent, LegacyDomainEventV1, CommandResult,
+)
 from lukart_work.contracts.versions import contract_version
 from lukart_work.validation.rules import digest, ref, Violation
 
@@ -41,6 +43,8 @@ def decode(row, cls):
         raise Violation('UNKNOWN')
     if sha256(raw.encode('utf-8')).hexdigest() != content_hash:
         raise Violation('INVALID_HASH')
+    if legacy_domain_event:
+        LegacyDomainEventV1.model_validate_json(raw)
     return cls.model_validate_json(raw)
 
 

@@ -1,9 +1,10 @@
 from .contracts import (
-    DraftingProfile, DraftingRejectionTrace, DraftingTrace, ModelExecutionReceipt,
+    DraftingProfile, DraftingRejectionTrace, DraftingTerminalResult, DraftingTrace,
+    ModelExecutionReceipt,
 )
 from .service import ControlledDraftingService
 
 __all__ = (
     'ControlledDraftingService', 'DraftingProfile', 'DraftingRejectionTrace',
-    'DraftingTrace', 'ModelExecutionReceipt',
+    'DraftingTerminalResult', 'DraftingTrace', 'ModelExecutionReceipt',
 )

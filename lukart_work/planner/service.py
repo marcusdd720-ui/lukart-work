@@ -14,6 +14,19 @@ from .contracts import DocumentPlanProjection, PlannerQuery, PlannerRequest
 
 
 class DocumentPlannerService(CommandService):
+    @staticmethod
+    def _validate_plan_satisfiability(plan, records):
+        sections = tuple(resolve(target, records, plan.tenant_id, plan.case_id)
+                         for target in plan.section_order)
+        allowed = {target for section in sections for target in section.contract.allowed_inputs}
+        if not set(plan.objectives) <= allowed:
+            raise Violation('OBJECTIVE_UNREACHABLE')
+        if not set(plan.argument_order) <= allowed:
+            raise Violation('ARGUMENT_UNREACHABLE')
+        if any(not set(section.arguments) <= set(section.contract.allowed_inputs)
+               for section in sections):
+            raise Violation('ARGUMENT_NOT_ALLOWED')
+
     def _parse_request(self, raw):
         value = strict_json(raw)
         stack = [(value, 0)]
@@ -174,6 +187,7 @@ class DocumentPlannerService(CommandService):
         body.update(self._metadata(request, principal, now, old.kind, old))
         body['status'] = statuses[request.operation]
         if request.operation == 'ApproveDocumentPlan':
+            self._validate_plan_satisfiability(old, records)
             decision = self._live_decision(request.data.decision, records, heads, principal)
             if (
                 decision.decision_type != 'PLAN_APPROVAL'

@@ -1,9 +1,9 @@
 """Stage 09 Controlled Drafting configuration and immutable trace contracts."""
 from datetime import date, datetime
-from typing import Literal
+from typing import Literal, Protocol
 from uuid import UUID
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from lukart_work.contracts.messages import AIRequest, AIResult, DomainError
 from lukart_work.domain.models import Actor, Hash, Ref, Value, VersionPin
@@ -35,6 +35,29 @@ class ModelExecutionReceipt(Value):
     model: VersionPin
     generator: VersionPin
     model_parameters_hash: Hash
+
+
+class DraftingTerminalResult(Value):
+    contract: Literal['urn:lukart:work:DraftingTerminalResult:1.0.0']
+    command_id: UUID
+    request_id: UUID | None = None
+    disposition: Literal['ABSTAIN', 'REJECT']
+    case_sequence: int = Field(ge=0)
+    event_ids: tuple[UUID, ...]
+    error: DomainError | None = None
+
+    @model_validator(mode='after')
+    def valid_terminal_result(self):
+        if self.disposition == 'REJECT' and self.error is None:
+            raise ValueError('REJECTION_ERROR_REQUIRED')
+        if self.disposition == 'ABSTAIN' and self.error is not None:
+            raise ValueError('ABSTAIN_ERROR_FORBIDDEN')
+        return self
+
+
+class AttestedDraftingProvider(Protocol):
+    def propose(self, invocation: 'DraftingInvocation') -> AIResult: ...
+    def execution_receipt(self, request_id: UUID) -> ModelExecutionReceipt: ...
 
 
 class DraftingInvocation(Value):

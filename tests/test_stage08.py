@@ -38,7 +38,7 @@ class PlannerContractTests(unittest.TestCase):
                 'position_scope': 'Synthetic safe scope', 'argument_order': [], 'evidence': [],
                 'sections': [{
                     'section_type': 'FACTS', 'title': 'Facts', 'arguments': [],
-                    'allowed_inputs': [fact, claim], 'required_inputs': [fact],
+                    'allowed_inputs': [request_ref, fact, claim], 'required_inputs': [fact],
                     'allowed_claims': [claim],
                     'forbidden': ['UNSUPPORTED_ASSERTION', 'UNMARKED_INFERENCE', 'NEW_FACT', 'NEW_LEGAL_RULE'],
                     'requirements': ['CHRONOLOGICAL'],

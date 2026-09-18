@@ -21,7 +21,8 @@ from lukart_work.validation.rules import (
     walk,
 )
 from .contracts import (
-    DraftingInvocation, DraftingProfile, DraftingRejectionTrace, DraftingTrace,
+    AttestedDraftingProvider, DraftingInvocation, DraftingProfile,
+    DraftingRejectionTrace, DraftingTerminalResult, DraftingTrace,
     ModelExecutionReceipt,
 )
 
@@ -33,7 +34,10 @@ REJECTION_TRACE_CATEGORY = 'drafting_rejection_trace'
 class ControlledDraftingService(CommandService):
     """Human-triggered drafting through a trusted ModelProvider, never direct AI writes."""
 
-    def __init__(self, repository, authority, model_provider, profiles, clock=None):
+    def __init__(
+        self, repository, authority, model_provider: AttestedDraftingProvider,
+        profiles, clock=None
+    ):
         super().__init__(repository, authority, clock)
         self.model_provider = model_provider
         self.profiles = dict(profiles)
@@ -67,7 +71,7 @@ class ControlledDraftingService(CommandService):
         return tx.replay_types(
             request.meta.idempotency_key,
             input_hash,
-            (wire.CommandResult, wire.AIResult, wire.DomainError),
+            (wire.CommandResult, DraftingTerminalResult, wire.AIResult, wire.DomainError),
         )
 
     def _legal_rule(
@@ -199,6 +203,7 @@ class ControlledDraftingService(CommandService):
 
         members = {member.ref for member in snapshot.members}
         sections = []
+        allowed = set()
         for section_ref in plan.section_order:
             section = resolve(section_ref, records, principal.tenant_id, principal.case_id)
             if section.kind != 'Section' or section.status != 'READY':
@@ -213,6 +218,9 @@ class ControlledDraftingService(CommandService):
             }
             if not declared <= members:
                 raise Violation('SNAPSHOT_NOT_CLOSED')
+            if not set(section.arguments) <= set(section.contract.allowed_inputs):
+                raise Violation('ARGUMENT_NOT_ALLOWED')
+            allowed.update(section.contract.allowed_inputs)
             for target in declared:
                 if target.kind == 'LegalRule':
                     self._legal_rule(
@@ -228,7 +236,19 @@ class ControlledDraftingService(CommandService):
                         and citation.supported not in declared
                     ):
                         raise Violation('GATE_DENIED')
+                    if (
+                        citation.supported.kind == 'LegalRule'
+                        and citation.source not in resolve(
+                            citation.supported, records,
+                            principal.tenant_id, principal.case_id
+                        ).sources
+                    ):
+                        raise Violation('GATE_DENIED')
             sections.append(section)
+        if not set(plan.objectives) <= allowed:
+            raise Violation('OBJECTIVE_UNREACHABLE')
+        if not set(plan.argument_order) <= allowed:
+            raise Violation('ARGUMENT_UNREACHABLE')
         return records, heads, snapshot, plan, tuple(sections), plan_approval, live_snapshot_decision
 
     @staticmethod
@@ -572,11 +592,19 @@ class ControlledDraftingService(CommandService):
                     rule_version=rule_pin(),
                 ),
             )
-            tx.finish_result(request, input_hash, results[-1], (event,))
+            terminal = DraftingTerminalResult(
+                contract='urn:lukart:work:DraftingTerminalResult:1.0.0',
+                command_id=request.meta.command_id,
+                request_id=results[-1].request_id,
+                disposition='ABSTAIN',
+                case_sequence=sequence + 1,
+                event_ids=(event.audit.event_id,),
+            )
+            tx.finish_result(request, input_hash, terminal, (event,))
             principal.require(
                 request.meta.tenant_id, request.meta.case_id, request.operation
             )
-        return results[-1]
+        return terminal
 
     def _record_rejection(
         self, request, principal, input_hash, profile, invocations, results,
@@ -587,6 +615,17 @@ class ControlledDraftingService(CommandService):
             if replay is not None:
                 return replay
             sequence = tx.sequence()
+            if sequence != request.meta.expected_case_sequence:
+                raise Violation('CONFLICT')
+            (
+                _records,
+                _heads,
+                _snapshot,
+                _plan,
+                _sections,
+                _plan_approval,
+                _snapshot_approval,
+            ) = self._context(request, principal, tx, self.clock().astimezone(timezone.utc).date())
             now = self.clock()
             if now.tzinfo is None:
                 raise Violation('SCHEMA_INVALID')
@@ -642,11 +681,22 @@ class ControlledDraftingService(CommandService):
                     rule_version=rule_pin(),
                 ),
             )
-            tx.finish_result(request, input_hash, error, (event,))
+            terminal = DraftingTerminalResult(
+                contract='urn:lukart:work:DraftingTerminalResult:1.0.0',
+                command_id=request.meta.command_id,
+                request_id=results[-1].request_id if results else (
+                    invocations[0].request.request_id if invocations else None
+                ),
+                disposition='REJECT',
+                case_sequence=sequence + 1,
+                event_ids=(event.audit.event_id,),
+                error=error,
+            )
+            tx.finish_result(request, input_hash, terminal, (event,))
             principal.require(
                 request.meta.tenant_id, request.meta.case_id, request.operation
             )
-        return error
+        return terminal
 
     def _commit(
         self, request, principal, input_hash, profile, invocations, results,
