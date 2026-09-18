@@ -233,6 +233,31 @@
       "title": "SourceAnchor",
       "type": "object"
     },
+    "SubmissionEvidenceData": {
+      "additionalProperties": false,
+      "properties": {
+        "receipt_source_id": {
+          "format": "uuid",
+          "title": "Receipt Source Id",
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/Ref"
+        },
+        "submitted_at": {
+          "format": "date-time",
+          "title": "Submitted At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt_source_id",
+        "evidence",
+        "submitted_at"
+      ],
+      "title": "SubmissionEvidenceData",
+      "type": "object"
+    },
     "VersionPin": {
       "additionalProperties": false,
       "properties": {
@@ -300,6 +325,9 @@
       "anyOf": [
         {
           "$ref": "#/$defs/RegisterFilingData"
+        },
+        {
+          "$ref": "#/$defs/SubmissionEvidenceData"
         },
         {
           "$ref": "#/$defs/ReceiptEvidenceData"

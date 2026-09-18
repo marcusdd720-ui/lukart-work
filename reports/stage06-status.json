@@ -1,6 +1,6 @@
 {
   "stage": "06 Document Registry",
-  "tests": 183,
+  "tests": 184,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -34,8 +34,8 @@
     "lukart_work/ingestion/service.py": "866bfad8a86a9fd96b85abf26ccc8529a149653b4f6dc4758b621ce05df0aef3",
     "lukart_work/ingestion/worker.py": "277e94dcd0d4d38f30b9202df642ed7b4885682693a3cb7d3eec0ad9a6144a81",
     "lukart_work/registry/__init__.py": "306be9c456a7b0cdcd4f080f49573afcb430bdf9bbe1eb40023ac3cb8fc7e402",
-    "lukart_work/registry/contracts.py": "41948eb7e1b7c4b11a8834ee2f3eb633dbf5678d7a39febcd7a92c10dc5700ef",
-    "lukart_work/registry/service.py": "95eb57c1e4139ad572e2162574951247a9f6e9492fabd3d709da12adf4d8bd76",
+    "lukart_work/registry/contracts.py": "c05d5bf1baa06b387430491d1eff82e7fe794cc3336f76ac2927d544bc9d35a8",
+    "lukart_work/registry/service.py": "6045e7257207b12dad0ef13beaaed38ebba1b9d0a9129b20e91adf5293f2cf17",
     "lukart_work/storage/__init__.py": "834dc25215367ffa1b5154b3df409c7dfb1ef56cf2181843e88911ff14a79ed1",
     "lukart_work/storage/backup.py": "12442bdffa17a7758a9c17b7b0e00fc8a0e80d34e853098613220065b97ca8b5",
     "lukart_work/storage/migration.sql": "ff4633c2ed0da8578c5c0c1abd1806266388e1f5190ed472a754db656e603ad6",
@@ -71,6 +71,6 @@
     "tests/test_stage03.py": "a8d2f4ed93cc3f29a5371d3450615e32b58692d725bd89499e1a9f5cb6f76a58",
     "tests/test_stage04.py": "06a174c28e5e9dcd51eb85bc0209ab7b594f6208dca30df0c3122ae2bd57971f",
     "tests/test_stage05.py": "e21fc9d0153ef2c8520a6e1b6448928f8b752fa2cbb93b43c6cde79a26aec0f4",
-    "tests/test_stage06.py": "11fc2cf548fa055a7a9731322a60b0060549c0eaaa23778a1dec2c36f27456ae"
+    "tests/test_stage06.py": "c5453c7e382aef7b56685ea80c340dab2a20e64e86cdfa73264033a3c41dc4e2"
   }
 }
