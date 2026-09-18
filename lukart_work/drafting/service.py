@@ -58,6 +58,14 @@ class ControlledDraftingService(CommandService):
             json.dumps(profile, allow_nan=False, sort_keys=True, separators=(',', ':'))
         )
 
+    @staticmethod
+    def _replay(tx, request, input_hash):
+        return tx.replay_types(
+            request.meta.idempotency_key,
+            input_hash,
+            (wire.CommandResult, wire.AIResult),
+        )
+
     def _context(self, request, principal, tx):
         records = tx.records()
         heads = {(entity.kind, entity.id): entity for entity in tx.heads()}
@@ -311,11 +319,112 @@ class ControlledDraftingService(CommandService):
                 edge,
             )
 
+    def _record_abstain(
+        self, request, principal, input_hash, profile, invocations, results, raw_outputs
+    ):
+        with self.repository.transaction(principal.tenant_id, principal.case_id) as tx:
+            replay = self._replay(tx, request, input_hash)
+            if replay is not None:
+                return replay
+            sequence = tx.sequence()
+            if sequence != request.meta.expected_case_sequence:
+                raise Violation('CONFLICT')
+            (
+                records,
+                _,
+                snapshot,
+                plan,
+                sections,
+                _,
+                _,
+            ) = self._context(request, principal, tx)
+            current_invocations = self._invocations(
+                request, principal, snapshot, sections, profile
+            )
+            if current_invocations != invocations:
+                raise Violation('STALE')
+            attempted = invocations[:len(results)]
+            if (
+                not results
+                or len(results) != len(raw_outputs)
+                or len(results) > len(invocations)
+                or results[-1].disposition != 'ABSTAIN'
+            ):
+                raise Violation('GATE_DENIED')
+            for index, (invocation, result) in enumerate(zip(attempted, results)):
+                validate_ai(result, invocation.request)
+                if index < len(results) - 1:
+                    if result.disposition != 'PROPOSE' or result.section is None or result.proposals:
+                        raise Violation('GATE_DENIED')
+                elif result.disposition != 'ABSTAIN':
+                    raise Violation('GATE_DENIED')
+
+            now = self.clock()
+            if now.tzinfo is None:
+                raise Violation('SCHEMA_INVALID')
+            now = now.astimezone(timezone.utc)
+            trace_input_hash = digest([
+                item.model_dump(mode='json') for item in attempted
+            ])
+            raw_output_hash = digest(raw_outputs)
+            trace = DraftingTrace(
+                contract='urn:lukart:work:DraftingTrace:1.0.0',
+                id=uuid5(request.meta.command_id, 'drafting-trace'),
+                tenant_id=principal.tenant_id,
+                case_id=principal.case_id,
+                command_id=request.meta.command_id,
+                actor=principal.actor,
+                recorded_at=now,
+                profile=profile,
+                invocations=attempted,
+                results=results,
+                raw_outputs=raw_outputs,
+                input_hash=trace_input_hash,
+                raw_output_hash=raw_output_hash,
+            )
+            tx.put_object(TRACE_CATEGORY, trace.id, trace)
+            tx.set_sequence(sequence + 1)
+            event_namespace = uuid5(
+                request.meta.command_id,
+                f'{principal.tenant_id}/{principal.case_id}',
+            )
+            event = wire.DomainEvent(
+                event_type='DraftingAbstained',
+                subjects=(ref(plan), *(ref(section) for section in sections[:len(results)])),
+                audit=wire.AuditEvent(
+                    event_id=uuid5(event_namespace, 'abstain-event'),
+                    tenant_id=principal.tenant_id,
+                    case_id=principal.case_id,
+                    sequence=sequence + 1,
+                    actor=principal.actor,
+                    timestamp=now,
+                    operation=request.operation,
+                    command_id=request.meta.command_id,
+                    correlation_id=request.meta.correlation_id,
+                    input_hash=input_hash,
+                    output_hash=digest(results[-1]),
+                    previous_event_hash=tx.last_event_hash(),
+                    source_versions=tuple(sorted(
+                        set(walk(trace, m.Ref)),
+                        key=lambda target: (
+                            target.kind, str(target.id), target.revision
+                        ),
+                    )),
+                    model_provider=profile.provider,
+                    rule_version=rule_pin(),
+                ),
+            )
+            tx.finish_result(request, input_hash, results[-1], (event,))
+            principal.require(
+                request.meta.tenant_id, request.meta.case_id, request.operation
+            )
+        return results[-1]
+
     def _commit(
         self, request, principal, input_hash, profile, invocations, results, raw_outputs
     ):
         with self.repository.transaction(principal.tenant_id, principal.case_id) as tx:
-            replay = tx.replay(request.meta.idempotency_key, input_hash)
+            replay = self._replay(tx, request, input_hash)
             if replay is not None:
                 return replay
             sequence = tx.sequence()
@@ -472,46 +581,54 @@ class ControlledDraftingService(CommandService):
                     'request': request.model_dump(mode='json'),
                     'actor': principal.actor.model_dump(mode='json'),
                 })
-                with self.repository.transaction(
-                    principal.tenant_id, principal.case_id
-                ) as tx:
-                    replay = tx.replay(request.meta.idempotency_key, input_hash)
-                    if replay is not None:
-                        return replay
-                    if tx.sequence() != request.meta.expected_case_sequence:
-                        raise Violation('CONFLICT')
-                    (
-                        _,
-                        _,
-                        snapshot,
-                        _,
-                        sections,
-                        _,
-                        _,
-                    ) = self._context(request, principal, tx)
-                    invocations = self._invocations(
-                        request, principal, snapshot, sections, profile
-                    )
+                with self.repository.external_call_lock(
+                    principal.tenant_id,
+                    principal.case_id,
+                    request.meta.idempotency_key,
+                ):
+                    with self.repository.transaction(
+                        principal.tenant_id, principal.case_id
+                    ) as tx:
+                        replay = self._replay(tx, request, input_hash)
+                        if replay is not None:
+                            return replay
+                        if tx.sequence() != request.meta.expected_case_sequence:
+                            raise Violation('CONFLICT')
+                        (
+                            _,
+                            _,
+                            snapshot,
+                            _,
+                            sections,
+                            _,
+                            _,
+                        ) = self._context(request, principal, tx)
+                        invocations = self._invocations(
+                            request, principal, snapshot, sections, profile
+                        )
 
-                results = []
-                raw_outputs = []
-                for invocation in invocations:
-                    raw_value = self.model_provider.propose(invocation)
-                    raw_json = json.dumps(
-                        raw_value, sort_keys=True, separators=(',', ':'),
-                        ensure_ascii=False, allow_nan=False,
+                    results = []
+                    raw_outputs = []
+                    for invocation in invocations:
+                        raw_value = self.model_provider.propose(invocation)
+                        raw_json = json.dumps(
+                            raw_value, sort_keys=True, separators=(',', ':'),
+                            ensure_ascii=False, allow_nan=False,
+                        )
+                        if len(raw_json.encode('utf-8')) > 2_000_000:
+                            raise Violation('SCHEMA_INVALID')
+                        result = wire.AIResult.model_validate_json(raw_json)
+                        results.append(result)
+                        raw_outputs.append(raw_json)
+                        if result.disposition == 'ABSTAIN':
+                            return self._record_abstain(
+                                request, principal, input_hash, profile,
+                                invocations, tuple(results), tuple(raw_outputs),
+                            )
+                    return self._commit(
+                        request, principal, input_hash, profile,
+                        invocations, tuple(results), tuple(raw_outputs),
                     )
-                    if len(raw_json.encode('utf-8')) > 2_000_000:
-                        raise Violation('SCHEMA_INVALID')
-                    result = wire.AIResult.model_validate_json(raw_json)
-                    if result.disposition == 'ABSTAIN':
-                        return result
-                    results.append(result)
-                    raw_outputs.append(raw_json)
-                return self._commit(
-                    request, principal, input_hash, profile,
-                    invocations, tuple(results), tuple(raw_outputs),
-                )
         except Violation as error:
             return safe_error(error.code, correlation)
         except (ValidationError, ValueError, TypeError, KeyError, RecursionError):
