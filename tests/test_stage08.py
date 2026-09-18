@@ -8,7 +8,7 @@ from uuid import uuid4
 from lukart_work.contracts.messages import CommandResult, DomainError
 from lukart_work.core.security import Principal
 from lukart_work.domain.models import Actor
-from lukart_work.planner.contracts import DocumentPlanProjection, PlannerOperation
+from lukart_work.planner.contracts import DocumentPlanProjection, PlannerOperation, stage08_actions
 from lukart_work.planner.service import DocumentPlannerService
 from lukart_work.validation.rules import digest
 from tests import test_stage02 as core
@@ -19,7 +19,7 @@ class DocumentPlannerTests(core.Stage02Tests):
     def setUp(self):
         super().setUp()
         self.authority.revoke(self.token)
-        actions = self.principal.actions | frozenset(get_args(PlannerOperation)) | {'GetDocumentPlan'}
+        actions = stage08_actions(self.principal.actions) | {'GetDocumentPlan'}
         self.principal = Principal(self.actor, self.tenant, self.case_id, actions)
         self.token = self.authority.provision(self.principal)
         self.planner = DocumentPlannerService(self.repo, self.authority)
@@ -272,6 +272,23 @@ class DocumentPlannerTests(core.Stage02Tests):
             plan, token=other_token, tenant=other_tenant, case_id=other_case
         )
         self.assertIsInstance(result, DomainError)
+
+    def test_legacy_core_planning_path_is_not_authorized_for_stage08_profile(self):
+        result = self.run_request(self.request('AddSection', {
+            'filing': {'kind': 'Filing', 'id': str(uuid4()), 'revision': 1},
+            'section_type': 'SYNTHETIC',
+            'title': 'Synthetic',
+            'arguments': [],
+            'contract': {
+                'allowed_inputs': [],
+                'required_inputs': [],
+                'allowed_claims': [],
+                'forbidden': ['UNSUPPORTED_ASSERTION', 'UNMARKED_INFERENCE', 'NEW_FACT', 'NEW_LEGAL_RULE'],
+                'requirements': [],
+            },
+        }))
+        self.assertIsInstance(result, DomainError)
+        self.assertEqual(result.code, 'FORBIDDEN')
 
     def test_transaction_rolls_back_sections_plan_audit_and_outbox(self):
         fact, _, evidence, filing, claim, objective, snapshot, _ = self.planning_case()
