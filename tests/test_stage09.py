@@ -6,12 +6,15 @@ from uuid import uuid4
 
 from lukart_work.contracts.messages import AIResult, CommandResult, DomainError
 from lukart_work.core.security import Principal
+from lukart_work.domain import models as m
 from lukart_work.domain.models import Actor
 from lukart_work.drafting.contracts import DraftingTrace
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.planner.contracts import PlannerOperation, stage08_actions
 from lukart_work.planner.service import DocumentPlannerService
-from lukart_work.validation.rules import digest
+from lukart_work.procedural.contracts import ProceduralOperation
+from lukart_work.procedural.service import ProceduralEngineService
+from lukart_work.validation.rules import digest, ref, validate_revision
 from tests import test_stage02 as core
 
 
@@ -32,10 +35,16 @@ class ControlledDraftingTests(core.Stage02Tests):
     def setUp(self):
         super().setUp()
         self.authority.revoke(self.token)
-        actions = self.principal.actions | frozenset(get_args(PlannerOperation)) | {'GetDocumentPlan'}
+        actions = (
+            self.principal.actions
+            | frozenset(get_args(PlannerOperation))
+            | frozenset(get_args(ProceduralOperation))
+            | {'GetDocumentPlan'}
+        )
         self.principal = Principal(self.actor, self.tenant, self.case_id, actions)
         self.token = self.authority.provision(self.principal)
         self.planner = DocumentPlannerService(self.repo, self.authority)
+        self.procedural = ProceduralEngineService(self.repo, self.authority)
         self.profile = {
             'profile': 'QUICK',
             'prompt': core.PIN,
@@ -69,8 +78,124 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.sequence = result.case_sequence
         return result
 
-    def approved_planning_case(self, requirements=('REQUESTS', 'ATTACHMENTS')):
-        fact, party, evidence, _ = self.fact()
+    def proc_request(self, operation, data=None, target=None):
+        request = self.request(operation, data, target)
+        request['contract'] = 'urn:lukart:work:ProceduralRequest:1.0.0'
+        request['rationale'] = 'Synthetic Stage 09 legal authority fixture'
+        return request
+
+    def proc_apply(self, operation, data=None, target=None):
+        result = self.procedural.execute(
+            json.dumps(self.proc_request(operation, data, target)), self.token
+        )
+        self.assertIsInstance(result, CommandResult, result)
+        self.assertEqual(result.state, 'APPLIED')
+        self.sequence = result.case_sequence
+        return result
+
+    def legal_authority_fixture(self, source_id):
+        source = self.proc_apply('RegisterProceduralSource', {
+            'source_id': str(source_id),
+            'registry_id': 'urn:synthetic:stage09:legal-source',
+            'registry_version': '2026-09-18',
+            'jurisdiction': 'PL',
+            'source_type': 'LAW',
+            'title': 'Synthetic Stage 09 Legal Source',
+            'identifier': 'SYN-STAGE09-LAW',
+            'effective_period': {'start': '2026-01-01', 'end': None},
+            'source_uri': 'https://example.invalid/stage09-law',
+            'authority_level': 'BINDING',
+        }).refs[0]
+        source = self.proc_apply('VerifyProceduralSource', target=source).refs[0]
+        rule = self.proc_apply('RegisterProceduralRule', {
+            'sources': [source.model_dump(mode='json')],
+            'statement': 'Synthetic Stage 09 binding legal proposition',
+            'jurisdiction': 'PL',
+            'effective_period': {'start': '2026-01-01', 'end': None},
+            'applicable_document_types': [core.PIN],
+            'interpretation': 'SETTLED',
+            'spec': {
+                'category': 'FORMAL_REQUIREMENT',
+                'code': 'SYN-STAGE09-LEGAL',
+                'applies_when': [],
+                'requirements': [{
+                    'path': '/case/status',
+                    'operator': 'PRESENT',
+                    'operand': None,
+                }],
+                'severity': 'BLOCKER',
+                'deadline': None,
+            },
+        }).refs[0]
+        reviewed = self.proc_apply('ReviewProceduralRule', target=rule).refs[0]
+        approval = self.decision('INTERPRETATION', [reviewed])
+        rule = self.proc_apply(
+            'ActivateProceduralRule',
+            {'decision': approval.model_dump(mode='json')},
+            reviewed,
+        ).refs[0]
+
+        active = self.get(rule)
+        source_entity = self.get(source)
+        provenance = m.Provenance(
+            actor=self.actor,
+            operation_id=uuid4(),
+            method='MANUAL',
+            inputs=(source, rule),
+            anchors=(),
+            rationale='Synthetic pre-verified citation fixture for Stage 09 drafting',
+        )
+        proposed = m.Citation(
+            schema_version='1.0.0',
+            id=uuid4(),
+            tenant_id=self.tenant,
+            case_id=self.case_id,
+            revision=1,
+            previous_hash=None,
+            created_at=active.recorded_at,
+            recorded_at=active.recorded_at,
+            provenance=provenance,
+            kind='Citation',
+            status='PROPOSED',
+            source=source,
+            locator=m.Locator(
+                unit='SECTION',
+                value='synthetic-section-1',
+                fragment_hash=source_entity.content_hash,
+            ),
+            supported=rule,
+            quotation='Synthetic legal quotation',
+        )
+        bound = proposed.model_copy(update={
+            'revision': 2,
+            'previous_hash': digest(proposed),
+            'status': 'BOUND',
+        })
+        verified = bound.model_copy(update={
+            'revision': 3,
+            'previous_hash': digest(bound),
+            'status': 'VERIFIED',
+        })
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            records = tx.records()
+            heads = {(item.kind, item.id): item for item in tx.heads()}
+            old = None
+            for item in (proposed, bound, verified):
+                if old is not None:
+                    validate_revision(old, item)
+                self.service._validate(item, old, tx, records, heads, self.principal)
+                tx.append(item)
+                records[ref(item)] = item
+                heads[(item.kind, item.id)] = item
+                old = item
+            tx.set_sequence(tx.sequence() + 1)
+        self.sequence += 1
+        return source, rule, ref(verified), approval
+
+    def approved_planning_case(
+        self, requirements=('REQUESTS', 'ATTACHMENTS'), *, legal=False
+    ):
+        fact, party, evidence, source_id = self.fact()
         filing = self.apply('AddFiling', {
             'document_type': core.PIN,
             'direction': 'OUTGOING',
@@ -98,6 +223,11 @@ class ControlledDraftingTests(core.Stage02Tests):
             'claims': [claim.model_dump(mode='json')],
             'evidence': [evidence.model_dump(mode='json')],
         })[0].refs[0]
+        legal_source = legal_rule = citation = legal_approval = None
+        if legal:
+            legal_source, legal_rule, citation, legal_approval = (
+                self.legal_authority_fixture(source_id)
+            )
         snapshot = self.snapshot()
         snapshot_acceptance = self.accept(snapshot)
         plan_data = {
@@ -117,11 +247,19 @@ class ControlledDraftingTests(core.Stage02Tests):
                     evidence.model_dump(mode='json'),
                     claim.model_dump(mode='json'),
                     objective.model_dump(mode='json'),
+                    *([] if not legal else [
+                        legal_rule.model_dump(mode='json'),
+                        citation.model_dump(mode='json'),
+                    ]),
                 ],
                 'required_inputs': [
                     fact.model_dump(mode='json'),
                     evidence.model_dump(mode='json'),
                     objective.model_dump(mode='json'),
+                    *([] if not legal else [
+                        legal_rule.model_dump(mode='json'),
+                        citation.model_dump(mode='json'),
+                    ]),
                 ],
                 'allowed_claims': [claim.model_dump(mode='json')],
                 'forbidden': [
@@ -152,6 +290,10 @@ class ControlledDraftingTests(core.Stage02Tests):
             'snapshot_acceptance': snapshot_acceptance,
             'plan': approved,
             'plan_approval': approval,
+            'legal_source': legal_source,
+            'legal_rule': legal_rule,
+            'citation': citation,
+            'legal_approval': legal_approval,
         }
 
     def generate_request(self, case):
