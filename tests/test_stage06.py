@@ -100,7 +100,7 @@ class DocumentRegistryTests(unittest.TestCase):
         filing,artifact,_,_=self.ready(); claim_source,claim_evidence=self.evidence(b'USER-CLAIM-ONLY',accept=False)
         denied=self.rexecute(self.rrequest('RecordSubmission',self.submission_data(claim_source,claim_evidence),filing)); self.assertIsInstance(denied,DomainError); self.assertEqual(denied.code,'GATE_DENIED')
         accepted_source,accepted_evidence=self.evidence(b'ACCEPTED-BUT-DIFFERENT-SOURCE')
-        missing_data=self.receipt_data(uuid4(),accepted_evidence); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',missing_data,filing)).code,'BROKEN_REFERENCE')
+        missing_data=self.submission_data(uuid4(),accepted_evidence); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',missing_data,filing)).code,'BROKEN_REFERENCE')
         artifact_evidence_source,artifact_evidence=self.evidence(b'SYNTHETIC-FILING-BYTES'); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.submission_data(artifact_evidence_source,artifact_evidence),filing)).code,'GATE_DENIED')
         receipt_bytes=b'SYNTHETIC-UNIQUE-SUBMISSION-RECEIPT'; submission,se=self.evidence(receipt_bytes); filing=self.rapply('RecordSubmission',self.submission_data(submission,se),filing).refs[0]
         cloned,clone_evidence=self.evidence(receipt_bytes); self.assertEqual(self.rexecute(self.rrequest('RecordAcknowledgement',self.receipt_data(cloned,clone_evidence),filing)).code,'GATE_DENIED')
