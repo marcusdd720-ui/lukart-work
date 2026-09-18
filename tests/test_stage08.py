@@ -163,6 +163,20 @@ class DocumentPlannerTests(core.Stage02Tests):
         self.apply('RevokeDecision', target=decision)
         self.assertFalse(self.projection(approved).approval_current)
 
+    def test_revoked_snapshot_acceptance_invalidates_effective_plan_approval(self):
+        fact, _, evidence, filing, claim, objective, snapshot, acceptance = self.planning_case()
+        plan = self.papply('PlanDocument', self.plan_data(
+            fact, evidence, filing, claim, objective, snapshot
+        )).refs[0]
+        reviewed = self.papply('ReviewDocumentPlan', target=plan).refs[0]
+        decision = self.decision('PLAN_APPROVAL', [reviewed])
+        approved = self.papply('ApproveDocumentPlan', {
+            'decision': decision.model_dump(mode='json')
+        }, reviewed).refs[0]
+        self.assertTrue(self.projection(approved).approval_current)
+        self.apply('RevokeDecision', target=acceptance)
+        self.assertFalse(self.projection(approved).approval_current)
+
     def test_revoked_snapshot_acceptance_blocks_new_plan(self):
         fact, _, evidence, filing, claim, objective, snapshot, acceptance = self.planning_case()
         self.apply('RevokeDecision', target=acceptance)
@@ -237,6 +251,9 @@ class DocumentPlannerTests(core.Stage02Tests):
 
     def test_ai_and_cross_scope_access_are_denied(self):
         fact, _, evidence, filing, claim, objective, snapshot, _ = self.planning_case()
+        plan = self.papply('PlanDocument', self.plan_data(
+            fact, evidence, filing, claim, objective, snapshot
+        )).refs[0]
         ai = Principal(
             Actor(id=uuid4(), kind='AI'), self.tenant, self.case_id,
             self.principal.actions,
@@ -252,7 +269,7 @@ class DocumentPlannerTests(core.Stage02Tests):
         other = Principal(self.actor, other_tenant, other_case, self.principal.actions)
         other_token = self.authority.provision(other)
         result = self.projection(
-            self.case_ref, token=other_token, tenant=other_tenant, case_id=other_case
+            plan, token=other_token, tenant=other_tenant, case_id=other_case
         )
         self.assertIsInstance(result, DomainError)
 
