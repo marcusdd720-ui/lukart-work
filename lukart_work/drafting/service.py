@@ -52,7 +52,11 @@ class ControlledDraftingService(CommandService):
         profile = self.profiles.get(name)
         if profile is None:
             raise Violation('GATE_DENIED')
-        return DraftingProfile.model_validate(profile)
+        if isinstance(profile, DraftingProfile):
+            return profile
+        return DraftingProfile.model_validate_json(
+            json.dumps(profile, allow_nan=False, sort_keys=True, separators=(',', ':'))
+        )
 
     def _context(self, request, principal, tx):
         records = tx.records()
