@@ -6,7 +6,7 @@ from typing import get_args
 from uuid import uuid4
 
 from lukart_work.contracts.messages import AIResult, CommandResult, DomainError
-from lukart_work.core.security import Principal
+from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.domain import models as m
 from lukart_work.domain.models import Actor
 from lukart_work.drafting.contracts import DraftingTrace
@@ -414,11 +414,21 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.provider.responder = lambda invocation: self.valid_output(case, invocation)
         request = self.generate_request(case)
         raw = json.dumps(request)
+
+        authority_a = TokenAuthority()
+        authority_b = TokenAuthority()
+        token_a = authority_a.provision(self.principal)
+        token_b = authority_b.provision(self.principal)
+        service_a = ControlledDraftingService(
+            self.repo, authority_a, self.provider, {'QUICK': self.profile}
+        )
+        service_b = ControlledDraftingService(
+            self.repo, authority_b, self.provider, {'QUICK': self.profile}
+        )
         with ThreadPoolExecutor(max_workers=2) as pool:
-            results = list(pool.map(
-                lambda _: self.drafting.generate(raw, self.token),
-                range(2),
-            ))
+            first = pool.submit(service_a.generate, raw, token_a)
+            second = pool.submit(service_b.generate, raw, token_b)
+            results = (first.result(), second.result())
         self.assertTrue(all(isinstance(result, CommandResult) for result in results))
         self.assertEqual(results[0], results[1])
         self.assertEqual(self.provider.calls, 1)
