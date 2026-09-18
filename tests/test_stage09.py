@@ -263,7 +263,7 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.assertEqual(self.provider.calls, 1)
         self.assertEqual(len(self.draft_heads()), 1)
 
-    def test_abstain_stays_abstain_and_never_creates_draft(self):
+    def test_abstain_stays_abstain_is_audited_and_replays_without_model_call(self):
         case = self.approved_planning_case()
         def responder(invocation):
             return {
@@ -276,12 +276,43 @@ class ControlledDraftingTests(core.Stage02Tests):
                 'reason': 'Insufficient evidence for controlled drafting',
             }
         self.provider.responder = responder
+        request = self.generate_request(case)
         before = self.sequence
-        result = self.drafting.generate(json.dumps(self.generate_request(case)), self.token)
+        result = self.drafting.generate(json.dumps(request), self.token)
         self.assertIsInstance(result, AIResult, result)
         self.assertEqual(result.disposition, 'ABSTAIN')
-        self.assertEqual(self.sequence, before)
+        self.assertEqual(self.provider.calls, 1)
         self.assertFalse(self.draft_heads())
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            self.assertEqual(tx.sequence(), before + 1)
+            traces = tx.objects('drafting_trace', DraftingTrace)
+            self.assertEqual(len(traces), 1)
+            self.assertEqual(traces[0].results[-1].disposition, 'ABSTAIN')
+            self.assertEqual(traces[0].raw_output_hash, digest(traces[0].raw_outputs))
+            events = tx.events()
+            self.assertEqual(events[-1].event_type, 'DraftingAbstained')
+            self.assertEqual(tx.outbox(), events)
+        replay = self.drafting.generate(json.dumps(request), self.token)
+        self.assertEqual(replay, result)
+        self.assertEqual(self.provider.calls, 1)
+        self.assertFalse(self.draft_heads())
+
+    def test_stage09_product_authority_can_draft_but_cannot_use_legacy_planning_bypass(self):
+        case = self.approved_planning_case()
+        restricted_actions = stage08_actions(self.principal.actions) | {'GetDocumentPlan'}
+        self.assertIn('GenerateDocument', restricted_actions)
+        self.assertNotIn('AddSection', restricted_actions)
+        restricted = Principal(
+            self.actor, self.tenant, self.case_id, restricted_actions
+        )
+        restricted_token = self.authority.provision(restricted)
+        self.provider.responder = lambda invocation: self.valid_output(case, invocation)
+        result = self.drafting.generate(
+            json.dumps(self.generate_request(case)), restricted_token
+        )
+        self.assertIsInstance(result, CommandResult, result)
+        self.assertEqual(result.state, 'APPLIED')
+        self.assertEqual(self.provider.calls, 1)
 
     def test_model_cannot_propose_domain_fact_or_claim_write(self):
         case = self.approved_planning_case()
