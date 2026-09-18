@@ -193,7 +193,8 @@ class ControlledDraftingTests(core.Stage02Tests):
         return source, rule, ref(verified), approval
 
     def approved_planning_case(
-        self, requirements=('REQUESTS', 'ATTACHMENTS'), *, legal=False
+        self, requirements=('REQUESTS', 'ATTACHMENTS'), *, legal=False,
+        revoke_legal_before_snapshot=False,
     ):
         fact, party, evidence, source_id = self.fact()
         filing = self.apply('AddFiling', {
@@ -228,6 +229,8 @@ class ControlledDraftingTests(core.Stage02Tests):
             legal_source, legal_rule, citation, legal_approval = (
                 self.legal_authority_fixture(source_id)
             )
+            if revoke_legal_before_snapshot:
+                self.apply('RevokeDecision', target=legal_approval)
         snapshot = self.snapshot()
         snapshot_acceptance = self.accept(snapshot)
         plan_data = {
@@ -551,6 +554,55 @@ class ControlledDraftingTests(core.Stage02Tests):
         result = self.drafting.generate(json.dumps(self.generate_request(case)), self.token)
         self.assertIsInstance(result, DomainError, result)
         self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertFalse(self.draft_heads())
+
+    def test_legal_statement_requires_live_rule_verified_citation_and_verified_source(self):
+        case = self.approved_planning_case(
+            requirements=('REQUESTS', 'ATTACHMENTS', 'CITATIONS'),
+            legal=True,
+        )
+        def responder(invocation):
+            output = self.valid_output(case, invocation)
+            output['section']['statements'].append(self.statement(
+                'Synthetic legal proposition backed by verified authority.',
+                'LEGAL',
+                'SOURCE_BACKED',
+                (case['legal_rule'],),
+                citations=(case['citation'],),
+            ))
+            return output
+        self.provider.responder = responder
+        result = self.drafting.generate(
+            json.dumps(self.generate_request(case)), self.token
+        )
+        self.assertIsInstance(result, CommandResult, result)
+        self.assertEqual(result.state, 'APPLIED')
+        self.assertEqual(self.provider.calls, 1)
+        draft = self.get(result.refs[0])
+        legal = [
+            statement
+            for section in draft.sections
+            for statement in section.statements
+            if statement.statement_type == 'LEGAL'
+        ]
+        self.assertEqual(len(legal), 1)
+        self.assertEqual(legal[0].refs, (case['legal_rule'],))
+        self.assertEqual(legal[0].citations, (case['citation'],))
+        self.assertEqual(draft.status, 'GENERATED')
+
+    def test_revoked_legal_interpretation_approval_blocks_before_model_call(self):
+        case = self.approved_planning_case(
+            requirements=('REQUESTS', 'ATTACHMENTS', 'CITATIONS'),
+            legal=True,
+            revoke_legal_before_snapshot=True,
+        )
+        self.provider.responder = lambda invocation: self.valid_output(case, invocation)
+        result = self.drafting.generate(
+            json.dumps(self.generate_request(case)), self.token
+        )
+        self.assertIsInstance(result, DomainError, result)
+        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertEqual(self.provider.calls, 0)
         self.assertFalse(self.draft_heads())
 
     def test_plan_approval_revocation_blocks_model_call(self):
