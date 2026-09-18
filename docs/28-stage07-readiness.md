@@ -51,9 +51,12 @@ No second writable CASE ledger is required.
 `lukart_work.procedural` is an application boundary over the canonical Core graph.
 
 A procedural source is admitted as the existing `LegalSource`; a procedural rule is admitted as the
-existing `LegalRule`. An append-only `ProceduralRuleBinding` is written atomically into existing
-case-scoped `lw_core.objects` for each exact LegalRule revision. It cannot be revised independently:
-the binding chain must be contiguous, source refs must equal the LegalRule source refs, and the
+existing `LegalRule`. The canonical LegalRule stores the exact canonical JSON serialization of its
+executable procedural spec in `requirement.operand` (`/procedural_spec`). An append-only
+`ProceduralRuleBinding` is written atomically into existing case-scoped `lw_core.objects` for each
+exact LegalRule revision and is only a validated execution projection of that canonical content. It
+cannot be revised independently: the binding chain must be contiguous, source refs must equal the
+LegalRule source refs, the serialized spec must equal the canonical LegalRule payload, and the
 executable spec is immutable across lifecycle revisions. Canonical rule/source revisions remain the
 authoritative legal/procedural records.
 
