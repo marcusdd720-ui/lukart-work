@@ -161,7 +161,7 @@ class DocumentPlannerService(CommandService):
         ), m.DocumentPlan)
         self._save(plan, None, intent, principal, tx, records, heads)
         self._dependencies(request, tx, plan, snapshot, records)
-        return (ref(plan), *section_refs), 'DocumentPlanCreated', plan
+        return (ref(plan), *section_refs), 'RevisionAppended', plan
 
     def _transition(self, request, principal, tx, records, heads, now):
         old = self._target(request, records, heads, 'DocumentPlan')
