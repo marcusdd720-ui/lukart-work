@@ -75,6 +75,16 @@ DocumentPlan revisions.
 
 `SupersedeDocumentPlan` preserves immutable approved content and uses the existing SUPERSEDED state.
 
+## Authorization topology
+
+Stage 08 uses a dedicated planner authorization profile. It grants the Stage 08 operations and does
+not grant the historical generic Core planning intents `AddSection`, `PrepareSection`, `AddPlan`,
+`ReviewPlan`, `ApprovePlan` or `SupersedePlan`. Those legacy contract members remain available
+for backwards compatibility with earlier stages, but are not an authorized product path for Stage 08.
+
+This prevents bypassing the accepted-snapshot and safe-section controls without making a breaking
+change to the historical CoreRequest contract.
+
 ## Persistence and concurrency
 
 Stage 08 introduces no new SQL schema. All mutations reuse `CommandService.execute` and inherit:
