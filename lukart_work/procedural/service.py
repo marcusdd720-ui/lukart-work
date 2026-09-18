@@ -269,6 +269,21 @@ class ProceduralEngineService(CommandService):
             used.append(target)
         return tuple(used)
 
+    def _current_rule_approval(self, rule, records, heads, principal):
+        if rule.review_decision is None or rule.revision < 2:
+            return False
+        try:
+            decision = self._live_decision(rule.review_decision, records, heads, principal)
+        except Violation:
+            return False
+        previous = m.Ref(kind='LegalRule', id=rule.id, revision=rule.revision - 1)
+        return (
+            decision.decision_type == 'INTERPRETATION'
+            and decision.outcome == 'ACCEPT'
+            and decision.decided_by.kind == 'HUMAN'
+            and previous in decision.targets
+        )
+
     @staticmethod
     def _base_context(case, filing, proceeding, recipient):
         return {
@@ -487,6 +502,14 @@ class ProceduralEngineService(CommandService):
                         binding = by_rule.get(ref(rule))
                         if binding is None:
                             raise Violation('PROVENANCE_MISSING')
+                        if not self._current_rule_approval(rule, records, heads, principal):
+                            findings.append(self._finding(
+                                binding, rule, code=binding.spec.code,
+                                applicability='ABSTAIN', outcome='ABSTAIN',
+                                severity=binding.spec.severity, path='/review_decision',
+                                message='PROCEDURAL_RULE_APPROVAL_NOT_CURRENT',
+                            ))
+                            continue
                         sources = self._current_sources(rule, records, heads, tx)
                         if sources is None:
                             findings.append(self._finding(
