@@ -214,9 +214,13 @@ class DocumentPlannerService(CommandService):
                     if digest(snapshot) != plan.input_snapshot_hash:
                         raise Violation('INVALID_HASH')
                     approval_current = False
-                    if plan.status == 'APPROVED' and plan.approval is not None:
+                    heads = {(e.kind, e.id): e for e in tx.heads()}
+                    if (
+                        plan.status == 'APPROVED'
+                        and plan.approval is not None
+                        and heads.get(('DocumentPlan', plan.id)) == plan
+                    ):
                         try:
-                            heads = {(e.kind, e.id): e for e in tx.heads()}
                             decision = self._live_decision(plan.approval, records, heads, principal)
                             snapshot_acceptance = tx.object('acceptance', snapshot.id, m.Decision)
                             live_snapshot_acceptance = self._live_decision(
