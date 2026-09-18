@@ -152,6 +152,24 @@ class DocumentPlannerTests(core.Stage02Tests):
         data.update(changes)
         return data
 
+    def test_internal_plan_construction_matches_public_contract(self):
+        fact, _, evidence, filing, claim, objective, snapshot, _ = self.planning_case()
+        raw = self.prequest('PlanDocument', self.plan_data(
+            fact, evidence, filing, claim, objective, snapshot
+        ))
+        parsed = self.planner._parse_request(json.dumps(raw))
+        with self.authority.session(self.token) as principal:
+            with self.repo.transaction(self.tenant, self.case_id) as tx:
+                records = tx.records()
+                heads = {(e.kind, e.id): e for e in tx.heads()}
+                now = self.planner.clock()
+                subjects, event_type, output = self.planner._plan(
+                    parsed, principal, tx, records, heads, now
+                )
+                self.assertEqual(event_type, 'DocumentPlanCreated')
+                self.assertEqual(output.kind, 'DocumentPlan')
+                self.assertEqual(len(subjects), 2)
+
     def test_golden_plan_is_derived_after_snapshot_and_provenance_bound(self):
         fact, _, evidence, filing, claim, objective, snapshot, _ = self.planning_case()
         request = self.prequest('PlanDocument', self.plan_data(
