@@ -224,6 +224,7 @@
         "SnapshotAccepted",
         "PlanApproved",
         "DraftGenerated",
+        "DraftingAbstained",
         "DependenciesInvalidated",
         "ValidationCompleted",
         "ReleaseDenied",

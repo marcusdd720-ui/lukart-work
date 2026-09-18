@@ -1,0 +1,729 @@
+{
+  "$defs": {
+    "AIProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "proposal_id": {
+          "format": "uuid",
+          "title": "Proposal Id",
+          "type": "string"
+        },
+        "proposed_kind": {
+          "enum": [
+            "Fact",
+            "Evidence",
+            "Issue",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Risk"
+          ],
+          "title": "Proposed Kind",
+          "type": "string"
+        },
+        "statement": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "support": {
+          "enum": [
+            "SOURCE_BACKED",
+            "INFERRED",
+            "UNSUPPORTED"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "anchors": {
+          "items": {
+            "$ref": "#/$defs/SourceAnchor"
+          },
+          "title": "Anchors",
+          "type": "array"
+        },
+        "uncertainty": {
+          "enum": [
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "UNKNOWN"
+          ],
+          "title": "Uncertainty",
+          "type": "string"
+        }
+      },
+      "required": [
+        "proposal_id",
+        "proposed_kind",
+        "statement",
+        "support",
+        "source_refs",
+        "anchors",
+        "uncertainty"
+      ],
+      "title": "AIProposal",
+      "type": "object"
+    },
+    "AIRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "task": {
+          "enum": [
+            "EXTRACTION",
+            "LEGAL_REASONING",
+            "DRAFTING",
+            "ADVERSARIAL_REVIEW",
+            "LANGUAGE_REVIEW"
+          ],
+          "title": "Task",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "format": "uuid",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "input_refs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "section_contract": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SectionContract"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prompt": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "output_contract": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "data_policy": {
+          "$ref": "#/$defs/VersionPin"
+        }
+      },
+      "required": [
+        "request_id",
+        "tenant_id",
+        "case_id",
+        "task",
+        "snapshot_id",
+        "snapshot_hash",
+        "input_refs",
+        "section_contract",
+        "prompt",
+        "output_contract",
+        "data_policy"
+      ],
+      "title": "AIRequest",
+      "type": "object"
+    },
+    "AIResult": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "format": "uuid",
+          "title": "Request Id",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "disposition": {
+          "enum": [
+            "PROPOSE",
+            "ABSTAIN"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "proposals": {
+          "items": {
+            "$ref": "#/$defs/AIProposal"
+          },
+          "title": "Proposals",
+          "type": "array"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SectionText"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "missing_information": {
+          "items": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Missing Information",
+          "type": "array"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reason"
+        }
+      },
+      "required": [
+        "request_id",
+        "snapshot_hash",
+        "disposition",
+        "proposals",
+        "section",
+        "missing_information",
+        "reason"
+      ],
+      "title": "AIResult",
+      "type": "object"
+    },
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "DraftingInvocation": {
+      "additionalProperties": false,
+      "properties": {
+        "contract": {
+          "const": "urn:lukart:work:DraftingInvocation:1.0.0",
+          "title": "Contract",
+          "type": "string"
+        },
+        "section": {
+          "$ref": "#/$defs/Ref"
+        },
+        "request": {
+          "$ref": "#/$defs/AIRequest"
+        }
+      },
+      "required": [
+        "contract",
+        "section",
+        "request"
+      ],
+      "title": "DraftingInvocation",
+      "type": "object"
+    },
+    "DraftingProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "enum": [
+            "QUICK",
+            "PROFESSIONAL",
+            "FORENSIC"
+          ],
+          "title": "Profile",
+          "type": "string"
+        },
+        "prompt": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "model": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "provider": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "generator": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "output_contract": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "data_policy": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "validators": {
+          "items": {
+            "$ref": "#/$defs/VersionPin"
+          },
+          "title": "Validators",
+          "type": "array"
+        },
+        "render_profile": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "model_parameters_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Model Parameters Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile",
+        "prompt",
+        "model",
+        "provider",
+        "generator",
+        "output_contract",
+        "data_policy",
+        "validators",
+        "render_profile",
+        "model_parameters_hash"
+      ],
+      "title": "DraftingProfile",
+      "type": "object"
+    },
+    "Locator": {
+      "additionalProperties": false,
+      "description": "A source location must be nonempty and address immutable source bytes.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "PAGE",
+            "PARAGRAPH",
+            "ARTICLE",
+            "BYTE_RANGE",
+            "RECORD"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "fragment_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fragment Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "value",
+        "fragment_hash"
+      ],
+      "title": "Locator",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "SectionContract": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_inputs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Allowed Inputs",
+          "type": "array"
+        },
+        "required_inputs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Required Inputs",
+          "type": "array"
+        },
+        "allowed_claims": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Allowed Claims",
+          "type": "array"
+        },
+        "forbidden": {
+          "items": {
+            "enum": [
+              "UNSUPPORTED_ASSERTION",
+              "UNMARKED_INFERENCE",
+              "NEW_FACT",
+              "NEW_LEGAL_RULE"
+            ],
+            "type": "string"
+          },
+          "title": "Forbidden",
+          "type": "array"
+        },
+        "requirements": {
+          "items": {
+            "enum": [
+              "CHRONOLOGICAL",
+              "CITATIONS",
+              "REQUESTS",
+              "ATTACHMENTS"
+            ],
+            "type": "string"
+          },
+          "title": "Requirements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "allowed_inputs",
+        "required_inputs",
+        "allowed_claims",
+        "forbidden",
+        "requirements"
+      ],
+      "title": "SectionContract",
+      "type": "object"
+    },
+    "SectionText": {
+      "additionalProperties": false,
+      "properties": {
+        "section": {
+          "$ref": "#/$defs/Ref"
+        },
+        "statements": {
+          "items": {
+            "$ref": "#/$defs/Statement"
+          },
+          "minItems": 1,
+          "title": "Statements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "section",
+        "statements"
+      ],
+      "title": "SectionText",
+      "type": "object"
+    },
+    "SourceAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Hash",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_hash",
+        "locator"
+      ],
+      "title": "SourceAnchor",
+      "type": "object"
+    },
+    "Statement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "statement_type": {
+          "enum": [
+            "FACTUAL",
+            "LEGAL",
+            "REQUEST",
+            "INFERENCE",
+            "STRUCTURAL"
+          ],
+          "title": "Statement Type",
+          "type": "string"
+        },
+        "support": {
+          "enum": [
+            "SOURCE_BACKED",
+            "INFERRED",
+            "UNSUPPORTED"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "refs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Refs",
+          "type": "array"
+        },
+        "citations": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "inference_label": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inference Label"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "statement_type",
+        "support",
+        "refs",
+        "citations"
+      ],
+      "title": "Statement",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:DraftingTrace:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "command_id": {
+      "format": "uuid",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "actor": {
+      "$ref": "#/$defs/Actor"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "profile": {
+      "$ref": "#/$defs/DraftingProfile"
+    },
+    "invocations": {
+      "items": {
+        "$ref": "#/$defs/DraftingInvocation"
+      },
+      "title": "Invocations",
+      "type": "array"
+    },
+    "results": {
+      "items": {
+        "$ref": "#/$defs/AIResult"
+      },
+      "title": "Results",
+      "type": "array"
+    },
+    "raw_outputs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Raw Outputs",
+      "type": "array"
+    },
+    "input_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Hash",
+      "type": "string"
+    },
+    "raw_output_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Raw Output Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract",
+    "id",
+    "tenant_id",
+    "case_id",
+    "command_id",
+    "actor",
+    "recorded_at",
+    "profile",
+    "invocations",
+    "results",
+    "raw_outputs",
+    "input_hash",
+    "raw_output_hash"
+  ],
+  "title": "DraftingTrace",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:DraftingTrace:1.0.0"
+}

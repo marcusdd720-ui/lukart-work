@@ -1,0 +1,94 @@
+{
+  "$defs": {
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "profile": {
+      "enum": [
+        "QUICK",
+        "PROFESSIONAL",
+        "FORENSIC"
+      ],
+      "title": "Profile",
+      "type": "string"
+    },
+    "prompt": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "model": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "provider": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "generator": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "output_contract": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "data_policy": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "validators": {
+      "items": {
+        "$ref": "#/$defs/VersionPin"
+      },
+      "title": "Validators",
+      "type": "array"
+    },
+    "render_profile": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "model_parameters_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Model Parameters Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "profile",
+    "prompt",
+    "model",
+    "provider",
+    "generator",
+    "output_contract",
+    "data_policy",
+    "validators",
+    "render_profile",
+    "model_parameters_hash"
+  ],
+  "title": "DraftingProfile",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:DraftingProfile:1.0.0"
+}

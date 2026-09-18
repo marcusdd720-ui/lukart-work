@@ -304,6 +304,18 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:DraftingProfile",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DraftingInvocation",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DraftingTrace",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -324,6 +336,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 79,
+  "json_files_parsed": 82,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }
