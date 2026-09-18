@@ -1,0 +1,127 @@
+{
+  "$defs": {
+    "DomainError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "SCHEMA_INVALID",
+            "INVALID_TRANSITION",
+            "BROKEN_REFERENCE",
+            "CROSS_CASE",
+            "PROVENANCE_MISSING",
+            "UNSUPPORTED",
+            "STALE",
+            "CONFLICT",
+            "IDEMPOTENCY_CONFLICT",
+            "FORBIDDEN",
+            "GATE_DENIED",
+            "UNKNOWN",
+            "DUPLICATE",
+            "INVALID_HASH",
+            "CYCLE"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "correlation_id": {
+          "format": "uuid",
+          "title": "Correlation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "path",
+        "message",
+        "retryable",
+        "correlation_id"
+      ],
+      "title": "DomainError",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:DraftingTerminalResult:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "command_id": {
+      "format": "uuid",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "request_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Request Id"
+    },
+    "disposition": {
+      "enum": [
+        "ABSTAIN",
+        "REJECT"
+      ],
+      "title": "Disposition",
+      "type": "string"
+    },
+    "case_sequence": {
+      "minimum": 0,
+      "title": "Case Sequence",
+      "type": "integer"
+    },
+    "event_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Event Ids",
+      "type": "array"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DomainError"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "contract",
+    "command_id",
+    "disposition",
+    "case_sequence",
+    "event_ids"
+  ],
+  "title": "DraftingTerminalResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:DraftingTerminalResult:1.0.0"
+}

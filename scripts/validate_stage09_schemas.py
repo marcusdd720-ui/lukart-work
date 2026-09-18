@@ -7,7 +7,10 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[1]
-schemas = sorted((ROOT / 'schemas').glob('*.json'))
+schemas = sorted(
+    (ROOT / 'schemas').glob('*.json'),
+    key=lambda path: path.relative_to(ROOT).as_posix(),
+)
 hashes = {}
 for path in schemas:
     schema = json.loads(path.read_text(encoding='utf-8'))

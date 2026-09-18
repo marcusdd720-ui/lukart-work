@@ -1,6 +1,6 @@
 {
   "stage": "09 Controlled Drafting",
-  "tests": 308,
+  "tests": 312,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -63,13 +63,13 @@
     "scripts/check_stage09_integrity.py": "652d299696845284fdde3e8403ae4beb17e5a98ea4b123d56f26d602e2fb45c5",
     "scripts/prepare_ci_database.py": "a3964429e2a06ffbb68f99254f00405efef684b9764bfedbbc8145d15eff9b9c",
     "scripts/prepare_stage02_database.py": "62a595b7c26b33619d7ca76ed8eae50553c5270ba7c9f372365175ed2fcfd559",
-    "scripts/refresh_manifest.py": "e0da509cd0f2f27eeddfe8598a8878070a8f91c683893211c8af7a322da0c476",
+    "scripts/refresh_manifest.py": "c29f0a79f93a20c7a686909f71c628b1f618057effef60534244fd4c1ea76aeb",
     "scripts/render_cross_repo_contract.py": "80476b1aa02bc2a058ddce3fe11b111e9b48185242672bb43100340818b53e04",
     "scripts/start_stage02_postgres.ps1": "49a7c29522606d091080901c6d0a4fe2b8e0401b551b77079f414571e6d21065",
     "scripts/validate_stage06_schemas.py": "e4135f24d41939a00be4aae06a95326fbb3db6c0eaba3040a0037259e2d45a94",
     "scripts/validate_stage07_schemas.py": "db267606a7bce858dd08cc27c263cece5a9e88626bbc6ba83d0075d69265073f",
     "scripts/validate_stage08_schemas.py": "aecca0ec4dc072a4be67da333545a861b1af320158336639e73050d73ece9ade",
-    "scripts/validate_stage09_schemas.py": "58d9a1f9b6854867de49efc247e0aa7e1eaa1b90a98171344d388d44865f2efb",
+    "scripts/validate_stage09_schemas.py": "3dd76e506ec3b57b8864670a987b12469b9229e69210b8059a0f80cd36ece0f2",
     "scripts/verify_stage02.py": "8b20f55fe41ee3cc4c23e089c33d868856c5a35dc22c12fadb266446173c9d73",
     "scripts/verify_stage03.py": "edf366ba45352b16de7ca618165faeb9113a3a2e049418b64afd67ce175595f4",
     "scripts/verify_stage04.py": "ecf844fbb01b38770c0736b72ba9aa890591753dd448935f8e1c7fc6e2da211e",
@@ -92,6 +92,7 @@
     "tests/test_stage06.py": "c5453c7e382aef7b56685ea80c340dab2a20e64e86cdfa73264033a3c41dc4e2",
     "tests/test_stage07.py": "eef47126a8e6cef64eb24638b26c78d1ef77053550b37b6f654f46ca2a5e66ca",
     "tests/test_stage08.py": "f934e7ba134322c4de588129da0482e9946a9e681d8b8908832d631f969b7633",
-    "tests/test_stage09.py": "6db8d7c83ccf3c35a752d6a53ed3e270fe46b68a954137514b95dc1008ffc8b8"
+    "tests/test_stage09.py": "6db8d7c83ccf3c35a752d6a53ed3e270fe46b68a954137514b95dc1008ffc8b8",
+    "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa"
   }
 }
