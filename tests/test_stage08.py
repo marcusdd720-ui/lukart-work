@@ -322,3 +322,4 @@ class DocumentPlannerTests(core.Stage02Tests):
         right = superseded_entity.model_dump(exclude={'status', 'revision', 'previous_hash', 'recorded_at', 'provenance'})
         self.assertEqual(left, right)
         self.assertEqual(superseded_entity.status, 'SUPERSEDED')
+        self.assertFalse(self.projection(approved).approval_current)
