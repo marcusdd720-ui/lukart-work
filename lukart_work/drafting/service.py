@@ -20,7 +20,7 @@ from lukart_work.validation.rules import (
     validate_section_inputs,
     walk,
 )
-from .contracts import DraftingProfile, DraftingTrace
+from .contracts import DraftingInvocation, DraftingProfile, DraftingTrace
 
 
 TRACE_CATEGORY = 'drafting_trace'
@@ -119,9 +119,12 @@ class ControlledDraftingService(CommandService):
         return records, heads, snapshot, plan, tuple(sections), plan_approval, live_snapshot_decision
 
     @staticmethod
-    def _ai_requests(request, principal, snapshot, sections, profile):
+    def _invocations(request, principal, snapshot, sections, profile):
         return tuple(
-            wire.AIRequest(
+            DraftingInvocation(
+                contract='urn:lukart:work:DraftingInvocation:1.0.0',
+                section=ref(section),
+                request=wire.AIRequest(
                 request_id=uuid5(request.meta.command_id, f'drafting-request:{index}'),
                 tenant_id=principal.tenant_id,
                 case_id=principal.case_id,
@@ -133,20 +136,24 @@ class ControlledDraftingService(CommandService):
                 prompt=profile.prompt,
                 output_contract=profile.output_contract,
                 data_policy=profile.data_policy,
+                ),
             )
             for index, section in enumerate(sections)
         )
 
     @staticmethod
-    def _validate_results(request, ai_requests, results, plan, sections, records):
+    def _validate_results(request, invocations, results, plan, sections, records):
         if len(results) != len(sections):
             raise Violation('GATE_DENIED')
         normalized_sections = []
         used_objectives = set()
         used_arguments = set()
         for section_index, (ai_request, result, section) in enumerate(
-            zip(ai_requests, results, sections)
+            zip(invocations, results, sections)
         ):
+            ai_request = invocation.request
+            if invocation.section != ref(section):
+                raise Violation('GATE_DENIED')
             validate_ai(result, ai_request)
             if result.disposition != 'PROPOSE' or result.proposals or result.section is None:
                 raise Violation('GATE_DENIED')
@@ -273,7 +280,7 @@ class ControlledDraftingService(CommandService):
             )
 
     def _commit(
-        self, request, principal, input_hash, profile, ai_requests, results
+        self, request, principal, input_hash, profile, invocations, results
     ):
         with self.repository.transaction(principal.tenant_id, principal.case_id) as tx:
             replay = tx.replay(request.meta.idempotency_key, input_hash)
@@ -291,17 +298,17 @@ class ControlledDraftingService(CommandService):
                 plan_approval,
                 snapshot_approval,
             ) = self._context(request, principal, tx)
-            current_requests = self._ai_requests(
+            current_invocations = self._invocations(
                 request, principal, snapshot, sections, profile
             )
-            if current_requests != ai_requests:
+            if current_invocations != invocations:
                 raise Violation('STALE')
             normalized_sections = self._validate_results(
-                request, ai_requests, results, plan, sections, records
+                request, invocations, results, plan, sections, records
             )
 
             trace_input_hash = digest([
-                item.model_dump(mode='json') for item in ai_requests
+                item.model_dump(mode='json') for item in invocations
             ])
             raw_output_hash = digest([
                 item.model_dump(mode='json') for item in results
@@ -363,7 +370,7 @@ class ControlledDraftingService(CommandService):
                 actor=principal.actor,
                 recorded_at=now,
                 profile=profile,
-                requests=ai_requests,
+                invocations=invocations,
                 results=results,
                 input_hash=trace_input_hash,
                 raw_output_hash=raw_output_hash,
@@ -451,21 +458,21 @@ class ControlledDraftingService(CommandService):
                         _,
                         _,
                     ) = self._context(request, principal, tx)
-                    ai_requests = self._ai_requests(
+                    invocations = self._invocations(
                         request, principal, snapshot, sections, profile
                     )
 
                 results = []
-                for ai_request in ai_requests:
+                for invocation in invocations:
                     result = wire.AIResult.model_validate(
-                        self.model_provider.propose(ai_request)
+                        self.model_provider.propose(invocation)
                     )
                     if result.disposition == 'ABSTAIN':
                         return result
                     results.append(result)
                 return self._commit(
                     request, principal, input_hash, profile,
-                    ai_requests, tuple(results),
+                    invocations, tuple(results),
                 )
         except Violation as error:
             return safe_error(error.code, correlation)
