@@ -1,0 +1,522 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "FilingRegistryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "filing": {
+          "$ref": "#/$defs/Ref"
+        },
+        "direction": {
+          "enum": [
+            "INCOMING",
+            "OUTGOING"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "PLANNED",
+            "PREPARING",
+            "READY",
+            "SUBMITTED",
+            "ACKNOWLEDGED",
+            "WITHDRAWN"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "document_type": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "proceeding": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recipient": {
+          "$ref": "#/$defs/Ref"
+        },
+        "authors": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Authors",
+          "type": "array"
+        },
+        "artifact_source_id": {
+          "format": "uuid",
+          "title": "Artifact Source Id",
+          "type": "string"
+        },
+        "artifact_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Artifact Hash",
+          "type": "string"
+        },
+        "artifact_byte_length": {
+          "minimum": 0,
+          "title": "Artifact Byte Length",
+          "type": "integer"
+        },
+        "submitted_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Submitted At"
+        },
+        "submission_receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceAnchor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "submission_evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "acknowledgement_receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceAnchor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "acknowledgement_evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "receipt_count": {
+          "minimum": 1,
+          "title": "Receipt Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filing",
+        "direction",
+        "status",
+        "document_type",
+        "proceeding",
+        "recipient",
+        "authors",
+        "artifact_source_id",
+        "artifact_hash",
+        "artifact_byte_length",
+        "submitted_at",
+        "submission_receipt",
+        "submission_evidence",
+        "acknowledgement_receipt",
+        "acknowledgement_evidence",
+        "receipt_count"
+      ],
+      "title": "FilingRegistryEntry",
+      "type": "object"
+    },
+    "Locator": {
+      "additionalProperties": false,
+      "description": "A source location must be nonempty and address immutable source bytes.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "PAGE",
+            "PARAGRAPH",
+            "ARTICLE",
+            "BYTE_RANGE",
+            "RECORD"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "fragment_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fragment Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "value",
+        "fragment_hash"
+      ],
+      "title": "Locator",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "RegistryReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "filing": {
+          "$ref": "#/$defs/Ref"
+        },
+        "sequence": {
+          "minimum": 1,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "previous_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Previous Hash"
+        },
+        "event": {
+          "enum": [
+            "REGISTERED",
+            "PREPARED",
+            "READY",
+            "SUBMITTED",
+            "ACKNOWLEDGED",
+            "WITHDRAWN"
+          ],
+          "title": "Event",
+          "type": "string"
+        },
+        "receipt_class": {
+          "enum": [
+            "REGISTRY",
+            "SUBMISSION",
+            "ACKNOWLEDGEMENT"
+          ],
+          "title": "Receipt Class",
+          "type": "string"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "event_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Event At"
+        },
+        "operation": {
+          "enum": [
+            "RegisterFiling",
+            "PrepareFiling",
+            "MarkFilingReady",
+            "RecordSubmission",
+            "RecordAcknowledgement",
+            "WithdrawFiling"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "input_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Hash",
+          "type": "string"
+        },
+        "implementation": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "artifact_source_id": {
+          "format": "uuid",
+          "title": "Artifact Source Id",
+          "type": "string"
+        },
+        "artifact_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Artifact Hash",
+          "type": "string"
+        },
+        "artifact_byte_length": {
+          "minimum": 0,
+          "title": "Artifact Byte Length",
+          "type": "integer"
+        },
+        "evidence_anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceAnchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "tenant_id",
+        "case_id",
+        "filing",
+        "sequence",
+        "previous_hash",
+        "event",
+        "receipt_class",
+        "actor",
+        "recorded_at",
+        "operation",
+        "input_hash",
+        "implementation",
+        "artifact_source_id",
+        "artifact_hash",
+        "artifact_byte_length"
+      ],
+      "title": "RegistryReceipt",
+      "type": "object"
+    },
+    "SourceAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Hash",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_hash",
+        "locator"
+      ],
+      "title": "SourceAnchor",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_sequence": {
+      "minimum": 1,
+      "title": "Case Sequence",
+      "type": "integer"
+    },
+    "filings": {
+      "items": {
+        "$ref": "#/$defs/FilingRegistryEntry"
+      },
+      "title": "Filings",
+      "type": "array"
+    },
+    "history": {
+      "items": {
+        "$ref": "#/$defs/RegistryReceipt"
+      },
+      "title": "History",
+      "type": "array"
+    },
+    "unregistered_filings": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Unregistered Filings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "case_id",
+    "case_sequence",
+    "filings",
+    "history",
+    "unregistered_filings"
+  ],
+  "title": "RegistryProjection",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:RegistryProjection:1.0.0"
+}

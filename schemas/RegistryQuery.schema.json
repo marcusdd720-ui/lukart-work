@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:RegistryQuery:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "operation": {
+      "const": "GetDocumentRegistry",
+      "title": "Operation",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "filing_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Filing Id"
+    }
+  },
+  "required": [
+    "contract",
+    "operation",
+    "tenant_id",
+    "case_id"
+  ],
+  "title": "RegistryQuery",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:RegistryQuery:1.0.0"
+}
