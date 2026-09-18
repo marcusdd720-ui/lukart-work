@@ -278,6 +278,16 @@ class ProceduralEngineTests(unittest.TestCase):
             self.deadline(),
         ]
         active_rules = [self.rule(source, spec) for spec in specs]
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            records = tx.records()
+            bindings = {b.rule: b for b in tx.objects(CATEGORY, ProceduralRuleBinding)}
+            for target in active_rules:
+                rule = records[target]
+                binding = bindings[target]
+                self.assertEqual(rule.requirement.operator, 'EQUALS')
+                self.assertEqual(rule.requirement.field_path, '/procedural_spec')
+                self.assertEqual(rule.requirement.operand, canonical(binding.spec))
+                self.assertEqual(rule.requirement.severity, binding.spec.severity)
         context = [
             self.fact_datum('channel', GOLDEN['channel'], appellant),
             self.fact_datum('form_complete', True, appellant),
