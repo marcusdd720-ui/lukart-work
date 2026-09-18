@@ -5,6 +5,7 @@ from .contracts import (
     PlannerQuery,
     PlannerRequest,
     SectionBlueprint,
+    stage08_actions,
 )
 from .service import DocumentPlannerService
 
@@ -16,4 +17,5 @@ __all__ = (
     'PlannerQuery',
     'PlannerRequest',
     'SectionBlueprint',
+    'stage08_actions',
 )
