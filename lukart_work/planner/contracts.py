@@ -1,6 +1,6 @@
 """Stage 08 Document Planner contracts over accepted immutable case snapshots."""
 import json
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
 from uuid import UUID
 
 from pydantic import Field, model_validator
@@ -11,6 +11,15 @@ from lukart_work.domain.models import DocumentPlan, Ref, Section, Text, Value
 PlannerOperation = Literal[
     'PlanDocument', 'ReviewDocumentPlan', 'ApproveDocumentPlan', 'SupersedeDocumentPlan',
 ]
+
+LEGACY_CORE_PLANNING_OPERATIONS = frozenset({
+    'AddSection', 'PrepareSection', 'AddPlan', 'ReviewPlan', 'ApprovePlan', 'SupersedePlan',
+})
+
+
+def stage08_actions(base_actions):
+    """Product authorization profile: planner owns planning; legacy Core path is not granted."""
+    return (frozenset(base_actions) - LEGACY_CORE_PLANNING_OPERATIONS) | frozenset(get_args(PlannerOperation))
 
 
 class SectionBlueprint(Value):
