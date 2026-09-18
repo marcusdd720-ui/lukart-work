@@ -25,7 +25,7 @@ source, and its source/hash may not already have been consumed as registry recei
 | S06-01 | Canonical Filing lifecycle | PRESENT | preserve existing closed transition allowlist |
 | S06-02 | Immutable artifact/source binding | PARTIAL | registration receipt + source byte/hash verification |
 | S06-03 | Registration identity/history | MISSING | append-only `RegistryReceipt` hash chain |
-| S06-04 | SUBMITTED requires evidence, not claim | MISSING | exact current human-reviewed ACCEPTED Evidence + distinct receipt source |
+| S06-04 | SUBMITTED requires evidence, not claim | MISSING | exact current human-reviewed ACCEPTED Evidence + distinct receipt source + explicit evidence-bound event time |
 | S06-05 | ACKNOWLEDGED requires independent evidence | MISSING | distinct accepted Evidence/source/hash not consumed before |
 | S06-06 | Tenant/case/authority isolation | PRESENT/PARTIAL | reuse Core auth/RLS; HUMAN-only writes |
 | S06-07 | CAS/idempotency/replay/rollback | PRESENT | reuse outer `CommandService.execute` transaction |
@@ -40,7 +40,7 @@ source, and its source/hash may not already have been consumed as registry recei
 Fail closed on missing/tampered/tombstoned source bytes; stale Filing or Evidence revisions; Evidence
 not ACCEPTED or authenticity DISPUTED; illegal lifecycle transitions; receipt-source/artifact hash
 aliasing; receipt reuse across a CASE/Filing; cross-tenant/case references; actor/capability spoof;
-idempotency conflicts; stale CAS; partial rollback; forged receipt chains and manifest drift.
+idempotency conflicts; stale CAS; partial rollback; forged receipt chains; fabricated submission event time; and manifest drift.
 
 Registration proves only that an artifact was registered. Human Evidence acceptance does not prove
 judicial admissibility or objective truth. Receipt evidence supports the recorded lifecycle event;

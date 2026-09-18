@@ -48,8 +48,8 @@ class DocumentRegistryService(CommandService):
         locator=m.Locator(unit='RECORD',value=canonical({'purpose':purpose,'source_id':str(source_id)}),fragment_hash=source.content_hash)
         return source,m.SourceAnchor(document_id=source.id,document_hash=source.content_hash,locator=locator)
 
-    @staticmethod
-    def _history(tx):
+    @classmethod
+    def _history(cls,tx):
         values=sorted(tx.objects(CATEGORY,RegistryReceipt),key=lambda r:(str(r.filing.id),r.sequence))
         records=tx.records(); groups={}
         for receipt in values: groups.setdefault(receipt.filing.id,[]).append(receipt)
@@ -61,10 +61,15 @@ class DocumentRegistryService(CommandService):
                 if receipt.sequence!=index or receipt.filing.revision!=index: raise Violation('INVALID_HASH')
                 if receipt.previous_hash!=(digest(previous) if previous else None): raise Violation('INVALID_HASH')
                 if (receipt.artifact_source_id,receipt.artifact_hash,receipt.artifact_byte_length)!=identity: raise Violation('INVALID_HASH')
+                filing=records.get(receipt.filing)
+                if filing is None or filing.kind!='Filing': raise Violation('INVALID_HASH')
                 if receipt.evidence is not None:
                     evidence=records.get(receipt.evidence)
                     if evidence is None or evidence.kind!='Evidence' or evidence.status!='ACCEPTED' or evidence.authenticity=='DISPUTED': raise Violation('INVALID_HASH')
                     if evidence.source!=receipt.evidence_anchor: raise Violation('INVALID_HASH')
+                if receipt.event=='SUBMITTED':
+                    source=cls._source(tx,receipt.evidence_anchor.document_id)
+                    if filing.submitted_at!=receipt.event_at or receipt.event_at>receipt.recorded_at or receipt.event_at>source.received_at: raise Violation('INVALID_HASH')
                 previous=receipt
         return tuple(values)
 
@@ -96,12 +101,12 @@ class DocumentRegistryService(CommandService):
         if records.get(evidence_ref)!=current: raise Violation('INVALID_HASH')
         return current
 
-    def _append_receipt(self,request,principal,tx,filing,artifact,now,*,evidence_anchor=None,evidence=None):
+    def _append_receipt(self,request,principal,tx,filing,artifact,now,*,evidence_anchor=None,evidence=None,event_at=None):
         history=self._filing_history(tx,filing.id); previous=history[-1] if history else None; event=STATUS_EVENT[filing.status]
         receipt_class='SUBMISSION' if event=='SUBMITTED' else 'ACKNOWLEDGEMENT' if event=='ACKNOWLEDGED' else 'REGISTRY'
         receipt=RegistryReceipt(id=uuid5(request.meta.command_id,'filing-registry-receipt'),tenant_id=principal.tenant_id,case_id=principal.case_id,
             filing=ref(filing),sequence=previous.sequence+1 if previous else 1,previous_hash=digest(previous) if previous else None,event=event,
-            receipt_class=receipt_class,actor=principal.actor,recorded_at=now,operation=request.operation,input_hash=self._request_hash(request,principal),
+            receipt_class=receipt_class,actor=principal.actor,recorded_at=now,event_at=event_at,operation=request.operation,input_hash=self._request_hash(request,principal),
             implementation=IMPLEMENTATION,artifact_source_id=artifact.id,artifact_hash=artifact.content_hash,artifact_byte_length=artifact.byte_length,
             evidence_anchor=evidence_anchor,evidence=evidence)
         if receipt.sequence!=filing.revision: raise Violation('INVALID_HASH')
@@ -120,13 +125,14 @@ class DocumentRegistryService(CommandService):
     def _transition(self,request,principal,tx,records,heads,now):
         old=self._target(request,records,heads,'Filing'); _,artifact=self._registered_identity(tx,old.id); target_status=OP_STATUS[request.operation]
         body=old.model_dump(mode='json'); body.update(self._metadata(request,principal,now,old.kind,old)); body['status']=target_status
-        evidence_anchor=evidence_ref=None
+        evidence_anchor=evidence_ref=event_at=None
         if request.operation=='RecordSubmission':
             receipt_source,_=self._anchor(tx,request.data.receipt_source_id,'SUBMISSION_RECEIPT')
             self._ensure_unique_receipt_evidence(tx,receipt_source,artifact)
             accepted=self._accepted_evidence(records,heads,request.data.evidence,receipt_source)
-            evidence_ref=ref(accepted); evidence_anchor=accepted.source
-            body['submitted_at']=now.isoformat(); body['submission_receipt']=evidence_anchor.model_dump(mode='json')
+            evidence_ref=ref(accepted); evidence_anchor=accepted.source; event_at=request.data.submitted_at
+            if event_at>now or event_at>receipt_source.received_at: raise Violation('GATE_DENIED')
+            body['submitted_at']=event_at.isoformat(); body['submission_receipt']=evidence_anchor.model_dump(mode='json')
         elif request.operation=='RecordAcknowledgement':
             if old.submission_receipt is None or old.submitted_at is None: raise Violation('GATE_DENIED')
             submission_source=self._source(tx,old.submission_receipt.document_id)
@@ -140,7 +146,7 @@ class DocumentRegistryService(CommandService):
         else: raise Violation('FORBIDDEN')
         entity=entity_from(body,m.Filing); self._validate(entity,old,tx,records,heads,principal); tx.append(entity)
         records[ref(entity)]=entity; heads[(entity.kind,entity.id)]=entity
-        receipt=self._append_receipt(request,principal,tx,entity,artifact,now,evidence_anchor=evidence_anchor,evidence=evidence_ref)
+        receipt=self._append_receipt(request,principal,tx,entity,artifact,now,evidence_anchor=evidence_anchor,evidence=evidence_ref,event_at=event_at)
         return (ref(entity),),'RevisionAppended',receipt
 
     def _apply(self,request,principal,tx,records,heads,now):
@@ -168,7 +174,9 @@ class DocumentRegistryService(CommandService):
                         if history[-1].event!=STATUS_EVENT[current.status]: raise Violation('INVALID_HASH')
                         submission_record=next((r for r in reversed(history) if r.event=='SUBMITTED'),None)
                         acknowledgement_record=next((r for r in reversed(history) if r.event=='ACKNOWLEDGED'),None)
-                        if submission_record: self._source(tx,submission_record.evidence_anchor.document_id)
+                        if submission_record:
+                            self._source(tx,submission_record.evidence_anchor.document_id)
+                            if current.submitted_at!=submission_record.event_at: raise Violation('INVALID_HASH')
                         if acknowledgement_record: self._source(tx,acknowledgement_record.evidence_anchor.document_id)
                         entries.append(FilingRegistryEntry(filing=ref(current),direction=current.direction,status=current.status,document_type=current.document_type,
                             proceeding=current.proceeding,recipient=current.recipient,authors=current.authors,artifact_source_id=artifact.id,

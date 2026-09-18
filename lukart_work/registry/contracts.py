@@ -28,18 +28,26 @@ class ReceiptEvidenceData(Value):
         if self.evidence.kind != 'Evidence': raise ValueError('EVIDENCE_REQUIRED')
         return self
 
+class SubmissionEvidenceData(ReceiptEvidenceData):
+    submitted_at: datetime
+    @model_validator(mode='after')
+    def submission_time(self):
+        if self.submitted_at.tzinfo is None: raise ValueError('SUBMISSION_TIMEZONE_REQUIRED')
+        return self
+
 class RegistryTransitionData(Value):
     pass
 
 class RegistryRequest(CoreRequest):
     contract: Literal['urn:lukart:work:RegistryRequest:1.0.0']
     operation: RegistryOperation
-    data: RegisterFilingData | ReceiptEvidenceData | RegistryTransitionData
+    data: RegisterFilingData | SubmissionEvidenceData | ReceiptEvidenceData | RegistryTransitionData
     rationale: Text
     @model_validator(mode='after')
     def action_payload(self):
         expected=(RegisterFilingData if self.operation=='RegisterFiling'
-            else ReceiptEvidenceData if self.operation in ('RecordSubmission','RecordAcknowledgement')
+            else SubmissionEvidenceData if self.operation=='RecordSubmission'
+            else ReceiptEvidenceData if self.operation=='RecordAcknowledgement'
             else RegistryTransitionData)
         parsed=expected.model_validate_json(self.data.model_dump_json(exclude_unset=True))
         object.__setattr__(self,'data',parsed)
@@ -60,6 +68,7 @@ class RegistryReceipt(Value):
     receipt_class: Literal['REGISTRY','SUBMISSION','ACKNOWLEDGEMENT']
     actor: Actor
     recorded_at: datetime
+    event_at: datetime | None = None
     operation: RegistryOperation
     input_hash: Hash
     implementation: VersionPin
@@ -71,13 +80,17 @@ class RegistryReceipt(Value):
     @model_validator(mode='after')
     def invariants(self):
         if self.filing.kind!='Filing' or self.actor.kind!='HUMAN' or self.recorded_at.tzinfo is None: raise ValueError('RECEIPT_IDENTITY')
+        if self.event_at is not None and self.event_at.tzinfo is None: raise ValueError('RECEIPT_EVENT_TIME')
         if (self.sequence==1)!=(self.previous_hash is None): raise ValueError('RECEIPT_CHAIN')
         expected='SUBMISSION' if self.event=='SUBMITTED' else 'ACKNOWLEDGEMENT' if self.event=='ACKNOWLEDGED' else 'REGISTRY'
         if self.receipt_class!=expected: raise ValueError('RECEIPT_CLASS')
-        if self.event in ('SUBMITTED','ACKNOWLEDGED'):
-            if self.evidence_anchor is None or self.evidence is None or self.evidence.kind!='Evidence': raise ValueError('RECEIPT_EVIDENCE_REQUIRED')
+        if self.event=='SUBMITTED':
+            if self.evidence_anchor is None or self.evidence is None or self.evidence.kind!='Evidence' or self.event_at is None: raise ValueError('RECEIPT_EVIDENCE_REQUIRED')
             if self.evidence_anchor.document_id==self.artifact_source_id: raise ValueError('RECEIPT_EVIDENCE_REQUIRED')
-        elif self.evidence_anchor is not None or self.evidence is not None: raise ValueError('UNEXPECTED_RECEIPT_EVIDENCE')
+        elif self.event=='ACKNOWLEDGED':
+            if self.evidence_anchor is None or self.evidence is None or self.evidence.kind!='Evidence' or self.event_at is not None: raise ValueError('RECEIPT_EVIDENCE_REQUIRED')
+            if self.evidence_anchor.document_id==self.artifact_source_id: raise ValueError('RECEIPT_EVIDENCE_REQUIRED')
+        elif self.evidence_anchor is not None or self.evidence is not None or self.event_at is not None: raise ValueError('UNEXPECTED_RECEIPT_EVIDENCE')
         return self
 
 class RegistryQuery(Value):

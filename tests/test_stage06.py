@@ -1,5 +1,6 @@
 """Stage 06 Document Registry acceptance on real PostgreSQL; synthetic data only."""
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 import base64, json, unittest
 from hashlib import sha256
 from pathlib import Path
@@ -67,14 +68,29 @@ class DocumentRegistryTests(unittest.TestCase):
         filing,artifact,author,recipient=self.register(content=content); filing=self.rapply('PrepareFiling',target=filing).refs[0]; filing=self.rapply('MarkFilingReady',target=filing).refs[0]; return filing,artifact,author,recipient
     @staticmethod
     def receipt_data(source,evidence): return {'receipt_source_id':str(source),'evidence':evidence.model_dump(mode='json')}
+    @staticmethod
+    def submission_data(source,evidence,submitted_at='2026-09-17T14:03:00+02:00'):
+        return {'receipt_source_id':str(source),'evidence':evidence.model_dump(mode='json'),'submitted_at':submitted_at}
 
     def test_golden_registry_submission_acknowledgement_withdrawal_and_history(self):
         f=json.loads((Path(__file__).parent/'golden_cases/document_registry.json').read_text()); filing,artifact,_,_=self.ready()
-        submission,se=self.evidence(f['submission_receipt_text'].encode()); filing=self.rapply('RecordSubmission',self.receipt_data(submission,se),filing).refs[0]
+        submission,se=self.evidence(f['submission_receipt_text'].encode()); filing=self.rapply('RecordSubmission',self.submission_data(submission,se,f['submitted_at']),filing).refs[0]
         acknowledgement,ae=self.evidence(f['acknowledgement_receipt_text'].encode()); filing=self.rapply('RecordAcknowledgement',self.receipt_data(acknowledgement,ae),filing).refs[0]
         filing=self.rapply('WithdrawFiling',target=filing).refs[0]; result=self.projection(filing_id=filing.id); self.assertIsInstance(result,RegistryProjection); entry=result.filings[0]
         self.assertEqual((entry.status,entry.artifact_source_id),('WITHDRAWN',artifact)); self.assertEqual(entry.submission_evidence,se); self.assertEqual(entry.acknowledgement_evidence,ae)
+        expected_submitted_at=datetime.fromisoformat(f['submitted_at']); self.assertEqual(entry.submitted_at,expected_submitted_at)
+        submission_record=next(x for x in result.history if x.event=='SUBMITTED'); self.assertEqual(submission_record.event_at,expected_submitted_at); self.assertGreater(submission_record.recorded_at,submission_record.event_at)
         self.assertEqual([x.event for x in result.history],f['expected_lifecycle']); self.assertEqual(entry.receipt_count,6); self.assertTrue(all(x.filing.revision==x.sequence for x in result.history))
+
+    def test_submission_time_is_explicit_timezone_aware_and_not_system_now(self):
+        filing,_,_,_=self.ready(); source,evidence=self.evidence(b'SYNTHETIC-TIME-RECEIPT')
+        missing=self.receipt_data(source,evidence); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',missing,filing)).code,'SCHEMA_INVALID')
+        naive=self.submission_data(source,evidence,'2026-09-17T14:03:00'); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',naive,filing)).code,'SCHEMA_INVALID')
+        future=(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()
+        self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.submission_data(source,evidence,future),filing)).code,'GATE_DENIED')
+        event_at='2026-09-17T14:03:00+02:00'; filing=self.rapply('RecordSubmission',self.submission_data(source,evidence,event_at),filing).refs[0]
+        result=self.projection(filing_id=filing.id); entry=result.filings[0]; receipt=next(x for x in result.history if x.event=='SUBMITTED')
+        self.assertEqual(entry.submitted_at,datetime.fromisoformat(event_at)); self.assertEqual(receipt.event_at,entry.submitted_at); self.assertGreater(receipt.recorded_at,receipt.event_at)
 
     def test_identical_bytes_can_back_distinct_incoming_and_outgoing_filings(self):
         artifact=self.source(b'IDENTICAL-SYNTHETIC-BYTES'); first,_,_,_=self.register(direction='INCOMING',source_id=artifact); second,_,_,_=self.register(direction='OUTGOING',source_id=artifact)
@@ -82,7 +98,7 @@ class DocumentRegistryTests(unittest.TestCase):
 
     def test_submission_rejects_mere_source_unaccepted_evidence_and_receipt_reuse(self):
         filing,artifact,_,_=self.ready(); claim_source,claim_evidence=self.evidence(b'USER-CLAIM-ONLY',accept=False)
-        denied=self.rexecute(self.rrequest('RecordSubmission',self.receipt_data(claim_source,claim_evidence),filing)); self.assertIsInstance(denied,DomainError); self.assertEqual(denied.code,'GATE_DENIED')
+        denied=self.rexecute(self.rrequest('RecordSubmission',self.submission_data(claim_source,claim_evidence),filing)); self.assertIsInstance(denied,DomainError); self.assertEqual(denied.code,'GATE_DENIED')
         accepted_source,accepted_evidence=self.evidence(b'ACCEPTED-BUT-DIFFERENT-SOURCE')
         missing_data=self.receipt_data(uuid4(),accepted_evidence); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',missing_data,filing)).code,'BROKEN_REFERENCE')
         artifact_evidence_source,artifact_evidence=self.evidence(b'SYNTHETIC-FILING-BYTES'); self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.receipt_data(artifact_evidence_source,artifact_evidence),filing)).code,'GATE_DENIED')
@@ -115,7 +131,7 @@ class DocumentRegistryTests(unittest.TestCase):
         create=self.request('CreateCase',{'title':'Foreign synthetic case','jurisdiction':'PL','retention_policy':core.PIN}); create['meta'].update(tenant_id=str(foreign_tenant),case_id=str(foreign_case),expected_case_sequence=0)
         fr=self.service.execute(json.dumps(create),foreign_token); sr={'contract':'urn:lukart:work:CoreRequest:1.0.0','operation':'RegisterSource','meta':{'command_id':str(uuid4()),'tenant_id':str(foreign_tenant),'case_id':str(foreign_case),'idempotency_key':str(uuid4()),'expected_case_sequence':fr.case_sequence,'correlation_id':str(uuid4())},'target':None,'data':{'content_base64':base64.b64encode(b'FOREIGN-RECEIPT').decode(),'media_type':'application/octet-stream','retention_policy':core.PIN}}
         self.assertIsInstance(self.service.execute(json.dumps(sr),foreign_token),CommandResult); foreign_source=uuid5(UUID(sr['meta']['command_id']),'source'); fake={'kind':'Evidence','id':str(uuid4()),'revision':1}
-        self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',{'receipt_source_id':str(foreign_source),'evidence':fake},filing)).code,'BROKEN_REFERENCE')
+        self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',{'receipt_source_id':str(foreign_source),'evidence':fake,'submitted_at':'2026-09-17T14:03:00+02:00'},filing)).code,'BROKEN_REFERENCE')
         receipt,evidence=self.evidence(b'SYNTHETIC-AUTHORITY-RECEIPT'); service_token=self.authority.provision(Principal(Actor(id=uuid4(),kind='SERVICE'),self.tenant,self.case_id,actions))
         self.assertEqual(self.rexecute(self.rrequest('RecordSubmission',self.receipt_data(receipt,evidence),filing),service_token).code,'FORBIDDEN')
         ai_token=self.authority.provision(Principal(Actor(id=uuid4(),kind='AI'),self.tenant,self.case_id,actions)); self.assertEqual(self.projection(ai_token).code,'FORBIDDEN')

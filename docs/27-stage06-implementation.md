@@ -33,8 +33,15 @@ exact current `Evidence` revision that:
 
 Acknowledgement additionally requires a prior submitted Filing and evidence bytes distinct from the
 submission receipt. Exact command replay resolves before these uniqueness checks and remains safe.
-This is a technical evidence gate only: accepted Evidence does not imply judicial admissibility,
-truth or legal effectiveness.
+
+`RecordSubmission` also requires an explicit timezone-aware `submitted_at` supplied by the HUMAN
+operator from the accepted receipt evidence. The service never substitutes command time or
+`SourceDocument.received_at` as the event time. The supplied event time must not be later than the
+receipt source's trusted `received_at` or the command's `recorded_at`. `RegistryReceipt.event_at`
+binds that event time to the exact accepted Evidence revision, while `recorded_at` remains the
+separate system/audit timestamp. Projection verifies `Filing.submitted_at == RegistryReceipt.event_at`
+and fails closed on drift. This is an evidence-bound human attestation, not independent proof of
+judicial admissibility, objective truth or legal effectiveness.
 
 ## Lifecycle
 
