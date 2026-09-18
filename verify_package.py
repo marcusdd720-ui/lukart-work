@@ -17,6 +17,7 @@ from lukart_work.procedural.contracts import (
     ProceduralRequest, ProceduralRuleBinding, ProceduralQuery, ProceduralFinding, ProceduralAssessment,
 )
 from lukart_work.planner.contracts import PlannerRequest, PlannerQuery, DocumentPlanProjection
+from lukart_work.drafting.contracts import DraftingProfile, DraftingInvocation, DraftingTrace
 from lukart_work.contracts.versions import contract_version
 from lukart_work.validation.rules import parse_entity
 ROOT=Path(__file__).parent
@@ -24,7 +25,7 @@ EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEviden
                  FactEvidenceQuery,FactEvidenceMatrix,RegistryRequest,RegistryReceipt,RegistryQuery,
                  FilingRegistryEntry,RegistryProjection,ProceduralRequest,ProceduralRuleBinding,
                  ProceduralQuery,ProceduralFinding,ProceduralAssessment,PlannerRequest,PlannerQuery,
-                 DocumentPlanProjection)
+                 DocumentPlanProjection,DraftingProfile,DraftingInvocation,DraftingTrace)
 checks=[]
 for cls in ENTITIES+CONTRACTS+EXTRA_CONTRACTS:
     schema=json.loads((ROOT/'schemas'/f'{cls.__name__}.schema.json').read_text())
