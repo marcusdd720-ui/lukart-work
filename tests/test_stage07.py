@@ -418,6 +418,29 @@ class ProceduralEngineTests(unittest.TestCase):
         denied = self.pexecute(self.prequest('ActivateProceduralRule', {'decision': wrong.model_dump(mode='json')}, reviewed))
         self.assertEqual(denied.code, 'GATE_DENIED')
 
+    def test_revoked_rule_approval_abstains_in_current_assessment(self):
+        _, _, _, _, filing = self.principals_and_filing()
+        source = self.legal_source(b'REVOKABLE SYNTHETIC PROCEDURAL SOURCE')
+        proposed = self.register_rule(
+            source, self.requirement('ORGAN', 'REVOKED-APPROVAL', '/case/status', 'EQUALS', 'OPEN')
+        )
+        reviewed = self.papply('ReviewProceduralRule', target=proposed).refs[0]
+        decision = self.decision('INTERPRETATION', [reviewed])
+        active = self.papply(
+            'ActivateProceduralRule', {'decision': decision.model_dump(mode='json')}, reviewed
+        ).refs[0]
+
+        before = self.assess(filing)
+        item = next(f for f in before.findings if f.rule == active)
+        self.assertEqual((item.applicability, item.outcome), ('APPLICABLE', 'SATISFIED'))
+
+        self.apply('RevokeDecision', target=decision)
+        after = self.assess(filing)
+        item = next(f for f in after.findings if f.rule == active)
+        self.assertEqual((item.applicability, item.outcome), ('ABSTAIN', 'ABSTAIN'))
+        self.assertEqual(item.message, 'PROCEDURAL_RULE_APPROVAL_NOT_CURRENT')
+        self.assertEqual(item.path, '/review_decision')
+
     def test_exact_replay_idempotency_conflict_and_concurrent_cas(self):
         source_id = self.source(b'SYNTHETIC REPLAY SOURCE')
         request = self.prequest('RegisterProceduralSource', {
