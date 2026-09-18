@@ -8,10 +8,46 @@ from uuid import uuid4
 from lukart_work.contracts.messages import CommandResult, DomainError
 from lukart_work.core.security import Principal
 from lukart_work.domain.models import Actor
-from lukart_work.planner.contracts import DocumentPlanProjection, PlannerOperation, stage08_actions
+from lukart_work.planner.contracts import DocumentPlanProjection, PlannerOperation, PlannerRequest, stage08_actions
 from lukart_work.planner.service import DocumentPlannerService
 from lukart_work.validation.rules import digest
 from tests import test_stage02 as core
+
+
+class PlannerContractTests(unittest.TestCase):
+    def test_plan_document_contract_accepts_safe_minimal_payload(self):
+        tenant, case_id = uuid4(), uuid4()
+        filing, request_ref, fact, claim = (
+            {'kind': 'Filing', 'id': str(uuid4()), 'revision': 1},
+            {'kind': 'Request', 'id': str(uuid4()), 'revision': 1},
+            {'kind': 'Fact', 'id': str(uuid4()), 'revision': 1},
+            {'kind': 'Claim', 'id': str(uuid4()), 'revision': 1},
+        )
+        payload = {
+            'contract': 'urn:lukart:work:PlannerRequest:1.0.0',
+            'operation': 'PlanDocument',
+            'meta': {
+                'command_id': str(uuid4()), 'tenant_id': str(tenant), 'case_id': str(case_id),
+                'idempotency_key': str(uuid4()), 'expected_case_sequence': 1,
+                'correlation_id': str(uuid4()),
+            },
+            'target': None,
+            'data': {
+                'snapshot_id': str(uuid4()), 'snapshot_hash': 'a' * 64,
+                'filing': filing, 'objectives': [request_ref],
+                'position_scope': 'Synthetic safe scope', 'argument_order': [], 'evidence': [],
+                'sections': [{
+                    'section_type': 'FACTS', 'title': 'Facts', 'arguments': [],
+                    'allowed_inputs': [fact, claim], 'required_inputs': [fact],
+                    'allowed_claims': [claim],
+                    'forbidden': ['UNSUPPORTED_ASSERTION', 'UNMARKED_INFERENCE', 'NEW_FACT', 'NEW_LEGAL_RULE'],
+                    'requirements': ['CHRONOLOGICAL'],
+                }],
+            },
+            'rationale': 'Synthetic parsing test',
+        }
+        parsed = PlannerRequest.model_validate_json(json.dumps(payload))
+        self.assertEqual(parsed.operation, 'PlanDocument')
 
 
 @unittest.skipUnless(core.ADMIN and core.DSN, 'Stage 08 requires isolated PostgreSQL')
