@@ -166,7 +166,7 @@ class DocumentPlannerTests(core.Stage02Tests):
                 subjects, event_type, output = self.planner._plan(
                     parsed, principal, tx, records, heads, now
                 )
-                self.assertEqual(event_type, 'DocumentPlanCreated')
+                self.assertEqual(event_type, 'RevisionAppended')
                 self.assertEqual(output.kind, 'DocumentPlan')
                 self.assertEqual(len(subjects), 2)
 
@@ -262,21 +262,22 @@ class DocumentPlannerTests(core.Stage02Tests):
 
     def test_reference_outside_snapshot_fails_closed_without_fact_promotion(self):
         fact, party, evidence, filing, claim, objective, snapshot, _ = self.planning_case()
-        outside = self.apply('AddFact', {
-            'statement': 'Synthetic post-snapshot user assertion',
-            'support': 'UNSUPPORTED',
-            'evidence': [],
-            'subjects': [party.model_dump(mode='json')],
-            'key_fact': False,
+        outside = self.apply('AddRequest', {
+            'filing': filing.model_dump(mode='json'),
+            'request_type': 'SYNTHETIC_POST_SNAPSHOT',
+            'text': 'Synthetic post-snapshot request',
+            'claims': [claim.model_dump(mode='json')],
+            'evidence': [evidence.model_dump(mode='json')],
         })[0].refs[0]
         section = self.section(fact, evidence, claim, objective)
         section['allowed_inputs'].append(outside.model_dump(mode='json'))
+        before_fact = self.get(fact)
         result = self.pexecute(self.prequest('PlanDocument', self.plan_data(
             fact, evidence, filing, claim, objective, snapshot, sections=[section]
         )))
         self.assertIsInstance(result, DomainError)
         with self.repo.transaction(self.tenant, self.case_id) as tx:
-            self.assertEqual(tx.records()[outside].status, 'CANDIDATE')
+            self.assertEqual(tx.records()[fact], before_fact)
             self.assertFalse(any(e.kind == 'DocumentPlan' for e in tx.heads()))
 
     def test_idempotency_conflict_and_case_sequence_cas(self):
