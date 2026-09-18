@@ -604,6 +604,7 @@ class ControlledDraftingTests(core.Stage02Tests):
             self.assertIsInstance(result, DomainError, result)
             self.assertIn(result.code, {'GATE_DENIED', 'UNSUPPORTED'})
             self.assertFalse(self.draft_heads())
+            self.sequence += 1
 
     def test_candidate_or_claim_cannot_be_materialized_as_factual_prose(self):
         for mode in ('CANDIDATE_FACT', 'CLAIM_WITH_EVIDENCE'):
@@ -824,7 +825,10 @@ class ControlledDraftingTests(core.Stage02Tests):
                 heads = {(item.kind, item.id): item for item in tx.heads()}
                 with self.assertRaises(Violation) as caught:
                     self.drafting._legal_rule(
-                        case['legal_rule'], records, heads, principal
+                        case['legal_rule'], records, heads, principal,
+                        heads[('Case', self.case_id)],
+                        records[case['filing']],
+                        self.drafting.clock().date(),
                     )
                 self.assertEqual(caught.exception.code, 'GATE_DENIED')
 

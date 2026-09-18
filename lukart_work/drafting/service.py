@@ -272,10 +272,17 @@ class ControlledDraftingService(CommandService):
         return receipt
 
     def _validate_results(
-        self, request, principal, invocations, results, plan, sections, records, heads
+        self, request, principal, invocations, results, plan, sections, records,
+        heads, evaluation_date
     ):
         if len(results) != len(sections):
             raise Violation('GATE_DENIED')
+        case = heads.get(('Case', principal.case_id))
+        if case is None:
+            raise Violation('BROKEN_REFERENCE')
+        filing = resolve(
+            plan.filing, records, principal.tenant_id, principal.case_id
+        )
         normalized_sections = []
         used_objectives = set()
         used_arguments = set()
@@ -320,7 +327,10 @@ class ControlledDraftingService(CommandService):
                     if not rules or not statement.citations:
                         raise Violation('GATE_DENIED')
                     rule_entities = {
-                        target: self._legal_rule(target, records, heads, principal)
+                        target: self._legal_rule(
+                            target, records, heads, principal, case, filing,
+                            evaluation_date,
+                        )
                         for target in rules
                     }
                     covered_rules = set()
@@ -664,7 +674,8 @@ class ControlledDraftingService(CommandService):
             if current_invocations != invocations:
                 raise Violation('STALE')
             normalized_sections = self._validate_results(
-                request, principal, invocations, results, plan, sections, records, heads
+                request, principal, invocations, results, plan, sections, records,
+                heads, evaluation_date
             )
 
             if len(execution_receipts) != len(invocations):
