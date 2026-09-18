@@ -1,0 +1,621 @@
+{
+  "$defs": {
+    "ActivateProceduralRuleData": {
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "$ref": "#/$defs/Ref"
+        }
+      },
+      "required": [
+        "decision"
+      ],
+      "title": "ActivateProceduralRuleData",
+      "type": "object"
+    },
+    "CommandMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "command_id": {
+          "format": "uuid",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "format": "uuid",
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "expected_case_sequence": {
+          "minimum": 0,
+          "title": "Expected Case Sequence",
+          "type": "integer"
+        },
+        "correlation_id": {
+          "format": "uuid",
+          "title": "Correlation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_id",
+        "tenant_id",
+        "case_id",
+        "idempotency_key",
+        "expected_case_sequence",
+        "correlation_id"
+      ],
+      "title": "CommandMeta",
+      "type": "object"
+    },
+    "DeadlineRule": {
+      "additionalProperties": false,
+      "properties": {
+        "trigger_key": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Trigger Key",
+          "type": "string"
+        },
+        "offset_days": {
+          "minimum": 0,
+          "title": "Offset Days",
+          "type": "integer"
+        },
+        "timezone": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        },
+        "due_time": {
+          "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+          "title": "Due Time",
+          "type": "string"
+        },
+        "calendar_mode": {
+          "enum": [
+            "CALENDAR_DAYS",
+            "BUSINESS_DAYS"
+          ],
+          "title": "Calendar Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trigger_key",
+        "offset_days",
+        "timezone",
+        "due_time",
+        "calendar_mode"
+      ],
+      "title": "DeadlineRule",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Locator": {
+      "additionalProperties": false,
+      "description": "A source location must be nonempty and address immutable source bytes.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "PAGE",
+            "PARAGRAPH",
+            "ARTICLE",
+            "BYTE_RANGE",
+            "RECORD"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "fragment_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fragment Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "value",
+        "fragment_hash"
+      ],
+      "title": "Locator",
+      "type": "object"
+    },
+    "ProceduralCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "operator": {
+          "enum": [
+            "PRESENT",
+            "EQUALS",
+            "ONE_OF",
+            "MIN_INTEGER",
+            "MIN_ITEMS",
+            "CONTAINS_ALL"
+          ],
+          "title": "Operator",
+          "type": "string"
+        },
+        "operand": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "path",
+        "operator"
+      ],
+      "title": "ProceduralCondition",
+      "type": "object"
+    },
+    "ProceduralRuleSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "ORGAN",
+            "JURISDICTION",
+            "VENUE",
+            "STANDING_AUTHORITY",
+            "FILING_TOPOLOGY",
+            "CHANNEL",
+            "FORMAL_REQUIREMENT",
+            "SIGNATURE",
+            "COPIES",
+            "ATTACHMENTS",
+            "DEADLINE"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "code": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "applies_when": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProceduralCondition"
+          },
+          "title": "Applies When",
+          "type": "array"
+        },
+        "requirements": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProceduralCondition"
+          },
+          "title": "Requirements",
+          "type": "array"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "deadline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeadlineRule"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "category",
+        "code",
+        "severity"
+      ],
+      "title": "ProceduralRuleSpec",
+      "type": "object"
+    },
+    "ProceduralTransitionData": {
+      "additionalProperties": false,
+      "properties": {},
+      "title": "ProceduralTransitionData",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "RegisterProceduralRuleData": {
+      "additionalProperties": false,
+      "properties": {
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "statement": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "jurisdiction": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Jurisdiction",
+          "type": "string"
+        },
+        "effective_period": {
+          "$ref": "#/$defs/TimeRange"
+        },
+        "applicable_document_types": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VersionPin"
+          },
+          "title": "Applicable Document Types",
+          "type": "array"
+        },
+        "interpretation": {
+          "enum": [
+            "SETTLED",
+            "DISPUTED",
+            "UNKNOWN"
+          ],
+          "title": "Interpretation",
+          "type": "string"
+        },
+        "spec": {
+          "$ref": "#/$defs/ProceduralRuleSpec"
+        }
+      },
+      "required": [
+        "sources",
+        "statement",
+        "jurisdiction",
+        "effective_period",
+        "interpretation",
+        "spec"
+      ],
+      "title": "RegisterProceduralRuleData",
+      "type": "object"
+    },
+    "RegisterProceduralSourceData": {
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "format": "uuid",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "registry_id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Registry Id",
+          "type": "string"
+        },
+        "registry_version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Registry Version",
+          "type": "string"
+        },
+        "jurisdiction": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Jurisdiction",
+          "type": "string"
+        },
+        "source_type": {
+          "enum": [
+            "LAW",
+            "CASE_LAW",
+            "OFFICIAL_GUIDANCE",
+            "DOCTRINE",
+            "SECONDARY_SOURCE",
+            "USER_MATERIAL"
+          ],
+          "title": "Source Type",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "identifier": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Identifier",
+          "type": "string"
+        },
+        "effective_period": {
+          "$ref": "#/$defs/TimeRange"
+        },
+        "source_uri": {
+          "pattern": "^https?://[^\\s]+$",
+          "title": "Source Uri",
+          "type": "string"
+        },
+        "authority_level": {
+          "enum": [
+            "BINDING",
+            "PERSUASIVE",
+            "INFORMATIONAL",
+            "UNKNOWN"
+          ],
+          "title": "Authority Level",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "registry_id",
+        "registry_version",
+        "jurisdiction",
+        "source_type",
+        "title",
+        "identifier",
+        "effective_period",
+        "source_uri",
+        "authority_level"
+      ],
+      "title": "RegisterProceduralSourceData",
+      "type": "object"
+    },
+    "SourceAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Hash",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_hash",
+        "locator"
+      ],
+      "title": "SourceAnchor",
+      "type": "object"
+    },
+    "TimeRange": {
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "format": "date",
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "title": "TimeRange",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:ProceduralRequest:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "RegisterProceduralSource",
+        "VerifyProceduralSource",
+        "RegisterProceduralRule",
+        "ReviewProceduralRule",
+        "ActivateProceduralRule",
+        "SupersedeProceduralRule",
+        "WithdrawProceduralRule"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "meta": {
+      "$ref": "#/$defs/CommandMeta"
+    },
+    "target": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Ref"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "data": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RegisterProceduralSourceData"
+        },
+        {
+          "$ref": "#/$defs/RegisterProceduralRuleData"
+        },
+        {
+          "$ref": "#/$defs/ActivateProceduralRuleData"
+        },
+        {
+          "$ref": "#/$defs/ProceduralTransitionData"
+        }
+      ],
+      "title": "Data"
+    },
+    "inputs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
+    "anchors": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SourceAnchor"
+      },
+      "title": "Anchors",
+      "type": "array"
+    },
+    "rationale": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract",
+    "operation",
+    "meta",
+    "data",
+    "rationale"
+  ],
+  "title": "ProceduralRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ProceduralRequest:1.0.0"
+}
