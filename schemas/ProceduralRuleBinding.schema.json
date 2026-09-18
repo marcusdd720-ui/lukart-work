@@ -1,0 +1,344 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "DeadlineRule": {
+      "additionalProperties": false,
+      "properties": {
+        "trigger_key": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Trigger Key",
+          "type": "string"
+        },
+        "offset_days": {
+          "minimum": 0,
+          "title": "Offset Days",
+          "type": "integer"
+        },
+        "timezone": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        },
+        "due_time": {
+          "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+          "title": "Due Time",
+          "type": "string"
+        },
+        "calendar_mode": {
+          "enum": [
+            "CALENDAR_DAYS",
+            "BUSINESS_DAYS"
+          ],
+          "title": "Calendar Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trigger_key",
+        "offset_days",
+        "timezone",
+        "due_time",
+        "calendar_mode"
+      ],
+      "title": "DeadlineRule",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ProceduralCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "operator": {
+          "enum": [
+            "PRESENT",
+            "EQUALS",
+            "ONE_OF",
+            "MIN_INTEGER",
+            "MIN_ITEMS",
+            "CONTAINS_ALL"
+          ],
+          "title": "Operator",
+          "type": "string"
+        },
+        "operand": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "path",
+        "operator"
+      ],
+      "title": "ProceduralCondition",
+      "type": "object"
+    },
+    "ProceduralRuleSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "ORGAN",
+            "JURISDICTION",
+            "VENUE",
+            "STANDING_AUTHORITY",
+            "FILING_TOPOLOGY",
+            "CHANNEL",
+            "FORMAL_REQUIREMENT",
+            "SIGNATURE",
+            "COPIES",
+            "ATTACHMENTS",
+            "DEADLINE"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "code": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "applies_when": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProceduralCondition"
+          },
+          "title": "Applies When",
+          "type": "array"
+        },
+        "requirements": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ProceduralCondition"
+          },
+          "title": "Requirements",
+          "type": "array"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "deadline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeadlineRule"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "category",
+        "code",
+        "severity"
+      ],
+      "title": "ProceduralRuleSpec",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "rule": {
+      "$ref": "#/$defs/Ref"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "previous_hash": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Previous Hash"
+    },
+    "sources": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "minItems": 1,
+      "title": "Sources",
+      "type": "array"
+    },
+    "spec": {
+      "$ref": "#/$defs/ProceduralRuleSpec"
+    },
+    "actor": {
+      "$ref": "#/$defs/Actor"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "implementation": {
+      "$ref": "#/$defs/VersionPin"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "case_id",
+    "rule",
+    "revision",
+    "previous_hash",
+    "sources",
+    "spec",
+    "actor",
+    "recorded_at",
+    "implementation"
+  ],
+  "title": "ProceduralRuleBinding",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ProceduralRuleBinding:1.0.0"
+}

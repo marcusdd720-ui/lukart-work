@@ -1,0 +1,256 @@
+{
+  "$defs": {
+    "JsonValue": {},
+    "ProceduralFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "ORGAN",
+            "JURISDICTION",
+            "VENUE",
+            "STANDING_AUTHORITY",
+            "FILING_TOPOLOGY",
+            "CHANNEL",
+            "FORMAL_REQUIREMENT",
+            "SIGNATURE",
+            "COPIES",
+            "ATTACHMENTS",
+            "DEADLINE"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "applicability": {
+          "enum": [
+            "APPLICABLE",
+            "NOT_APPLICABLE",
+            "UNKNOWN",
+            "UNRESOLVED",
+            "ABSTAIN"
+          ],
+          "title": "Applicability",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "SATISFIED",
+            "VIOLATION",
+            "CALCULATED",
+            "NOT_APPLICABLE",
+            "UNKNOWN",
+            "UNRESOLVED",
+            "ABSTAIN"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/$defs/Ref"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Sources",
+          "type": "array"
+        },
+        "binding_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Binding Hash",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        },
+        "actual": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "expected": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "due_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Due At"
+        }
+      },
+      "required": [
+        "code",
+        "category",
+        "applicability",
+        "outcome",
+        "severity",
+        "rule",
+        "sources",
+        "binding_hash",
+        "path",
+        "message"
+      ],
+      "title": "ProceduralFinding",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "case_sequence": {
+      "minimum": 1,
+      "title": "Case Sequence",
+      "type": "integer"
+    },
+    "filing": {
+      "$ref": "#/$defs/Ref"
+    },
+    "evaluation_date": {
+      "format": "date",
+      "title": "Evaluation Date",
+      "type": "string"
+    },
+    "findings": {
+      "items": {
+        "$ref": "#/$defs/ProceduralFinding"
+      },
+      "title": "Findings",
+      "type": "array"
+    },
+    "rules_considered": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Rules Considered",
+      "type": "array"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "case_id",
+    "case_sequence",
+    "filing",
+    "evaluation_date",
+    "findings",
+    "rules_considered"
+  ],
+  "title": "ProceduralAssessment",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ProceduralAssessment:1.0.0"
+}

@@ -272,6 +272,26 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:ProceduralRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProceduralRuleBinding",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProceduralQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProceduralFinding",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProceduralAssessment",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -292,6 +312,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 71,
+  "json_files_parsed": 76,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }

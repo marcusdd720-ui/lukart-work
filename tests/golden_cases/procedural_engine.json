@@ -1,0 +1,29 @@
+{
+  "case_jurisdiction": "PL-SYNTHETIC",
+  "evaluation_date": "2026-09-18",
+  "service_date": "2026-09-01",
+  "deadline_due": "2026-09-15T23:59:00+02:00",
+  "channel": "SYNTHETIC_PORTAL",
+  "copies_count": 2,
+  "attachments": ["ANNEX_A"],
+  "expected_categories": [
+    "ATTACHMENTS",
+    "CHANNEL",
+    "COPIES",
+    "DEADLINE",
+    "FILING_TOPOLOGY",
+    "FORMAL_REQUIREMENT",
+    "JURISDICTION",
+    "ORGAN",
+    "SIGNATURE",
+    "STANDING_AUTHORITY",
+    "VENUE"
+  ],
+  "forbidden": [
+    "AUTO_PROMOTE_CLAIM_TO_FACT",
+    "DOCUMENT_PLAN",
+    "DRAFT",
+    "RENDER",
+    "EXTERNAL_FILE"
+  ]
+}

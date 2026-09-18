@@ -1,0 +1,155 @@
+{
+  "$defs": {
+    "JsonValue": {},
+    "ProceduralDatum": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "FACT",
+            "CLAIM",
+            "HYPOTHESIS",
+            "INTERPRETATION",
+            "UNKNOWN",
+            "UNRESOLVED"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Facts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "classification"
+      ],
+      "title": "ProceduralDatum",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:ProceduralQuery:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "operation": {
+      "const": "AssessProcedure",
+      "title": "Operation",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "filing": {
+      "$ref": "#/$defs/Ref"
+    },
+    "evaluation_date": {
+      "format": "date",
+      "title": "Evaluation Date",
+      "type": "string"
+    },
+    "context": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProceduralDatum"
+      },
+      "title": "Context",
+      "type": "array"
+    }
+  },
+  "required": [
+    "contract",
+    "operation",
+    "tenant_id",
+    "case_id",
+    "filing",
+    "evaluation_date"
+  ],
+  "title": "ProceduralQuery",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ProceduralQuery:1.0.0"
+}
