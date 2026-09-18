@@ -61,6 +61,29 @@ class PostgresRepository:
             return tx.object('snapshot', snapshot_id, Snapshot)
 
     @contextmanager
+    def external_call_lock(self, tenant_id, case_id, idempotency_key):
+        """Serialize one external-call idempotency key across processes without locking the case."""
+        import psycopg
+        with psycopg.connect(self._dsn) as connection:
+            role = connection.execute(
+                'SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname=current_user'
+            ).fetchone()
+            if role is None or any(role):
+                raise Violation('FORBIDDEN')
+            lock = int.from_bytes(
+                sha256(
+                    f'external-call/{tenant_id}/{case_id}/{idempotency_key}'.encode()
+                ).digest()[:8],
+                'big',
+                signed=True,
+            )
+            connection.execute('SELECT pg_advisory_lock(%s)', (lock,))
+            try:
+                yield
+            finally:
+                connection.execute('SELECT pg_advisory_unlock(%s)', (lock,))
+
+    @contextmanager
     def transaction(self, tenant_id, case_id):
         import psycopg
         with psycopg.connect(self._dsn) as connection:
@@ -153,20 +176,31 @@ class UnitOfWork:
             raise Violation('PROVENANCE_MISSING')
         return data
 
-    def replay(self, idempotency_key, input_hash):
+    def replay_types(self, idempotency_key, input_hash, types):
         row = self.connection.execute('SELECT input_hash,contract,payload,content_hash FROM lw_core.commands WHERE tenant_id=%s AND case_id=%s AND idempotency_key=%s', (*self.scope, idempotency_key)).fetchone()
         if row is None:
             return None
         if row[0] != input_hash:
             raise Violation('IDEMPOTENCY_CONFLICT')
-        return decode(row[1:], CommandResult)
+        for cls in types:
+            if row[1] == urn(cls):
+                return decode(row[1:], cls)
+        raise Violation('UNKNOWN')
 
-    def finish(self, request, input_hash, result, events):
-        self.connection.execute('INSERT INTO lw_core.commands VALUES (%s,%s,%s,%s,%s,%s,%s)', (*self.scope, request.meta.idempotency_key, input_hash, urn(CommandResult), canonical(result), digest(result)))
+    def replay(self, idempotency_key, input_hash):
+        return self.replay_types(idempotency_key, input_hash, (CommandResult,))
+
+    def finish_result(self, request, input_hash, result, events):
+        self.connection.execute('INSERT INTO lw_core.commands VALUES (%s,%s,%s,%s,%s,%s,%s)', (*self.scope, request.meta.idempotency_key, input_hash, urn(type(result)), canonical(result), digest(result)))
         for event in events:
             raw = canonical(event)
             self.connection.execute('INSERT INTO lw_core.events (tenant_id,case_id,event_id,sequence,contract,payload,content_hash) VALUES (%s,%s,%s,%s,%s,%s,%s)', (*self.scope, event.audit.event_id, event.audit.sequence, urn(DomainEvent), raw, digest(event)))
             self.connection.execute('INSERT INTO lw_core.outbox VALUES (%s,%s,%s)', (*self.scope, event.audit.event_id))
+
+    def finish(self, request, input_hash, result, events):
+        if not isinstance(result, CommandResult):
+            raise Violation('SCHEMA_INVALID')
+        self.finish_result(request, input_hash, result, events)
 
     def last_event_hash(self):
         self.events()  # Validate the chain before extending it.
