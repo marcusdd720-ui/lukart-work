@@ -19,7 +19,7 @@ class DocumentPlannerTests(core.Stage02Tests):
     def setUp(self):
         super().setUp()
         self.authority.revoke(self.token)
-        actions = stage08_actions(self.principal.actions) | {'GetDocumentPlan'}
+        actions = self.principal.actions | frozenset(get_args(PlannerOperation)) | {'GetDocumentPlan'}
         self.principal = Principal(self.actor, self.tenant, self.case_id, actions)
         self.token = self.authority.provision(self.principal)
         self.planner = DocumentPlannerService(self.repo, self.authority)
@@ -274,6 +274,11 @@ class DocumentPlannerTests(core.Stage02Tests):
         self.assertIsInstance(result, DomainError)
 
     def test_legacy_core_planning_path_is_not_authorized_for_stage08_profile(self):
+        restricted = Principal(
+            self.actor, self.tenant, self.case_id,
+            stage08_actions(self.principal.actions) | {'GetDocumentPlan'},
+        )
+        restricted_token = self.authority.provision(restricted)
         result = self.run_request(self.request('AddSection', {
             'filing': {'kind': 'Filing', 'id': str(uuid4()), 'revision': 1},
             'section_type': 'SYNTHETIC',
@@ -286,7 +291,7 @@ class DocumentPlannerTests(core.Stage02Tests):
                 'forbidden': ['UNSUPPORTED_ASSERTION', 'UNMARKED_INFERENCE', 'NEW_FACT', 'NEW_LEGAL_RULE'],
                 'requirements': [],
             },
-        }))
+        }), token=restricted_token)
         self.assertIsInstance(result, DomainError)
         self.assertEqual(result.code, 'FORBIDDEN')
 
