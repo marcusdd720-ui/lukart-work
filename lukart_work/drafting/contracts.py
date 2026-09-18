@@ -51,6 +51,7 @@ class DraftingTrace(Value):
     profile: DraftingProfile
     invocations: tuple[DraftingInvocation, ...]
     results: tuple[AIResult, ...]
+    raw_outputs: tuple[str, ...]
     input_hash: Hash
     raw_output_hash: Hash
 
@@ -58,7 +59,11 @@ class DraftingTrace(Value):
     def complete_trace(self):
         if self.recorded_at.tzinfo is None:
             raise ValueError('TIMEZONE_REQUIRED')
-        if not self.invocations or len(self.invocations) != len(self.results):
+        if (
+            not self.invocations
+            or len(self.invocations) != len(self.results)
+            or len(self.results) != len(self.raw_outputs)
+        ):
             raise ValueError('INCOMPLETE_TRACE')
         request_ids = tuple(item.request.request_id for item in self.invocations)
         if len(set(request_ids)) != len(request_ids):
