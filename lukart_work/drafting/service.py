@@ -20,10 +20,14 @@ from lukart_work.validation.rules import (
     validate_section_inputs,
     walk,
 )
-from .contracts import DraftingInvocation, DraftingProfile, DraftingTrace
+from .contracts import (
+    DraftingInvocation, DraftingProfile, DraftingRejectionTrace, DraftingTrace,
+    ModelExecutionReceipt,
+)
 
 
 TRACE_CATEGORY = 'drafting_trace'
+REJECTION_TRACE_CATEGORY = 'drafting_rejection_trace'
 
 
 class ControlledDraftingService(CommandService):
@@ -63,16 +67,32 @@ class ControlledDraftingService(CommandService):
         return tx.replay_types(
             request.meta.idempotency_key,
             input_hash,
-            (wire.CommandResult, wire.AIResult),
+            (wire.CommandResult, wire.AIResult, wire.DomainError),
         )
 
-    def _legal_rule(self, target, records, heads, principal):
+    def _legal_rule(
+        self, target, records, heads, principal, case, filing, evaluation_date
+    ):
         rule = resolve(target, records, principal.tenant_id, principal.case_id)
         if (
             rule.kind != 'LegalRule'
             or rule.status != 'ACTIVE'
             or heads.get(('LegalRule', rule.id)) != rule
             or rule.review_decision is None
+        ):
+            raise Violation('GATE_DENIED')
+        if (
+            evaluation_date < rule.effective_period.start
+            or (
+                rule.effective_period.end is not None
+                and evaluation_date > rule.effective_period.end
+            )
+            or rule.jurisdiction != case.jurisdiction
+            or (
+                rule.applicable_document_types
+                and filing.document_type not in rule.applicable_document_types
+            )
+            or rule.interpretation != 'SETTLED'
         ):
             raise Violation('GATE_DENIED')
         approval = self._live_decision(
@@ -89,6 +109,29 @@ class ControlledDraftingService(CommandService):
         ):
             raise Violation('GATE_DENIED')
         return rule
+
+    def _confirmed_fact(self, target, records, heads, principal):
+        fact = resolve(target, records, principal.tenant_id, principal.case_id)
+        if (
+            fact.kind != 'Fact'
+            or fact.status != 'CONFIRMED'
+            or fact.support != 'SOURCE_BACKED'
+            or fact.acceptance is None
+            or heads.get(('Fact', fact.id)) != fact
+        ):
+            raise Violation('GATE_DENIED')
+        approval = self._live_decision(
+            fact.acceptance, records, heads, principal
+        )
+        previous = m.Ref(kind='Fact', id=fact.id, revision=fact.revision - 1)
+        if (
+            approval.decision_type != 'FACT_ACCEPTANCE'
+            or approval.outcome != 'ACCEPT'
+            or approval.decided_by.kind != 'HUMAN'
+            or previous not in approval.targets
+        ):
+            raise Violation('GATE_DENIED')
+        return fact
 
     def _verified_citation(self, target, records, heads, principal):
         citation = resolve(target, records, principal.tenant_id, principal.case_id)
@@ -109,7 +152,7 @@ class ControlledDraftingService(CommandService):
             raise Violation('GATE_DENIED')
         return citation, source
 
-    def _context(self, request, principal, tx):
+    def _context(self, request, principal, tx, evaluation_date):
         records = tx.records()
         heads = {(entity.kind, entity.id): entity for entity in tx.heads()}
         case = heads.get(('Case', principal.case_id))
@@ -172,7 +215,10 @@ class ControlledDraftingService(CommandService):
                 raise Violation('SNAPSHOT_NOT_CLOSED')
             for target in declared:
                 if target.kind == 'LegalRule':
-                    self._legal_rule(target, records, heads, principal)
+                    self._legal_rule(
+                        target, records, heads, principal, case, filing,
+                        evaluation_date,
+                    )
                 elif target.kind == 'Citation':
                     citation, _ = self._verified_citation(
                         target, records, heads, principal
@@ -186,11 +232,12 @@ class ControlledDraftingService(CommandService):
         return records, heads, snapshot, plan, tuple(sections), plan_approval, live_snapshot_decision
 
     @staticmethod
-    def _invocations(request, principal, snapshot, sections, profile):
+    def _invocations(request, principal, snapshot, sections, profile, evaluation_date):
         return tuple(
             DraftingInvocation(
                 contract='urn:lukart:work:DraftingInvocation:1.0.0',
                 section=ref(section),
+                evaluation_date=evaluation_date,
                 request=wire.AIRequest(
                 request_id=uuid5(request.meta.command_id, f'drafting-request:{index}'),
                 tenant_id=principal.tenant_id,
@@ -207,6 +254,22 @@ class ControlledDraftingService(CommandService):
             )
             for index, section in enumerate(sections)
         )
+
+    @staticmethod
+    def _execution_receipt(profile, invocation, raw):
+        receipt = (
+            raw if isinstance(raw, ModelExecutionReceipt)
+            else ModelExecutionReceipt.model_validate(raw)
+        )
+        if (
+            receipt.request_id != invocation.request.request_id
+            or receipt.provider != profile.provider
+            or receipt.model != profile.model
+            or receipt.generator != profile.generator
+            or receipt.model_parameters_hash != profile.model_parameters_hash
+        ):
+            raise Violation('GATE_DENIED')
+        return receipt
 
     def _validate_results(
         self, request, principal, invocations, results, plan, sections, records, heads
@@ -238,10 +301,20 @@ class ControlledDraftingService(CommandService):
                     raise Violation('UNSUPPORTED')
                 if (statement.statement_type == 'INFERENCE') != (statement.support == 'INFERRED'):
                     raise Violation('GATE_DENIED')
-                if statement.statement_type == 'FACTUAL' and not any(
-                    target.kind in ('Fact', 'Evidence') for target in statement.refs
-                ):
-                    raise Violation('GATE_DENIED')
+                if statement.statement_type == 'FACTUAL':
+                    facts = [
+                        target for target in statement.refs if target.kind == 'Fact'
+                    ]
+                    if (
+                        not facts
+                        or any(
+                            target.kind not in ('Fact', 'Evidence')
+                            for target in statement.refs
+                        )
+                    ):
+                        raise Violation('GATE_DENIED')
+                    for target in facts:
+                        self._confirmed_fact(target, records, heads, principal)
                 if statement.statement_type == 'LEGAL':
                     rules = [target for target in statement.refs if target.kind == 'LegalRule']
                     if not rules or not statement.citations:
@@ -264,12 +337,21 @@ class ControlledDraftingService(CommandService):
                             covered_rules.add(citation.supported)
                     if not set(rules) <= covered_rules:
                         raise Violation('GATE_DENIED')
+                statement_requests = {
+                    target for target in statement.refs if target.kind == 'Request'
+                }
                 if statement.statement_type == 'REQUEST':
-                    requests = {target for target in statement.refs if target.kind == 'Request'}
-                    if not requests:
+                    if (
+                        not statement_requests
+                        or not statement_requests <= set(plan.objectives)
+                    ):
                         raise Violation('GATE_DENIED')
-                    used_objectives.update(requests)
-                used_arguments.update(target for target in statement.refs if target.kind == 'Argument')
+                    used_objectives.update(statement_requests)
+                elif statement_requests:
+                    raise Violation('GATE_DENIED')
+                used_arguments.update(
+                    target for target in statement.refs if target.kind == 'Argument'
+                )
 
                 body = statement.model_dump(mode='json')
                 body['id'] = str(uuid5(
@@ -380,7 +462,8 @@ class ControlledDraftingService(CommandService):
             )
 
     def _record_abstain(
-        self, request, principal, input_hash, profile, invocations, results, raw_outputs
+        self, request, principal, input_hash, profile, invocations, results,
+        execution_receipts, raw_outputs, evaluation_date
     ):
         with self.repository.transaction(principal.tenant_id, principal.case_id) as tx:
             replay = self._replay(tx, request, input_hash)
@@ -397,9 +480,9 @@ class ControlledDraftingService(CommandService):
                 sections,
                 _,
                 _,
-            ) = self._context(request, principal, tx)
+            ) = self._context(request, principal, tx, evaluation_date)
             current_invocations = self._invocations(
-                request, principal, snapshot, sections, profile
+                request, principal, snapshot, sections, profile, evaluation_date
             )
             if current_invocations != invocations:
                 raise Violation('STALE')
@@ -407,11 +490,15 @@ class ControlledDraftingService(CommandService):
             if (
                 not results
                 or len(results) != len(raw_outputs)
+                or len(results) != len(execution_receipts)
                 or len(results) > len(invocations)
                 or results[-1].disposition != 'ABSTAIN'
             ):
                 raise Violation('GATE_DENIED')
-            for index, (invocation, result) in enumerate(zip(attempted, results)):
+            for index, (invocation, result, receipt) in enumerate(
+                zip(attempted, results, execution_receipts)
+            ):
+                self._execution_receipt(profile, invocation, receipt)
                 validate_ai(result, invocation.request)
                 if index < len(results) - 1:
                     if result.disposition != 'PROPOSE' or result.section is None or result.proposals:
@@ -438,6 +525,7 @@ class ControlledDraftingService(CommandService):
                 profile=profile,
                 invocations=attempted,
                 results=results,
+                execution_receipts=execution_receipts,
                 raw_outputs=raw_outputs,
                 input_hash=trace_input_hash,
                 raw_output_hash=raw_output_hash,
@@ -480,8 +568,79 @@ class ControlledDraftingService(CommandService):
             )
         return results[-1]
 
+    def _record_rejection(
+        self, request, principal, input_hash, profile, invocations, results,
+        execution_receipts, raw_outputs, error
+    ):
+        with self.repository.transaction(principal.tenant_id, principal.case_id) as tx:
+            replay = self._replay(tx, request, input_hash)
+            if replay is not None:
+                return replay
+            sequence = tx.sequence()
+            now = self.clock()
+            if now.tzinfo is None:
+                raise Violation('SCHEMA_INVALID')
+            now = now.astimezone(timezone.utc)
+            trace = DraftingRejectionTrace(
+                contract='urn:lukart:work:DraftingRejectionTrace:1.0.0',
+                id=uuid5(request.meta.command_id, 'drafting-rejection-trace'),
+                tenant_id=principal.tenant_id,
+                case_id=principal.case_id,
+                command_id=request.meta.command_id,
+                actor=principal.actor,
+                recorded_at=now,
+                profile=profile,
+                invocations=invocations,
+                results=results,
+                execution_receipts=execution_receipts,
+                raw_outputs=raw_outputs,
+                error=error,
+                input_hash=digest([
+                    item.model_dump(mode='json') for item in invocations
+                ]),
+                raw_output_hash=digest(raw_outputs),
+            )
+            tx.put_object(REJECTION_TRACE_CATEGORY, trace.id, trace)
+            tx.set_sequence(sequence + 1)
+            event_namespace = uuid5(
+                request.meta.command_id,
+                f'{principal.tenant_id}/{principal.case_id}',
+            )
+            event = wire.DomainEvent(
+                event_type='DraftingRejected',
+                subjects=(request.plan, *(item.section for item in invocations)),
+                audit=wire.AuditEvent(
+                    event_id=uuid5(event_namespace, 'rejected-event'),
+                    tenant_id=principal.tenant_id,
+                    case_id=principal.case_id,
+                    sequence=sequence + 1,
+                    actor=principal.actor,
+                    timestamp=now,
+                    operation=request.operation,
+                    command_id=request.meta.command_id,
+                    correlation_id=request.meta.correlation_id,
+                    input_hash=input_hash,
+                    output_hash=digest(error),
+                    previous_event_hash=tx.last_event_hash(),
+                    source_versions=tuple(sorted(
+                        set(walk(trace, m.Ref)),
+                        key=lambda target: (
+                            target.kind, str(target.id), target.revision
+                        ),
+                    )),
+                    model_provider=profile.provider,
+                    rule_version=rule_pin(),
+                ),
+            )
+            tx.finish_result(request, input_hash, error, (event,))
+            principal.require(
+                request.meta.tenant_id, request.meta.case_id, request.operation
+            )
+        return error
+
     def _commit(
-        self, request, principal, input_hash, profile, invocations, results, raw_outputs
+        self, request, principal, input_hash, profile, invocations, results,
+        execution_receipts, raw_outputs, evaluation_date
     ):
         with self.repository.transaction(principal.tenant_id, principal.case_id) as tx:
             replay = self._replay(tx, request, input_hash)
@@ -498,9 +657,9 @@ class ControlledDraftingService(CommandService):
                 sections,
                 plan_approval,
                 snapshot_approval,
-            ) = self._context(request, principal, tx)
+            ) = self._context(request, principal, tx, evaluation_date)
             current_invocations = self._invocations(
-                request, principal, snapshot, sections, profile
+                request, principal, snapshot, sections, profile, evaluation_date
             )
             if current_invocations != invocations:
                 raise Violation('STALE')
@@ -508,6 +667,11 @@ class ControlledDraftingService(CommandService):
                 request, principal, invocations, results, plan, sections, records, heads
             )
 
+            if len(execution_receipts) != len(invocations):
+                raise Violation('GATE_DENIED')
+            for invocation, receipt in zip(invocations, execution_receipts):
+                self._execution_receipt(profile, invocation, receipt)
+            execution = execution_receipts[0]
             trace_input_hash = digest([
                 item.model_dump(mode='json') for item in invocations
             ])
@@ -516,10 +680,10 @@ class ControlledDraftingService(CommandService):
                 knowledge=snapshot.knowledge_pins,
                 rule_set=snapshot.rule_set,
                 prompts=(profile.prompt,),
-                models=(profile.model,),
-                provider=profile.provider,
-                model_parameters_hash=profile.model_parameters_hash,
-                generator=profile.generator,
+                models=(execution.model,),
+                provider=execution.provider,
+                model_parameters_hash=execution.model_parameters_hash,
+                generator=execution.generator,
                 validators=profile.validators,
                 render_profile=profile.render_profile,
                 input_hash=trace_input_hash,
@@ -571,6 +735,7 @@ class ControlledDraftingService(CommandService):
                 profile=profile,
                 invocations=invocations,
                 results=results,
+                execution_receipts=execution_receipts,
                 raw_outputs=raw_outputs,
                 input_hash=trace_input_hash,
                 raw_output_hash=raw_output_hash,
@@ -641,6 +806,10 @@ class ControlledDraftingService(CommandService):
                     'request': request.model_dump(mode='json'),
                     'actor': principal.actor.model_dump(mode='json'),
                 })
+                instant = self.clock()
+                if instant.tzinfo is None:
+                    raise Violation('SCHEMA_INVALID')
+                evaluation_date = instant.astimezone(timezone.utc).date()
                 with self.repository.external_call_lock(
                     principal.tenant_id,
                     principal.case_id,
@@ -662,33 +831,100 @@ class ControlledDraftingService(CommandService):
                             sections,
                             _,
                             _,
-                        ) = self._context(request, principal, tx)
+                        ) = self._context(
+                            request, principal, tx, evaluation_date
+                        )
                         invocations = self._invocations(
-                            request, principal, snapshot, sections, profile
+                            request, principal, snapshot, sections, profile,
+                            evaluation_date,
                         )
 
                     results = []
+                    execution_receipts = []
                     raw_outputs = []
-                    for invocation in invocations:
-                        raw_value = self.model_provider.propose(invocation)
-                        raw_json = json.dumps(
-                            raw_value, sort_keys=True, separators=(',', ':'),
-                            ensure_ascii=False, allow_nan=False,
-                        )
-                        if len(raw_json.encode('utf-8')) > 2_000_000:
-                            raise Violation('SCHEMA_INVALID')
-                        result = wire.AIResult.model_validate_json(raw_json)
-                        results.append(result)
-                        raw_outputs.append(raw_json)
-                        if result.disposition == 'ABSTAIN':
-                            return self._record_abstain(
-                                request, principal, input_hash, profile,
-                                invocations, tuple(results), tuple(raw_outputs),
+                    for index, invocation in enumerate(invocations):
+                        attempted = invocations[:index + 1]
+                        try:
+                            raw_value = self.model_provider.propose(invocation)
+                            raw_json = json.dumps(
+                                raw_value, sort_keys=True, separators=(',', ':'),
+                                ensure_ascii=False, allow_nan=False,
                             )
-                    return self._commit(
-                        request, principal, input_hash, profile,
-                        invocations, tuple(results), tuple(raw_outputs),
-                    )
+                            if len(raw_json.encode('utf-8')) > 2_000_000:
+                                raise Violation('SCHEMA_INVALID')
+                            raw_outputs.append(raw_json)
+                            receipt = self._execution_receipt(
+                                profile,
+                                invocation,
+                                self.model_provider.execution_receipt(
+                                    invocation.request.request_id
+                                ),
+                            )
+                            execution_receipts.append(receipt)
+                            result = wire.AIResult.model_validate_json(raw_json)
+                            results.append(result)
+                            if result.disposition == 'ABSTAIN':
+                                return self._record_abstain(
+                                    request, principal, input_hash, profile,
+                                    invocations, tuple(results),
+                                    tuple(execution_receipts), tuple(raw_outputs),
+                                    evaluation_date,
+                                )
+                        except Violation as error:
+                            return self._record_rejection(
+                                request, principal, input_hash, profile, attempted,
+                                tuple(results), tuple(execution_receipts),
+                                tuple(raw_outputs),
+                                safe_error(error.code, correlation),
+                            )
+                        except (
+                            ValidationError, ValueError, TypeError, KeyError,
+                            RecursionError,
+                        ):
+                            return self._record_rejection(
+                                request, principal, input_hash, profile, attempted,
+                                tuple(results), tuple(execution_receipts),
+                                tuple(raw_outputs),
+                                safe_error('SCHEMA_INVALID', correlation),
+                            )
+                        except Exception:
+                            return self._record_rejection(
+                                request, principal, input_hash, profile, attempted,
+                                tuple(results), tuple(execution_receipts),
+                                tuple(raw_outputs),
+                                safe_error('UNKNOWN', correlation),
+                            )
+                    try:
+                        return self._commit(
+                            request, principal, input_hash, profile,
+                            invocations, tuple(results),
+                            tuple(execution_receipts), tuple(raw_outputs),
+                            evaluation_date,
+                        )
+                    except Violation as error:
+                        return self._record_rejection(
+                            request, principal, input_hash, profile, invocations,
+                            tuple(results), tuple(execution_receipts),
+                            tuple(raw_outputs),
+                            safe_error(error.code, correlation),
+                        )
+                    except (
+                        ValidationError, ValueError, TypeError, KeyError,
+                        RecursionError,
+                    ):
+                        return self._record_rejection(
+                            request, principal, input_hash, profile, invocations,
+                            tuple(results), tuple(execution_receipts),
+                            tuple(raw_outputs),
+                            safe_error('SCHEMA_INVALID', correlation),
+                        )
+                    except Exception:
+                        return self._record_rejection(
+                            request, principal, input_hash, profile, invocations,
+                            tuple(results), tuple(execution_receipts),
+                            tuple(raw_outputs),
+                            safe_error('UNKNOWN', correlation),
+                        )
         except Violation as error:
             return safe_error(error.code, correlation)
         except (ValidationError, ValueError, TypeError, KeyError, RecursionError):

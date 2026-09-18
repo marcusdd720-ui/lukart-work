@@ -63,6 +63,8 @@ jobs:
             schemas/DraftingProfile.schema.json
             schemas/DraftingInvocation.schema.json
             schemas/DraftingTrace.schema.json
+            schemas/DraftingRejectionTrace.schema.json
+            schemas/ModelExecutionReceipt.schema.json
             reports/stage09-status.json
             reports/stage09-schema-validation.json
             reports/package-validation.json

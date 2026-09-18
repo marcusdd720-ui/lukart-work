@@ -31,7 +31,13 @@ def urn(cls):
 def decode(row, cls):
     contract, raw, content_hash = row
     # Verify the saved representation BEFORE parsing a historical payload.
-    if contract != urn(cls):
+    expected = urn(cls)
+    legacy_domain_event = (
+        cls is DomainEvent
+        and expected == 'urn:lukart:work:DomainEvent:2.0.0'
+        and contract == 'urn:lukart:work:DomainEvent:1.0.0'
+    )
+    if contract != expected and not legacy_domain_event:
         raise Violation('UNKNOWN')
     if sha256(raw.encode('utf-8')).hexdigest() != content_hash:
         raise Violation('INVALID_HASH')

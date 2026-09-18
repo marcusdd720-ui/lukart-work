@@ -5,11 +5,14 @@ import unittest
 from typing import get_args
 from uuid import uuid4
 
-from lukart_work.contracts.messages import AIResult, CommandResult, DomainError
+from lukart_work.contracts.messages import AIResult, CommandResult, DomainError, DomainEvent
+from lukart_work.core.postgres import canonical, decode
 from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.domain import models as m
 from lukart_work.domain.models import Actor
-from lukart_work.drafting.contracts import DraftingTrace
+from lukart_work.drafting.contracts import (
+    DraftingRejectionTrace, DraftingTrace,
+)
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.planner.contracts import PlannerOperation, stage08_actions
 from lukart_work.planner.service import DocumentPlannerService
@@ -23,12 +26,25 @@ class SyntheticProvider:
     def __init__(self, responder=None):
         self.responder = responder
         self.calls = 0
+        self.receipt_overrides = {}
 
     def propose(self, invocation):
         self.calls += 1
         if self.responder is None:
             raise AssertionError('Synthetic provider responder not configured')
         return self.responder(invocation)
+
+    def execution_receipt(self, request_id):
+        value = {
+            'contract': 'urn:lukart:work:ModelExecutionReceipt:1.0.0',
+            'request_id': request_id,
+            'provider': core.PIN,
+            'model': core.PIN,
+            'generator': core.PIN,
+            'model_parameters_hash': 'b' * 64,
+        }
+        value.update(self.receipt_overrides)
+        return value
 
 
 @unittest.skipUnless(core.ADMIN and core.DSN, 'Stage 09 requires isolated PostgreSQL')
@@ -94,16 +110,25 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.sequence = result.case_sequence
         return result
 
-    def legal_authority_fixture(self, source_id):
+    def legal_authority_fixture(
+        self, source_id, *, jurisdiction='PL', effective_period=None,
+        applicable_document_types=None, interpretation='SETTLED'
+    ):
+        effective_period = effective_period or {'start': '2026-01-01', 'end': None}
+        applicable_document_types = (
+            [core.PIN]
+            if applicable_document_types is None
+            else applicable_document_types
+        )
         source = self.proc_apply('RegisterProceduralSource', {
             'source_id': str(source_id),
             'registry_id': 'urn:synthetic:stage09:legal-source',
             'registry_version': '2026-09-18',
-            'jurisdiction': 'PL',
+            'jurisdiction': jurisdiction,
             'source_type': 'LAW',
             'title': 'Synthetic Stage 09 Legal Source',
             'identifier': 'SYN-STAGE09-LAW',
-            'effective_period': {'start': '2026-01-01', 'end': None},
+            'effective_period': effective_period,
             'source_uri': 'https://example.invalid/stage09-law',
             'authority_level': 'BINDING',
         }).refs[0]
@@ -111,10 +136,10 @@ class ControlledDraftingTests(core.Stage02Tests):
         rule = self.proc_apply('RegisterProceduralRule', {
             'sources': [source.model_dump(mode='json')],
             'statement': 'Synthetic Stage 09 binding legal proposition',
-            'jurisdiction': 'PL',
-            'effective_period': {'start': '2026-01-01', 'end': None},
-            'applicable_document_types': [core.PIN],
-            'interpretation': 'SETTLED',
+            'jurisdiction': jurisdiction,
+            'effective_period': effective_period,
+            'applicable_document_types': applicable_document_types,
+            'interpretation': interpretation,
             'spec': {
                 'category': 'FORMAL_REQUIREMENT',
                 'code': 'SYN-STAGE09-LEGAL',
@@ -194,9 +219,18 @@ class ControlledDraftingTests(core.Stage02Tests):
         return source, rule, ref(verified), approval
 
     def approved_planning_case(
-        self, requirements=('REQUESTS', 'ATTACHMENTS'), *, legal=False
+        self, requirements=('REQUESTS', 'ATTACHMENTS'), *, legal=False,
+        legal_kwargs=None, confirm_fact=True, extra_context_request=False
     ):
         fact, party, evidence, source_id = self.fact()
+        if confirm_fact:
+            reviewed_fact = self.apply('ReviewFact', target=fact)[0].refs[0]
+            fact_acceptance = self.decision('FACT_ACCEPTANCE', [reviewed_fact])
+            fact = self.apply(
+                'ConfirmFact',
+                {'decision': fact_acceptance.model_dump(mode='json')},
+                reviewed_fact,
+            )[0].refs[0]
         filing = self.apply('AddFiling', {
             'document_type': core.PIN,
             'direction': 'OUTGOING',
@@ -224,10 +258,19 @@ class ControlledDraftingTests(core.Stage02Tests):
             'claims': [claim.model_dump(mode='json')],
             'evidence': [evidence.model_dump(mode='json')],
         })[0].refs[0]
+        extra_request = None
+        if extra_context_request:
+            extra_request = self.apply('AddRequest', {
+                'filing': filing.model_dump(mode='json'),
+                'request_type': 'SYNTHETIC_CONTEXT_ONLY',
+                'text': 'Synthetic context-only request',
+                'claims': [claim.model_dump(mode='json')],
+                'evidence': [evidence.model_dump(mode='json')],
+            })[0].refs[0]
         legal_source = legal_rule = citation = legal_approval = None
         if legal:
             legal_source, legal_rule, citation, legal_approval = (
-                self.legal_authority_fixture(source_id)
+                self.legal_authority_fixture(source_id, **(legal_kwargs or {}))
             )
         snapshot = self.snapshot()
         snapshot_acceptance = self.accept(snapshot)
@@ -248,6 +291,9 @@ class ControlledDraftingTests(core.Stage02Tests):
                     evidence.model_dump(mode='json'),
                     claim.model_dump(mode='json'),
                     objective.model_dump(mode='json'),
+                    *([] if extra_request is None else [
+                        extra_request.model_dump(mode='json'),
+                    ]),
                     *([] if not legal else [
                         legal_rule.model_dump(mode='json'),
                         citation.model_dump(mode='json'),
@@ -287,6 +333,7 @@ class ControlledDraftingTests(core.Stage02Tests):
             'filing': filing,
             'claim': claim,
             'objective': objective,
+            'extra_request': extra_request,
             'snapshot': snapshot,
             'snapshot_acceptance': snapshot_acceptance,
             'plan': approved,
@@ -387,6 +434,11 @@ class ControlledDraftingTests(core.Stage02Tests):
             self.assertEqual(len(traces), 1)
             trace = traces[0]
             self.assertEqual(len(trace.raw_outputs), 1)
+            self.assertEqual(len(trace.execution_receipts), 1)
+            self.assertEqual(
+                trace.execution_receipts[0].request_id,
+                trace.invocations[0].request.request_id,
+            )
             self.assertEqual(trace.raw_output_hash, digest(trace.raw_outputs))
             self.assertEqual(trace.results[0].disposition, 'PROPOSE')
             events = tx.events()
@@ -498,10 +550,15 @@ class ControlledDraftingTests(core.Stage02Tests):
             return output
         self.provider.responder = responder
         before = self.get(case['fact'])
-        result = self.drafting.generate(json.dumps(self.generate_request(case)), self.token)
+        request = self.generate_request(case)
+        result = self.drafting.generate(json.dumps(request), self.token)
         self.assertIsInstance(result, DomainError, result)
         self.assertEqual(result.code, 'GATE_DENIED')
         self.assertEqual(self.get(case['fact']), before)
+        self.assertEqual(self.provider.calls, 1)
+        replay = self.drafting.generate(json.dumps(request), self.token)
+        self.assertEqual(replay, result)
+        self.assertEqual(self.provider.calls, 1)
         self.assertFalse(self.draft_heads())
 
     def test_model_cannot_hide_new_fact_as_structural_text(self):
@@ -547,6 +604,148 @@ class ControlledDraftingTests(core.Stage02Tests):
             self.assertIsInstance(result, DomainError, result)
             self.assertIn(result.code, {'GATE_DENIED', 'UNSUPPORTED'})
             self.assertFalse(self.draft_heads())
+
+    def test_candidate_or_claim_cannot_be_materialized_as_factual_prose(self):
+        for mode in ('CANDIDATE_FACT', 'CLAIM_WITH_EVIDENCE'):
+            with self.subTest(mode=mode):
+                case = self.approved_planning_case(confirm_fact=False)
+                def responder(invocation, mode=mode):
+                    output = self.valid_output(case, invocation)
+                    refs = (
+                        (case['fact'], case['evidence'])
+                        if mode == 'CANDIDATE_FACT'
+                        else (case['claim'], case['evidence'])
+                    )
+                    output['section']['statements'][0] = self.statement(
+                        'Synthetic unconfirmed proposition.',
+                        'FACTUAL',
+                        'SOURCE_BACKED',
+                        refs,
+                    )
+                    return output
+                self.provider.responder = responder
+                request = self.generate_request(case)
+                before_calls = self.provider.calls
+                result = self.drafting.generate(json.dumps(request), self.token)
+                self.assertIsInstance(result, DomainError, result)
+                self.assertEqual(result.code, 'GATE_DENIED')
+                self.assertEqual(self.provider.calls, before_calls + 1)
+                replay = self.drafting.generate(json.dumps(request), self.token)
+                self.assertEqual(replay, result)
+                self.assertEqual(self.provider.calls, before_calls + 1)
+                self.assertFalse(self.draft_heads())
+                with self.repo.transaction(self.tenant, self.case_id) as tx:
+                    rejections = tx.objects(
+                        'drafting_rejection_trace', DraftingRejectionTrace
+                    )
+                    self.assertTrue(rejections)
+                    self.assertEqual(tx.events()[-1].event_type, 'DraftingRejected')
+                    self.assertEqual(tx.outbox(), tx.events())
+                self.sequence += 1
+
+    def test_request_statement_cannot_expand_approved_plan_objectives(self):
+        case = self.approved_planning_case(extra_context_request=True)
+        def responder(invocation):
+            output = self.valid_output(case, invocation)
+            output['section']['statements'].append(self.statement(
+                'Synthetic unapproved additional request.',
+                'REQUEST',
+                'SOURCE_BACKED',
+                (case['extra_request'],),
+            ))
+            return output
+        self.provider.responder = responder
+        result = self.drafting.generate(
+            json.dumps(self.generate_request(case)), self.token
+        )
+        self.assertIsInstance(result, DomainError, result)
+        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertFalse(self.draft_heads())
+
+    def test_legal_rule_must_be_currently_applicable_before_model_call(self):
+        bad_rules = (
+            {
+                'effective_period': {
+                    'start': '2020-01-01',
+                    'end': '2025-12-31',
+                },
+            },
+            {'jurisdiction': 'DE'},
+            {
+                'applicable_document_types': [{
+                    'id': 'other-document',
+                    'version': '1.0.0',
+                    'content_hash': 'd' * 64,
+                }],
+            },
+            {'interpretation': 'DISPUTED'},
+            {'interpretation': 'UNKNOWN'},
+        )
+        for legal_kwargs in bad_rules:
+            with self.subTest(legal_kwargs=legal_kwargs):
+                case = self.approved_planning_case(
+                    legal=True, legal_kwargs=legal_kwargs
+                )
+                self.provider.responder = (
+                    lambda invocation, case=case: self.valid_output(case, invocation)
+                )
+                before_calls = self.provider.calls
+                result = self.drafting.generate(
+                    json.dumps(self.generate_request(case)), self.token
+                )
+                self.assertIsInstance(result, DomainError, result)
+                self.assertEqual(result.code, 'GATE_DENIED')
+                self.assertEqual(self.provider.calls, before_calls)
+
+    def test_execution_receipt_mismatch_is_terminal_and_replays_without_model_call(self):
+        case = self.approved_planning_case()
+        self.provider.responder = lambda invocation: self.valid_output(case, invocation)
+        self.provider.receipt_overrides = {'model_parameters_hash': 'c' * 64}
+        request = self.generate_request(case)
+        result = self.drafting.generate(json.dumps(request), self.token)
+        self.assertIsInstance(result, DomainError, result)
+        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertEqual(self.provider.calls, 1)
+        replay = self.drafting.generate(json.dumps(request), self.token)
+        self.assertEqual(replay, result)
+        self.assertEqual(self.provider.calls, 1)
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            traces = tx.objects(
+                'drafting_rejection_trace', DraftingRejectionTrace
+            )
+            self.assertEqual(len(traces), 1)
+            self.assertEqual(traces[0].error.code, 'GATE_DENIED')
+            self.assertEqual(tx.events()[-1].event_type, 'DraftingRejected')
+
+    def test_provider_exception_is_terminal_and_replays_without_second_call(self):
+        case = self.approved_planning_case()
+        def explode(_):
+            raise RuntimeError('synthetic provider failure')
+        self.provider.responder = explode
+        request = self.generate_request(case)
+        result = self.drafting.generate(json.dumps(request), self.token)
+        self.assertIsInstance(result, DomainError, result)
+        self.assertEqual(result.code, 'UNKNOWN')
+        self.assertEqual(self.provider.calls, 1)
+        replay = self.drafting.generate(json.dumps(request), self.token)
+        self.assertEqual(replay, result)
+        self.assertEqual(self.provider.calls, 1)
+
+    def test_domain_event_v2_reader_accepts_historical_v1_payload(self):
+        case = self.approved_planning_case()
+        self.provider.responder = lambda invocation: self.valid_output(case, invocation)
+        result = self.drafting.generate(
+            json.dumps(self.generate_request(case)), self.token
+        )
+        self.assertIsInstance(result, CommandResult, result)
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            event = tx.events()[-1]
+        raw = canonical(event)
+        historical = decode(
+            ('urn:lukart:work:DomainEvent:1.0.0', raw, digest(event)),
+            DomainEvent,
+        )
+        self.assertEqual(historical, event)
 
     def test_reference_outside_approved_section_contract_is_rejected(self):
         case = self.approved_planning_case()
