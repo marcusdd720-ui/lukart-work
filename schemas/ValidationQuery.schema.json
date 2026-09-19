@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:ValidationQuery:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "operation": {
+      "const": "GetValidation",
+      "title": "Operation",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "run_id": {
+      "format": "uuid",
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract",
+    "operation",
+    "tenant_id",
+    "case_id",
+    "run_id"
+  ],
+  "title": "ValidationQuery",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ValidationQuery:1.0.0"
+}

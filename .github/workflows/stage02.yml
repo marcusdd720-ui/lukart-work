@@ -1,9 +1,9 @@
-name: Stage 09 Controlled Drafting assurance
+name: Stage 10 Validation Engine assurance
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  drafting:
+  validation:
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -40,16 +40,18 @@ jobs:
       - run: python -B -X utf8 scripts/prepare_ci_database.py
       - name: Focused Stage 09
         run: python -B -X utf8 -m unittest -v tests.test_stage09
+      - name: Focused Stage 10 adversarial and integration
+        run: python -B -X utf8 -m unittest -v tests.test_stage10
       - name: Full regression
-        run: python -B -X utf8 scripts/verify_stage09.py
+        run: python -B -X utf8 scripts/verify_stage10.py
       - name: Independent JSON Schema validation
-        run: python -B -X utf8 scripts/validate_stage09_schemas.py
+        run: python -B -X utf8 scripts/validate_stage10_schemas.py
       - name: Package verification
         run: python -B -X utf8 verify_package.py
       - name: Refresh global integrity manifest
         run: python -B -X utf8 scripts/refresh_manifest.py
-      - name: Stage 09 integrity
-        run: python -B -X utf8 scripts/check_stage09_integrity.py
+      - name: Stage 10 integrity
+        run: python -B -X utf8 scripts/check_stage10_integrity.py
       - name: Whitespace check
         run: git diff --check
       - name: Generated evidence is reproducible
@@ -57,7 +59,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: stage09-generated
+          name: stage10-generated
           path: |
             schemas/DomainEvent.schema.json
             schemas/DraftingProfile.schema.json
@@ -70,3 +72,6 @@ jobs:
             reports/stage09-schema-validation.json
             reports/package-validation.json
             reports/manifest.sha256.json
+            schemas/Validation*.schema.json
+            reports/stage10-status.json
+            reports/stage10-schema-validation.json

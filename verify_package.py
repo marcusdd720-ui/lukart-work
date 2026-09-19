@@ -22,6 +22,7 @@ from lukart_work.drafting.contracts import (
     DraftingTerminalResult, ModelExecutionReceipt,
 )
 from lukart_work.contracts.versions import contract_version
+from lukart_work.validation.contracts import STAGE10_CONTRACTS
 from lukart_work.validation.rules import parse_entity
 ROOT=Path(__file__).parent
 EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEvidenceRequest,CandidateReviewRecord,
@@ -31,7 +32,7 @@ EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEviden
                  DocumentPlanProjection,DraftingProfile,DraftingInvocation,DraftingTrace,
                  DraftingRejectionTrace,DraftingTerminalResult,ModelExecutionReceipt)
 checks=[]
-for cls in ENTITIES+CONTRACTS+EXTRA_CONTRACTS:
+for cls in ENTITIES+CONTRACTS+EXTRA_CONTRACTS+STAGE10_CONTRACTS:
     schema=json.loads((ROOT/'schemas'/f'{cls.__name__}.schema.json').read_text())
     expected=cls.model_json_schema()
     assert {k:v for k,v in schema.items() if k not in ('$id','$schema')}==expected
