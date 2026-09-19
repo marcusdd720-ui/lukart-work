@@ -800,6 +800,76 @@ class ControlledDraftingTests(core.Stage02Tests):
         self.assertEqual(replay, result)
         self.assertEqual(self.provider.calls, 1)
 
+    def test_multisection_provider_failure_records_failing_request_id(self):
+        case = self.approved_planning_case()
+        original_invocations = self.drafting._invocations
+        invocation_pair = {}
+
+        def two_invocations(*args):
+            first = original_invocations(*args)[0]
+            second = first.model_copy(update={
+                'request': first.request.model_copy(update={'request_id': uuid4()})
+            })
+            invocation_pair['value'] = (first, second)
+            return first, second
+
+        self.drafting._invocations = two_invocations
+        def responder(invocation):
+            if invocation.request.request_id == invocation_pair['value'][1].request.request_id:
+                raise RuntimeError('synthetic second-section failure')
+            return self.valid_output(case, invocation)
+
+        self.provider.responder = responder
+        request = self.generate_request(case)
+        result = self.drafting.generate(json.dumps(request), self.token)
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.disposition, 'REJECT')
+        self.assertEqual(
+            result.request_id,
+            invocation_pair['value'][1].request.request_id,
+        )
+        self.assertEqual(self.provider.calls, 2)
+        self.assertFalse(self.draft_heads())
+        replay = self.drafting.generate(json.dumps(request), self.token)
+        self.assertEqual(replay, result)
+        self.assertEqual(self.provider.calls, 2)
+
+    def test_multisection_receipt_mismatch_records_failing_request_id(self):
+        case = self.approved_planning_case()
+        original_invocations = self.drafting._invocations
+        invocation_pair = {}
+
+        def two_invocations(*args):
+            first = original_invocations(*args)[0]
+            second = first.model_copy(update={
+                'request': first.request.model_copy(update={'request_id': uuid4()})
+            })
+            invocation_pair['value'] = (first, second)
+            return first, second
+
+        self.drafting._invocations = two_invocations
+        def responder(invocation):
+            if invocation.request.request_id == invocation_pair['value'][1].request.request_id:
+                self.provider.receipt_overrides = {
+                    'model_parameters_hash': 'c' * 64
+                }
+            return self.valid_output(case, invocation)
+
+        self.provider.responder = responder
+        request = self.generate_request(case)
+        result = self.drafting.generate(json.dumps(request), self.token)
+        self.assertIsInstance(result, DraftingTerminalResult, result)
+        self.assertEqual(result.disposition, 'REJECT')
+        self.assertEqual(
+            result.request_id,
+            invocation_pair['value'][1].request.request_id,
+        )
+        self.assertEqual(self.provider.calls, 2)
+        self.assertFalse(self.draft_heads())
+        replay = self.drafting.generate(json.dumps(request), self.token)
+        self.assertEqual(replay, result)
+        self.assertEqual(self.provider.calls, 2)
+
     def test_domain_event_v2_reader_accepts_historical_v1_payload(self):
         case = self.approved_planning_case()
         self.provider.responder = lambda invocation: self.valid_output(case, invocation)

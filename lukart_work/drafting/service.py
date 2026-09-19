@@ -608,7 +608,7 @@ class ControlledDraftingService(CommandService):
 
     def _record_rejection(
         self, request, principal, input_hash, profile, invocations, results,
-        execution_receipts, raw_outputs, error
+        execution_receipts, raw_outputs, error, failing_request_id
     ):
         with self.repository.transaction(principal.tenant_id, principal.case_id) as tx:
             replay = self._replay(tx, request, input_hash)
@@ -684,9 +684,7 @@ class ControlledDraftingService(CommandService):
             terminal = DraftingTerminalResult(
                 contract='urn:lukart:work:DraftingTerminalResult:1.0.0',
                 command_id=request.meta.command_id,
-                request_id=results[-1].request_id if results else (
-                    invocations[0].request.request_id if invocations else None
-                ),
+                request_id=failing_request_id,
                 disposition='REJECT',
                 case_sequence=sequence + 1,
                 event_ids=(event.audit.event_id,),
@@ -937,6 +935,7 @@ class ControlledDraftingService(CommandService):
                                 tuple(results), tuple(execution_receipts),
                                 tuple(raw_outputs),
                                 safe_error(error.code, correlation),
+                                invocation.request.request_id,
                             )
                         except (
                             ValidationError, ValueError, TypeError, KeyError,
@@ -947,6 +946,7 @@ class ControlledDraftingService(CommandService):
                                 tuple(results), tuple(execution_receipts),
                                 tuple(raw_outputs),
                                 safe_error('SCHEMA_INVALID', correlation),
+                                invocation.request.request_id,
                             )
                         except Exception:
                             return self._record_rejection(
@@ -954,6 +954,7 @@ class ControlledDraftingService(CommandService):
                                 tuple(results), tuple(execution_receipts),
                                 tuple(raw_outputs),
                                 safe_error('UNKNOWN', correlation),
+                                invocation.request.request_id,
                             )
                     try:
                         return self._commit(
@@ -968,6 +969,7 @@ class ControlledDraftingService(CommandService):
                             tuple(results), tuple(execution_receipts),
                             tuple(raw_outputs),
                             safe_error(error.code, correlation),
+                            None,
                         )
                     except (
                         ValidationError, ValueError, TypeError, KeyError,
@@ -978,6 +980,7 @@ class ControlledDraftingService(CommandService):
                             tuple(results), tuple(execution_receipts),
                             tuple(raw_outputs),
                             safe_error('SCHEMA_INVALID', correlation),
+                            None,
                         )
                     except Exception:
                         return self._record_rejection(
@@ -985,6 +988,7 @@ class ControlledDraftingService(CommandService):
                             tuple(results), tuple(execution_receipts),
                             tuple(raw_outputs),
                             safe_error('UNKNOWN', correlation),
+                            None,
                         )
         except Violation as error:
             return safe_error(error.code, correlation)

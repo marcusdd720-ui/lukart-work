@@ -1,6 +1,6 @@
 {
   "stage": "09 Controlled Drafting",
-  "tests": 312,
+  "tests": 317,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -11,7 +11,7 @@
     "lukart_work/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "lukart_work/contracts/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "lukart_work/contracts/messages.py": "66beb87d047e85be4cf196bc6f72b93783f06475a6e51357a0b314be265c51e6",
-    "lukart_work/contracts/ports.py": "daecf1f88d1c0d86350411b33031915fe1be727fc15e46f13f19ef46e4688777",
+    "lukart_work/contracts/ports.py": "e302d9b44ba2b87b9efc0e63a0092415ff4686796a0cbf7ac2add6394e9b1c8d",
     "lukart_work/contracts/versions.py": "36e53c969f83d091db0f92ecc0df9f817e8a9a479eb9bb0d39f726a1cdbaef49",
     "lukart_work/convergence/__init__.py": "12a505839635248e82f7f0550d1193cfde24be4df7f630effcf0d5ed5242026d",
     "lukart_work/convergence/contract.py": "f25c84a006fa23bf6d695065fc85e7abcd823328e2365d53bd98cf1f1c316318",
@@ -27,7 +27,7 @@
     "lukart_work/domain/models.py": "d10a2882feacc0b1f4a0a16cb99f6382dbaa3c04d94c9871587a041fb5dc760f",
     "lukart_work/drafting/__init__.py": "d0377974608569b47f4e679b57655e0e103d6ae26ac3c2c8956e4963fd94ab33",
     "lukart_work/drafting/contracts.py": "7008e62e65edfa5f7b0abf7c16a1de29c4e0695e875c1d92a14089d3f045b853",
-    "lukart_work/drafting/service.py": "b0b8de0c4fddbbf88e9c5141c02e14abda79201b29360ffcbe2155c46a8c2de2",
+    "lukart_work/drafting/service.py": "2f48806ca697c27c235a387e57c399c4afa6c4ceb14f0812dffa395f76dc2ca3",
     "lukart_work/facts/__init__.py": "781d05bc570c5b702902caf0b47d152b7d311b62680e669a66b9a0fbdcca987a",
     "lukart_work/facts/contracts.py": "bde0111b031cc47ef309ffc5eed7aa7c76229a6eaf427f91c4242bed38b04a51",
     "lukart_work/facts/service.py": "685c06df834f1b8f68f727fd79152e234edd71e5d10741e29a4e1eb44b942f88",
@@ -91,8 +91,8 @@
     "tests/test_stage05.py": "e21fc9d0153ef2c8520a6e1b6448928f8b752fa2cbb93b43c6cde79a26aec0f4",
     "tests/test_stage06.py": "c5453c7e382aef7b56685ea80c340dab2a20e64e86cdfa73264033a3c41dc4e2",
     "tests/test_stage07.py": "eef47126a8e6cef64eb24638b26c78d1ef77053550b37b6f654f46ca2a5e66ca",
-    "tests/test_stage08.py": "f934e7ba134322c4de588129da0482e9946a9e681d8b8908832d631f969b7633",
-    "tests/test_stage09.py": "6db8d7c83ccf3c35a752d6a53ed3e270fe46b68a954137514b95dc1008ffc8b8",
+    "tests/test_stage08.py": "eb70f0834c5c1204f9ead6e9ce57715d5ae378f5d845db2ab5492a632d41b397",
+    "tests/test_stage09.py": "8ee891d4a386a3afc74078614afdc2b5f6dac41454112d5b86738b9bf8569c85",
     "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa"
   }
 }
