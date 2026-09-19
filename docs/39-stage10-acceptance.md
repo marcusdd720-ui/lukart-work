@@ -1,6 +1,6 @@
 # Stage 10 — acceptance and freeze evidence
 
-Status: IMPLEMENTATION UNDER ASSURANCE. This file does not award closure or independent review.
+Status: FUNCTIONAL ASSURANCE COMPLETE; exact-head reproducibility freeze pending. This file does not award closure or independent review.
 The durable exact-head continuation receipt is maintained in Draft PR #9.
 
 Base: `0d31a47f6481e9eb252b188253ac1ed33effa50c`.
@@ -43,6 +43,28 @@ Source candidate `9a41ac47c260d6aabf4c6a0fbe6c292be7e89704` passed 30 focused St
 347 full regression tests (zero failures/errors/skips), 94 schemas and 95 package checks in
 CI `35437512988`, job `105882583179`. Only generated-evidence materialization remained.
 The subsequent safe-error repair requires a fresh full exact-head run and does not inherit that PASS.
+
+## Final source assurance and evidence materialization
+
+The repaired source candidate `3f835b646981650a54783af174fd665b9fe45f6a` passed:
+
+- focused Stage 10: 31 tests;
+- historical focused Stage 09: 66 tests;
+- full regression: 348 tests, zero failures/errors/skips;
+- independent Draft 2020-12 schema validation: 94 schemas;
+- package/export verification: 95 checks / 94 JSON files;
+- integrity and whitespace checks.
+
+Evidence: push CI `35450531059`, job `105916778114`. Only the generated-evidence bootstrap gate
+failed before materialization. Its `stage10-generated` artifact (ID `10585579025`, SHA-256
+`1cf28489af2165be87f4c9c75982278161f6fc6aa084e228b116200add8d7844`) supplies the exact reports now
+checked in, with source and schema hashes verified locally. The final workflow additionally rejects
+untracked generated evidence. A fresh all-green push CI on the materialization commit remains
+mandatory. The immutable frozen SHA, final run/job and artifact digest are recorded in PR #9 to
+avoid a self-referential report commit.
+
+Builder Red Team: the findings listed above are repaired and covered by the focused suite; no known
+implementation blocker remains. This is not an independent exact-SHA review.
 
 Initial checkpoint CI `35436308696`, job `105879438841`, passed focused Stage 09, focused Stage 10,
 full regression, schema/package and integrity steps, then failed generated-evidence reproducibility
