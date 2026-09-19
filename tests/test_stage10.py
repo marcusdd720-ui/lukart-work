@@ -1,21 +1,23 @@
 """Stage 10 synthetic PostgreSQL assurance; never loads private CASE material."""
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from hashlib import sha256
 import json
 import unittest
 from uuid import UUID, uuid4, uuid5
 from unittest.mock import patch
+from pydantic import ValidationError
 from lukart_work.contracts.messages import CommandResult, DomainError
 from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.core.postgres import UnitOfWork
 from lukart_work.domain.models import Actor
 from lukart_work.facts.service import FactEvidenceService
 from lukart_work.validation.contracts import (
-    ValidationExecution, ValidationProjection, ValidationReview, SEMANTIC_CHECKS, stage10_actions,
+    ValidationExecution, ValidationProjection, ValidationReview, ValidationReviewProposal, SEMANTIC_CHECKS, stage10_actions,
 )
 from lukart_work.validation.policy import validation_pin
 from lukart_work.validation.service import ValidationEngineService
-from lukart_work.validation.rules import digest, ref
+from lukart_work.validation.rules import digest, ref, Violation
 from tests import test_stage09 as drafting
 
 
@@ -40,6 +42,22 @@ class ValidationTests(drafting.ControlledDraftingTests):
             evidence = result.refs[0]
         fact = self.apply('EditFact', {'evidence': [evidence.model_dump(mode='json')]}, fact)[0].refs[0]
         return fact, party, evidence, source
+
+    def legal_authority_fixture(self, source_id, **kwargs):
+        source, rule, citation_ref, approval = super().legal_authority_fixture(source_id, **kwargs)
+        # Stage 09 tests a citation identity boundary; Stage 10 additionally checks literal quotation bytes.
+        old = self.get(citation_ref)
+        quote = 'Synthetic payment receipt.'
+        citation = old.model_copy(update={'revision':old.revision + 1, 'previous_hash':digest(old),
+            'quotation':quote, 'locator':old.locator.model_copy(update={'fragment_hash':sha256(quote.encode()).hexdigest()})})
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            records = tx.records()
+            heads = {(e.kind, e.id):e for e in tx.heads()}
+            self.service._validate(citation, old, tx, records, heads, self.principal)
+            tx.append(citation)
+            tx.set_sequence(tx.sequence() + 1)
+        self.sequence += 1
+        return source, rule, ref(citation), approval
 
     def generated(self, legal=True):
         case = self.approved_planning_case(legal=legal)
@@ -262,6 +280,148 @@ class ValidationTests(drafting.ControlledDraftingTests):
         now = self.validation.clock()
         self.validation.clock = lambda: now + timedelta(days=1)
         self.assertIn('EVALUATION_DATE_STALE', self.projection(run_id).reasons)
+
+    def test_stage10_source_disappearance_invalidates_success(self):
+        _, draft = self.generated()
+        _, run_id, _ = self.validate(draft, self.review(draft))
+        with patch.object(UnitOfWork, 'source_bytes', side_effect=Violation('PROVENANCE_MISSING')):
+            projection = self.projection(run_id)
+        self.assertFalse(projection.eligible_for_approval)
+        self.assertIn('AUTHORITY_OR_SOURCE_STALE', projection.reasons)
+
+    def test_stage10_legal_authority_revocation_denies_new_run(self):
+        case, draft = self.generated()
+        self.apply('RevokeDecision', target=case['legal_approval'])
+        before = self.state()
+        self.assertIsInstance(self.vexecute(self.vrequest('ValidateDraft', draft)), DomainError)
+        self.assertEqual(before, self.state())
+
+    def test_stage10_snapshot_revocation_denies_new_run(self):
+        case, draft = self.generated()
+        self.apply('RevokeDecision', target=case['snapshot_acceptance'])
+        before = self.state()
+        self.assertIsInstance(self.vexecute(self.vrequest('ValidateDraft', draft)), DomainError)
+        self.assertEqual(before, self.state())
+
+    def test_stage10_rejected_resolution_without_live_human_decision(self):
+        _, draft = self.generated()
+        result, _, _ = self.validate(draft)
+        finding = self.get(result.refs[1])
+        decision = self.decision('FINDING_RESOLUTION', [ref(finding)])
+        self.apply('RevokeDecision', target=decision)
+        request = self.request('ResolveValidationFinding', target=ref(finding))
+        request.pop('data')
+        request.update(contract='urn:lukart:work:ValidationRequest:1.0.0', validation_policy=validation_pin().model_dump(mode='json'),
+            decision=decision.model_dump(mode='json'), resolution='RESOLVED', rationale='Synthetic revoked resolution')
+        before = self.state()
+        self.assertIsInstance(self.vexecute(request), DomainError)
+        self.assertEqual(before, self.state())
+
+    def test_stage10_finding_ids_manifest_and_audit_are_reproducible(self):
+        _, draft = self.generated()
+        result, run_id, _ = self.validate(draft)
+        projection = self.projection(run_id)
+        execution = projection.execution
+        self.assertEqual(digest(execution.manifest), execution.run.execution_manifest_hash)
+        self.assertEqual(execution.manifest.draft_hash, digest(draft))
+        for target in result.refs[1:]:
+            finding = self.get(target)
+            check = finding.path.split('/')[-1]
+            expected = uuid5(run_id, digest((check, finding.code, finding.path, finding.severity, finding.message)))
+            self.assertEqual(finding.id, expected)
+            self.assertEqual(finding.provenance.method, 'VALIDATION')
+            self.assertEqual(finding.provenance.inputs, (ref(draft),))
+
+    def test_stage10_procedural_violation_and_unknown_are_not_overridden_by_review(self):
+        original = self.proc_apply
+        def proc(operation, data=None, target=None):
+            if operation == 'RegisterProceduralRule':
+                data['spec']['requirements'] = [
+                    {'path':'/case/status', 'operator':'EQUALS', 'operand':'CLOSED'},
+                    {'path':'/context/signature', 'operator':'PRESENT', 'operand':None}]
+            return original(operation, data, target)
+        self.proc_apply = proc
+        _, draft = self.generated()
+        result, run_id, _ = self.validate(draft, self.review(draft))
+        codes = {self.get(r).code for r in result.refs[1:]}
+        self.assertTrue({'PROCEDURAL_FALSE', 'PROCEDURAL_UNKNOWN'} <= codes)
+        self.assertFalse(self.projection(run_id).eligible_for_approval)
+
+    def test_stage10_claim_context_never_becomes_procedural_fact(self):
+        original = self.proc_apply
+        def proc(operation, data=None, target=None):
+            if operation == 'RegisterProceduralRule':
+                data['spec']['requirements'] = [{'path':'/context/signature', 'operator':'PRESENT', 'operand':None}]
+            return original(operation, data, target)
+        self.proc_apply = proc
+        _, draft = self.generated()
+        review = self.review(draft)
+        request = self.vrequest('ValidateDraft', draft, review_id=str(review),
+            procedural_context=[{'key':'signature','classification':'CLAIM','value':True,'facts':[]}])
+        result = self.vapply(request)
+        self.assertIn('PROCEDURAL_ABSTAIN', {self.get(r).code for r in result.refs[1:]})
+
+    def test_stage10_fake_fact_context_rejected_atomically(self):
+        case, draft = self.generated()
+        request = self.vrequest('ValidateDraft', draft,
+            procedural_context=[{'key':'signature','classification':'FACT','value':True,
+                'facts':[case['fact'].model_dump(mode='json')]}])
+        before = self.state()
+        self.assertIsInstance(self.vexecute(request), DomainError)
+        self.assertEqual(before, self.state())
+
+    def test_stage10_review_duplicate_incomplete_and_contradictory_outcomes_rejected(self):
+        _, draft = self.generated()
+        assessments = [{'check':c,'outcome':'PASS','rationale':'Synthetic review'} for c in SEMANTIC_CHECKS]
+        before = self.state()
+        variants = [dict(assessments=assessments[:-1]), dict(assessments=assessments + assessments[:1]),
+            dict(assessments=assessments, issues=[dict(check='language',code='SYN',severity='CRITICAL',path='/',message='Synthetic defect')])]
+        for kwargs in variants:
+            self.assertIsInstance(self.vexecute(self.vrequest('RecordValidationReview', draft, **kwargs)), DomainError)
+            self.assertEqual(before, self.state())
+
+    def test_stage10_cross_case_sql_objects_and_runtime_immutability(self):
+        import psycopg
+        _, draft = self.generated()
+        _, run_id, _ = self.validate(draft)
+        with self.repo.transaction(self.tenant, uuid4()) as tx:
+            self.assertEqual(tx.objects('validation_execution', ValidationExecution), ())
+        with self.assertRaises(psycopg.Error):
+            with self.repo.transaction(self.tenant, self.case_id) as tx:
+                tx.connection.execute("UPDATE lw_core.objects SET payload='{}' WHERE category='validation_execution'")
+        self.assertIsInstance(self.projection(run_id), ValidationProjection)
+
+    def test_stage10_review_provider_proposal_is_not_a_command(self):
+        _, draft = self.generated()
+        proposal = dict(task='LANGUAGE_REVIEW', draft=ref(draft).model_dump(mode='json'), draft_hash=digest(draft),
+            snapshot_hash=draft.snapshot_hash, policy=validation_pin().model_dump(mode='json'),
+            assessments=[{'check':'language','outcome':'PASS','rationale':'Synthetic proposal'}], issues=[],
+            disposition='PROPOSE', reason='Synthetic proposal-only output')
+        ValidationReviewProposal.model_validate_json(json.dumps(proposal))
+        before = self.state()
+        self.assertIsInstance(self.vexecute(proposal), DomainError)
+        proposal['assessments'][0]['check'] = 'legal_basis'
+        with self.assertRaises(ValidationError):
+            ValidationReviewProposal.model_validate_json(json.dumps(proposal))
+        self.assertEqual(before, self.state())
+
+    def test_stage10_fabricated_quotation_cannot_be_overridden_by_human_pass(self):
+        original = self.legal_authority_fixture
+        def fixture(source_id, **kwargs):
+            source, rule, citation_ref, approval = original(source_id, **kwargs)
+            old = self.get(citation_ref)
+            citation = old.model_copy(update={'revision':old.revision+1, 'previous_hash':digest(old),
+                'quotation':'Synthetic fabricated quotation absent from source'})
+            with self.repo.transaction(self.tenant, self.case_id) as tx:
+                tx.append(citation)
+                tx.set_sequence(tx.sequence()+1)
+            self.sequence += 1
+            return source, rule, ref(citation), approval
+        self.legal_authority_fixture = fixture
+        _, draft = self.generated()
+        result, run_id, _ = self.validate(draft, self.review(draft))
+        self.assertIn('QUOTATION_BYTES_MISMATCH', {self.get(r).code for r in result.refs[1:]})
+        self.assertFalse(self.projection(run_id).eligible_for_approval)
 
 
 def load_tests(loader, tests, pattern):

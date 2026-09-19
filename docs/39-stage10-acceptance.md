@@ -1,0 +1,51 @@
+# Stage 10 — acceptance and freeze evidence
+
+Status: IMPLEMENTATION UNDER ASSURANCE. This file does not award closure or independent review.
+The durable exact-head continuation receipt is maintained in Draft PR #9.
+
+Base: `0d31a47f6481e9eb252b188253ac1ed33effa50c`.
+Branch: `codex/stage10-validation-engine`. Scope: synthetic CASE-TESTY only.
+
+## Evidence to require before freeze
+
+- all Stage 10 focused/adversarial integration tests on real PostgreSQL;
+- full historical regression with zero failures/errors/skips;
+- exported typed contracts checked by independent Draft 2020-12 JSON Schema engine;
+- package/export equivalence and complete global integrity manifest;
+- byte-reproducible generated evidence on the exact candidate GitHub head;
+- authoritative CI run/job and artifact digest;
+- explicit remaining findings and Stage 11/12 boundaries;
+- a separate independent exact-SHA review after builder freeze, never performed by this builder.
+
+## Builder Red Team and repair log
+
+1. Missing review and empty procedural coverage must not be vacuous PASS. Both persist blockers.
+2. Resolving a finding must not retroactively clear a failed run. Immutable run references and
+   severity remain binding; fresh validation is mandatory.
+3. A review of GENERATED content must remain revocable after the Draft becomes VALIDATED.
+   Revocation now accepts the exact historical reviewed revision without requiring it to be head.
+4. A manifest hash alone is insufficient for reconstruction. The complete typed manifest is stored
+   with the execution and checked against the canonical run and immutable dependency hashes.
+5. Original source bytes alone do not prove ingestion lineage. Validation also invokes Stage 05
+   extraction/provenance availability checks.
+6. Review-provider output must not cross task/authority boundaries. Task-specific proposal schemas
+   and a non-command input/output boundary prevent direct PASS or domain persistence.
+7. Procedural context must not turn CLAIM into FACT. Stage 07 evidence-bound checks are run inside
+   the validation transaction and snapshot membership is enforced.
+8. A deadline can elapse within one UTC day. Queries re-evaluate procedural predicates and deadlines,
+   in addition to conservative case-sequence/date/authority invalidation.
+9. VERIFIED citation metadata does not prove literal quotation bytes. Stage 10 checks the quotation
+   and fragment hash against text/plain source bytes; unsupported quoted formats remain blocking.
+
+Initial checkpoint CI `35436308696`, job `105879438841`, passed focused Stage 09, focused Stage 10,
+full regression, schema/package and integrity steps, then failed generated-evidence reproducibility
+because new reports had not yet been committed. This is a bootstrap failure, not a waiver or green
+candidate. Later source changes require fresh exact-head evidence.
+
+A local test failed in inherited CreateCase setup with DomainError UNKNOWN before Stage 10 code.
+Direct diagnosis returned ConnectionTimeout for both local test database roles. GitHub PostgreSQL
+CI is the authoritative integration environment; no local functional PASS is claimed.
+
+No Stage 11 renderer, Stage 12 certification/provenance engine, or Stage 13+ work is included.
+The three requested operating documents remain NOT PRESENT IN VERIFIED BASELINE; execution relies
+on the verified baseline and the user's explicit authorization recorded in readiness.

@@ -45,6 +45,55 @@
       "title": "CommandMeta",
       "type": "object"
     },
+    "JsonValue": {},
+    "ProceduralDatum": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "FACT",
+            "CLAIM",
+            "HYPOTHESIS",
+            "INTERPRETATION",
+            "UNKNOWN",
+            "UNRESOLVED"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Facts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "classification"
+      ],
+      "title": "ProceduralDatum",
+      "type": "object"
+    },
     "Ref": {
       "additionalProperties": false,
       "properties": {
@@ -349,6 +398,14 @@
       "default": [],
       "items": {},
       "title": "Anchors",
+      "type": "array"
+    },
+    "procedural_context": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProceduralDatum"
+      },
+      "title": "Procedural Context",
       "type": "array"
     }
   },

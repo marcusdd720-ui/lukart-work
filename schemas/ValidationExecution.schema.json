@@ -68,6 +68,55 @@
       "title": "CheckResult",
       "type": "object"
     },
+    "JsonValue": {},
+    "ProceduralDatum": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "FACT",
+            "CLAIM",
+            "HYPOTHESIS",
+            "INTERPRETATION",
+            "UNKNOWN",
+            "UNRESOLVED"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Facts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "classification"
+      ],
+      "title": "ProceduralDatum",
+      "type": "object"
+    },
     "Ref": {
       "additionalProperties": false,
       "properties": {
@@ -214,6 +263,77 @@
         "message"
       ],
       "title": "ReviewIssue",
+      "type": "object"
+    },
+    "ValidationManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "draft_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Draft Hash",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "dependency_hashes": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "$ref": "#/$defs/Ref"
+              },
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Dependency Hashes",
+          "type": "array"
+        },
+        "review_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Review Hash"
+        },
+        "evaluation_date": {
+          "format": "date",
+          "title": "Evaluation Date",
+          "type": "string"
+        },
+        "procedural_context": {
+          "items": {
+            "$ref": "#/$defs/ProceduralDatum"
+          },
+          "title": "Procedural Context",
+          "type": "array"
+        }
+      },
+      "required": [
+        "policy",
+        "draft_hash",
+        "snapshot_hash",
+        "dependency_hashes",
+        "review_hash",
+        "evaluation_date",
+        "procedural_context"
+      ],
+      "title": "ValidationManifest",
       "type": "object"
     },
     "ValidationReview": {
@@ -468,6 +588,9 @@
     },
     "validator": {
       "$ref": "#/$defs/VersionPin"
+    },
+    "manifest": {
+      "$ref": "#/$defs/ValidationManifest"
     }
   },
   "required": [
@@ -480,7 +603,8 @@
     "committed_sequence",
     "review",
     "dependencies",
-    "validator"
+    "validator",
+    "manifest"
   ],
   "title": "ValidationExecution",
   "type": "object",

@@ -1,5 +1,6 @@
 """Stage 10 authenticated, atomic pre-render validation over canonical PostgreSQL state."""
 import json
+from hashlib import sha256
 from types import SimpleNamespace
 from uuid import UUID, uuid5
 from pydantic import ValidationError
@@ -8,9 +9,10 @@ from lukart_work.core.service import CommandService, entity_from, safe_error
 from lukart_work.domain import models as m
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.procedural.service import ProceduralEngineService
+from lukart_work.facts.service import FactEvidenceService
 from .contracts import (
     ValidationRequest, ValidationReview, ValidationReviewRevocation, ValidationExecution,
-    ValidationQuery, ValidationProjection, PRE_RENDER_CHECKS, SEMANTIC_CHECKS,
+    ValidationQuery, ValidationProjection, ValidationManifest, PRE_RENDER_CHECKS, SEMANTIC_CHECKS,
 )
 from .policy import validation_pin
 from .rules import Violation, digest, ref, resolve, walk, strict_json, validate_graph, validate_state
@@ -65,7 +67,7 @@ class ValidationEngineService(CommandService):
             raise Violation('GATE_DENIED')
         return review
 
-    def _procedure(self, tx, principal, records, heads, plan, now, add):
+    def _procedure(self, tx, principal, records, heads, plan, now, add, procedural_context):
         """Execute Stage 07 predicates inside the same case transaction, no untrusted assessment import."""
         engine = ProceduralEngineService(self.repository, self.authority)
         case = heads[('Case', principal.case_id)]
@@ -73,6 +75,10 @@ class ValidationEngineService(CommandService):
         proceeding = heads.get(('Proceeding', filing.proceeding.id)) if filing.proceeding else None
         recipient = heads.get(('Institution', filing.recipient.id)) if filing.recipient.kind == 'Institution' else None
         base = engine._base_context(case, filing, proceeding, recipient)
+        datums = {d.key: d for d in procedural_context}
+        for datum in procedural_context:
+            if datum.classification == 'FACT':
+                engine._confirmed_datum(datum, principal, tx, records, heads)
         rules = sorted((e for e in heads.values() if e.kind == 'LegalRule' and e.rule_type == 'PROCEDURAL' and e.status == 'ACTIVE'), key=lambda e: str(e.id))
         if not rules:
             add('procedure', 'PROCEDURAL_RULE_COVERAGE_UNKNOWN', '/rules', 'BLOCKER')
@@ -81,24 +87,26 @@ class ValidationEngineService(CommandService):
             if not engine._current_rule_approval(rule, records, heads, principal) or engine._current_sources(rule, records, heads, tx) is None:
                 add('procedure', 'PROCEDURAL_AUTHORITY_UNAVAILABLE', '/rules/' + str(rule.id), 'BLOCKER')
                 continue
-            state = engine._applicability(rule, binding, SimpleNamespace(evaluation_date=now.date()), case, filing, base, {})
+            state = engine._applicability(rule, binding, SimpleNamespace(evaluation_date=now.date()), case, filing, base, datums)
             if state == 'NOT_APPLICABLE':
                 continue
             if state != 'APPLICABLE':
                 add('procedure', 'PROCEDURAL_' + state, '/rules/' + str(rule.id), 'BLOCKER')
                 continue
             if binding.spec.category == 'DEADLINE':
-                finding = engine._deadline_finding(binding, rule, base, {})
-                # A calculated date alone does not prove compliance with the deadline.
-                add('procedure', 'DEADLINE_COMPLIANCE_UNRESOLVED', finding.path, 'BLOCKER')
+                finding = engine._deadline_finding(binding, rule, base, datums)
+                if finding.due_at is None or finding.outcome != 'CALCULATED':
+                    add('procedure', 'DEADLINE_COMPLIANCE_UNRESOLVED', finding.path, 'BLOCKER')
+                elif now > finding.due_at:
+                    add('procedure', 'DEADLINE_ELAPSED', finding.path, 'BLOCKER')
                 continue
             for condition in binding.spec.requirements:
-                outcome, _, _ = engine._condition(condition, base, {})
+                outcome, _, _ = engine._condition(condition, base, datums)
                 if outcome != 'TRUE':
                     add('procedure', 'PROCEDURAL_' + outcome, condition.path,
                         binding.spec.severity if outcome == 'FALSE' else 'BLOCKER')
 
-    def _checks(self, draft, principal, tx, now, review, context):
+    def _checks(self, draft, principal, tx, now, review, context, procedural_context):
         drafting, (records, heads, snapshot, plan, sections, _, acceptance) = context
         issues = []
         def add(check, code, path, severity='ERROR', message=None):
@@ -110,6 +118,8 @@ class ValidationEngineService(CommandService):
                 add(check, code, path, 'BLOCKER')
 
         sources = {s.id: s for s in tx.objects('source', w.SourceDocument)}
+        facts_service = FactEvidenceService(self.repository, self.authority)
+        candidate_reviews = facts_service._reviews(tx)
         guard('schema', 'SCHEMA_GRAPH_INVALID', '/', lambda: validate_graph(tuple(records.values()), sources))
         guard('document', 'DOCUMENT_CONTRACT_INVALID', '/sections', lambda: validate_state(draft, records, snapshot=snapshot, snapshot_approval=acceptance))
         statements = [s for section in draft.sections for s in section.statements]
@@ -127,6 +137,8 @@ class ValidationEngineService(CommandService):
                 if (heads.get(('Evidence', evidence.id)) != evidence or evidence.status != 'ACCEPTED' or evidence.authenticity == 'DISPUTED'):
                     add('evidence', 'EVIDENCE_NOT_ACCEPTED_CURRENT', '/evidence/' + str(evidence.id), 'BLOCKER')
                 guard('evidence', 'SOURCE_BYTES_UNAVAILABLE', '/evidence/' + str(evidence.id), lambda: tx.source_bytes(evidence.source.document_id))
+                if facts_service._evidence_issues(evidence, tx, candidate_reviews):
+                    add('evidence', 'EVIDENCE_PROVENANCE_UNAVAILABLE', '/evidence/' + str(evidence.id), 'BLOCKER')
         request = SimpleNamespace(meta=SimpleNamespace(command_id=UUID(int=0)))
         invocations = tuple(SimpleNamespace(section=ref(s), request=w.AIRequest(
             request_id=uuid5(draft.id, str(i)), tenant_id=draft.tenant_id, case_id=draft.case_id,
@@ -144,6 +156,20 @@ class ValidationEngineService(CommandService):
         for i, statement in enumerate(statements):
             for citation_ref in statement.citations:
                 guard('citations', 'CITATION_INVALID', '/statements/' + str(i), lambda: drafting._verified_citation(citation_ref, records, heads, principal))
+                citation, legal_source = drafting._verified_citation(citation_ref, records, heads, principal)
+                period = legal_source.effective_period
+                if (legal_source.jurisdiction != heads[('Case', principal.case_id)].jurisdiction
+                        or now.date() < period.start or (period.end is not None and now.date() > period.end)):
+                    add('legal_basis', 'LEGAL_SOURCE_NOT_APPLICABLE', '/citations/' + str(citation.id), 'BLOCKER')
+                if citation.quotation is not None:
+                    original = tx.source_bytes(legal_source.anchor.document_id)
+                    source_record = sources[legal_source.anchor.document_id]
+                    if source_record.media_type != 'text/plain':
+                        add('citations', 'QUOTATION_EXTRACTION_UNSUPPORTED', '/citations/' + str(citation.id), 'BLOCKER')
+                    else:
+                        quote = citation.quotation.encode('utf-8')
+                        if quote not in original or citation.locator.fragment_hash != sha256(quote).hexdigest():
+                            add('citations', 'QUOTATION_BYTES_MISMATCH', '/citations/' + str(citation.id), 'BLOCKER')
             if statement.statement_type == 'LEGAL':
                 for target in statement.refs:
                     if target.kind == 'LegalRule':
@@ -158,7 +184,9 @@ class ValidationEngineService(CommandService):
             if key in by_text and by_text[key] != signature:
                 add('contradictions', 'CONFLICTING_STATEMENT_BINDING', '/sections', 'BLOCKER')
             by_text[key] = signature
-        self._procedure(tx, principal, records, heads, plan, now, add)
+        if not {r for d in procedural_context for r in d.facts} <= {member.ref for member in snapshot.members}:
+            raise Violation('GATE_DENIED')
+        self._procedure(tx, principal, records, heads, plan, now, add, procedural_context)
         outcomes = {check: 'PASS' for check in PRE_RENDER_CHECKS}
         if review is None:
             for check in SEMANTIC_CHECKS:
@@ -211,11 +239,13 @@ class ValidationEngineService(CommandService):
             tx.put_object('validation_review', review.id, review)
             return (ref(draft),), 'RevisionAppended', review
         review = self._review(tx, request.review_id, draft, validation_pin(), now.date())
-        outcomes, issues = self._checks(draft, principal, tx, now, review, context)
+        outcomes, issues = self._checks(draft, principal, tx, now, review, context, request.procedural_context)
         run_id = uuid5(request.meta.command_id, 'validation-run')
         findings = []
         for check, code, path, severity, message in issues:
             body = self._metadata(request, principal, now, 'ValidationFinding')
+            body['provenance'].update(method='VALIDATION', inputs=[ref(draft).model_dump(mode='json')],
+                                      tool=validation_pin().model_dump(mode='json'))
             body.update(id=str(uuid5(run_id, digest((check, code, path, severity, message)))), status='OPEN',
                 run_id=str(run_id), target=ref(draft).model_dump(mode='json'), target_hash=digest(draft),
                 layer=LAYERS[check], code=code, severity=severity, message=message, path=path, resolution=None)
@@ -228,6 +258,8 @@ class ValidationEngineService(CommandService):
         if all(value == 'PASS' for value in outcomes.values()) and draft.status == 'GENERATED':
             body = draft.model_dump(mode='json')
             body.update(self._metadata(request, principal, now, 'Draft', draft))
+            body['provenance'].update(method='VALIDATION', inputs=[ref(draft).model_dump(mode='json')],
+                                      tool=validation_pin().model_dump(mode='json'))
             body['status'] = 'VALIDATED'
             output = entity_from(body, m.Draft)
             self._validate(output, draft, tx, records, heads, principal)
@@ -237,9 +269,10 @@ class ValidationEngineService(CommandService):
         dependencies = {ref(draft), ref(plan), ref(plan_approval), ref(acceptance), *(ref(s) for s in sections), *snapshot.heads}
         dependencies.update(ref(e) for e in context_heads.values() if e.kind in ('LegalRule', 'LegalSource', 'Decision'))
         ordered = tuple(sorted(dependencies, key=lambda r: (r.kind, str(r.id), r.revision)))
-        manifest = {'policy': validation_pin().model_dump(mode='json'), 'draft_hash': digest(draft),
-                    'dependencies': [(r.model_dump(mode='json'), digest(records[r])) for r in ordered],
-                    'review_hash': digest(review) if review else None, 'evaluation_date': now.date().isoformat()}
+        manifest = ValidationManifest(policy=validation_pin(), draft_hash=digest(draft), snapshot_hash=draft.snapshot_hash,
+            dependency_hashes=tuple((r, digest(records[r])) for r in ordered),
+            review_hash=digest(review) if review else None, evaluation_date=now.date(),
+            procedural_context=tuple(sorted(request.procedural_context, key=lambda d: d.key)))
         run = w.ValidationRun(id=run_id, tenant_id=draft.tenant_id, case_id=draft.case_id,
             draft=ref(draft), draft_hash=digest(draft), snapshot_hash=draft.snapshot_hash,
             policy=validation_pin(), completed_at=now,
@@ -249,10 +282,10 @@ class ValidationEngineService(CommandService):
         execution = ValidationExecution(id=run_id, run=run, output_draft=ref(output), output_hash=digest(output),
             evaluation_date=now.date(), input_sequence=request.meta.expected_case_sequence,
             committed_sequence=request.meta.expected_case_sequence + 1, review=review,
-            dependencies=ordered, validator=validation_pin())
+            dependencies=ordered, validator=validation_pin(), manifest=manifest)
         tx.put_object('validation_run', run_id, run)
         tx.put_object('validation_execution', run_id, execution)
-        # Persist the exact manifest as a typed execution-derived object via the run's binding.
+        # The exact manifest is persisted in execution; its hash binds the canonical run.
         for target in ordered:
             if target == ref(output):
                 continue
@@ -271,6 +304,12 @@ class ValidationEngineService(CommandService):
                     if execution.id != query.run_id or run != execution.run:
                         raise Violation('INVALID_HASH')
                     records = tx.records()
+                    if (digest(execution.manifest) != run.execution_manifest_hash
+                            or execution.manifest.draft_hash != run.draft_hash
+                            or digest(records[run.draft]) != run.draft_hash
+                            or tuple(r for r, _ in execution.manifest.dependency_hashes) != execution.dependencies
+                            or any(digest(records[r]) != h for r, h in execution.manifest.dependency_hashes)):
+                        raise Violation('INVALID_HASH')
                     heads = {(e.kind, e.id): e for e in tx.heads()}
                     output = records[execution.output_draft]
                     reasons = []
@@ -289,6 +328,12 @@ class ValidationEngineService(CommandService):
                         self._context(output, principal, tx, self.clock())
                         if execution.review:
                             self._review(tx, execution.review.id, records[run.draft], validation_pin(), execution.evaluation_date)
+                        procedural_failures = []
+                        self._procedure(tx, principal, records, heads, records[output.plan], self.clock(),
+                            lambda check, code, path, severity: procedural_failures.append(severity),
+                            execution.manifest.procedural_context)
+                        if output.status == 'VALIDATED' and any(s in BLOCKING for s in procedural_failures):
+                            reasons.append('PROCEDURAL_STATE_STALE')
                     except (Violation, ValueError, KeyError):
                         reasons.append('AUTHORITY_OR_SOURCE_STALE')
                     # Any subsequent case mutation is conservative invalidation, including new rules/reviews.
