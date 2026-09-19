@@ -1,0 +1,29 @@
+{
+  "description": "Synthetic Stage 09 controlled drafting golden case",
+  "authority": [
+    "accepted immutable snapshot",
+    "current HUMAN SNAPSHOT_ACCEPTANCE",
+    "APPROVED DocumentPlan",
+    "current HUMAN PLAN_APPROVAL",
+    "READY SectionContract"
+  ],
+  "command": "GenerateDocument",
+  "ai_task": "DRAFTING",
+  "expected_draft_status": "GENERATED",
+  "forbidden": [
+    "FINAL",
+    "MODEL_DOMAIN_WRITE",
+    "MODEL_APPROVAL",
+    "FACT_PROMOTION",
+    "CLAIM_PROMOTION",
+    "UNSUPPORTED_ASSERTION",
+    "UNMARKED_INFERENCE",
+    "OUT_OF_CONTRACT_REF",
+    "RENDER",
+    "RELEASE",
+    "EXTERNAL_FILING"
+  ],
+  "replay": "NO_SECOND_MODEL_CALL",
+  "abstain": "NO_DRAFT",
+  "fixtures": "SYNTHETIC_ONLY"
+}

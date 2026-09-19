@@ -15,6 +15,59 @@ from tests import test_stage02 as core
 
 
 class PlannerContractTests(unittest.TestCase):
+    @staticmethod
+    def _satisfiability_payload():
+        filing = {'kind': 'Filing', 'id': uuid4(), 'revision': 1}
+        objective = {'kind': 'Request', 'id': uuid4(), 'revision': 1}
+        section = {
+            'section_type': 'FACTS',
+            'title': 'Facts',
+            'arguments': (),
+            'allowed_inputs': (),
+            'required_inputs': (),
+            'allowed_claims': (),
+            'forbidden': (
+                'UNSUPPORTED_ASSERTION', 'UNMARKED_INFERENCE',
+                'NEW_FACT', 'NEW_LEGAL_RULE',
+            ),
+            'requirements': (),
+        }
+        return {
+            'snapshot_id': uuid4(),
+            'snapshot_hash': 'a' * 64,
+            'filing': filing,
+            'objectives': (objective,),
+            'position_scope': 'Synthetic scope',
+            'argument_order': (),
+            'evidence': (),
+            'sections': (section,),
+        }
+
+    def test_unreachable_objective_is_rejected(self):
+        payload = self._satisfiability_payload()
+        with self.assertRaisesRegex(ValueError, 'OBJECTIVE_UNREACHABLE'):
+            from lukart_work.planner.contracts import PlanDocumentData
+            PlanDocumentData.model_validate(payload)
+
+    def test_unreachable_argument_is_rejected(self):
+        payload = self._satisfiability_payload()
+        payload['sections'][0]['allowed_inputs'] = (payload['objectives'][0],)
+        payload['argument_order'] = ({
+            'kind': 'Argument', 'id': uuid4(), 'revision': 1,
+        },)
+        with self.assertRaisesRegex(ValueError, 'ARGUMENT_UNREACHABLE'):
+            from lukart_work.planner.contracts import PlanDocumentData
+            PlanDocumentData.model_validate(payload)
+
+    def test_section_argument_outside_allowed_inputs_is_rejected(self):
+        payload = self._satisfiability_payload()
+        payload['sections'][0]['arguments'] = ({
+            'kind': 'Argument', 'id': uuid4(), 'revision': 1,
+        },)
+        with self.assertRaisesRegex(ValueError, 'ARGUMENT_NOT_ALLOWED'):
+            from lukart_work.planner.contracts import PlanDocumentData
+            PlanDocumentData.model_validate(payload)
+
     def test_plan_document_contract_accepts_safe_minimal_payload(self):
         tenant, case_id = uuid4(), uuid4()
         filing, request_ref, fact, claim = (
@@ -38,7 +91,7 @@ class PlannerContractTests(unittest.TestCase):
                 'position_scope': 'Synthetic safe scope', 'argument_order': [], 'evidence': [],
                 'sections': [{
                     'section_type': 'FACTS', 'title': 'Facts', 'arguments': [],
-                    'allowed_inputs': [fact, claim], 'required_inputs': [fact],
+                    'allowed_inputs': [request_ref, fact, claim], 'required_inputs': [fact],
                     'allowed_claims': [claim],
                     'forbidden': ['UNSUPPORTED_ASSERTION', 'UNMARKED_INFERENCE', 'NEW_FACT', 'NEW_LEGAL_RULE'],
                     'requirements': ['CHRONOLOGICAL'],

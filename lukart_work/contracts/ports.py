@@ -20,6 +20,7 @@ class ValidationProvider(Protocol):
     def validate(self, tenant_id: UUID, case_id: UUID, draft: Ref, snapshot: Snapshot, policy: VersionPin) -> ValidationRun: ...
 
 class ModelProvider(Protocol):
+    """Trusted drafting adapter; the application validates both payload and execution attestation."""
     def propose(self, request: AIRequest) -> AIResult: ...
 
 class DocumentProvider(Protocol):

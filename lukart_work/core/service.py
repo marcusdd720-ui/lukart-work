@@ -196,7 +196,19 @@ class CommandService:
                 if entity.kind == 'Decision' and target == entity.supersedes:
                     continue
                 self._live_decision(target, records, heads, principal)
-        validate_state(entity, candidate)
+        if entity.kind == 'Draft' and entity.status != 'PLANNED':
+            snapshot = tx.object('snapshot', entity.snapshot_id, wire.Snapshot)
+            acceptance = tx.object('acceptance', snapshot.id, m.Decision)
+            live_acceptance = self._live_decision(ref(acceptance), records, heads, principal)
+            validate_snapshot_acceptance(snapshot, live_acceptance, records)
+            if digest(snapshot) != entity.snapshot_hash:
+                raise Violation('INVALID_HASH')
+            self._snapshot_heads(snapshot, heads)
+            for source in snapshot.sources:
+                tx.source_bytes(source.id)
+            validate_state(entity, candidate, snapshot=snapshot, snapshot_approval=live_acceptance)
+        else:
+            validate_state(entity, candidate)
         if entity.kind == 'Fact' and entity.status == 'CONFIRMED':
             for target in entity.evidence:
                 current = heads.get(('Evidence', target.id))

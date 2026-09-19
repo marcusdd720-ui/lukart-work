@@ -5,6 +5,7 @@
 REMEDIATED_CONTRACTS = frozenset({
     'Decision', 'ValidationFinding', 'Draft', 'DocumentPlan', 'Proceeding', 'Deadline', 'Section',
     'Snapshot', 'AcceptSnapshot', 'SnapshotResult', 'AIRequest', 'AIResult', 'ReleaseResult',
+    'DomainEvent',
     'AppendRevision', 'RevisionResult', 'Entity', 'Command',
 })
 

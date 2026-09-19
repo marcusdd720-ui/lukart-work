@@ -162,7 +162,17 @@ class AuditEvent(Value):
     rule_version: VersionPin
 
 class DomainEvent(Value):
-    event_type: Literal['RevisionAppended','SnapshotAccepted','PlanApproved','DraftGenerated','DependenciesInvalidated','ValidationCompleted','ReleaseDenied','ReleaseGranted','DecisionRecorded']
+    event_type: Literal['RevisionAppended','SnapshotAccepted','PlanApproved','DraftGenerated','DraftingAbstained','DraftingRejected','DependenciesInvalidated','ValidationCompleted','ReleaseDenied','ReleaseGranted','DecisionRecorded']
+    audit: AuditEvent
+    subjects: tuple[Ref, ...]
+
+
+class LegacyDomainEventV1(Value):
+    event_type: Literal[
+        'RevisionAppended', 'SnapshotAccepted', 'PlanApproved', 'DraftGenerated',
+        'DependenciesInvalidated', 'ValidationCompleted', 'ReleaseDenied',
+        'ReleaseGranted', 'DecisionRecorded',
+    ]
     audit: AuditEvent
     subjects: tuple[Ref, ...]
 

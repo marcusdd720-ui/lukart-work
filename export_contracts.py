@@ -13,6 +13,10 @@ from lukart_work.procedural.contracts import (
     ProceduralRequest, ProceduralRuleBinding, ProceduralQuery, ProceduralFinding, ProceduralAssessment,
 )
 from lukart_work.planner.contracts import PlannerRequest, PlannerQuery, DocumentPlanProjection
+from lukart_work.drafting.contracts import (
+    DraftingProfile, DraftingInvocation, DraftingTrace, DraftingRejectionTrace,
+    DraftingTerminalResult, ModelExecutionReceipt,
+)
 from lukart_work.contracts.versions import contract_version
 from lukart_work.domain.lifecycle import TRANSITIONS,INITIAL
 from lukart_work.validation.rules import RELATIONS
@@ -23,7 +27,8 @@ EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEviden
                  FactEvidenceQuery,FactEvidenceMatrix,RegistryRequest,RegistryReceipt,RegistryQuery,
                  FilingRegistryEntry,RegistryProjection,ProceduralRequest,ProceduralRuleBinding,
                  ProceduralQuery,ProceduralFinding,ProceduralAssessment,PlannerRequest,PlannerQuery,
-                 DocumentPlanProjection)
+                 DocumentPlanProjection,DraftingProfile,DraftingInvocation,DraftingTrace,
+                 DraftingRejectionTrace,DraftingTerminalResult,ModelExecutionReceipt)
 
 def write(path,obj):
     (ROOT/path).write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n')
