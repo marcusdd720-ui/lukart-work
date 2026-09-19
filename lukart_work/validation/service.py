@@ -84,27 +84,51 @@ class ValidationEngineService(CommandService):
         if not rules:
             add('procedure', 'PROCEDURAL_RULE_COVERAGE_UNKNOWN', '/rules', 'BLOCKER')
         for rule in rules:
+            rule_path = f'/rules/{rule.id}/revisions/{rule.revision}'
             binding = engine._binding_for(tx, rule)
-            if not engine._current_rule_approval(rule, records, heads, principal) or engine._current_sources(rule, records, heads, tx) is None:
-                add('procedure', 'PROCEDURAL_AUTHORITY_UNAVAILABLE', '/rules/' + str(rule.id), 'BLOCKER')
+            if not engine._current_rule_approval(rule, records, heads, principal):
+                add('procedure', 'PROCEDURAL_AUTHORITY_UNAVAILABLE', rule_path, 'BLOCKER')
                 continue
             state = engine._applicability(rule, binding, SimpleNamespace(evaluation_date=now.date()), case, filing, base, datums)
             if state == 'NOT_APPLICABLE':
                 continue
             if state != 'APPLICABLE':
-                add('procedure', 'PROCEDURAL_' + state, '/rules/' + str(rule.id), 'BLOCKER')
+                add('procedure', 'PROCEDURAL_' + state, rule_path, 'BLOCKER')
+                continue
+            # A rule's applicability does not establish its sources' applicability.
+            # Use the same UTC execution date as the rule and citation checks,
+            # including both endpoints, regardless of whether the source is cited.
+            sources_valid = True
+            for source_ref in sorted(rule.sources, key=lambda r: (str(r.id), r.revision)):
+                source_path = f'{rule_path}/sources/{source_ref.id}/revisions/{source_ref.revision}'
+                try:
+                    source = resolve(source_ref, records, principal.tenant_id, principal.case_id)
+                    if (source.kind != 'LegalSource' or source.status != 'VERIFIED'
+                            or heads.get(('LegalSource', source.id)) != source):
+                        raise Violation('STALE')
+                    tx.source_bytes(source.anchor.document_id)
+                except (Violation, ValueError, KeyError, TypeError):
+                    add('procedure', 'PROCEDURAL_SOURCE_UNAVAILABLE', source_path, 'BLOCKER')
+                    sources_valid = False
+                    continue
+                if (source.jurisdiction != case.jurisdiction or source.jurisdiction != rule.jurisdiction
+                        or now.date() < source.effective_period.start
+                        or (source.effective_period.end is not None and now.date() > source.effective_period.end)):
+                    add('procedure', 'PROCEDURAL_SOURCE_NOT_APPLICABLE', source_path, 'BLOCKER')
+                    sources_valid = False
+            if not sources_valid:
                 continue
             if binding.spec.category == 'DEADLINE':
                 finding = engine._deadline_finding(binding, rule, base, datums)
                 if finding.due_at is None or finding.outcome != 'CALCULATED':
-                    add('procedure', 'DEADLINE_COMPLIANCE_UNRESOLVED', finding.path, 'BLOCKER')
+                    add('procedure', 'DEADLINE_COMPLIANCE_UNRESOLVED', rule_path + finding.path, 'BLOCKER')
                 elif now > finding.due_at:
-                    add('procedure', 'DEADLINE_ELAPSED', finding.path, 'BLOCKER')
+                    add('procedure', 'DEADLINE_ELAPSED', rule_path + finding.path, 'BLOCKER')
                 continue
             for condition in binding.spec.requirements:
                 outcome, _, _ = engine._condition(condition, base, datums)
                 if outcome != 'TRUE':
-                    add('procedure', 'PROCEDURAL_' + outcome, condition.path,
+                    add('procedure', 'PROCEDURAL_' + outcome, rule_path + condition.path,
                         binding.spec.severity if outcome == 'FALSE' else 'BLOCKER')
 
     def _checks(self, draft, principal, tx, now, review, context, procedural_context):

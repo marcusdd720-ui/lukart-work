@@ -472,6 +472,121 @@ class ValidationTests(drafting.ControlledDraftingTests):
         self.assertIn('QUOTATION_LOCATOR_UNSUPPORTED', {self.get(r).code for r in result.refs[1:]})
         self.assertFalse(self.projection(run_id).eligible_for_approval)
 
+    def uncited_procedural_rule(self, *, period=None, jurisdiction='PL', failing=False):
+        """Use public procedural commands before the Draft snapshot; never cite this rule."""
+        _, _, _, source_id = self.fact()
+        original = self.proc_apply
+        def proc(operation, data=None, target=None):
+            if operation == 'RegisterProceduralSource':
+                data['jurisdiction'] = jurisdiction
+                if period is not None:
+                    data['effective_period'] = period
+            if operation == 'RegisterProceduralRule' and failing:
+                data['spec']['requirements'] = [
+                    {'path': '/case/status', 'operator': 'EQUALS', 'operand': 'CLOSED'}]
+            return original(operation, data, target)
+        self.proc_apply = proc
+        try:
+            source, rule, _, _ = self.legal_authority_fixture(source_id)
+        finally:
+            self.proc_apply = original
+        return source, rule
+
+    def assert_uncited_source(self, *, period=None, jurisdiction='PL', passes=False):
+        source, rule = self.uncited_procedural_rule(period=period, jurisdiction=jurisdiction)
+        _, draft = self.generated()
+        statements = [s for section in draft.sections for s in section.statements]
+        self.assertNotIn(rule, {r for s in statements for r in s.refs})
+        self.assertNotIn(source, {self.get(c).source for s in statements for c in s.citations})
+        result, run_id, _ = self.validate(draft, self.review(draft))
+        projection = self.projection(run_id)
+        self.assertEqual(projection.eligible_for_approval, passes)
+        self.assertEqual(self.get(result.refs[0]).status, 'VALIDATED' if passes else 'GENERATED')
+        self.assertEqual(next(c.outcome for c in projection.execution.run.checks if c.check == 'procedure'),
+                         'PASS' if passes else 'FAIL')
+        findings = [self.get(r) for r in result.refs[1:]]
+        if not passes:
+            finding, = findings
+            self.assertEqual(finding.code, 'PROCEDURAL_SOURCE_NOT_APPLICABLE')
+            self.assertEqual(finding.severity, 'BLOCKER')
+            self.assertEqual(finding.path,
+                f'/rules/{rule.id}/revisions/{rule.revision}/sources/{source.id}/revisions/{source.revision}')
+            self.assertEqual(finding.id, uuid5(run_id, digest((
+                'procedure', finding.code, finding.path, finding.severity, finding.message))))
+        else:
+            self.assertEqual(findings, [])
+        return run_id
+
+    def test_stage10_remediation_expired_uncited_source_blocks(self):
+        self.assert_uncited_source(period={'start': '2000-01-01', 'end': '2001-01-01'})
+
+    def test_stage10_remediation_foreign_uncited_source_blocks(self):
+        self.assert_uncited_source(jurisdiction='DE')
+
+    def test_stage10_remediation_future_uncited_source_blocks(self):
+        start = (self.validation.clock().date() + timedelta(days=10)).isoformat()
+        self.assert_uncited_source(period={'start': start, 'end': None})
+
+    def test_stage10_remediation_current_uncited_source_passes(self):
+        self.assert_uncited_source(passes=True)
+
+    def test_stage10_remediation_source_period_endpoints_and_query_expiry(self):
+        # Validation follows fixture creation; never backdate the Draft revision.
+        now = self.validation.clock() + timedelta(minutes=1)
+        self.validation.clock = lambda: now
+        today = now.date().isoformat()
+        run_id = self.assert_uncited_source(period={'start': today, 'end': today}, passes=True)
+        self.validation.clock = lambda: now + timedelta(days=1)
+        projection = self.projection(run_id)
+        self.assertFalse(projection.eligible_for_approval)
+        self.assertIn('PROCEDURAL_STATE_STALE', projection.reasons)
+
+    def test_stage10_remediation_distinct_rules_preserve_finding_identity(self):
+        rules = [self.uncited_procedural_rule(failing=True)[1] for _ in range(2)]
+        _, draft = self.generated()
+        result, run_id, request = self.validate(draft, self.review(draft))
+        findings = [self.get(r) for r in result.refs[1:]]
+        self.assertEqual(len(findings), 2)
+        self.assertEqual({f.path for f in findings}, {
+            f'/rules/{r.id}/revisions/{r.revision}/case/status' for r in rules})
+        self.assertEqual(len({f.id for f in findings}), 2)
+        self.assertEqual([f.path for f in findings], sorted(f.path for f in findings))
+        for finding in findings:
+            self.assertEqual(finding.code, 'PROCEDURAL_FALSE')
+            self.assertEqual(finding.id, uuid5(run_id, digest((
+                'procedure', finding.code, finding.path, finding.severity, finding.message))))
+        self.assertFalse(self.projection(run_id).eligible_for_approval)
+        self.assertEqual(self.vexecute(request), result)
+
+    def test_stage10_remediation_unavailable_sources_produce_findings(self):
+        source_ref, rule = self.uncited_procedural_rule()
+        _, draft = self.generated()
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            records = tx.records()
+            heads = {(e.kind, e.id): e for e in tx.heads()}
+            source = records[source_ref]
+            for fault in ('stale', 'unverified', 'bytes'):
+                with self.subTest(fault=fault):
+                    scoped_records, scoped_heads = dict(records), dict(heads)
+                    if fault == 'stale':
+                        scoped_heads[('LegalSource', source.id)] = source.model_copy(update={'revision': source.revision + 1})
+                    if fault == 'unverified':
+                        changed = source.model_copy(update={'status': 'REGISTERED'})
+                        scoped_records[source_ref] = changed
+                        scoped_heads[('LegalSource', source.id)] = changed
+                    original_bytes = tx.source_bytes
+                    def source_bytes(source_id):
+                        if fault == 'bytes' and source_id == source.anchor.document_id:
+                            raise Violation('PROVENANCE_MISSING')
+                        return original_bytes(source_id)
+                    issues = []
+                    with patch.object(tx, 'source_bytes', side_effect=source_bytes):
+                        self.validation._procedure(tx, self.principal, scoped_records, scoped_heads,
+                            records[draft.plan], self.validation.clock(), lambda *issue: issues.append(issue), ())
+                    self.assertIn(('procedure', 'PROCEDURAL_SOURCE_UNAVAILABLE',
+                        f'/rules/{rule.id}/revisions/{rule.revision}/sources/{source.id}/revisions/{source_ref.revision}',
+                        'BLOCKER'), issues)
+
     def test_stage10_query_database_failure_returns_only_safe_code(self):
         import psycopg
         with patch.object(self.repo, 'transaction', side_effect=psycopg.OperationalError('SYNTHETIC-DRIVER-DETAIL')):

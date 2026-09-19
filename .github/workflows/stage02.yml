@@ -40,6 +40,16 @@ jobs:
       - run: python -B -X utf8 scripts/prepare_ci_database.py
       - name: Focused Stage 09
         run: python -B -X utf8 -m unittest -v tests.test_stage09
+      - name: Focused Stage 10 P1 P2 PostgreSQL regressions
+        run: |
+          python -B -X utf8 -m unittest -v \
+            tests.test_stage10.ValidationTests.test_stage10_remediation_expired_uncited_source_blocks \
+            tests.test_stage10.ValidationTests.test_stage10_remediation_foreign_uncited_source_blocks \
+            tests.test_stage10.ValidationTests.test_stage10_remediation_future_uncited_source_blocks \
+            tests.test_stage10.ValidationTests.test_stage10_remediation_current_uncited_source_passes \
+            tests.test_stage10.ValidationTests.test_stage10_remediation_source_period_endpoints_and_query_expiry \
+            tests.test_stage10.ValidationTests.test_stage10_remediation_distinct_rules_preserve_finding_identity \
+            tests.test_stage10.ValidationTests.test_stage10_remediation_unavailable_sources_produce_findings
       - name: Focused Stage 10 adversarial and integration
         run: python -B -X utf8 -m unittest -v tests.test_stage10
       - name: Full regression
