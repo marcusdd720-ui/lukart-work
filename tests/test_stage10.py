@@ -472,6 +472,14 @@ class ValidationTests(drafting.ControlledDraftingTests):
         self.assertIn('QUOTATION_LOCATOR_UNSUPPORTED', {self.get(r).code for r in result.refs[1:]})
         self.assertFalse(self.projection(run_id).eligible_for_approval)
 
+    def test_stage10_query_database_failure_returns_only_safe_code(self):
+        import psycopg
+        with patch.object(self.repo, 'transaction', side_effect=psycopg.OperationalError('SYNTHETIC-DRIVER-DETAIL')):
+            result = self.projection(uuid4())
+        self.assertIsInstance(result, DomainError)
+        self.assertEqual(result.code, 'UNKNOWN')
+        self.assertNotIn('SYNTHETIC-DRIVER-DETAIL', result.model_dump_json())
+
 
 def load_tests(loader, tests, pattern):
     # Reuse synthetic fixture helpers, not inherited Stage 02/09 tests counted twice.

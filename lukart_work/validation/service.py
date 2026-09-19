@@ -365,3 +365,7 @@ class ValidationEngineService(CommandService):
             return safe_error(error.code, UUID(int=0))
         except (ValidationError, ValueError, KeyError, TypeError, RecursionError):
             return safe_error('SCHEMA_INVALID', UUID(int=0))
+        except Exception as error:
+            if type(error).__module__.startswith('psycopg'):
+                return safe_error('UNKNOWN', UUID(int=0))
+            raise

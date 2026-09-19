@@ -63,4 +63,4 @@ VALIDATED with APPROVED, or pre-render eligibility with FINAL.
 Stage 11 rendering and Stage 12 certification/provenance expansion are excluded. Stage 10 may
 persist only the validation execution/dependency/audit contracts required for its own assurance.
 
-Status: readiness checkpoint; implementation and all Stage 10 execution evidence pending.
+Status: implementation present; exact-head assurance and freeze are tracked in acceptance and Draft PR #9.

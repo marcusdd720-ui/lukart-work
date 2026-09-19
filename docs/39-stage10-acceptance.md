@@ -36,6 +36,13 @@ Branch: `codex/stage10-validation-engine`. Scope: synthetic CASE-TESTY only.
    in addition to conservative case-sequence/date/authority invalidation.
 9. VERIFIED citation metadata does not prove literal quotation bytes. Stage 10 checks the quotation
    and fragment hash against text/plain source bytes; unsupported quoted formats remain blocking.
+10. Database failures in the read projection must preserve Core's safe-error boundary. Driver details
+    are now mapped to UNKNOWN, with a focused fault-injection test.
+
+Source candidate `9a41ac47c260d6aabf4c6a0fbe6c292be7e89704` passed 30 focused Stage 10 tests and
+347 full regression tests (zero failures/errors/skips), 94 schemas and 95 package checks in
+CI `35437512988`, job `105882583179`. Only generated-evidence materialization remained.
+The subsequent safe-error repair requires a fresh full exact-head run and does not inherit that PASS.
 
 Initial checkpoint CI `35436308696`, job `105879438841`, passed focused Stage 09, focused Stage 10,
 full regression, schema/package and integrity steps, then failed generated-evidence reproducibility
