@@ -44,7 +44,8 @@ INFO and WARNING findings are retained without blocking. ERROR, BLOCKER and CRIT
 UNKNOWN, NOT_RUN and FAIL block. Missing procedural rules are UNKNOWN coverage, not vacuous PASS.
 Unsupported business calendars and unresolved context fail closed through Stage 07 semantics.
 Literal quotations additionally require matching UTF-8 bytes and fragment SHA-256 in a text/plain
-source. A quoted non-text source is blocked as QUOTATION_EXTRACTION_UNSUPPORTED until a verified
+source. The supported exact locators are RECORD `1` (whole source) and BYTE_RANGE `start:end`;
+unknown locations and out-of-range spans block. A quoted non-text source is blocked as QUOTATION_EXTRACTION_UNSUPPORTED until a verified
 extraction adapter provides that proof. Source jurisdiction/effective dates are checked separately
 from rule applicability. Human PASS cannot override a fabricated quotation.
 Calculated deadlines are compared with execution time; queries re-evaluate procedural conditions,

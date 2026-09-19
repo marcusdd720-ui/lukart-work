@@ -1,4 +1,16 @@
-# LUKART WORK — Case Core, Storage and Ingestion
+# LUKART WORK — controlled drafting and validation
+
+Stage 10 (pakiet 0.10.0): walidacja pomiędzy GENERATED a późniejszym renderingiem.
+`lukart_work.validation.service.ValidationEngineService` udostępnia `execute` dla jawnych
+poleceń walidacji, oceny człowieka i rozstrzygnięcia findings oraz `query` dla bieżącej kwalifikacji.
+[Zakres i dowody wejściowe](docs/37-stage10-readiness.md),
+[kontrakty, użycie i ograniczenia](docs/38-stage10-implementation.md),
+[odbiór i Red Team](docs/39-stage10-acceptance.md).
+Pełny runner: `python -B -X utf8 scripts/verify_stage10.py`; każdy SKIP oznacza FAIL.
+Stage 10 pozostaje przed niezależnym review i merge. Nie realizuje renderowania ani FINAL.
+
+Poniższe opisy wcześniejszych etapów są historyczne; dowody ich późniejszego zamknięcia
+zestawiono w gotowości Stage 10.
 
 Stage 05 (pakiet 0.5.0): ludzki przegląd kandydatów, lifecycle faktów i dowodów,
 wersjonowane decyzje oraz macierz pochodzenia i aktualności potwierdzeń.

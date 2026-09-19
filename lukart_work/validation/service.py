@@ -1,5 +1,6 @@
 """Stage 10 authenticated, atomic pre-render validation over canonical PostgreSQL state."""
 import json
+import re
 from hashlib import sha256
 from types import SimpleNamespace
 from uuid import UUID, uuid5
@@ -168,7 +169,16 @@ class ValidationEngineService(CommandService):
                         add('citations', 'QUOTATION_EXTRACTION_UNSUPPORTED', '/citations/' + str(citation.id), 'BLOCKER')
                     else:
                         quote = citation.quotation.encode('utf-8')
-                        if quote not in original or citation.locator.fragment_hash != sha256(quote).hexdigest():
+                        fragment = None
+                        if citation.locator.unit == 'RECORD' and citation.locator.value == '1':
+                            fragment = original
+                        elif citation.locator.unit == 'BYTE_RANGE' and re.fullmatch(r'[0-9]+:[0-9]+', citation.locator.value):
+                            start, end = map(int, citation.locator.value.split(':'))
+                            if 0 <= start < end <= len(original):
+                                fragment = original[start:end]
+                        if fragment is None:
+                            add('citations', 'QUOTATION_LOCATOR_UNSUPPORTED', '/citations/' + str(citation.id), 'BLOCKER')
+                        elif quote not in fragment or citation.locator.fragment_hash != sha256(fragment).hexdigest():
                             add('citations', 'QUOTATION_BYTES_MISMATCH', '/citations/' + str(citation.id), 'BLOCKER')
             if statement.statement_type == 'LEGAL':
                 for target in statement.refs:
@@ -306,6 +316,8 @@ class ValidationEngineService(CommandService):
                     records = tx.records()
                     if (digest(execution.manifest) != run.execution_manifest_hash
                             or execution.manifest.draft_hash != run.draft_hash
+                            or execution.manifest.review_hash != (digest(execution.review) if execution.review else None)
+                            or execution.manifest.snapshot_hash != run.snapshot_hash
                             or digest(records[run.draft]) != run.draft_hash
                             or tuple(r for r, _ in execution.manifest.dependency_hashes) != execution.dependencies
                             or any(digest(records[r]) != h for r, h in execution.manifest.dependency_hashes)):

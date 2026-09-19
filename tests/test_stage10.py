@@ -1,6 +1,6 @@
 """Stage 10 synthetic PostgreSQL assurance; never loads private CASE material."""
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
+from datetime import datetime, timezone, timedelta
 from hashlib import sha256
 import json
 import unittest
@@ -49,7 +49,7 @@ class ValidationTests(drafting.ControlledDraftingTests):
         old = self.get(citation_ref)
         quote = 'Synthetic payment receipt.'
         citation = old.model_copy(update={'revision':old.revision + 1, 'previous_hash':digest(old),
-            'quotation':quote, 'locator':old.locator.model_copy(update={'fragment_hash':sha256(quote.encode()).hexdigest()})})
+            'quotation':quote, 'locator':old.locator.model_copy(update={'unit':'RECORD', 'value':'1', 'fragment_hash':sha256(quote.encode()).hexdigest()})})
         with self.repo.transaction(self.tenant, self.case_id) as tx:
             records = tx.records()
             heads = {(e.kind, e.id):e for e in tx.heads()}
@@ -421,6 +421,55 @@ class ValidationTests(drafting.ControlledDraftingTests):
         _, draft = self.generated()
         result, run_id, _ = self.validate(draft, self.review(draft))
         self.assertIn('QUOTATION_BYTES_MISMATCH', {self.get(r).code for r in result.refs[1:]})
+        self.assertFalse(self.projection(run_id).eligible_for_approval)
+
+    def test_stage10_supported_deadline_context_expires_within_same_day(self):
+        before_deadline = (datetime.now(timezone.utc) + timedelta(days=1)).replace(hour=10, minute=0, second=0, microsecond=0)
+        trigger_date = before_deadline.date().isoformat()
+        original_fact = self.fact
+        def fact_fixture():
+            fact, party, evidence, source = original_fact()
+            statement = json.dumps({'key':'trigger','value':trigger_date}, sort_keys=True, separators=(',', ':'))
+            fact = self.apply('EditFact', {'statement':statement}, fact)[0].refs[0]
+            return fact, party, evidence, source
+        self.fact = fact_fixture
+        original_proc = self.proc_apply
+        def proc(operation, data=None, target=None):
+            if operation == 'RegisterProceduralRule':
+                data['spec'].update(category='DEADLINE', requirements=[], deadline={
+                    'trigger_key':'trigger','offset_days':0,'timezone':'UTC','due_time':'12:00', 'calendar_mode':'CALENDAR_DAYS'})
+            return original_proc(operation, data, target)
+        self.proc_apply = proc
+        case, draft = self.generated()
+        self.validation.clock = lambda: before_deadline
+        review = self.review(draft)
+        request = self.vrequest('ValidateDraft', draft, review_id=str(review), procedural_context=[{
+            'key':'trigger','classification':'FACT','value':trigger_date,'facts':[case['fact'].model_dump(mode='json')]}])
+        result = self.vapply(request)
+        run_id = uuid5(UUID(request['meta']['command_id']), 'validation-run')
+        self.assertEqual(self.get(result.refs[0]).status, 'VALIDATED')
+        self.assertTrue(self.projection(run_id).eligible_for_approval)
+        self.validation.clock = lambda: before_deadline + timedelta(hours=3)
+        projection = self.projection(run_id)
+        self.assertFalse(projection.eligible_for_approval)
+        self.assertIn('PROCEDURAL_STATE_STALE', projection.reasons)
+
+    def test_stage10_unverifiable_locator_denies_quotation(self):
+        original = self.legal_authority_fixture
+        def fixture(source_id, **kwargs):
+            source, rule, citation_ref, approval = original(source_id, **kwargs)
+            old = self.get(citation_ref)
+            citation = old.model_copy(update={'revision':old.revision+1, 'previous_hash':digest(old),
+                'locator':old.locator.model_copy(update={'unit':'BYTE_RANGE','value':'900:901'})})
+            with self.repo.transaction(self.tenant, self.case_id) as tx:
+                tx.append(citation)
+                tx.set_sequence(tx.sequence()+1)
+            self.sequence += 1
+            return source, rule, ref(citation), approval
+        self.legal_authority_fixture = fixture
+        _, draft = self.generated()
+        result, run_id, _ = self.validate(draft, self.review(draft))
+        self.assertIn('QUOTATION_LOCATOR_UNSUPPORTED', {self.get(r).code for r in result.refs[1:]})
         self.assertFalse(self.projection(run_id).eligible_for_approval)
 
 
