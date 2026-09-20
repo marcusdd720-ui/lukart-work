@@ -47,12 +47,16 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                 with self.assertRaises(CONTROL.ControlError):
                     CONTROL.validate_promote_paths([path])
 
+    def test_promotion_rejects_all_workflow_changes(self) -> None:
+        with self.assertRaises(CONTROL.ControlError):
+            CONTROL.validate_promote_paths([".github/workflows/stage11.yml"])
+
     def test_promotion_accepts_stage11_product_paths(self) -> None:
         CONTROL.validate_promote_paths(
             [
                 "lukart_work/rendering/service.py",
                 "tests/test_stage11.py",
-                ".github/workflows/stage11.yml",
+                "lukart_work/rendering/contracts.py",
             ]
         )
 
