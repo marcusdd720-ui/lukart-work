@@ -67,46 +67,50 @@ class Stage11DeliveryControlTests(unittest.TestCase):
         )
 
     def test_dispatch_candidate_checks_binds_exact_sha_and_stage_branch(self) -> None:
+        branch = "codex/stage11-rendering-engine"
+        sha = "a" * 40
+        token = "e" * 32
         calls = []
-        original_api = CONTROL.api
-        original_ref = CONTROL._ref
+        posted = set()
+        run_ids = {"stage02.yml": 101, "stage11-assurance.yml": 102}
 
         def fake_api(method, path, payload=None):
             calls.append((method, path, payload))
-            return None
+            if method == "POST" and path.endswith("/dispatches"):
+                workflow = path.split("/")[3]
+                posted.add(workflow)
+                return None
+            if method == "GET" and "/runs?" in path:
+                workflow = path.split("/")[3]
+                if workflow not in posted:
+                    return {"workflow_runs": []}
+                return {
+                    "workflow_runs": [
+                        {
+                            "id": run_ids[workflow],
+                            "display_title": f"stage11-dispatch-{token}",
+                            "event": "workflow_dispatch",
+                            "head_sha": sha,
+                            "head_branch": branch,
+                            "path": f".github/workflows/{workflow}",
+                        }
+                    ]
+                }
+            raise AssertionError((method, path, payload))
 
-        CONTROL.api = fake_api
-        CONTROL._ref = lambda branch: {"object": {"sha": "a" * 40}}
-        try:
-            CONTROL.dispatch_candidate_checks(
-                "codex/stage11-rendering-engine",
-                "a" * 40,
-            )
-        finally:
-            CONTROL.api = original_api
-            CONTROL._ref = original_ref
+        with patch.object(CONTROL, "api", side_effect=fake_api), \
+                patch.object(CONTROL, "_ref", return_value={"object": {"sha": sha}}), \
+                patch.object(CONTROL.secrets, "token_hex", return_value=token):
+            result = CONTROL.dispatch_candidate_checks(branch, sha)
 
-        self.assertEqual(
-            calls,
-            [
-                (
-                    "POST",
-                    "/actions/workflows/stage02.yml/dispatches",
-                    {
-                        "ref": "codex/stage11-rendering-engine",
-                        "inputs": {"candidate_sha": "a" * 40},
-                    },
-                ),
-                (
-                    "POST",
-                    "/actions/workflows/stage11-assurance.yml/dispatches",
-                    {
-                        "ref": "codex/stage11-rendering-engine",
-                        "inputs": {"candidate_sha": "a" * 40},
-                    },
-                ),
-            ],
-        )
+        self.assertEqual(result, run_ids)
+        dispatches = [call for call in calls if call[0] == "POST"]
+        self.assertEqual(len(dispatches), 2)
+        for _, path, payload in dispatches:
+            self.assertTrue(path.endswith("/dispatches"))
+            self.assertEqual(payload["ref"], branch)
+            self.assertEqual(payload["inputs"]["candidate_sha"], sha)
+            self.assertEqual(payload["inputs"]["dispatch_token"], token)
 
     def test_dispatch_candidate_checks_rejects_untrusted_ref_or_sha(self) -> None:
         with self.assertRaises(CONTROL.ControlError):
@@ -118,9 +122,8 @@ class Stage11DeliveryControlTests(unittest.TestCase):
             )
 
     def test_dispatch_candidate_checks_rejects_moved_candidate_branch(self) -> None:
-        original_ref = CONTROL._ref
-        CONTROL._ref = lambda branch: {"object": {"sha": "b" * 40}}
-        try:
+        with patch.object(CONTROL, "_ref", return_value={"object": {"sha": "b" * 40}}), \
+                patch.object(CONTROL.secrets, "token_hex", return_value="e" * 32):
             with self.assertRaisesRegex(
                 CONTROL.ControlError,
                 "candidate branch moved",
@@ -129,8 +132,6 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                     "codex/stage11-rendering-engine",
                     "a" * 40,
                 )
-        finally:
-            CONTROL._ref = original_ref
 
     def test_check_gate_binds_required_workflows_to_exact_sha_and_event(self) -> None:
         sha = "a" * 40
@@ -382,6 +383,8 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                 text = path.read_text(encoding="utf-8")
                 self.assertIn("workflow_dispatch:", text)
                 self.assertIn("candidate_sha:", text)
+                self.assertIn("dispatch_token:", text)
+                self.assertIn("run-name: stage11-", text)
                 self.assertIn("Resolve exact tested source", text)
                 self.assertIn("ref: ${{ steps.source.outputs.sha }}", text)
                 self.assertIn("persist-credentials: false", text)
@@ -500,6 +503,236 @@ class P1RegressionTests(unittest.TestCase):
                                         cwd=root, env=env, capture_output=True, text=True)
                 self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
 
+    def test_dispatch_binding_rejects_target_movement_before_between_and_after_dispatches(self):
+        branch = "codex/stage11-test"
+        sha = "c" * 40
+        newer = "d" * 40
+        token = "e" * 32
+        workflows = ("stage02.yml", "stage11-assurance.yml")
+
+        for race in ("before_first", "between_dispatches", "after_second"):
+            with self.subTest(race=race):
+                refs = {branch: sha}
+                posted = set()
+                get_counts = {workflow: 0 for workflow in workflows}
+
+                def fake_ref(name):
+                    return {"object": {"sha": refs[name]}} if name in refs else None
+
+                def fake_api(method, path, payload=None):
+                    if method == "POST" and path.endswith("/dispatches"):
+                        workflow = path.split("/")[3]
+                        posted.add(workflow)
+                        return None
+                    if method == "GET" and "/runs?" in path:
+                        workflow = path.split("/")[3]
+                        get_counts[workflow] += 1
+                        if race == "before_first" and workflow == workflows[0] and get_counts[workflow] == 1:
+                            refs[branch] = newer
+                        if workflow not in posted:
+                            return {"workflow_runs": []}
+                        run = {
+                            "id": 100 + workflows.index(workflow),
+                            "display_title": f"stage11-dispatch-{token}",
+                            "event": "workflow_dispatch",
+                            "head_sha": sha,
+                            "head_branch": branch,
+                            "path": f".github/workflows/{workflow}",
+                        }
+                        if race == "between_dispatches" and workflow == workflows[0]:
+                            refs[branch] = newer
+                        if race == "after_second" and workflow == workflows[1]:
+                            refs[branch] = newer
+                        return {"workflow_runs": [run]}
+                    raise AssertionError((method, path, payload))
+
+                with patch.object(CONTROL, "_ref", side_effect=fake_ref), \
+                        patch.object(CONTROL, "api", side_effect=fake_api), \
+                        patch.object(CONTROL.secrets, "token_hex", return_value=token):
+                    with self.assertRaisesRegex(CONTROL.ControlError, "candidate branch moved"):
+                        CONTROL.dispatch_candidate_checks(branch, sha)
+                self.assertEqual(refs[branch], newer)
+
+    def test_dispatch_binding_rejects_correlated_run_for_wrong_head(self):
+        branch = "codex/stage11-test"
+        sha = "c" * 40
+        newer = "d" * 40
+        token = "e" * 32
+        posted = set()
+
+        def fake_api(method, path, payload=None):
+            if method == "POST" and path.endswith("/dispatches"):
+                posted.add(path.split("/")[3])
+                return None
+            if method == "GET" and "/runs?" in path:
+                workflow = path.split("/")[3]
+                if workflow not in posted:
+                    return {"workflow_runs": []}
+                return {
+                    "workflow_runs": [
+                        {
+                            "id": 101,
+                            "display_title": f"stage11-dispatch-{token}",
+                            "event": "workflow_dispatch",
+                            "head_sha": newer,
+                            "head_branch": branch,
+                            "path": f".github/workflows/{workflow}",
+                        }
+                    ]
+                }
+            raise AssertionError((method, path, payload))
+
+        with patch.object(CONTROL, "_ref", return_value={"object": {"sha": sha}}), \
+                patch.object(CONTROL, "api", side_effect=fake_api), \
+                patch.object(CONTROL.secrets, "token_hex", return_value=token):
+            with self.assertRaisesRegex(CONTROL.ControlError, "wrong source"):
+                CONTROL.dispatch_candidate_checks(branch, sha)
+
+    def test_promotion_blocks_target_move_after_dispatch_binding_before_receipt(self):
+        source = "work/stage11-test"
+        target = "codex/stage11-test"
+        source_sha = self.SHA
+        base_sha = self.BASE
+        promoted_sha = "c" * 40
+        newer_target = "d" * 40
+        refs = {source: source_sha, target: base_sha, "main": base_sha}
+        comments = []
+
+        def fake_ref(branch):
+            return {"object": {"sha": refs[branch]}} if branch in refs else None
+
+        def fake_api(method, path, payload=None):
+            if method == "GET" and path == f"/compare/{base_sha}...{source_sha}":
+                return {
+                    "behind_by": 0,
+                    "ahead_by": 1,
+                    "files": [{"filename": "product.py", "status": "added"}],
+                }
+            if method in {"PATCH", "DELETE"}:
+                self.fail(f"unexpected destructive ref mutation: {method} {path}")
+            raise AssertionError((method, path, payload))
+
+        def fake_commit(sha):
+            if sha == source_sha:
+                return {"commit": {"tree": {"sha": "tree"}}}
+            if sha == promoted_sha:
+                return {
+                    "commit": {
+                        "tree": {"sha": "tree"},
+                        "verification": {"verified": True},
+                    }
+                }
+            raise AssertionError(sha)
+
+        def fake_graphql(query, variables):
+            refs[target] = promoted_sha
+            return {"createCommitOnBranch": {"commit": {"oid": promoted_sha}}}
+
+        def fake_dispatch(branch, sha):
+            refs[target] = newer_target
+            return {"stage02.yml": 201, "stage11-assurance.yml": 202}
+
+        with patch.object(CONTROL, "_ref", side_effect=fake_ref), \
+                patch.object(CONTROL, "api", side_effect=fake_api), \
+                patch.object(CONTROL, "_commit", side_effect=fake_commit), \
+                patch.object(CONTROL, "_tree_map", return_value={"product.py": {"sha": "blob", "mode": "100644"}}), \
+                patch.object(CONTROL, "_blob_bytes", return_value=b"content"), \
+                patch.object(CONTROL, "graphql", side_effect=fake_graphql), \
+                patch.object(CONTROL, "dispatch_candidate_checks", side_effect=fake_dispatch), \
+                patch.object(CONTROL, "_post_comment", side_effect=lambda issue, body: comments.append(body)), \
+                patch.object(CONTROL, "_repo", return_value="owner/repo"):
+            with self.assertRaisesRegex(CONTROL.ControlError, "candidate branch moved"):
+                CONTROL.promote(
+                    17,
+                    {
+                        "source": source,
+                        "source_sha": source_sha,
+                        "target": target,
+                        "base_sha": base_sha,
+                    },
+                )
+
+        self.assertEqual(refs[target], newer_target)
+        self.assertEqual(refs[source], source_sha)
+        self.assertEqual(comments, [])
+
+    def test_promotion_never_rewrites_source_ref_after_concurrent_source_advance(self):
+        source = "work/stage11-test"
+        target = "codex/stage11-test"
+        source_sha = self.SHA
+        newer_source = "e" * 40
+        base_sha = self.BASE
+        promoted_sha = "c" * 40
+        refs = {source: source_sha, target: base_sha, "main": base_sha}
+        calls = []
+        comments = []
+
+        def fake_ref(branch):
+            return {"object": {"sha": refs[branch]}} if branch in refs else None
+
+        def fake_api(method, path, payload=None):
+            calls.append((method, path, payload))
+            if method == "GET" and path == f"/compare/{base_sha}...{source_sha}":
+                return {
+                    "behind_by": 0,
+                    "ahead_by": 1,
+                    "files": [{"filename": "product.py", "status": "added"}],
+                }
+            if method in {"PATCH", "DELETE"}:
+                self.fail(f"unexpected destructive ref mutation: {method} {path}")
+            raise AssertionError((method, path, payload))
+
+        def fake_commit(sha):
+            if sha == source_sha:
+                return {"commit": {"tree": {"sha": "tree"}}}
+            if sha == promoted_sha:
+                return {
+                    "commit": {
+                        "tree": {"sha": "tree"},
+                        "verification": {"verified": True},
+                    }
+                }
+            raise AssertionError(sha)
+
+        def fake_graphql(query, variables):
+            self.assertEqual(variables["input"]["expectedHeadOid"], base_sha)
+            refs[target] = promoted_sha
+            return {"createCommitOnBranch": {"commit": {"oid": promoted_sha}}}
+
+        def fake_dispatch(branch, sha):
+            self.assertEqual((branch, sha), (target, promoted_sha))
+            refs[source] = newer_source
+            return {"stage02.yml": 201, "stage11-assurance.yml": 202}
+
+        with patch.object(CONTROL, "_ref", side_effect=fake_ref), \
+                patch.object(CONTROL, "api", side_effect=fake_api), \
+                patch.object(CONTROL, "_commit", side_effect=fake_commit), \
+                patch.object(CONTROL, "_tree_map", return_value={"product.py": {"sha": "blob", "mode": "100644"}}), \
+                patch.object(CONTROL, "_blob_bytes", return_value=b"content"), \
+                patch.object(CONTROL, "graphql", side_effect=fake_graphql), \
+                patch.object(CONTROL, "dispatch_candidate_checks", side_effect=fake_dispatch), \
+                patch.object(CONTROL, "_post_comment", side_effect=lambda issue, body: comments.append(body)), \
+                patch.object(CONTROL, "_procedure_identity", return_value=("policy", "procedure")), \
+                patch.object(CONTROL, "_repo", return_value="owner/repo"):
+            CONTROL.promote(
+                17,
+                {
+                    "source": source,
+                    "source_sha": source_sha,
+                    "target": target,
+                    "base_sha": base_sha,
+                },
+            )
+
+        self.assertEqual(refs[source], newer_source)
+        self.assertFalse(any(method in {"PATCH", "DELETE"} for method, _, _ in calls))
+        self.assertEqual(len(comments), 1)
+        self.assertTrue(comments[0].startswith("STAGE11_PROMOTION: DISPATCH_BOUND\n"))
+        self.assertNotIn("STAGE11_PROMOTION: PASS", comments[0])
+        self.assertIn("source_ref_mutation=NONE", comments[0])
+        self.assertIn("stage02.yml:201", comments[0])
+        self.assertIn("stage11-assurance.yml:202", comments[0])
+
     def test_promotion_failure_never_overwrites_concurrent_ref_updates(self):
         source, target = "work/stage11-test", "codex/stage11-test"
         promoted, newer = "c" * 40, "d" * 40
@@ -511,7 +744,6 @@ class P1RegressionTests(unittest.TestCase):
                         if existing:
                             refs[target] = self.BASE
                         calls = []
-                        dispatches = []
 
                         def api(method, path, payload=None):
                             calls.append((method, path, payload))
@@ -521,14 +753,15 @@ class P1RegressionTests(unittest.TestCase):
                             if method == "POST" and path == "/git/refs":
                                 refs[target] = payload["sha"]
                                 return None
-                            if method == "POST" and path.endswith("/dispatches"):
-                                dispatches.append(path)
-                                if failure == "first_dispatch" or len(dispatches) == 2:
-                                    if concurrent:
-                                        refs[target] = newer
-                                    raise CONTROL.ControlError("injected dispatch failure")
-                                return None
                             self.fail(f"unsafe/unexpected mutation: {method} {path}")
+
+                        def dispatch(branch, sha):
+                            self.assertEqual((branch, sha), (target, promoted))
+                            if failure in {"first_dispatch", "second_dispatch"}:
+                                if concurrent:
+                                    refs[target] = newer
+                                raise CONTROL.ControlError("injected dispatch failure")
+                            self.fail("dispatch must not run after signature/tree failure")
 
                         def commit(sha):
                             if sha == self.SHA:
@@ -548,6 +781,7 @@ class P1RegressionTests(unittest.TestCase):
                                 patch.object(CONTROL, "graphql", side_effect=graphql), \
                                 patch.object(CONTROL, "_tree_map", return_value={"product.py": {"sha": "blob", "mode": "100644"}}), \
                                 patch.object(CONTROL, "_blob_bytes", return_value=b"content"), \
+                                patch.object(CONTROL, "dispatch_candidate_checks", side_effect=dispatch), \
                                 patch.object(CONTROL, "_post_comment") as comment, \
                                 patch.object(CONTROL, "_repo", return_value="owner/repo"):
                             with self.assertRaisesRegex(CONTROL.ControlError, "target preserved"):

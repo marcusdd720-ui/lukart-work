@@ -32,12 +32,19 @@ The candidate SHA is a first-class identity and must be validated directly.
 3. After verifying signature and source-tree identity, the trusted control explicitly
    dispatches both required assurance workflows with:
    - `ref=<codex/stage11-* branch>`;
-   - `candidate_sha=<exact promoted SHA>`.
+   - `candidate_sha=<exact promoted SHA>`;
+   - a unique 128-bit `dispatch_token` used only to correlate the concrete GitHub
+     workflow run created by that dispatch.
 4. Each dispatched workflow:
    - requires a lowercase 40-hex `candidate_sha`;
+   - exposes the correlation token in its deterministic `run-name`;
    - requires the dispatch event SHA to equal `candidate_sha`;
    - checks out `candidate_sha` explicitly;
    - asserts `git rev-parse HEAD == candidate_sha` before running assurance.
+   The control does not treat HTTP acceptance of `workflow_dispatch` as evidence.
+   Before completing promotion setup it must observe exactly one newly materialized
+   correlated run for each required workflow and verify its workflow path, event,
+   branch and `head_sha == candidate_sha`.
 5. Pull-request runs also check out the PR head SHA explicitly so their tested source is
    not silently replaced by GitHub's synthetic PR merge commit.
 6. The authoritative pre-merge Stage 11 gate is the pair of successful checks bound
@@ -80,16 +87,23 @@ Promotion is fail-closed.
 2. Trusted procedure/workflow paths cannot be promoted.
 3. The promoted GitHub commit must be `verified=true`.
 4. The promoted commit tree must equal the exact source tree.
-5. Both exact-SHA assurance dispatches must be accepted before the work staging branch is
-   moved to the verified promoted commit.
-6. If verification or dispatch setup fails, fail closed and preserve the target ref
+5. Both exact-SHA assurance dispatches must be correlated to concrete newly created
+   GitHub Actions runs whose `head_sha` equals the promoted SHA. The target ref is
+   rechecked before each dispatch, after each correlated run is observed, and after
+   the pair is bound.
+6. Promotion never rewrites the `work/stage11-*` source ref. The exact source SHA is
+   immutable input evidence; a concurrent source advance is preserved rather than
+   force-reset to the promoted SHA.
+7. If verification or dispatch binding fails, fail closed and preserve the target ref
    and failed promoted commit as evidence. Do not reset or delete the target, including
    a branch created by this attempt. REST ref PATCH/DELETE do not supply expected-head
    compare-and-swap; a preceding HEAD read cannot prevent a concurrent lost update.
-   Recovery requires a separately authorized and concurrency-safe operation. The work
-   staging branch is not reset, no promotion PASS is emitted, and no automatic retry
-   may assume the failed candidate is accepted.
-7. No failure may be converted into implicit PASS.
+   Recovery requires a separately authorized and concurrency-safe operation.
+8. Promotion emits `STAGE11_PROMOTION: DISPATCH_BOUND`, not a PASS receipt. This means
+   only that the verified candidate and exact-SHA dispatch runs were bound while the
+   target was observed at the candidate SHA. Candidate assurance, independent review
+   and merge gates remain separate and mandatory.
+9. No failure may be converted into implicit PASS.
 
 ## Guarded merge contract
 
@@ -140,10 +154,17 @@ Failed candidate `02d4209a80cde62144377d1f573b7b076b1b2026` remains immutable hi
 Its independent review was BLOCKED (`p0=0`, `p1=3`, merge not performed), as supplied
 in the explicit remediation authorization. Root causes were destructive compensation
 without CAS, optional rendering-test execution, and unauthenticated substring matching.
-The focused regressions cover concurrent target updates for existing/new branches on
-verification and first/second dispatch failures, executable workflow test-presence
-gates, and malformed/spoofed review receipts. Fresh exact-SHA CI and a new independent
-review are required for the remediation candidate; no failed-candidate PASS transfers.
+
+Candidate `48b8b67bf6174f991de49e1bc7a70d433a6adeec` repaired those three findings, but
+Case 1 adversarial review identified two additional P1 concurrency windows: mutable
+target movement during the two-dispatch binding window could produce premature promotion
+completion, and the final source `force=true` reset could overwrite a newer concurrent
+source update. This remediation removes source-ref mutation entirely, correlates each
+dispatch to its concrete exact-SHA run, adds target rechecks across the binding window,
+and replaces promotion PASS with a narrower `DISPATCH_BOUND` receipt.
+
+Fresh exact-SHA CI and a new independent Case 1 review are required; no PASS transfers
+from either failed candidate.
 
 ## Post-merge contract
 

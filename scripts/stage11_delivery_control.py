@@ -5,8 +5,10 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shlex
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -16,6 +18,9 @@ from typing import Any
 API = "https://api.github.com"
 GRAPHQL = "https://api.github.com/graphql"
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+DISPATCH_TOKEN_RE = re.compile(r"^[0-9a-f]{32}$")
+DISPATCH_POLL_ATTEMPTS = 30
+DISPATCH_POLL_INTERVAL_SECONDS = 1.0
 STAGE_BRANCH_PREFIX = "codex/stage11-"
 WORK_BRANCH_PREFIX = "work/stage11-"
 REQUIRED_STAGE11_CHECKS = ("validation", "stage11-rendering")
@@ -196,23 +201,115 @@ def _procedure_identity() -> tuple[str, str]:
     )
 
 
-def dispatch_candidate_checks(branch: str, sha: str) -> None:
+def _assert_ref_sha(branch: str, expected_sha: str, phase: str) -> None:
+    ref = _ref(branch)
+    actual = ref.get("object", {}).get("sha") if isinstance(ref, dict) else None
+    if actual != expected_sha:
+        raise ControlError(
+            f"candidate branch moved {phase}: expected={expected_sha}, actual={actual!r}"
+        )
+
+
+def _workflow_dispatch_runs(workflow: str) -> list[dict[str, Any]]:
+    workflow_id = urllib.parse.quote(workflow, safe="")
+    data = api(
+        "GET",
+        f"/actions/workflows/{workflow_id}/runs?event=workflow_dispatch&per_page=100",
+    )
+    runs = data.get("workflow_runs") if isinstance(data, dict) else None
+    if not isinstance(runs, list):
+        raise ControlError(f"workflow run listing is malformed for {workflow}")
+    return [run for run in runs if isinstance(run, dict)]
+
+
+def _wait_for_bound_dispatch_run(
+    workflow: str,
+    branch: str,
+    candidate_sha: str,
+    dispatch_token: str,
+    baseline_ids: set[int],
+    *,
+    attempts: int = DISPATCH_POLL_ATTEMPTS,
+    interval_seconds: float = DISPATCH_POLL_INTERVAL_SECONDS,
+) -> int:
+    expected_title = f"stage11-dispatch-{dispatch_token}"
+    expected_path = f".github/workflows/{workflow}"
+    for attempt in range(attempts):
+        correlated = []
+        for run in _workflow_dispatch_runs(workflow):
+            run_id = run.get("id")
+            if type(run_id) is not int or run_id in baseline_ids:
+                continue
+            if (
+                run.get("display_title") == expected_title
+                and run.get("event") == "workflow_dispatch"
+            ):
+                correlated.append(run)
+        if correlated:
+            if len(correlated) != 1:
+                raise ControlError(
+                    f"ambiguous correlated workflow_dispatch runs for {workflow}"
+                )
+            run = correlated[0]
+            if (
+                run.get("head_sha") != candidate_sha
+                or run.get("head_branch") != branch
+                or run.get("path") != expected_path
+            ):
+                raise ControlError(
+                    f"workflow_dispatch bound to wrong source for {workflow}: "
+                    f"head_sha={run.get('head_sha')!r}, "
+                    f"head_branch={run.get('head_branch')!r}, path={run.get('path')!r}"
+                )
+            return run["id"]
+        if attempt + 1 < attempts and interval_seconds > 0:
+            time.sleep(interval_seconds)
+    raise ControlError(
+        f"workflow_dispatch run did not materialize for exact candidate: {workflow}"
+    )
+
+
+def dispatch_candidate_checks(branch: str, sha: str) -> dict[str, int]:
     if not branch.startswith(STAGE_BRANCH_PREFIX):
         raise ControlError("candidate CI branch is outside Stage 11 namespace")
     candidate_sha = _require_sha(sha, "candidate_sha")
-    branch_ref = _ref(branch)
-    if not branch_ref or branch_ref["object"]["sha"] != candidate_sha:
-        raise ControlError("candidate branch moved before exact-SHA CI dispatch")
+    dispatch_token = secrets.token_hex(16)
+    if not DISPATCH_TOKEN_RE.fullmatch(dispatch_token):
+        raise ControlError("generated dispatch token is invalid")
+
+    bound_runs: dict[str, int] = {}
+    _assert_ref_sha(branch, candidate_sha, "before exact-SHA CI dispatch")
+
     for workflow in CANDIDATE_WORKFLOWS:
         workflow_id = urllib.parse.quote(workflow, safe="")
+        baseline_ids = {
+            run["id"]
+            for run in _workflow_dispatch_runs(workflow)
+            if type(run.get("id")) is int
+        }
+        _assert_ref_sha(branch, candidate_sha, f"before dispatch of {workflow}")
         api(
             "POST",
             f"/actions/workflows/{workflow_id}/dispatches",
             {
                 "ref": branch,
-                "inputs": {"candidate_sha": candidate_sha},
+                "inputs": {
+                    "candidate_sha": candidate_sha,
+                    "dispatch_token": dispatch_token,
+                },
             },
         )
+        bound_runs[workflow] = _wait_for_bound_dispatch_run(
+            workflow,
+            branch,
+            candidate_sha,
+            dispatch_token,
+            baseline_ids,
+        )
+        _assert_ref_sha(branch, candidate_sha, f"after binding {workflow}")
+
+    _assert_ref_sha(branch, candidate_sha, "after exact-SHA CI dispatch binding")
+    return bound_runs
 
 
 def _event() -> dict[str, Any]:
@@ -352,36 +449,41 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
         )
 
     # GITHUB_TOKEN pushes do not recursively trigger ordinary push workflows.
-    # Dispatch the trusted exact-SHA assurance workflows explicitly. Both workflows
-    # fail closed unless the dispatch ref resolves to this exact promoted SHA.
+    # Dispatch the trusted exact-SHA assurance workflows explicitly, then bind each
+    # dispatch to the concrete workflow run GitHub materialized for promoted_sha.
+    # The Work source ref is immutable input evidence for this operation and is never
+    # rewritten by promotion.
     try:
-        dispatch_candidate_checks(target, promoted_sha)
+        bound_runs = dispatch_candidate_checks(target, promoted_sha)
     except Exception as exc:
-        _abort_promotion(target, promoted_sha, f"CI dispatch failed: {exc}")
+        _abort_promotion(target, promoted_sha, f"CI dispatch binding failed: {exc}")
 
-    # Replace the unsigned Work staging head only after both exact-SHA CI dispatches
-    # have been accepted. This preserves a retryable source if dispatch fails.
-    source_quoted = urllib.parse.quote(f"heads/{source}", safe="")
-    api("PATCH", f"/git/refs/{source_quoted}", {"sha": promoted_sha, "force": True})
+    _assert_ref_sha(target, promoted_sha, "before promotion dispatch receipt")
 
     policy_digest, procedure_digest = _procedure_identity()
     _post_comment(
         issue_number,
         "\n".join(
             [
-                "STAGE11_PROMOTION: PASS",
+                "STAGE11_PROMOTION: DISPATCH_BOUND",
                 f"source={source}",
                 f"source_sha={source_sha}",
+                "source_ref_mutation=NONE",
                 f"target={target}",
+                f"target_observed_sha={promoted_sha}",
                 f"base_sha={base_sha}",
                 f"promoted_sha={promoted_sha}",
                 f"tree_sha={promoted['commit']['tree']['sha']}",
-                f"source_reset_sha={promoted_sha}",
                 f"policy_sha256={policy_digest}",
                 f"procedure_sha256={procedure_digest}",
-                "ci_dispatch=REQUESTED",
+                "ci_dispatch=BOUND",
+                "dispatch_runs=" + ",".join(
+                    f"{workflow}:{bound_runs[workflow]}"
+                    for workflow in CANDIDATE_WORKFLOWS
+                ),
                 f"required_checks={','.join(REQUIRED_STAGE11_CHECKS)}",
                 "signature=VERIFIED",
+                "candidate_assurance=REQUIRED_BEFORE_MERGE",
             ]
         ),
     )
