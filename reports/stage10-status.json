@@ -99,8 +99,8 @@
     "tests/test_stage06.py": "c5453c7e382aef7b56685ea80c340dab2a20e64e86cdfa73264033a3c41dc4e2",
     "tests/test_stage07.py": "eef47126a8e6cef64eb24638b26c78d1ef77053550b37b6f654f46ca2a5e66ca",
     "tests/test_stage08.py": "eb70f0834c5c1204f9ead6e9ce57715d5ae378f5d845db2ab5492a632d41b397",
-    "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa",
     "tests/test_stage09.py": "8ee891d4a386a3afc74078614afdc2b5f6dac41454112d5b86738b9bf8569c85",
+    "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa",
     "tests/test_stage10.py": "68f9266483ef07ac8940f748d9fbafb79cecbf88fce66a4a8c403514dc1764b1",
     "tests/test_stage11_delivery_control.py": "543f46b791704d6ad15f7913529b1aeaaae8a19f1b1fe2568661d322c1a3824d"
   }
