@@ -63,12 +63,14 @@ class Stage11DeliveryControlTests(unittest.TestCase):
     def test_dispatch_candidate_checks_binds_exact_sha_and_stage_branch(self) -> None:
         calls = []
         original_api = CONTROL.api
+        original_ref = CONTROL._ref
 
         def fake_api(method, path, payload=None):
             calls.append((method, path, payload))
             return None
 
         CONTROL.api = fake_api
+        CONTROL._ref = lambda branch: {"object": {"sha": "a" * 40}}
         try:
             CONTROL.dispatch_candidate_checks(
                 "codex/stage11-rendering-engine",
@@ -76,6 +78,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
             )
         finally:
             CONTROL.api = original_api
+            CONTROL._ref = original_ref
 
         self.assertEqual(
             calls,
@@ -107,6 +110,21 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                 "codex/stage11-rendering-engine",
                 "A" * 40,
             )
+
+    def test_dispatch_candidate_checks_rejects_moved_candidate_branch(self) -> None:
+        original_ref = CONTROL._ref
+        CONTROL._ref = lambda branch: {"object": {"sha": "b" * 40}}
+        try:
+            with self.assertRaisesRegex(
+                CONTROL.ControlError,
+                "candidate branch moved",
+            ):
+                CONTROL.dispatch_candidate_checks(
+                    "codex/stage11-rendering-engine",
+                    "a" * 40,
+                )
+        finally:
+            CONTROL._ref = original_ref
 
     def test_promotion_rolls_back_target_when_ci_dispatch_fails(self) -> None:
         source_sha = "a" * 40
