@@ -126,6 +126,139 @@ class Stage11DeliveryControlTests(unittest.TestCase):
         finally:
             CONTROL._ref = original_ref
 
+    def test_check_gate_binds_required_workflows_to_exact_sha_and_event(self) -> None:
+        sha = "a" * 40
+        original_api = CONTROL.api
+
+        def fake_api(method, path, payload=None):
+            if path == f"/commits/{sha}/check-runs?per_page=100":
+                return {
+                    "check_runs": [
+                        {
+                            "name": "validation",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "app": {"slug": "github-actions"},
+                        },
+                        {
+                            "name": "stage11-rendering",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "app": {"slug": "github-actions"},
+                        },
+                    ]
+                }
+            if path == (
+                f"/actions/runs?head_sha={sha}"
+                "&event=workflow_dispatch&per_page=100"
+            ):
+                return {
+                    "workflow_runs": [
+                        {
+                            "path": ".github/workflows/stage02.yml",
+                            "event": "workflow_dispatch",
+                            "head_sha": sha,
+                            "status": "completed",
+                            "conclusion": "success",
+                        },
+                        {
+                            "path": ".github/workflows/stage11-assurance.yml",
+                            "event": "workflow_dispatch",
+                            "head_sha": sha,
+                            "status": "completed",
+                            "conclusion": "success",
+                        },
+                    ]
+                }
+            raise AssertionError(path)
+
+        CONTROL.api = fake_api
+        try:
+            CONTROL._check_gate(sha, required_event="workflow_dispatch")
+        finally:
+            CONTROL.api = original_api
+
+    def test_check_gate_rejects_untrusted_or_wrong_provenance(self) -> None:
+        sha = "a" * 40
+        original_api = CONTROL.api
+
+        def fake_api(method, path, payload=None):
+            if path == f"/commits/{sha}/check-runs?per_page=100":
+                return {
+                    "check_runs": [
+                        {
+                            "name": "validation",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "app": {"slug": "untrusted-check-producer"},
+                        },
+                        {
+                            "name": "stage11-rendering",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "app": {"slug": "github-actions"},
+                        },
+                    ]
+                }
+            return {"workflow_runs": []}
+
+        CONTROL.api = fake_api
+        try:
+            with self.assertRaisesRegex(
+                CONTROL.ControlError,
+                "required trusted GitHub Actions checks",
+            ):
+                CONTROL._check_gate(sha, required_event="workflow_dispatch")
+        finally:
+            CONTROL.api = original_api
+
+        def fake_wrong_event_api(method, path, payload=None):
+            if path == f"/commits/{sha}/check-runs?per_page=100":
+                return {
+                    "check_runs": [
+                        {
+                            "name": "validation",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "app": {"slug": "github-actions"},
+                        },
+                        {
+                            "name": "stage11-rendering",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "app": {"slug": "github-actions"},
+                        },
+                    ]
+                }
+            return {
+                "workflow_runs": [
+                    {
+                        "path": ".github/workflows/stage02.yml",
+                        "event": "pull_request",
+                        "head_sha": sha,
+                        "status": "completed",
+                        "conclusion": "success",
+                    },
+                    {
+                        "path": ".github/workflows/stage11-assurance.yml",
+                        "event": "pull_request",
+                        "head_sha": sha,
+                        "status": "completed",
+                        "conclusion": "success",
+                    },
+                ]
+            }
+
+        CONTROL.api = fake_wrong_event_api
+        try:
+            with self.assertRaisesRegex(
+                CONTROL.ControlError,
+                "workflow provenance",
+            ):
+                CONTROL._check_gate(sha, required_event="workflow_dispatch")
+        finally:
+            CONTROL.api = original_api
+
     def test_promotion_rolls_back_target_when_ci_dispatch_fails(self) -> None:
         source_sha = "a" * 40
         base_sha = "b" * 40
