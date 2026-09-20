@@ -1,7 +1,7 @@
 {
   ".github/workflows/cross-repo-conformance.yml": "7f0999d0f958709c0768a83825562a00822bb2654c30553cad95bb2f7c330853",
   ".github/workflows/stage02.yml": "d2855c73876cffec09133e73ce3c694bc3215838a5f6730bd8940781aaaa78c6",
-  ".github/workflows/stage11-assurance.yml": "abf67aa81b9c2f2585cc27da99700afc9e6c762abeedc63e38a7c31c481d2263",
+  ".github/workflows/stage11-assurance.yml": "02d5e8ac80e6b38507225251c1cff155a3e67f0ccd08fdbeb1d895748dca7452",
   ".github/workflows/stage11-control.yml": "9bfe99a5e839c00b5f7cd8095fa2103d3d78268165e9499f40f86749489bcc1b",
   ".gitignore": "f4942c2957ab6ce819f46dd1f0a68df886ba92a02808e429a2db3a31e7a13233",
   "AGENTS.md": "3788ae8e301422eba5eca2f870abef337f753d54a5c125818d7b37c5cddb1803",
@@ -61,7 +61,7 @@
   "docs/CROSS_REPO_CONTRACT_CONVERGENCE.md": "7d741a1d29a16bf68a3cc9967e0a1fe8a016f3bacb85122e5bdf72c54ae0626a",
   "docs/ENTERPRISE_EXECUTION_CONSTITUTION.md": "0d15ba0c5d73d845bce26399756a7a76ce29d80bc2520529117d08633c9e0a8f",
   "docs/IDEAS_BACKLOG.md": "902e57037e6dd4a38b1eba9670b4f1a7b9e668e80ff576f907a53b573f626d04",
-  "docs/STAGE11_DELIVERY_AUTOMATION.md": "70add69d57984e99ac6251284940fb6e93d649d7a6474bfa751cd67c7e1dbd41",
+  "docs/STAGE11_DELIVERY_AUTOMATION.md": "374d610881d50f047d4935409ea1e6fb07ffbeddba5aaf26d3a98d4f6cc782a2",
   "examples/invalid-confirmed-fact.json": "6e037e4e3a8d8db2b055dcb320eec30a3277d59074aeeb292d00de86c3fcde9e",
   "examples/invalid-extra-property.json": "90feaf1b484c2e3e98f93fd164805c836443779efa2eaa09f22b7b30f33dfd27",
   "examples/valid-fact.json": "8db223d707c620905c48d23ae861980e3c109e9158c74089532907e0fc82e946",
@@ -138,7 +138,7 @@
   "reports/stage09-schema-validation.json": "f7f42ca52e803b0f21d646c50d5b6d06bd41cd50c171ac009d6389fa478dd5a5",
   "reports/stage09-status.json": "5d11212e22559aba5a041a5402100ebabb422ba1cfc5724ccdbb0aabd9e6bf7e",
   "reports/stage10-schema-validation.json": "c07b4e2b29ebb768f97e2d426d74695209f82df981908ed11e709a9259fa7bfc",
-  "reports/stage10-status.json": "f1a2be35c6291a4c7a7948d2ee6d7d46e579496d1a903ef392d3c95971f7ac09",
+  "reports/stage10-status.json": "f886b178b5a5b4233fdff8b53231cc07b5dd990f6cc8325514c5bb65972fa8c8",
   "reports/status.json": "b3a0315e0fc695b5b8a343f03f2842d7c07c35f881ac2b6c9d9229e318fd2c85",
   "reports/unittest.txt": "001f4d7399e2b3f597dc4a9f6b5370544ede14b6abb2a4dea66bc83e263744b1",
   "schemas/AIRequest.schema.json": "54555e50f93fbe1e62e5ccb21f8d0c0dae253f7f511d03e2cadfa9f7f47c5ed3",
@@ -248,7 +248,7 @@
   "scripts/prepare_stage02_database.py": "62a595b7c26b33619d7ca76ed8eae50553c5270ba7c9f372365175ed2fcfd559",
   "scripts/refresh_manifest.py": "c29f0a79f93a20c7a686909f71c628b1f618057effef60534244fd4c1ea76aeb",
   "scripts/render_cross_repo_contract.py": "80476b1aa02bc2a058ddce3fe11b111e9b48185242672bb43100340818b53e04",
-  "scripts/stage11_delivery_control.py": "8fa554e350feefba9f17c5d7a75da184f2d1a4300410d6531f00ec3ac5fe2232",
+  "scripts/stage11_delivery_control.py": "33412fad40ec54d166227ff83c7a1042058e05d72992c2da855994dcdd46e802",
   "scripts/start_stage02_postgres.ps1": "49a7c29522606d091080901c6d0a4fe2b8e0401b551b77079f414571e6d21065",
   "scripts/validate_stage06_schemas.py": "e4135f24d41939a00be4aae06a95326fbb3db6c0eaba3040a0037259e2d45a94",
   "scripts/validate_stage07_schemas.py": "db267606a7bce858dd08cc27c263cece5a9e88626bbc6ba83d0075d69265073f",
@@ -286,6 +286,6 @@
   "tests/test_stage09.py": "8ee891d4a386a3afc74078614afdc2b5f6dac41454112d5b86738b9bf8569c85",
   "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa",
   "tests/test_stage10.py": "68f9266483ef07ac8940f748d9fbafb79cecbf88fce66a4a8c403514dc1764b1",
-  "tests/test_stage11_delivery_control.py": "f350f18cfcf6acf711a2c0f2beaed735f9edca9e6010f0142793c42bb1721c84",
+  "tests/test_stage11_delivery_control.py": "79157f1268808efac9c94bcaed8106ab5ebaf9034421e6f78bf9c045e8430dab",
   "verify_package.py": "372409d95b4d314ebb4db2ad202b6c759bdad35e623504047821d55a3623c48f"
 }

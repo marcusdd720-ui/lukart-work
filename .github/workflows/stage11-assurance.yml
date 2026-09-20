@@ -63,6 +63,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ steps.source.outputs.sha }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Assert exact tested source
@@ -93,13 +94,32 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          set -euo pipefail
-          branch="${PR_HEAD_REF:-${REF_NAME}}"
-          if [[ "${branch}" == codex/stage11-* && -f tests/test_stage11.py ]]; then
-            python -B -X utf8 -m unittest -v tests.test_stage11
-          elif [[ "${EVENT_NAME}" == "push" && "${REF_NAME}" == "main" && -f tests/test_stage11.py ]]; then
-            python -B -X utf8 -m unittest -v tests.test_stage11
-          fi
+          python -B -X utf8 - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          import unittest
+          from scripts.stage11_delivery_control import (
+              PROCEDURE_BOOTSTRAP_BASE, PROCEDURE_BOOTSTRAP_BRANCH, require_stage11_tests,
+          )
+
+          branch = os.environ.get("PR_HEAD_REF") or os.environ["REF_NAME"]
+          present = Path("tests/test_stage11.py").is_file()
+          paths = []
+          if not present and branch == PROCEDURE_BOOTSTRAP_BRANCH:
+              subprocess.run(["git", "merge-base", "--is-ancestor", PROCEDURE_BOOTSTRAP_BASE, "HEAD"], check=True)
+              paths = subprocess.check_output(
+                  ["git", "diff", "--no-renames", "--name-only", "-z", PROCEDURE_BOOTSTRAP_BASE, "HEAD"],
+                  text=True,
+              ).split("\0")[:-1]
+          mode = require_stage11_tests(branch, present, base_sha=PROCEDURE_BOOTSTRAP_BASE, changed_paths=paths)
+          print(f"stage11_assurance_mode={mode}", flush=True)
+          if mode == "RENDERING_TESTS_REQUIRED":
+              suite = unittest.defaultTestLoader.loadTestsFromName("tests.test_stage11")
+              result = unittest.TextTestRunner(verbosity=2).run(suite)
+              if not result.wasSuccessful() or result.skipped or not result.testsRun:
+                  raise SystemExit("Stage 11 rendering evidence incomplete or failed")
+          PY
 
       - name: Whitespace check
         run: git diff --check

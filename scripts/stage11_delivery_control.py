@@ -24,6 +24,18 @@ REQUIRED_STAGE11_WORKFLOWS = {
     "stage11-rendering": ".github/workflows/stage11-assurance.yml",
 }
 CANDIDATE_WORKFLOWS = ("stage02.yml", "stage11-assurance.yml")
+PROCEDURE_BOOTSTRAP_BRANCH = "codex/stage11-procedure-bootstrap-pr15"
+PROCEDURE_BOOTSTRAP_BASE = "f9b55b1562bb9b3bf2d1db1a5cdb84690619082f"
+PROCEDURE_BOOTSTRAP_PATHS = frozenset({
+    ".github/workflows/stage02.yml",
+    ".github/workflows/stage11-assurance.yml",
+    ".github/workflows/stage11-control.yml",
+    "docs/STAGE11_DELIVERY_AUTOMATION.md",
+    "reports/manifest.sha256.json",
+    "reports/stage10-status.json",
+    "scripts/stage11_delivery_control.py",
+    "tests/test_stage11_delivery_control.py",
+})
 FORBIDDEN_PROMOTION_PATHS = {
     "scripts/stage11_delivery_control.py",
     "docs/STAGE11_DELIVERY_AUTOMATION.md",
@@ -35,6 +47,31 @@ FORBIDDEN_PROMOTION_PREFIXES = (
 
 class ControlError(RuntimeError):
     pass
+
+
+def require_stage11_tests(
+    branch: str, tests_present: bool, *, base_sha: str = "", changed_paths: list[str] | None = None
+) -> str:
+    if tests_present:
+        return "RENDERING_TESTS_REQUIRED"
+    if (
+        branch == PROCEDURE_BOOTSTRAP_BRANCH
+        and base_sha == PROCEDURE_BOOTSTRAP_BASE
+        and changed_paths
+        and set(changed_paths) <= PROCEDURE_BOOTSTRAP_PATHS
+    ):
+        return "PROCEDURE_ONLY_BOOTSTRAP"
+    raise ControlError("tests/test_stage11.py is required; no applicable procedure-only exception")
+
+
+def _abort_promotion(target: str, promoted_sha: str, reason: str) -> None:
+    # GitHub REST ref PATCH/DELETE have no expected-head CAS. Even a preceding
+    # GET cannot make destructive compensation safe against a concurrent writer.
+    # Preserve the failed commit and ref; recovery needs a separately guarded action.
+    raise ControlError(
+        f"promotion BLOCKED: {reason}; target preserved without reset/delete: "
+        f"{target}; failed_promoted_sha={promoted_sha}; recovery required"
+    )
 
 
 def _require_sha(value: str, field: str) -> str:
@@ -236,11 +273,9 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
         if not main or main["object"]["sha"] != base_sha:
             raise ControlError("first promotion base_sha must equal current main")
         api("POST", "/git/refs", {"ref": f"refs/heads/{target}", "sha": base_sha})
-        target_created = True
     else:
         if target_ref["object"]["sha"] != base_sha:
             raise ControlError("target branch moved; base_sha is stale")
-        target_created = False
 
     compare = api("GET", f"/compare/{base_sha}...{source_sha}")
     if compare.get("behind_by") != 0 or int(compare.get("ahead_by", 0)) < 1:
@@ -311,12 +346,9 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
     same_tree = promoted["commit"]["tree"]["sha"] == source_commit["commit"]["tree"]["sha"]
 
     if not verification.get("verified") or not same_tree:
-        quoted = urllib.parse.quote(f"heads/{target}", safe="")
-        api("PATCH", f"/git/refs/{quoted}", {"sha": base_sha, "force": True})
-        if target_created:
-            api("DELETE", f"/git/refs/{quoted}")
-        raise ControlError(
-            "promotion rollback: resulting commit was not GitHub-verified or tree identity differed"
+        _abort_promotion(
+            target, promoted_sha,
+            "resulting commit was not GitHub-verified or tree identity differed",
         )
 
     # GITHUB_TOKEN pushes do not recursively trigger ordinary push workflows.
@@ -324,12 +356,8 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
     # fail closed unless the dispatch ref resolves to this exact promoted SHA.
     try:
         dispatch_candidate_checks(target, promoted_sha)
-    except Exception:
-        quoted = urllib.parse.quote(f"heads/{target}", safe="")
-        api("PATCH", f"/git/refs/{quoted}", {"sha": base_sha, "force": True})
-        if target_created:
-            api("DELETE", f"/git/refs/{quoted}")
-        raise
+    except Exception as exc:
+        _abort_promotion(target, promoted_sha, f"CI dispatch failed: {exc}")
 
     # Replace the unsigned Work staging head only after both exact-SHA CI dispatches
     # have been accepted. This preserves a retryable source if dispatch fails.
@@ -377,6 +405,47 @@ def _has_receipt(comments: list[dict[str, Any]], prefix: str, sha: str) -> bool:
         body = str(comment.get("body", ""))
         if body.startswith(prefix) and needle in body:
             return True
+    return False
+
+
+def _has_independent_review(
+    comments: list[dict[str, Any]], sha: str, base_sha: str, owner: dict[str, Any]
+) -> bool:
+    expected = {
+        "sha": _require_sha(sha, "review_sha"),
+        "base_sha": _require_sha(base_sha, "review_base_sha"),
+        "p0": "0", "p1": "0", "merge": "NOT_PERFORMED",
+    }
+    # Owner attestation is the existing HUMAN trust boundary. Identity comes
+    # from GitHub metadata, never from text supplied inside the receipt.
+    if type(owner.get("id")) is not int or not owner.get("login") or owner.get("type") != "User":
+        return False
+    for comment in comments:
+        user = comment.get("user")
+        if not isinstance(user, dict) or (
+            type(user.get("id")) is not int
+            or user.get("id") != owner["id"]
+            or user.get("login") != owner["login"]
+            or user.get("type") != "User"
+            or comment.get("author_association") != "OWNER"
+            or comment.get("performed_via_github_app") is not None
+        ):
+            continue
+        body = comment.get("body")
+        if not isinstance(body, str):
+            continue
+        lines = body.splitlines()
+        if not lines or lines[0] != "STAGE11_INDEPENDENT_REVIEW: PASS":
+            continue
+        fields: dict[str, str] = {}
+        for line in lines[1:]:
+            key, separator, value = line.partition("=")
+            if not separator or key in fields or key not in expected:
+                break
+            fields[key] = value
+        else:
+            if fields == expected:
+                return True
     return False
 
 
@@ -480,8 +549,9 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
     _check_gate(head_sha, required_event="workflow_dispatch")
 
     comments = _comments(issue_number)
-    if not _has_receipt(comments, "STAGE11_INDEPENDENT_REVIEW: PASS", head_sha):
-        raise ControlError("exact-SHA independent review PASS receipt is missing")
+    owner = api("GET", "").get("owner", {})
+    if not _has_independent_review(comments, head_sha, base_sha, owner):
+        raise ControlError("authenticated exact-SHA/base independent review PASS receipt is missing")
 
     result = api(
         "PUT",

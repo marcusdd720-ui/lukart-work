@@ -54,6 +54,24 @@ This design deliberately uses `workflow_dispatch`, which GitHub allows to create
 workflow run even when the dispatch originates from a workflow authenticated with
 `GITHUB_TOKEN`. No PAT or long-lived GitHub App credential is required for this path.
 
+### Stage 11 test presence and bounded procedure bootstrap
+
+Missing `tests/test_stage11.py` fails assurance, including ordinary `codex/stage11-*`
+branches. When present, the suite must execute at least one test with no failures,
+errors or skips. Delivery-control tests cannot substitute for rendering tests.
+
+The sole pre-merge procedure-only exception is the existing PR #17 branch
+`codex/stage11-procedure-bootstrap-pr15`. It requires ancestor base
+`f9b55b1562bb9b3bf2d1db1a5cdb84690619082f` and a nonempty complete diff from that
+base restricted to the eight `PROCEDURE_BOOTSTRAP_PATHS` in the control script.
+Those are the three existing Stage 10/11 workflow files, this policy, the control
+script, its guard tests, and the two existing generated evidence reports.
+Any product/test deletion or other path outside that list blocks the exception.
+The workflow reports `PROCEDURE_ONLY_BOOTSTRAP`; this is not rendering validation.
+The exception does not apply to `main` or similarly named branches. Post-merge
+rendering assurance without product tests remains blocked; this pre-merge bootstrap
+does not award Stage 11 completion or authorize a merge.
+
 ## Promotion transaction contract
 
 Promotion is fail-closed.
@@ -64,8 +82,13 @@ Promotion is fail-closed.
 4. The promoted commit tree must equal the exact source tree.
 5. Both exact-SHA assurance dispatches must be accepted before the work staging branch is
    moved to the verified promoted commit.
-6. If verification or dispatch setup fails, the target branch is rolled back to the
-   supplied base (and removed when it was created by that failed attempt).
+6. If verification or dispatch setup fails, fail closed and preserve the target ref
+   and failed promoted commit as evidence. Do not reset or delete the target, including
+   a branch created by this attempt. REST ref PATCH/DELETE do not supply expected-head
+   compare-and-swap; a preceding HEAD read cannot prevent a concurrent lost update.
+   Recovery requires a separately authorized and concurrency-safe operation. The work
+   staging branch is not reset, no promotion PASS is emitted, and no automatic retry
+   may assume the failed candidate is accepted.
 7. No failure may be converted into implicit PASS.
 
 ## Guarded merge contract
@@ -78,9 +101,49 @@ A Stage 11 merge is eligible only when all of the following are true:
 4. Current base SHA equals the explicitly supplied expected base SHA.
 5. The reviewed head commit is GitHub `verified=true`.
 6. Required Stage 11 checks for that exact head SHA are terminal SUCCESS.
-7. An exact-SHA independent review result is recorded for that same head SHA.
+7. An authenticated independent review receipt binds that exact head and base SHA,
+   with `p0=0` and `p1=0` as described below.
 8. Merge uses merge-commit semantics and binds the expected head SHA.
 9. Any mismatch, stale state, missing evidence or unknown state blocks the merge.
+
+### Independent review receipt authentication
+
+The existing repository-owner HUMAN boundary attests a separately performed independent
+review. The merge control loads repository owner identity from GitHub's repository API
+and comment identity from its issue-comments API. Both numeric user ID and exact login
+must match, both identities must be `User`, association must be `OWNER`, and an
+app-authored receipt is rejected. Identity declarations inside the body carry no trust.
+An organization owner, missing metadata or unavailable identity fails closed.
+
+The complete body must have this exact header and exactly these five unique fields
+(field order may vary; values may not). Unknown, duplicate or malformed fields,
+additional prose, nonzero findings and substring matches are rejected:
+
+```text
+STAGE11_INDEPENDENT_REVIEW: PASS
+sha=<exact 40-character lowercase candidate SHA>
+base_sha=<exact 40-character lowercase base SHA>
+p0=0
+p1=0
+merge=NOT_PERFORMED
+```
+
+Authentication proves who attested the result; it does not prove that an independent
+review occurred. The owner must attest only an actual separate review. Builder
+preflight is not independent review and must never be relabeled as this receipt.
+Historical receipts for other heads/bases do not transfer. This remediation does not
+create a review receipt or authorize merge.
+
+### P1 remediation evidence lineage
+
+Failed candidate `02d4209a80cde62144377d1f573b7b076b1b2026` remains immutable history.
+Its independent review was BLOCKED (`p0=0`, `p1=3`, merge not performed), as supplied
+in the explicit remediation authorization. Root causes were destructive compensation
+without CAS, optional rendering-test execution, and unauthenticated substring matching.
+The focused regressions cover concurrent target updates for existing/new branches on
+verification and first/second dispatch failures, executable workflow test-presence
+gates, and malformed/spoofed review receipts. Fresh exact-SHA CI and a new independent
+review are required for the remediation candidate; no failed-candidate PASS transfers.
 
 ## Post-merge contract
 
