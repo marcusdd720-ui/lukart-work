@@ -1,0 +1,31 @@
+name: Stage 11 Delivery Control
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  actions: read
+  issues: write
+
+jobs:
+  control:
+    if: startsWith(github.event.comment.body, '/stage11 ')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Load trusted control code from default branch revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git -c http.extraheader="AUTHORIZATION: bearer ${GH_TOKEN}"             fetch --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+      - name: Execute Stage 11 control
+        run: python -B -X utf8 scripts/stage11_delivery_control.py
