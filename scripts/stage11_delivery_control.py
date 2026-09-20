@@ -159,6 +159,9 @@ def dispatch_candidate_checks(branch: str, sha: str) -> None:
     if not branch.startswith(STAGE_BRANCH_PREFIX):
         raise ControlError("candidate CI branch is outside Stage 11 namespace")
     candidate_sha = _require_sha(sha, "candidate_sha")
+    branch_ref = _ref(branch)
+    if not branch_ref or branch_ref["object"]["sha"] != candidate_sha:
+        raise ControlError("candidate branch moved before exact-SHA CI dispatch")
     for workflow in CANDIDATE_WORKFLOWS:
         workflow_id = urllib.parse.quote(workflow, safe="")
         api(
