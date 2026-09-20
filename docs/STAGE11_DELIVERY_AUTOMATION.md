@@ -37,7 +37,8 @@ The candidate SHA is a first-class identity and must be validated directly.
      workflow run created by that dispatch.
 4. Each dispatched workflow:
    - requires a lowercase 40-hex `candidate_sha`;
-   - exposes the correlation token in the single canonical deterministic format\n     `stage11-dispatch-<dispatch_token>` (`run-name: stage11-dispatch-${{ inputs.dispatch_token || github.sha }}`);
+   - exposes the correlation token in the single canonical deterministic format
+     `stage11-dispatch-<dispatch_token>` (`run-name: stage11-dispatch-${{ inputs.dispatch_token || github.sha }}`);
    - requires the dispatch event SHA to equal `candidate_sha`;
    - checks out `candidate_sha` explicitly;
    - asserts `git rev-parse HEAD == candidate_sha` before running assurance.
