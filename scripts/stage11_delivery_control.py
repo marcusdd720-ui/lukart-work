@@ -20,10 +20,12 @@ STAGE_BRANCH_PREFIX = "codex/stage11-"
 WORK_BRANCH_PREFIX = "work/stage11-"
 REQUIRED_STAGE11_CHECKS = ("validation", "stage11-rendering")
 FORBIDDEN_PROMOTION_PATHS = {
-    ".github/workflows/stage11-control.yml",
     "scripts/stage11_delivery_control.py",
     "docs/STAGE11_DELIVERY_AUTOMATION.md",
 }
+FORBIDDEN_PROMOTION_PREFIXES = (
+    ".github/workflows/",
+)
 
 
 class ControlError(RuntimeError):
@@ -59,7 +61,9 @@ def validate_promote_paths(paths: list[str]) -> None:
         normalized = path.replace("\\", "/")
         if normalized.startswith("/") or ".." in Path(normalized).parts:
             raise ControlError(f"unsafe path: {path}")
-        if normalized in FORBIDDEN_PROMOTION_PATHS:
+        if normalized in FORBIDDEN_PROMOTION_PATHS or any(
+            normalized.startswith(prefix) for prefix in FORBIDDEN_PROMOTION_PREFIXES
+        ):
             raise ControlError(f"trusted delivery-control path cannot be promoted: {path}")
 
 
