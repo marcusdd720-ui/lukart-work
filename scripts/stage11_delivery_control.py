@@ -5,8 +5,10 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shlex
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -16,9 +18,34 @@ from typing import Any
 API = "https://api.github.com"
 GRAPHQL = "https://api.github.com/graphql"
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+DISPATCH_TOKEN_RE = re.compile(r"^[0-9a-f]{32}$")
+DISPATCH_POLL_ATTEMPTS = 30
+DISPATCH_POLL_INTERVAL_SECONDS = 1.0
+DISPATCH_RUN_NAME_PREFIX = "stage11-dispatch-"
+DISPATCH_RUN_NAME_WORKFLOW = (
+    f"run-name: {DISPATCH_RUN_NAME_PREFIX}"
+    "${{ inputs.dispatch_token || github.sha }}"
+)
 STAGE_BRANCH_PREFIX = "codex/stage11-"
 WORK_BRANCH_PREFIX = "work/stage11-"
 REQUIRED_STAGE11_CHECKS = ("validation", "stage11-rendering")
+REQUIRED_STAGE11_WORKFLOWS = {
+    "validation": ".github/workflows/stage02.yml",
+    "stage11-rendering": ".github/workflows/stage11-assurance.yml",
+}
+CANDIDATE_WORKFLOWS = ("stage02.yml", "stage11-assurance.yml")
+PROCEDURE_BOOTSTRAP_BRANCH = "codex/stage11-procedure-bootstrap-pr15"
+PROCEDURE_BOOTSTRAP_BASE = "f9b55b1562bb9b3bf2d1db1a5cdb84690619082f"
+PROCEDURE_BOOTSTRAP_PATHS = frozenset({
+    ".github/workflows/stage02.yml",
+    ".github/workflows/stage11-assurance.yml",
+    ".github/workflows/stage11-control.yml",
+    "docs/STAGE11_DELIVERY_AUTOMATION.md",
+    "reports/manifest.sha256.json",
+    "reports/stage10-status.json",
+    "scripts/stage11_delivery_control.py",
+    "tests/test_stage11_delivery_control.py",
+})
 FORBIDDEN_PROMOTION_PATHS = {
     "scripts/stage11_delivery_control.py",
     "docs/STAGE11_DELIVERY_AUTOMATION.md",
@@ -30,6 +57,37 @@ FORBIDDEN_PROMOTION_PREFIXES = (
 
 class ControlError(RuntimeError):
     pass
+
+def _dispatch_run_title(dispatch_token: str) -> str:
+    if not DISPATCH_TOKEN_RE.fullmatch(dispatch_token):
+        raise ControlError("dispatch_token is invalid")
+    return f"{DISPATCH_RUN_NAME_PREFIX}{dispatch_token}"
+
+
+
+def require_stage11_tests(
+    branch: str, tests_present: bool, *, base_sha: str = "", changed_paths: list[str] | None = None
+) -> str:
+    if tests_present:
+        return "RENDERING_TESTS_REQUIRED"
+    if (
+        branch == PROCEDURE_BOOTSTRAP_BRANCH
+        and base_sha == PROCEDURE_BOOTSTRAP_BASE
+        and changed_paths
+        and set(changed_paths) <= PROCEDURE_BOOTSTRAP_PATHS
+    ):
+        return "PROCEDURE_ONLY_BOOTSTRAP"
+    raise ControlError("tests/test_stage11.py is required; no applicable procedure-only exception")
+
+
+def _abort_promotion(target: str, promoted_sha: str, reason: str) -> None:
+    # GitHub REST ref PATCH/DELETE have no expected-head CAS. Even a preceding
+    # GET cannot make destructive compensation safe against a concurrent writer.
+    # Preserve the failed commit and ref; recovery needs a separately guarded action.
+    raise ControlError(
+        f"promotion BLOCKED: {reason}; target preserved without reset/delete: "
+        f"{target}; failed_promoted_sha={promoted_sha}; recovery required"
+    )
 
 
 def _require_sha(value: str, field: str) -> str:
@@ -154,6 +212,117 @@ def _procedure_identity() -> tuple[str, str]:
     )
 
 
+def _assert_ref_sha(branch: str, expected_sha: str, phase: str) -> None:
+    ref = _ref(branch)
+    actual = ref.get("object", {}).get("sha") if isinstance(ref, dict) else None
+    if actual != expected_sha:
+        raise ControlError(
+            f"candidate branch moved {phase}: expected={expected_sha}, actual={actual!r}"
+        )
+
+
+def _workflow_dispatch_runs(workflow: str) -> list[dict[str, Any]]:
+    workflow_id = urllib.parse.quote(workflow, safe="")
+    data = api(
+        "GET",
+        f"/actions/workflows/{workflow_id}/runs?event=workflow_dispatch&per_page=100",
+    )
+    runs = data.get("workflow_runs") if isinstance(data, dict) else None
+    if not isinstance(runs, list):
+        raise ControlError(f"workflow run listing is malformed for {workflow}")
+    return [run for run in runs if isinstance(run, dict)]
+
+
+def _wait_for_bound_dispatch_run(
+    workflow: str,
+    branch: str,
+    candidate_sha: str,
+    dispatch_token: str,
+    baseline_ids: set[int],
+    *,
+    attempts: int = DISPATCH_POLL_ATTEMPTS,
+    interval_seconds: float = DISPATCH_POLL_INTERVAL_SECONDS,
+) -> int:
+    expected_title = _dispatch_run_title(dispatch_token)
+    expected_path = f".github/workflows/{workflow}"
+    for attempt in range(attempts):
+        correlated = []
+        for run in _workflow_dispatch_runs(workflow):
+            run_id = run.get("id")
+            if type(run_id) is not int or run_id in baseline_ids:
+                continue
+            if (
+                run.get("display_title") == expected_title
+                and run.get("event") == "workflow_dispatch"
+            ):
+                correlated.append(run)
+        if correlated:
+            if len(correlated) != 1:
+                raise ControlError(
+                    f"ambiguous correlated workflow_dispatch runs for {workflow}"
+                )
+            run = correlated[0]
+            if (
+                run.get("head_sha") != candidate_sha
+                or run.get("head_branch") != branch
+                or run.get("path") != expected_path
+            ):
+                raise ControlError(
+                    f"workflow_dispatch bound to wrong source for {workflow}: "
+                    f"head_sha={run.get('head_sha')!r}, "
+                    f"head_branch={run.get('head_branch')!r}, path={run.get('path')!r}"
+                )
+            return run["id"]
+        if attempt + 1 < attempts and interval_seconds > 0:
+            time.sleep(interval_seconds)
+    raise ControlError(
+        f"workflow_dispatch run did not materialize for exact candidate: {workflow}"
+    )
+
+
+def dispatch_candidate_checks(branch: str, sha: str) -> dict[str, int]:
+    if not branch.startswith(STAGE_BRANCH_PREFIX):
+        raise ControlError("candidate CI branch is outside Stage 11 namespace")
+    candidate_sha = _require_sha(sha, "candidate_sha")
+    dispatch_token = secrets.token_hex(16)
+    if not DISPATCH_TOKEN_RE.fullmatch(dispatch_token):
+        raise ControlError("generated dispatch token is invalid")
+
+    bound_runs: dict[str, int] = {}
+    _assert_ref_sha(branch, candidate_sha, "before exact-SHA CI dispatch")
+
+    for workflow in CANDIDATE_WORKFLOWS:
+        workflow_id = urllib.parse.quote(workflow, safe="")
+        baseline_ids = {
+            run["id"]
+            for run in _workflow_dispatch_runs(workflow)
+            if type(run.get("id")) is int
+        }
+        _assert_ref_sha(branch, candidate_sha, f"before dispatch of {workflow}")
+        api(
+            "POST",
+            f"/actions/workflows/{workflow_id}/dispatches",
+            {
+                "ref": branch,
+                "inputs": {
+                    "candidate_sha": candidate_sha,
+                    "dispatch_token": dispatch_token,
+                },
+            },
+        )
+        bound_runs[workflow] = _wait_for_bound_dispatch_run(
+            workflow,
+            branch,
+            candidate_sha,
+            dispatch_token,
+            baseline_ids,
+        )
+        _assert_ref_sha(branch, candidate_sha, f"after binding {workflow}")
+
+    _assert_ref_sha(branch, candidate_sha, "after exact-SHA CI dispatch binding")
+    return bound_runs
+
+
 def _event() -> dict[str, Any]:
     path = os.environ.get("GITHUB_EVENT_PATH", "")
     if not path:
@@ -212,11 +381,9 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
         if not main or main["object"]["sha"] != base_sha:
             raise ControlError("first promotion base_sha must equal current main")
         api("POST", "/git/refs", {"ref": f"refs/heads/{target}", "sha": base_sha})
-        target_created = True
     else:
         if target_ref["object"]["sha"] != base_sha:
             raise ControlError("target branch moved; base_sha is stale")
-        target_created = False
 
     compare = api("GET", f"/compare/{base_sha}...{source_sha}")
     if compare.get("behind_by") != 0 or int(compare.get("ahead_by", 0)) < 1:
@@ -287,35 +454,47 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
     same_tree = promoted["commit"]["tree"]["sha"] == source_commit["commit"]["tree"]["sha"]
 
     if not verification.get("verified") or not same_tree:
-        quoted = urllib.parse.quote(f"heads/{target}", safe="")
-        api("PATCH", f"/git/refs/{quoted}", {"sha": base_sha, "force": True})
-        if target_created:
-            api("DELETE", f"/git/refs/{quoted}")
-        raise ControlError(
-            "promotion rollback: resulting commit was not GitHub-verified or tree identity differed"
+        _abort_promotion(
+            target, promoted_sha,
+            "resulting commit was not GitHub-verified or tree identity differed",
         )
 
-    # Replace the unsigned Work staging head with the verified promoted commit.
-    # This keeps source and canonical Stage 11 branches on one signed history.
-    source_quoted = urllib.parse.quote(f"heads/{source}", safe="")
-    api("PATCH", f"/git/refs/{source_quoted}", {"sha": promoted_sha, "force": True})
+    # GITHUB_TOKEN pushes do not recursively trigger ordinary push workflows.
+    # Dispatch the trusted exact-SHA assurance workflows explicitly, then bind each
+    # dispatch to the concrete workflow run GitHub materialized for promoted_sha.
+    # The Work source ref is immutable input evidence for this operation and is never
+    # rewritten by promotion.
+    try:
+        bound_runs = dispatch_candidate_checks(target, promoted_sha)
+    except Exception as exc:
+        _abort_promotion(target, promoted_sha, f"CI dispatch binding failed: {exc}")
+
+    _assert_ref_sha(target, promoted_sha, "before promotion dispatch receipt")
 
     policy_digest, procedure_digest = _procedure_identity()
     _post_comment(
         issue_number,
         "\n".join(
             [
-                "STAGE11_PROMOTION: PASS",
+                "STAGE11_PROMOTION: DISPATCH_BOUND",
                 f"source={source}",
                 f"source_sha={source_sha}",
+                "source_ref_mutation=NONE",
                 f"target={target}",
+                f"target_observed_sha={promoted_sha}",
                 f"base_sha={base_sha}",
                 f"promoted_sha={promoted_sha}",
                 f"tree_sha={promoted['commit']['tree']['sha']}",
-                f"source_reset_sha={promoted_sha}",
                 f"policy_sha256={policy_digest}",
                 f"procedure_sha256={procedure_digest}",
+                "ci_dispatch=BOUND",
+                "dispatch_runs=" + ",".join(
+                    f"{workflow}:{bound_runs[workflow]}"
+                    for workflow in CANDIDATE_WORKFLOWS
+                ),
+                f"required_checks={','.join(REQUIRED_STAGE11_CHECKS)}",
                 "signature=VERIFIED",
+                "candidate_assurance=REQUIRED_BEFORE_MERGE",
             ]
         ),
     )
@@ -342,34 +521,123 @@ def _has_receipt(comments: list[dict[str, Any]], prefix: str, sha: str) -> bool:
     return False
 
 
-def _check_gate(sha: str) -> None:
-    data = api("GET", f"/commits/{sha}/check-runs?per_page=100")
+def _has_independent_review(
+    comments: list[dict[str, Any]], sha: str, base_sha: str, owner: dict[str, Any]
+) -> bool:
+    expected = {
+        "sha": _require_sha(sha, "review_sha"),
+        "base_sha": _require_sha(base_sha, "review_base_sha"),
+        "p0": "0", "p1": "0", "merge": "NOT_PERFORMED",
+    }
+    # Owner attestation is the existing HUMAN trust boundary. Identity comes
+    # from GitHub metadata, never from text supplied inside the receipt.
+    if type(owner.get("id")) is not int or not owner.get("login") or owner.get("type") != "User":
+        return False
+    for comment in comments:
+        user = comment.get("user")
+        if not isinstance(user, dict) or (
+            type(user.get("id")) is not int
+            or user.get("id") != owner["id"]
+            or user.get("login") != owner["login"]
+            or user.get("type") != "User"
+            or comment.get("author_association") != "OWNER"
+            or comment.get("performed_via_github_app") is not None
+        ):
+            continue
+        body = comment.get("body")
+        if not isinstance(body, str):
+            continue
+        lines = body.splitlines()
+        if not lines or lines[0] != "STAGE11_INDEPENDENT_REVIEW: PASS":
+            continue
+        fields: dict[str, str] = {}
+        for line in lines[1:]:
+            key, separator, value = line.partition("=")
+            if not separator or key in fields or key not in expected:
+                break
+            fields[key] = value
+        else:
+            if fields == expected:
+                return True
+    return False
+
+
+def _check_gate(sha: str, *, required_event: str) -> None:
+    candidate_sha = _require_sha(sha, "gate_sha")
+    if required_event not in {"workflow_dispatch", "push"}:
+        raise ControlError(f"unsupported gate event: {required_event}")
+
+    data = api("GET", f"/commits/{candidate_sha}/check-runs?per_page=100")
     runs = data.get("check_runs", [])
     if not runs:
         raise ControlError("no check-runs found for candidate")
-    nonterminal = [r["name"] for r in runs if r.get("status") != "completed"]
+
+    trusted_runs = [
+        run
+        for run in runs
+        if run.get("app", {}).get("slug") == "github-actions"
+    ]
+    nonterminal = [
+        run["name"]
+        for run in trusted_runs
+        if run.get("status") != "completed"
+    ]
     failing = [
-        r["name"]
-        for r in runs
-        if r.get("status") == "completed"
-        and r.get("conclusion") not in {"success", "neutral", "skipped"}
+        run["name"]
+        for run in trusted_runs
+        if run.get("status") == "completed"
+        and run.get("conclusion") not in {"success", "neutral", "skipped"}
     ]
     if nonterminal or failing:
         raise ControlError(
             f"checks are not terminal-green: pending={nonterminal}, failing={failing}"
         )
-    by_name = {}
-    for run in runs:
+
+    by_name: dict[str, list[dict[str, Any]]] = {}
+    for run in trusted_runs:
         by_name.setdefault(run["name"], []).append(run)
     missing = []
     for name in REQUIRED_STAGE11_CHECKS:
         if not any(
-            r.get("status") == "completed" and r.get("conclusion") == "success"
-            for r in by_name.get(name, [])
+            run.get("status") == "completed" and run.get("conclusion") == "success"
+            for run in by_name.get(name, [])
         ):
             missing.append(name)
     if missing:
-        raise ControlError(f"required Stage 11 checks missing/not-success: {missing}")
+        raise ControlError(
+            f"required trusted GitHub Actions checks missing/not-success: {missing}"
+        )
+
+    query_event = urllib.parse.quote(required_event, safe="")
+    action_runs = api(
+        "GET",
+        f"/actions/runs?head_sha={candidate_sha}&event={query_event}&per_page=100",
+    ).get("workflow_runs", [])
+    workflow_failures = []
+    for check_name, expected_path in REQUIRED_STAGE11_WORKFLOWS.items():
+        matching = [
+            run
+            for run in action_runs
+            if run.get("head_sha") == candidate_sha
+            and run.get("event") == required_event
+            and run.get("path") == expected_path
+        ]
+        if not any(
+            run.get("status") == "completed" and run.get("conclusion") == "success"
+            for run in matching
+        ):
+            workflow_failures.append(
+                {
+                    "check": check_name,
+                    "path": expected_path,
+                    "event": required_event,
+                }
+            )
+    if workflow_failures:
+        raise ControlError(
+            "required exact-SHA workflow provenance missing/not-success: "
+            f"{workflow_failures}"
+        )
 
 
 def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> None:
@@ -391,11 +659,12 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
     head = _commit(head_sha)
     if not head["commit"]["verification"].get("verified"):
         raise ControlError("Stage 11 candidate commit is not GitHub-verified")
-    _check_gate(head_sha)
+    _check_gate(head_sha, required_event="workflow_dispatch")
 
     comments = _comments(issue_number)
-    if not _has_receipt(comments, "STAGE11_INDEPENDENT_REVIEW: PASS", head_sha):
-        raise ControlError("exact-SHA independent review PASS receipt is missing")
+    owner = api("GET", "").get("owner", {})
+    if not _has_independent_review(comments, head_sha, base_sha, owner):
+        raise ControlError("authenticated exact-SHA/base independent review PASS receipt is missing")
 
     result = api(
         "PUT",
@@ -470,7 +739,7 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
     if main_commit["commit"]["tree"]["sha"] != branch_commit["commit"]["tree"]["sha"]:
         raise ControlError("merge tree differs from reviewed Stage 11 candidate tree")
 
-    _check_gate(main_sha)
+    _check_gate(main_sha, required_event="push")
     comments = _comments(issue_number)
     if not _has_receipt(
         comments, "STAGE11_POST_MERGE_VERIFICATION: PASS", main_sha
