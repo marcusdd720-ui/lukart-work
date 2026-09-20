@@ -1,5 +1,5 @@
 name: Stage 11 Rendering Assurance
-run-name: stage11-${{ github.event_name }}-${{ inputs.dispatch_token || github.sha }}
+run-name: stage11-dispatch-${{ inputs.dispatch_token || github.sha }}
 
 on:
   push:

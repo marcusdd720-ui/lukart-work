@@ -21,6 +21,8 @@ SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 DISPATCH_TOKEN_RE = re.compile(r"^[0-9a-f]{32}$")
 DISPATCH_POLL_ATTEMPTS = 30
 DISPATCH_POLL_INTERVAL_SECONDS = 1.0
+DISPATCH_RUN_NAME_PREFIX = "stage11-dispatch-"
+DISPATCH_RUN_NAME_WORKFLOW = "run-name: stage11-dispatch-${{ inputs.dispatch_token || github.sha }}"
 STAGE_BRANCH_PREFIX = "codex/stage11-"
 WORK_BRANCH_PREFIX = "work/stage11-"
 REQUIRED_STAGE11_CHECKS = ("validation", "stage11-rendering")
@@ -52,6 +54,12 @@ FORBIDDEN_PROMOTION_PREFIXES = (
 
 class ControlError(RuntimeError):
     pass
+
+def _dispatch_run_title(dispatch_token: str) -> str:
+    if not DISPATCH_TOKEN_RE.fullmatch(dispatch_token):
+        raise ControlError("dispatch_token is invalid")
+    return f"{DISPATCH_RUN_NAME_PREFIX}{dispatch_token}"
+
 
 
 def require_stage11_tests(
@@ -232,7 +240,7 @@ def _wait_for_bound_dispatch_run(
     attempts: int = DISPATCH_POLL_ATTEMPTS,
     interval_seconds: float = DISPATCH_POLL_INTERVAL_SECONDS,
 ) -> int:
-    expected_title = f"stage11-dispatch-{dispatch_token}"
+    expected_title = _dispatch_run_title(dispatch_token)
     expected_path = f".github/workflows/{workflow}"
     for attempt in range(attempts):
         correlated = []

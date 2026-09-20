@@ -88,7 +88,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                     "workflow_runs": [
                         {
                             "id": run_ids[workflow],
-                            "display_title": f"stage11-dispatch-{token}",
+                            "display_title": CONTROL._dispatch_run_title(token),
                             "event": "workflow_dispatch",
                             "head_sha": sha,
                             "head_branch": branch,
@@ -384,12 +384,91 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                 self.assertIn("workflow_dispatch:", text)
                 self.assertIn("candidate_sha:", text)
                 self.assertIn("dispatch_token:", text)
-                self.assertIn("run-name: stage11-", text)
+                run_name_lines = [line.strip() for line in text.splitlines() if line.startswith("run-name:")]
+                self.assertEqual(run_name_lines, [CONTROL.DISPATCH_RUN_NAME_WORKFLOW])
+                self.assertEqual(
+                    CONTROL._dispatch_run_title("e" * 32),
+                    "stage11-dispatch-" + "e" * 32,
+                )
                 self.assertIn("Resolve exact tested source", text)
                 self.assertIn("ref: ${{ steps.source.outputs.sha }}", text)
                 self.assertIn("persist-credentials: false", text)
                 self.assertIn("Assert exact tested source", text)
                 self.assertIn('[[ "${EVENT_SHA}" == "${sha}" ]]', text)
+
+
+    def test_dispatch_run_correlation_fail_closed_matrix(self) -> None:
+        branch = "codex/stage11-test"
+        sha = "c" * 40
+        token = "e" * 32
+        workflow = "stage02.yml"
+        canonical = {
+            "id": 101,
+            "display_title": CONTROL._dispatch_run_title(token),
+            "event": "workflow_dispatch",
+            "head_sha": sha,
+            "head_branch": branch,
+            "path": ".github/workflows/stage02.yml",
+        }
+
+        def wait(runs, baseline_ids=frozenset()):
+            with patch.object(CONTROL, "_workflow_dispatch_runs", return_value=runs):
+                return CONTROL._wait_for_bound_dispatch_run(
+                    workflow,
+                    branch,
+                    sha,
+                    token,
+                    set(baseline_ids),
+                    attempts=1,
+                    interval_seconds=0,
+                )
+
+        self.assertEqual(wait([canonical]), 101)
+
+        rejected = (
+            ("baseline_same_sha_and_token", [canonical], {101}, "did not materialize"),
+            (
+                "wrong_correlation_token",
+                [canonical | {"id": 102, "display_title": CONTROL._dispatch_run_title("f" * 32)}],
+                set(),
+                "did not materialize",
+            ),
+            (
+                "wrong_workflow_path",
+                [canonical | {"id": 102, "path": ".github/workflows/stage11-assurance.yml"}],
+                set(),
+                "wrong source",
+            ),
+            (
+                "wrong_event",
+                [canonical | {"id": 102, "event": "push"}],
+                set(),
+                "did not materialize",
+            ),
+            (
+                "wrong_branch",
+                [canonical | {"id": 102, "head_branch": "codex/stage11-other"}],
+                set(),
+                "wrong source",
+            ),
+            (
+                "wrong_head_sha",
+                [canonical | {"id": 102, "head_sha": "d" * 40}],
+                set(),
+                "wrong source",
+            ),
+            ("no_materialized_run", [], set(), "did not materialize"),
+            (
+                "ambiguous_two_correlated_runs",
+                [canonical, canonical | {"id": 102}],
+                set(),
+                "ambiguous correlated",
+            ),
+        )
+        for name, runs, baseline, pattern in rejected:
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(CONTROL.ControlError, pattern):
+                    wait(runs, baseline)
 
 
 class P1RegressionTests(unittest.TestCase):
@@ -533,7 +612,7 @@ class P1RegressionTests(unittest.TestCase):
                             return {"workflow_runs": []}
                         run = {
                             "id": 100 + workflows.index(workflow),
-                            "display_title": f"stage11-dispatch-{token}",
+                            "display_title": CONTROL._dispatch_run_title(token),
                             "event": "workflow_dispatch",
                             "head_sha": sha,
                             "head_branch": branch,
@@ -572,7 +651,7 @@ class P1RegressionTests(unittest.TestCase):
                     "workflow_runs": [
                         {
                             "id": 101,
-                            "display_title": f"stage11-dispatch-{token}",
+                            "display_title": CONTROL._dispatch_run_title(token),
                             "event": "workflow_dispatch",
                             "head_sha": newer,
                             "head_branch": branch,
