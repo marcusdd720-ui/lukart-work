@@ -387,6 +387,21 @@ class Stage11DeliveryControlTests(unittest.TestCase):
             )
         )
 
+    def test_stage11_control_bootstrap_uses_pinned_checkout_without_bearer_git_auth(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        text = (root / ".github" / "workflows" / "stage11-control.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+            text,
+        )
+        self.assertIn("ref: ${{ github.sha }}", text)
+        self.assertIn("persist-credentials: false", text)
+        self.assertNotIn("AUTHORIZATION: bearer", text)
+        self.assertNotIn("git remote add origin", text)
+        self.assertNotIn("git -c http.extraheader=", text)
+
     def test_required_assurance_workflows_have_exact_sha_dispatch_guards(self) -> None:
         root = Path(__file__).resolve().parents[1]
         for path in (
