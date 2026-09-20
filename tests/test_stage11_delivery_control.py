@@ -744,7 +744,6 @@ class P1RegressionTests(unittest.TestCase):
                         if existing:
                             refs[target] = self.BASE
                         calls = []
-                        dispatches = []
 
                         def api(method, path, payload=None):
                             calls.append((method, path, payload))
@@ -754,14 +753,15 @@ class P1RegressionTests(unittest.TestCase):
                             if method == "POST" and path == "/git/refs":
                                 refs[target] = payload["sha"]
                                 return None
-                            if method == "POST" and path.endswith("/dispatches"):
-                                dispatches.append(path)
-                                if failure == "first_dispatch" or len(dispatches) == 2:
-                                    if concurrent:
-                                        refs[target] = newer
-                                    raise CONTROL.ControlError("injected dispatch failure")
-                                return None
                             self.fail(f"unsafe/unexpected mutation: {method} {path}")
+
+                        def dispatch(branch, sha):
+                            self.assertEqual((branch, sha), (target, promoted))
+                            if failure in {"first_dispatch", "second_dispatch"}:
+                                if concurrent:
+                                    refs[target] = newer
+                                raise CONTROL.ControlError("injected dispatch failure")
+                            self.fail("dispatch must not run after signature/tree failure")
 
                         def commit(sha):
                             if sha == self.SHA:
@@ -781,6 +781,7 @@ class P1RegressionTests(unittest.TestCase):
                                 patch.object(CONTROL, "graphql", side_effect=graphql), \
                                 patch.object(CONTROL, "_tree_map", return_value={"product.py": {"sha": "blob", "mode": "100644"}}), \
                                 patch.object(CONTROL, "_blob_bytes", return_value=b"content"), \
+                                patch.object(CONTROL, "dispatch_candidate_checks", side_effect=dispatch), \
                                 patch.object(CONTROL, "_post_comment") as comment, \
                                 patch.object(CONTROL, "_repo", return_value="owner/repo"):
                             with self.assertRaisesRegex(CONTROL.ControlError, "target preserved"):
