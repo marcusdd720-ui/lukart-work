@@ -19,6 +19,7 @@ SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 STAGE_BRANCH_PREFIX = "codex/stage11-"
 WORK_BRANCH_PREFIX = "work/stage11-"
 REQUIRED_STAGE11_CHECKS = ("validation", "stage11-rendering")
+CANDIDATE_WORKFLOWS = ("stage02.yml", "stage11-assurance.yml")
 FORBIDDEN_PROMOTION_PATHS = {
     "scripts/stage11_delivery_control.py",
     "docs/STAGE11_DELIVERY_AUTOMATION.md",
@@ -152,6 +153,22 @@ def _procedure_identity() -> tuple[str, str]:
         _local_digest("docs/STAGE11_DELIVERY_AUTOMATION.md"),
         _local_digest("scripts/stage11_delivery_control.py"),
     )
+
+
+def dispatch_candidate_checks(branch: str, sha: str) -> None:
+    if not branch.startswith(STAGE_BRANCH_PREFIX):
+        raise ControlError("candidate CI branch is outside Stage 11 namespace")
+    candidate_sha = _require_sha(sha, "candidate_sha")
+    for workflow in CANDIDATE_WORKFLOWS:
+        workflow_id = urllib.parse.quote(workflow, safe="")
+        api(
+            "POST",
+            f"/actions/workflows/{workflow_id}/dispatches",
+            {
+                "ref": branch,
+                "inputs": {"candidate_sha": candidate_sha},
+            },
+        )
 
 
 def _event() -> dict[str, Any]:
@@ -295,8 +312,20 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
             "promotion rollback: resulting commit was not GitHub-verified or tree identity differed"
         )
 
-    # Replace the unsigned Work staging head with the verified promoted commit.
-    # This keeps source and canonical Stage 11 branches on one signed history.
+    # GITHUB_TOKEN pushes do not recursively trigger ordinary push workflows.
+    # Dispatch the trusted exact-SHA assurance workflows explicitly. Both workflows
+    # fail closed unless the dispatch ref resolves to this exact promoted SHA.
+    try:
+        dispatch_candidate_checks(target, promoted_sha)
+    except Exception:
+        quoted = urllib.parse.quote(f"heads/{target}", safe="")
+        api("PATCH", f"/git/refs/{quoted}", {"sha": base_sha, "force": True})
+        if target_created:
+            api("DELETE", f"/git/refs/{quoted}")
+        raise
+
+    # Replace the unsigned Work staging head only after both exact-SHA CI dispatches
+    # have been accepted. This preserves a retryable source if dispatch fails.
     source_quoted = urllib.parse.quote(f"heads/{source}", safe="")
     api("PATCH", f"/git/refs/{source_quoted}", {"sha": promoted_sha, "force": True})
 
@@ -315,6 +344,8 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
                 f"source_reset_sha={promoted_sha}",
                 f"policy_sha256={policy_digest}",
                 f"procedure_sha256={procedure_digest}",
+                "ci_dispatch=REQUESTED",
+                f"required_checks={','.join(REQUIRED_STAGE11_CHECKS)}",
                 "signature=VERIFIED",
             ]
         ),
