@@ -138,7 +138,7 @@
   "reports/stage09-schema-validation.json": "f7f42ca52e803b0f21d646c50d5b6d06bd41cd50c171ac009d6389fa478dd5a5",
   "reports/stage09-status.json": "5d11212e22559aba5a041a5402100ebabb422ba1cfc5724ccdbb0aabd9e6bf7e",
   "reports/stage10-schema-validation.json": "c07b4e2b29ebb768f97e2d426d74695209f82df981908ed11e709a9259fa7bfc",
-  "reports/stage10-status.json": "c0f80ca2c7d02028354a632d0114781794dbc02876b32700b2dbae6ecdc5bf24",
+  "reports/stage10-status.json": "b28bc9a0fa6a1268c86ef075982af4b376492c76190a505506ee561ec8b914a4",
   "reports/status.json": "b3a0315e0fc695b5b8a343f03f2842d7c07c35f881ac2b6c9d9229e318fd2c85",
   "reports/unittest.txt": "001f4d7399e2b3f597dc4a9f6b5370544ede14b6abb2a4dea66bc83e263744b1",
   "schemas/AIRequest.schema.json": "54555e50f93fbe1e62e5ccb21f8d0c0dae253f7f511d03e2cadfa9f7f47c5ed3",
@@ -286,6 +286,6 @@
   "tests/test_stage09.py": "8ee891d4a386a3afc74078614afdc2b5f6dac41454112d5b86738b9bf8569c85",
   "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa",
   "tests/test_stage10.py": "68f9266483ef07ac8940f748d9fbafb79cecbf88fce66a4a8c403514dc1764b1",
-  "tests/test_stage11_delivery_control.py": "b6cd819a8d7c8e8f1e0f50c82f4a423ac51acfc405b803d8ae45254c2016c251",
+  "tests/test_stage11_delivery_control.py": "7d95ba4f0348098d7c163e66f8ff5a003a82447cf0718f0dce3887c5c949ef5c",
   "verify_package.py": "372409d95b4d314ebb4db2ad202b6c759bdad35e623504047821d55a3623c48f"
 }
