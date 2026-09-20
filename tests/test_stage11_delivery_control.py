@@ -60,6 +60,70 @@ class Stage11DeliveryControlTests(unittest.TestCase):
             ]
         )
 
+    def test_dispatch_candidate_checks_binds_exact_sha_and_stage_branch(self) -> None:
+        calls = []
+        original_api = CONTROL.api
+
+        def fake_api(method, path, payload=None):
+            calls.append((method, path, payload))
+            return None
+
+        CONTROL.api = fake_api
+        try:
+            CONTROL.dispatch_candidate_checks(
+                "codex/stage11-rendering-engine",
+                "a" * 40,
+            )
+        finally:
+            CONTROL.api = original_api
+
+        self.assertEqual(
+            calls,
+            [
+                (
+                    "POST",
+                    "/actions/workflows/stage02.yml/dispatches",
+                    {
+                        "ref": "codex/stage11-rendering-engine",
+                        "inputs": {"candidate_sha": "a" * 40},
+                    },
+                ),
+                (
+                    "POST",
+                    "/actions/workflows/stage11-assurance.yml/dispatches",
+                    {
+                        "ref": "codex/stage11-rendering-engine",
+                        "inputs": {"candidate_sha": "a" * 40},
+                    },
+                ),
+            ],
+        )
+
+    def test_dispatch_candidate_checks_rejects_untrusted_ref_or_sha(self) -> None:
+        with self.assertRaises(CONTROL.ControlError):
+            CONTROL.dispatch_candidate_checks("main", "a" * 40)
+        with self.assertRaises(CONTROL.ControlError):
+            CONTROL.dispatch_candidate_checks(
+                "codex/stage11-rendering-engine",
+                "A" * 40,
+            )
+
+    def test_required_assurance_workflows_have_exact_sha_dispatch_guards(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        for path in (
+            root / ".github" / "workflows" / "stage02.yml",
+            root / ".github" / "workflows" / "stage11-assurance.yml",
+        ):
+            with self.subTest(path=path):
+                text = path.read_text(encoding="utf-8")
+                self.assertIn("workflow_dispatch:", text)
+                self.assertIn("candidate_sha:", text)
+                self.assertIn("Resolve exact tested source", text)
+                self.assertIn("ref: ${{ steps.source.outputs.sha }}", text)
+                self.assertIn("persist-credentials: false", text)
+                self.assertIn("Assert exact tested source", text)
+                self.assertIn('[[ "${EVENT_SHA}" == "${sha}" ]]', text)
+
 
 if __name__ == "__main__":
     unittest.main()
