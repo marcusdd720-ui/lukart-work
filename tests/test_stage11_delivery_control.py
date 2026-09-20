@@ -108,6 +108,116 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                 "A" * 40,
             )
 
+    def test_promotion_rolls_back_target_when_ci_dispatch_fails(self) -> None:
+        source_sha = "a" * 40
+        base_sha = "b" * 40
+        promoted_sha = "c" * 40
+        source = "work/stage11-rendering-engine"
+        target = "codex/stage11-rendering-engine"
+        api_calls = []
+
+        originals = {
+            "_ref": CONTROL._ref,
+            "api": CONTROL.api,
+            "_commit": CONTROL._commit,
+            "_tree_map": CONTROL._tree_map,
+            "_blob_bytes": CONTROL._blob_bytes,
+            "graphql": CONTROL.graphql,
+            "dispatch_candidate_checks": CONTROL.dispatch_candidate_checks,
+            "_post_comment": CONTROL._post_comment,
+            "_procedure_identity": CONTROL._procedure_identity,
+        }
+
+        def fake_ref(branch):
+            if branch == source:
+                return {"object": {"sha": source_sha}}
+            if branch == target:
+                return None
+            if branch == "main":
+                return {"object": {"sha": base_sha}}
+            raise AssertionError(branch)
+
+        def fake_api(method, path, payload=None):
+            api_calls.append((method, path, payload))
+            if method == "GET" and path == f"/compare/{base_sha}...{source_sha}":
+                return {
+                    "behind_by": 0,
+                    "ahead_by": 1,
+                    "files": [
+                        {
+                            "filename": "lukart_work/rendering/service.py",
+                            "status": "modified",
+                        }
+                    ],
+                }
+            return None
+
+        def fake_commit(sha):
+            if sha == source_sha:
+                return {"commit": {"tree": {"sha": "tree-1"}}}
+            if sha == promoted_sha:
+                return {
+                    "commit": {
+                        "tree": {"sha": "tree-1"},
+                        "verification": {"verified": True},
+                    }
+                }
+            raise AssertionError(sha)
+
+        try:
+            CONTROL._ref = fake_ref
+            CONTROL.api = fake_api
+            CONTROL._commit = fake_commit
+            CONTROL._tree_map = lambda commit: {
+                "lukart_work/rendering/service.py": {
+                    "sha": "blob-1",
+                    "mode": "100644",
+                }
+            }
+            CONTROL._blob_bytes = lambda blob_sha: b"content"
+            CONTROL.graphql = lambda query, variables: {
+                "createCommitOnBranch": {"commit": {"oid": promoted_sha}}
+            }
+            CONTROL.dispatch_candidate_checks = lambda branch, sha: (_ for _ in ()).throw(
+                CONTROL.ControlError("dispatch failed")
+            )
+            CONTROL._post_comment = lambda issue_number, body: (_ for _ in ()).throw(
+                AssertionError("promotion receipt must not be posted")
+            )
+            CONTROL._procedure_identity = lambda: ("policy", "procedure")
+
+            with self.assertRaisesRegex(CONTROL.ControlError, "dispatch failed"):
+                CONTROL.promote(
+                    123,
+                    {
+                        "source": source,
+                        "source_sha": source_sha,
+                        "target": target,
+                        "base_sha": base_sha,
+                    },
+                )
+        finally:
+            for name, value in originals.items():
+                setattr(CONTROL, name, value)
+
+        target_ref = "heads%2Fcodex%2Fstage11-rendering-engine"
+        self.assertIn(
+            (
+                "PATCH",
+                f"/git/refs/{target_ref}",
+                {"sha": base_sha, "force": True},
+            ),
+            api_calls,
+        )
+        self.assertIn(("DELETE", f"/git/refs/{target_ref}", None), api_calls)
+        self.assertFalse(
+            any(
+                method == "PATCH"
+                and path == "heads%2Fwork%2Fstage11-rendering-engine"
+                for method, path, payload in api_calls
+            )
+        )
+
     def test_required_assurance_workflows_have_exact_sha_dispatch_guards(self) -> None:
         root = Path(__file__).resolve().parents[1]
         for path in (
