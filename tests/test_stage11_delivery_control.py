@@ -588,6 +588,74 @@ class P1RegressionTests(unittest.TestCase):
             with self.assertRaisesRegex(CONTROL.ControlError, "wrong source"):
                 CONTROL.dispatch_candidate_checks(branch, sha)
 
+    def test_promotion_blocks_target_move_after_dispatch_binding_before_receipt(self):
+        source = "work/stage11-test"
+        target = "codex/stage11-test"
+        source_sha = self.SHA
+        base_sha = self.BASE
+        promoted_sha = "c" * 40
+        newer_target = "d" * 40
+        refs = {source: source_sha, target: base_sha, "main": base_sha}
+        comments = []
+
+        def fake_ref(branch):
+            return {"object": {"sha": refs[branch]}} if branch in refs else None
+
+        def fake_api(method, path, payload=None):
+            if method == "GET" and path == f"/compare/{base_sha}...{source_sha}":
+                return {
+                    "behind_by": 0,
+                    "ahead_by": 1,
+                    "files": [{"filename": "product.py", "status": "added"}],
+                }
+            if method in {"PATCH", "DELETE"}:
+                self.fail(f"unexpected destructive ref mutation: {method} {path}")
+            raise AssertionError((method, path, payload))
+
+        def fake_commit(sha):
+            if sha == source_sha:
+                return {"commit": {"tree": {"sha": "tree"}}}
+            if sha == promoted_sha:
+                return {
+                    "commit": {
+                        "tree": {"sha": "tree"},
+                        "verification": {"verified": True},
+                    }
+                }
+            raise AssertionError(sha)
+
+        def fake_graphql(query, variables):
+            refs[target] = promoted_sha
+            return {"createCommitOnBranch": {"commit": {"oid": promoted_sha}}}
+
+        def fake_dispatch(branch, sha):
+            refs[target] = newer_target
+            return {"stage02.yml": 201, "stage11-assurance.yml": 202}
+
+        with patch.object(CONTROL, "_ref", side_effect=fake_ref), \
+                patch.object(CONTROL, "api", side_effect=fake_api), \
+                patch.object(CONTROL, "_commit", side_effect=fake_commit), \
+                patch.object(CONTROL, "_tree_map", return_value={"product.py": {"sha": "blob", "mode": "100644"}}), \
+                patch.object(CONTROL, "_blob_bytes", return_value=b"content"), \
+                patch.object(CONTROL, "graphql", side_effect=fake_graphql), \
+                patch.object(CONTROL, "dispatch_candidate_checks", side_effect=fake_dispatch), \
+                patch.object(CONTROL, "_post_comment", side_effect=lambda issue, body: comments.append(body)), \
+                patch.object(CONTROL, "_repo", return_value="owner/repo"):
+            with self.assertRaisesRegex(CONTROL.ControlError, "candidate branch moved"):
+                CONTROL.promote(
+                    17,
+                    {
+                        "source": source,
+                        "source_sha": source_sha,
+                        "target": target,
+                        "base_sha": base_sha,
+                    },
+                )
+
+        self.assertEqual(refs[target], newer_target)
+        self.assertEqual(refs[source], source_sha)
+        self.assertEqual(comments, [])
+
     def test_promotion_never_rewrites_source_ref_after_concurrent_source_advance(self):
         source = "work/stage11-test"
         target = "codex/stage11-test"
