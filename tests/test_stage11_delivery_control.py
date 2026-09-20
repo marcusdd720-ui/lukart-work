@@ -213,7 +213,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
         self.assertFalse(
             any(
                 method == "PATCH"
-                and path == "heads%2Fwork%2Fstage11-rendering-engine"
+                and path == "/git/refs/heads%2Fwork%2Fstage11-rendering-engine"
                 for method, path, payload in api_calls
             )
         )
