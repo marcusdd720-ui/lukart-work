@@ -20,12 +20,10 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Load trusted control code from default branch revision
-        shell: bash
-        run: |
-          set -euo pipefail
-          git init .
-          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
-          git -c http.extraheader="AUTHORIZATION: bearer ${GH_TOKEN}"             fetch --depth=1 origin "${GITHUB_SHA}"
-          git checkout --detach FETCH_HEAD
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
       - name: Execute Stage 11 control
         run: python -B -X utf8 scripts/stage11_delivery_control.py
