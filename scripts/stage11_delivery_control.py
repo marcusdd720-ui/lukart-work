@@ -295,6 +295,11 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
             "promotion rollback: resulting commit was not GitHub-verified or tree identity differed"
         )
 
+    # Replace the unsigned Work staging head with the verified promoted commit.
+    # This keeps source and canonical Stage 11 branches on one signed history.
+    source_quoted = urllib.parse.quote(f"heads/{source}", safe="")
+    api("PATCH", f"/git/refs/{source_quoted}", {"sha": promoted_sha, "force": True})
+
     policy_digest, procedure_digest = _procedure_identity()
     _post_comment(
         issue_number,
@@ -307,6 +312,7 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
                 f"base_sha={base_sha}",
                 f"promoted_sha={promoted_sha}",
                 f"tree_sha={promoted['commit']['tree']['sha']}",
+                f"source_reset_sha={promoted_sha}",
                 f"policy_sha256={policy_digest}",
                 f"procedure_sha256={procedure_digest}",
                 "signature=VERIFIED",
@@ -447,10 +453,14 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
 
     main_ref = _ref("main")
     branch_ref = _ref(branch)
+    source_branch = WORK_BRANCH_PREFIX + branch[len(STAGE_BRANCH_PREFIX):]
+    source_ref = _ref(source_branch)
     if not main_ref or main_ref["object"]["sha"] != main_sha:
         raise ControlError("main moved after post-merge verification")
     if not branch_ref or branch_ref["object"]["sha"] != branch_sha:
         raise ControlError("branch moved or is missing")
+    if source_ref and source_ref["object"]["sha"] != branch_sha:
+        raise ControlError("Work staging branch diverged after final promotion")
 
     main_commit = _commit(main_sha)
     branch_commit = _commit(branch_sha)
@@ -469,6 +479,9 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
 
     quoted = urllib.parse.quote(f"heads/{branch}", safe="")
     api("DELETE", f"/git/refs/{quoted}")
+    if source_ref:
+        source_quoted = urllib.parse.quote(f"heads/{source_branch}", safe="")
+        api("DELETE", f"/git/refs/{source_quoted}")
 
     _post_comment(
         issue_number,
@@ -478,6 +491,7 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
                 f"sha={main_sha}",
                 f"deleted_branch={branch}",
                 f"deleted_branch_sha={branch_sha}",
+                f"deleted_work_branch={source_branch if source_ref else 'NOT_PRESENT'}",
             ]
         ),
     )
