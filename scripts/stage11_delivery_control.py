@@ -19,6 +19,11 @@ SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 STAGE_BRANCH_PREFIX = "codex/stage11-"
 WORK_BRANCH_PREFIX = "work/stage11-"
 REQUIRED_STAGE11_CHECKS = ("validation", "stage11-rendering")
+REQUIRED_STAGE11_WORKFLOWS = {
+    "validation": ".github/workflows/stage02.yml",
+    "stage11-rendering": ".github/workflows/stage11-assurance.yml",
+}
+CANDIDATE_WORKFLOWS = ("stage02.yml", "stage11-assurance.yml")
 FORBIDDEN_PROMOTION_PATHS = {
     "scripts/stage11_delivery_control.py",
     "docs/STAGE11_DELIVERY_AUTOMATION.md",
@@ -152,6 +157,25 @@ def _procedure_identity() -> tuple[str, str]:
         _local_digest("docs/STAGE11_DELIVERY_AUTOMATION.md"),
         _local_digest("scripts/stage11_delivery_control.py"),
     )
+
+
+def dispatch_candidate_checks(branch: str, sha: str) -> None:
+    if not branch.startswith(STAGE_BRANCH_PREFIX):
+        raise ControlError("candidate CI branch is outside Stage 11 namespace")
+    candidate_sha = _require_sha(sha, "candidate_sha")
+    branch_ref = _ref(branch)
+    if not branch_ref or branch_ref["object"]["sha"] != candidate_sha:
+        raise ControlError("candidate branch moved before exact-SHA CI dispatch")
+    for workflow in CANDIDATE_WORKFLOWS:
+        workflow_id = urllib.parse.quote(workflow, safe="")
+        api(
+            "POST",
+            f"/actions/workflows/{workflow_id}/dispatches",
+            {
+                "ref": branch,
+                "inputs": {"candidate_sha": candidate_sha},
+            },
+        )
 
 
 def _event() -> dict[str, Any]:
@@ -295,8 +319,20 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
             "promotion rollback: resulting commit was not GitHub-verified or tree identity differed"
         )
 
-    # Replace the unsigned Work staging head with the verified promoted commit.
-    # This keeps source and canonical Stage 11 branches on one signed history.
+    # GITHUB_TOKEN pushes do not recursively trigger ordinary push workflows.
+    # Dispatch the trusted exact-SHA assurance workflows explicitly. Both workflows
+    # fail closed unless the dispatch ref resolves to this exact promoted SHA.
+    try:
+        dispatch_candidate_checks(target, promoted_sha)
+    except Exception:
+        quoted = urllib.parse.quote(f"heads/{target}", safe="")
+        api("PATCH", f"/git/refs/{quoted}", {"sha": base_sha, "force": True})
+        if target_created:
+            api("DELETE", f"/git/refs/{quoted}")
+        raise
+
+    # Replace the unsigned Work staging head only after both exact-SHA CI dispatches
+    # have been accepted. This preserves a retryable source if dispatch fails.
     source_quoted = urllib.parse.quote(f"heads/{source}", safe="")
     api("PATCH", f"/git/refs/{source_quoted}", {"sha": promoted_sha, "force": True})
 
@@ -315,6 +351,8 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
                 f"source_reset_sha={promoted_sha}",
                 f"policy_sha256={policy_digest}",
                 f"procedure_sha256={procedure_digest}",
+                "ci_dispatch=REQUESTED",
+                f"required_checks={','.join(REQUIRED_STAGE11_CHECKS)}",
                 "signature=VERIFIED",
             ]
         ),
@@ -342,34 +380,82 @@ def _has_receipt(comments: list[dict[str, Any]], prefix: str, sha: str) -> bool:
     return False
 
 
-def _check_gate(sha: str) -> None:
-    data = api("GET", f"/commits/{sha}/check-runs?per_page=100")
+def _check_gate(sha: str, *, required_event: str) -> None:
+    candidate_sha = _require_sha(sha, "gate_sha")
+    if required_event not in {"workflow_dispatch", "push"}:
+        raise ControlError(f"unsupported gate event: {required_event}")
+
+    data = api("GET", f"/commits/{candidate_sha}/check-runs?per_page=100")
     runs = data.get("check_runs", [])
     if not runs:
         raise ControlError("no check-runs found for candidate")
-    nonterminal = [r["name"] for r in runs if r.get("status") != "completed"]
+
+    trusted_runs = [
+        run
+        for run in runs
+        if run.get("app", {}).get("slug") == "github-actions"
+    ]
+    nonterminal = [
+        run["name"]
+        for run in trusted_runs
+        if run.get("status") != "completed"
+    ]
     failing = [
-        r["name"]
-        for r in runs
-        if r.get("status") == "completed"
-        and r.get("conclusion") not in {"success", "neutral", "skipped"}
+        run["name"]
+        for run in trusted_runs
+        if run.get("status") == "completed"
+        and run.get("conclusion") not in {"success", "neutral", "skipped"}
     ]
     if nonterminal or failing:
         raise ControlError(
             f"checks are not terminal-green: pending={nonterminal}, failing={failing}"
         )
-    by_name = {}
-    for run in runs:
+
+    by_name: dict[str, list[dict[str, Any]]] = {}
+    for run in trusted_runs:
         by_name.setdefault(run["name"], []).append(run)
     missing = []
     for name in REQUIRED_STAGE11_CHECKS:
         if not any(
-            r.get("status") == "completed" and r.get("conclusion") == "success"
-            for r in by_name.get(name, [])
+            run.get("status") == "completed" and run.get("conclusion") == "success"
+            for run in by_name.get(name, [])
         ):
             missing.append(name)
     if missing:
-        raise ControlError(f"required Stage 11 checks missing/not-success: {missing}")
+        raise ControlError(
+            f"required trusted GitHub Actions checks missing/not-success: {missing}"
+        )
+
+    query_event = urllib.parse.quote(required_event, safe="")
+    action_runs = api(
+        "GET",
+        f"/actions/runs?head_sha={candidate_sha}&event={query_event}&per_page=100",
+    ).get("workflow_runs", [])
+    workflow_failures = []
+    for check_name, expected_path in REQUIRED_STAGE11_WORKFLOWS.items():
+        matching = [
+            run
+            for run in action_runs
+            if run.get("head_sha") == candidate_sha
+            and run.get("event") == required_event
+            and run.get("path") == expected_path
+        ]
+        if not any(
+            run.get("status") == "completed" and run.get("conclusion") == "success"
+            for run in matching
+        ):
+            workflow_failures.append(
+                {
+                    "check": check_name,
+                    "path": expected_path,
+                    "event": required_event,
+                }
+            )
+    if workflow_failures:
+        raise ControlError(
+            "required exact-SHA workflow provenance missing/not-success: "
+            f"{workflow_failures}"
+        )
 
 
 def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> None:
@@ -391,7 +477,7 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
     head = _commit(head_sha)
     if not head["commit"]["verification"].get("verified"):
         raise ControlError("Stage 11 candidate commit is not GitHub-verified")
-    _check_gate(head_sha)
+    _check_gate(head_sha, required_event="workflow_dispatch")
 
     comments = _comments(issue_number)
     if not _has_receipt(comments, "STAGE11_INDEPENDENT_REVIEW: PASS", head_sha):
@@ -470,7 +556,7 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
     if main_commit["commit"]["tree"]["sha"] != branch_commit["commit"]["tree"]["sha"]:
         raise ControlError("merge tree differs from reviewed Stage 11 candidate tree")
 
-    _check_gate(main_sha)
+    _check_gate(main_sha, required_event="push")
     comments = _comments(issue_number)
     if not _has_receipt(
         comments, "STAGE11_POST_MERGE_VERIFICATION: PASS", main_sha

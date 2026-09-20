@@ -8,35 +8,98 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Exact candidate SHA to validate
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   stage11-rendering:
+    name: stage11-rendering
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
+      - name: Resolve exact tested source
+        id: source
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          DISPATCH_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          case "${EVENT_NAME}" in
+            workflow_dispatch)
+              sha="${DISPATCH_SHA}"
+              [[ "${sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid candidate_sha"; exit 1; }
+              [[ "${EVENT_SHA}" == "${sha}" ]] || {
+                echo "workflow_dispatch ref resolved to ${EVENT_SHA}, expected ${sha}"
+                exit 1
+              }
+              ;;
+            pull_request)
+              sha="${PR_HEAD_SHA}"
+              [[ "${sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid pull_request head SHA"; exit 1; }
+              ;;
+            push)
+              sha="${EVENT_SHA}"
+              [[ "${sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid push SHA"; exit 1; }
+              ;;
+            *)
+              echo "unsupported event: ${EVENT_NAME}"
+              exit 1
+              ;;
+          esac
+          echo "sha=${sha}" >> "${GITHUB_OUTPUT}"
+          echo "TESTED_SHA=${sha}" >> "${GITHUB_ENV}"
+          echo "Resolved exact tested SHA: ${sha}"
+
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
-          python-version: '3.14'
-      - name: Install package
-        run: python -m pip install -e .
-      - name: Delivery-control guard tests
-        run: python -B -X utf8 -m unittest -v tests.test_stage11_delivery_control
-      - name: Stage 11 rendering tests
+          ref: ${{ steps.source.outputs.sha }}
+          persist-credentials: false
+
+      - name: Assert exact tested source
         shell: bash
         run: |
           set -euo pipefail
-          branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && "${branch}" == codex/stage11-* ]]; then
-            test -f tests/test_stage11.py
+          actual="$(git rev-parse HEAD)"
+          [[ "${actual}" == "${TESTED_SHA}" ]] || {
+            echo "checked out ${actual}, expected ${TESTED_SHA}"
+            exit 1
+          }
+          echo "tested_sha=${actual}"
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.14'
+
+      - name: Install package
+        run: python -m pip install -e .
+
+      - name: Delivery-control guard tests
+        run: python -B -X utf8 -m unittest -v tests.test_stage11_delivery_control
+
+      - name: Stage 11 rendering tests
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          branch="${PR_HEAD_REF:-${REF_NAME}}"
+          if [[ "${branch}" == codex/stage11-* && -f tests/test_stage11.py ]]; then
             python -B -X utf8 -m unittest -v tests.test_stage11
-          elif [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_NAME}" == "main" && -f tests/test_stage11.py ]]; then
-            python -B -X utf8 -m unittest -v tests.test_stage11
-          elif [[ "${GITHUB_EVENT_NAME}" == "push" && "${branch}" == codex/stage11-* && -f tests/test_stage11.py ]]; then
+          elif [[ "${EVENT_NAME}" == "push" && "${REF_NAME}" == "main" && -f tests/test_stage11.py ]]; then
             python -B -X utf8 -m unittest -v tests.test_stage11
           fi
+
       - name: Whitespace check
         run: git diff --check
