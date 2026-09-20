@@ -1,0 +1,424 @@
+{
+  "$defs": {
+    "CommandMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "command_id": {
+          "format": "uuid",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "format": "uuid",
+          "title": "Idempotency Key",
+          "type": "string"
+        },
+        "expected_case_sequence": {
+          "minimum": 0,
+          "title": "Expected Case Sequence",
+          "type": "integer"
+        },
+        "correlation_id": {
+          "format": "uuid",
+          "title": "Correlation Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_id",
+        "tenant_id",
+        "case_id",
+        "idempotency_key",
+        "expected_case_sequence",
+        "correlation_id"
+      ],
+      "title": "CommandMeta",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ProceduralDatum": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "FACT",
+            "CLAIM",
+            "HYPOTHESIS",
+            "INTERPRETATION",
+            "UNKNOWN",
+            "UNRESOLVED"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Facts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "classification"
+      ],
+      "title": "ProceduralDatum",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "ReviewAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "facts",
+            "evidence",
+            "legal_basis",
+            "procedure",
+            "contradictions",
+            "language",
+            "adversarial"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN",
+            "NOT_RUN"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check",
+        "outcome",
+        "rationale"
+      ],
+      "title": "ReviewAssessment",
+      "type": "object"
+    },
+    "ReviewIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "facts",
+            "evidence",
+            "legal_basis",
+            "procedure",
+            "contradictions",
+            "language",
+            "adversarial"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "code": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check",
+        "code",
+        "severity",
+        "path",
+        "message"
+      ],
+      "title": "ReviewIssue",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:ValidationRequest:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "ValidateDraft",
+        "RecordValidationReview",
+        "RevokeValidationReview",
+        "ResolveValidationFinding"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "meta": {
+      "$ref": "#/$defs/CommandMeta"
+    },
+    "target": {
+      "$ref": "#/$defs/Ref"
+    },
+    "draft_hash": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Draft Hash"
+    },
+    "snapshot_hash": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Snapshot Hash"
+    },
+    "validation_policy": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "review_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Review Id"
+    },
+    "assessments": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReviewAssessment"
+      },
+      "title": "Assessments",
+      "type": "array"
+    },
+    "issues": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReviewIssue"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "decision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Ref"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "resolution": {
+      "anyOf": [
+        {
+          "enum": [
+            "RESOLVED",
+            "FALSE_POSITIVE"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resolution"
+    },
+    "rationale": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "inputs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
+    "anchors": {
+      "default": [],
+      "items": {},
+      "title": "Anchors",
+      "type": "array"
+    },
+    "procedural_context": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProceduralDatum"
+      },
+      "title": "Procedural Context",
+      "type": "array"
+    }
+  },
+  "required": [
+    "contract",
+    "operation",
+    "meta",
+    "target",
+    "validation_policy",
+    "rationale"
+  ],
+  "title": "ValidationRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ValidationRequest:1.0.0"
+}

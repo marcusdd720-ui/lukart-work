@@ -328,6 +328,42 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:ValidationReviewInput",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationReviewProposal",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationReview",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationReviewRevocation",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationExecution",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationProjection",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationManifest",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -348,6 +384,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 85,
+  "json_files_parsed": 94,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }

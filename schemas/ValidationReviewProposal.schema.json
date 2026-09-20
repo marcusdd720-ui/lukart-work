@@ -1,0 +1,252 @@
+{
+  "$defs": {
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "ReviewAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "facts",
+            "evidence",
+            "legal_basis",
+            "procedure",
+            "contradictions",
+            "language",
+            "adversarial"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN",
+            "NOT_RUN"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check",
+        "outcome",
+        "rationale"
+      ],
+      "title": "ReviewAssessment",
+      "type": "object"
+    },
+    "ReviewIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "facts",
+            "evidence",
+            "legal_basis",
+            "procedure",
+            "contradictions",
+            "language",
+            "adversarial"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "code": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check",
+        "code",
+        "severity",
+        "path",
+        "message"
+      ],
+      "title": "ReviewIssue",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Untrusted review-provider output. No public command persists this as authority.",
+  "properties": {
+    "task": {
+      "enum": [
+        "LANGUAGE_REVIEW",
+        "ADVERSARIAL_REVIEW"
+      ],
+      "title": "Task",
+      "type": "string"
+    },
+    "draft": {
+      "$ref": "#/$defs/Ref"
+    },
+    "draft_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Draft Hash",
+      "type": "string"
+    },
+    "snapshot_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Snapshot Hash",
+      "type": "string"
+    },
+    "policy": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "assessments": {
+      "items": {
+        "$ref": "#/$defs/ReviewAssessment"
+      },
+      "title": "Assessments",
+      "type": "array"
+    },
+    "issues": {
+      "items": {
+        "$ref": "#/$defs/ReviewIssue"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "disposition": {
+      "enum": [
+        "PROPOSE",
+        "ABSTAIN"
+      ],
+      "title": "Disposition",
+      "type": "string"
+    },
+    "reason": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task",
+    "draft",
+    "draft_hash",
+    "snapshot_hash",
+    "policy",
+    "assessments",
+    "issues",
+    "disposition",
+    "reason"
+  ],
+  "title": "ValidationReviewProposal",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ValidationReviewProposal:1.0.0"
+}

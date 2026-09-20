@@ -1,0 +1,61 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "review_id": {
+      "format": "uuid",
+      "title": "Review Id",
+      "type": "string"
+    },
+    "actor": {
+      "$ref": "#/$defs/Actor"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "rationale": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    }
+  },
+  "required": [
+    "review_id",
+    "actor",
+    "recorded_at",
+    "rationale"
+  ],
+  "title": "ValidationReviewRevocation",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:ValidationReviewRevocation:1.0.0"
+}
