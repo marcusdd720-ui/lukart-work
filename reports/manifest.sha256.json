@@ -58,7 +58,7 @@
   "docs/39-stage10-acceptance.md": "987168318e76ccec98bf419b07f7b83d146d6f2e6db43ccfd20d1a2893c2408b",
   "docs/40-stage10-remediation.md": "3597043b608a2e49cbbc56da326c40f119c21b30d8f0238c6d6a48b8b4c4296d",
   "docs/CROSS_REPO_CONTRACT_CONVERGENCE.md": "7d741a1d29a16bf68a3cc9967e0a1fe8a016f3bacb85122e5bdf72c54ae0626a",
-  "docs/STAGE11_DELIVERY_AUTOMATION.md": "f9dab84463a5a1ddf8f1eb679258accaaf55b46300602fadadfb1171d83d1323",
+  "docs/STAGE11_DELIVERY_AUTOMATION.md": "70add69d57984e99ac6251284940fb6e93d649d7a6474bfa751cd67c7e1dbd41",
   "examples/invalid-confirmed-fact.json": "6e037e4e3a8d8db2b055dcb320eec30a3277d59074aeeb292d00de86c3fcde9e",
   "examples/invalid-extra-property.json": "90feaf1b484c2e3e98f93fd164805c836443779efa2eaa09f22b7b30f33dfd27",
   "examples/valid-fact.json": "8db223d707c620905c48d23ae861980e3c109e9158c74089532907e0fc82e946",
@@ -245,7 +245,7 @@
   "scripts/prepare_stage02_database.py": "62a595b7c26b33619d7ca76ed8eae50553c5270ba7c9f372365175ed2fcfd559",
   "scripts/refresh_manifest.py": "c29f0a79f93a20c7a686909f71c628b1f618057effef60534244fd4c1ea76aeb",
   "scripts/render_cross_repo_contract.py": "80476b1aa02bc2a058ddce3fe11b111e9b48185242672bb43100340818b53e04",
-  "scripts/stage11_delivery_control.py": "b12ca3b7a8771518bd437d611ec22c2f3302aaae0bb6304a716884ebc54c9efe",
+  "scripts/stage11_delivery_control.py": "8fa554e350feefba9f17c5d7a75da184f2d1a4300410d6531f00ec3ac5fe2232",
   "scripts/start_stage02_postgres.ps1": "49a7c29522606d091080901c6d0a4fe2b8e0401b551b77079f414571e6d21065",
   "scripts/validate_stage06_schemas.py": "e4135f24d41939a00be4aae06a95326fbb3db6c0eaba3040a0037259e2d45a94",
   "scripts/validate_stage07_schemas.py": "db267606a7bce858dd08cc27c263cece5a9e88626bbc6ba83d0075d69265073f",
@@ -283,6 +283,6 @@
   "tests/test_stage09.py": "8ee891d4a386a3afc74078614afdc2b5f6dac41454112d5b86738b9bf8569c85",
   "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa",
   "tests/test_stage10.py": "68f9266483ef07ac8940f748d9fbafb79cecbf88fce66a4a8c403514dc1764b1",
-  "tests/test_stage11_delivery_control.py": "4359e381c4190b8272685c95fa4f257952e3c0d6002e0a7f13716256c86f106c",
+  "tests/test_stage11_delivery_control.py": "f350f18cfcf6acf711a2c0f2beaed735f9edca9e6010f0142793c42bb1721c84",
   "verify_package.py": "372409d95b4d314ebb4db2ad202b6c759bdad35e623504047821d55a3623c48f"
 }
