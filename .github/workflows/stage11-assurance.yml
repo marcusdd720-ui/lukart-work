@@ -25,13 +25,17 @@ jobs:
         run: python -m pip install -e .
       - name: Delivery-control guard tests
         run: python -B -X utf8 -m unittest -v tests.test_stage11_delivery_control
-      - name: Require Stage 11 rendering tests on Stage 11 candidates
+      - name: Stage 11 rendering tests
         shell: bash
         run: |
           set -euo pipefail
           branch="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          if [[ "${branch}" == codex/stage11-* ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" && "${branch}" == codex/stage11-* ]]; then
             test -f tests/test_stage11.py
+            python -B -X utf8 -m unittest -v tests.test_stage11
+          elif [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_NAME}" == "main" && -f tests/test_stage11.py ]]; then
+            python -B -X utf8 -m unittest -v tests.test_stage11
+          elif [[ "${GITHUB_EVENT_NAME}" == "push" && "${branch}" == codex/stage11-* && -f tests/test_stage11.py ]]; then
             python -B -X utf8 -m unittest -v tests.test_stage11
           fi
       - name: Whitespace check
