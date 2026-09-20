@@ -40,11 +40,15 @@ The candidate SHA is a first-class identity and must be validated directly.
    - asserts `git rev-parse HEAD == candidate_sha` before running assurance.
 5. Pull-request runs also check out the PR head SHA explicitly so their tested source is
    not silently replaced by GitHub's synthetic PR merge commit.
-6. The authoritative pre-merge Stage 11 gate is the pair of successful check-runs bound
+6. The authoritative pre-merge Stage 11 gate is the pair of successful checks bound
    to the exact candidate SHA:
-   - `validation`;
-   - `stage11-rendering`.
-7. Missing, stale, nonterminal, failed, or differently bound evidence blocks merge.
+   - `validation` from `.github/workflows/stage02.yml`;
+   - `stage11-rendering` from `.github/workflows/stage11-assurance.yml`.
+7. Gate verification checks both the trusted check producer (`github-actions`) and the
+   workflow-run provenance. Pre-merge evidence must come from `workflow_dispatch` runs
+   whose workflow path and `head_sha` match the expected candidate exactly.
+8. Missing, stale, nonterminal, failed, untrusted, wrong-event, wrong-workflow, or
+   differently bound evidence blocks merge.
 
 This design deliberately uses `workflow_dispatch`, which GitHub allows to create a new
 workflow run even when the dispatch originates from a workflow authenticated with
@@ -86,9 +90,11 @@ After merge, Stage 11 remains open until:
 2. The merge commit is GitHub verified.
 3. The merge parents bind the pre-merge base and reviewed candidate.
 4. Required post-merge checks are terminal SUCCESS on the exact resulting `main` SHA.
-5. Tree/content identity is consistent with the reviewed candidate where the merge is
+5. Post-merge workflow provenance is verified against the expected workflow paths and the
+   `push` event for that exact `main` SHA.
+6. Tree/content identity is consistent with the reviewed candidate where the merge is
    content-only.
-6. A post-merge verification receipt records exact identities and known limitations.
+7. A post-merge verification receipt records exact identities and known limitations.
 
 Push-triggered post-merge workflows use the resulting `main` commit SHA directly.
 
