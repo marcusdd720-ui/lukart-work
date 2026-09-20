@@ -22,7 +22,10 @@ DISPATCH_TOKEN_RE = re.compile(r"^[0-9a-f]{32}$")
 DISPATCH_POLL_ATTEMPTS = 30
 DISPATCH_POLL_INTERVAL_SECONDS = 1.0
 DISPATCH_RUN_NAME_PREFIX = "stage11-dispatch-"
-DISPATCH_RUN_NAME_WORKFLOW = "run-name: stage11-dispatch-${{ inputs.dispatch_token || github.sha }}"
+DISPATCH_RUN_NAME_WORKFLOW = (
+    f"run-name: {DISPATCH_RUN_NAME_PREFIX}"
+    "${{ inputs.dispatch_token || github.sha }}"
+)
 STAGE_BRANCH_PREFIX = "codex/stage11-"
 WORK_BRANCH_PREFIX = "work/stage11-"
 REQUIRED_STAGE11_CHECKS = ("validation", "stage11-rendering")

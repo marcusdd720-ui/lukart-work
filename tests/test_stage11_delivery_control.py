@@ -17,6 +17,20 @@ assert SPEC and SPEC.loader
 CONTROL = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CONTROL)
 
+WORKFLOW_DISPATCH_TOKEN_EXPRESSION = "${{ inputs.dispatch_token || github.sha }}"
+
+
+def _workflow_dispatch_title(workflow: str, dispatch_token: str) -> str:
+    path = Path(__file__).resolve().parents[1] / ".github" / "workflows" / workflow
+    text = path.read_text(encoding="utf-8")
+    lines = [line.strip() for line in text.splitlines() if line.startswith("run-name:")]
+    if len(lines) != 1:
+        raise AssertionError(f"{workflow} must declare exactly one run-name")
+    template = lines[0].removeprefix("run-name: ")
+    if WORKFLOW_DISPATCH_TOKEN_EXPRESSION not in template:
+        raise AssertionError(f"{workflow} run-name lacks the canonical dispatch expression")
+    return template.replace(WORKFLOW_DISPATCH_TOKEN_EXPRESSION, dispatch_token)
+
 
 class Stage11DeliveryControlTests(unittest.TestCase):
     def test_parse_promote(self) -> None:
@@ -88,7 +102,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                     "workflow_runs": [
                         {
                             "id": run_ids[workflow],
-                            "display_title": CONTROL._dispatch_run_title(token),
+                            "display_title": _workflow_dispatch_title(workflow, token),
                             "event": "workflow_dispatch",
                             "head_sha": sha,
                             "head_branch": branch,
@@ -387,9 +401,45 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                 run_name_lines = [line.strip() for line in text.splitlines() if line.startswith("run-name:")]
                 self.assertEqual(run_name_lines, [CONTROL.DISPATCH_RUN_NAME_WORKFLOW])
                 self.assertEqual(
+                    _workflow_dispatch_title(path.name, "e" * 32),
                     CONTROL._dispatch_run_title("e" * 32),
-                    "stage11-dispatch-" + "e" * 32,
                 )
+                drifted = text.replace(
+                    CONTROL.DISPATCH_RUN_NAME_WORKFLOW,
+                    "run-name: stage11-other-${{ inputs.dispatch_token || github.sha }}",
+                    1,
+                )
+                drifted_line = [
+                    line.strip() for line in drifted.splitlines() if line.startswith("run-name:")
+                ]
+                self.assertEqual(len(drifted_line), 1)
+                drifted_title = drifted_line[0].removeprefix("run-name: ").replace(
+                    WORKFLOW_DISPATCH_TOKEN_EXPRESSION,
+                    "e" * 32,
+                )
+                self.assertNotEqual(drifted_title, CONTROL._dispatch_run_title("e" * 32))
+                with patch.object(
+                    CONTROL,
+                    "_workflow_dispatch_runs",
+                    return_value=[{
+                        "id": 901,
+                        "display_title": drifted_title,
+                        "event": "workflow_dispatch",
+                        "head_sha": "c" * 40,
+                        "head_branch": "codex/stage11-test",
+                        "path": f".github/workflows/{path.name}",
+                    }],
+                ):
+                    with self.assertRaisesRegex(CONTROL.ControlError, "did not materialize"):
+                        CONTROL._wait_for_bound_dispatch_run(
+                            path.name,
+                            "codex/stage11-test",
+                            "c" * 40,
+                            "e" * 32,
+                            set(),
+                            attempts=1,
+                            interval_seconds=0,
+                        )
                 self.assertIn("Resolve exact tested source", text)
                 self.assertIn("ref: ${{ steps.source.outputs.sha }}", text)
                 self.assertIn("persist-credentials: false", text)
@@ -404,7 +454,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
         workflow = "stage02.yml"
         canonical = {
             "id": 101,
-            "display_title": CONTROL._dispatch_run_title(token),
+            "display_title": _workflow_dispatch_title(workflow, token),
             "event": "workflow_dispatch",
             "head_sha": sha,
             "head_branch": branch,
@@ -429,7 +479,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
             ("baseline_same_sha_and_token", [canonical], {101}, "did not materialize"),
             (
                 "wrong_correlation_token",
-                [canonical | {"id": 102, "display_title": CONTROL._dispatch_run_title("f" * 32)}],
+                [canonical | {"id": 102, "display_title": _workflow_dispatch_title(workflow, "f" * 32)}],
                 set(),
                 "did not materialize",
             ),
@@ -612,7 +662,7 @@ class P1RegressionTests(unittest.TestCase):
                             return {"workflow_runs": []}
                         run = {
                             "id": 100 + workflows.index(workflow),
-                            "display_title": CONTROL._dispatch_run_title(token),
+                            "display_title": _workflow_dispatch_title(workflow, token),
                             "event": "workflow_dispatch",
                             "head_sha": sha,
                             "head_branch": branch,
@@ -651,7 +701,7 @@ class P1RegressionTests(unittest.TestCase):
                     "workflow_runs": [
                         {
                             "id": 101,
-                            "display_title": CONTROL._dispatch_run_title(token),
+                            "display_title": _workflow_dispatch_title(workflow, token),
                             "event": "workflow_dispatch",
                             "head_sha": newer,
                             "head_branch": branch,
@@ -815,61 +865,146 @@ class P1RegressionTests(unittest.TestCase):
     def test_promotion_failure_never_overwrites_concurrent_ref_updates(self):
         source, target = "work/stage11-test", "codex/stage11-test"
         promoted, newer = "c" * 40, "d" * 40
+        token = "e" * 32
+        scenario_count = 0
+
         for existing in (False, True):
             for failure in ("signature", "tree", "first_dispatch", "second_dispatch"):
                 for concurrent in (False, True):
+                    scenario_count += 1
                     with self.subTest(existing=existing, failure=failure, concurrent=concurrent):
                         refs = {source: self.SHA, "main": self.BASE}
                         if existing:
                             refs[target] = self.BASE
                         calls = []
+                        events = []
+                        dispatched = set()
+                        bound = set()
 
                         def api(method, path, payload=None):
                             calls.append((method, path, payload))
                             if method == "GET" and path.startswith("/compare/"):
-                                return {"behind_by": 0, "ahead_by": 1, "files": [
-                                    {"filename": "product.py", "status": "added"}]}
+                                return {
+                                    "behind_by": 0,
+                                    "ahead_by": 1,
+                                    "files": [{"filename": "product.py", "status": "added"}],
+                                }
                             if method == "POST" and path == "/git/refs":
                                 refs[target] = payload["sha"]
                                 return None
+                            if method == "GET" and "/actions/workflows/" in path and "/runs?" in path:
+                                workflow = path.split("/")[3]
+                                if workflow not in dispatched:
+                                    return {"workflow_runs": []}
+                                if workflow not in bound:
+                                    bound.add(workflow)
+                                    events.append(f"{workflow}:bound")
+                                return {
+                                    "workflow_runs": [{
+                                        "id": 201 + CONTROL.CANDIDATE_WORKFLOWS.index(workflow),
+                                        "display_title": _workflow_dispatch_title(workflow, token),
+                                        "event": "workflow_dispatch",
+                                        "head_sha": promoted,
+                                        "head_branch": target,
+                                        "path": f".github/workflows/{workflow}",
+                                    }]
+                                }
+                            if method == "POST" and path.endswith("/dispatches"):
+                                workflow = path.split("/")[3]
+                                events.append(f"{workflow}:dispatch")
+                                if failure == "first_dispatch" and workflow == "stage02.yml":
+                                    if concurrent:
+                                        refs[target] = newer
+                                    raise CONTROL.ControlError("injected first dispatch failure")
+                                if failure == "second_dispatch" and workflow == "stage11-assurance.yml":
+                                    self.assertIn("stage02.yml", bound)
+                                    if concurrent:
+                                        refs[target] = newer
+                                    raise CONTROL.ControlError("injected second dispatch failure")
+                                dispatched.add(workflow)
+                                return None
                             self.fail(f"unsafe/unexpected mutation: {method} {path}")
-
-                        def dispatch(branch, sha):
-                            self.assertEqual((branch, sha), (target, promoted))
-                            if failure in {"first_dispatch", "second_dispatch"}:
-                                if concurrent:
-                                    refs[target] = newer
-                                raise CONTROL.ControlError("injected dispatch failure")
-                            self.fail("dispatch must not run after signature/tree failure")
 
                         def commit(sha):
                             if sha == self.SHA:
                                 return {"commit": {"tree": {"sha": "tree"}}}
                             if failure in {"signature", "tree"} and concurrent:
                                 refs[target] = newer
-                            return {"commit": {"tree": {"sha": "wrong" if failure == "tree" else "tree"},
-                                               "verification": {"verified": failure != "signature"}}}
+                            return {
+                                "commit": {
+                                    "tree": {"sha": "wrong" if failure == "tree" else "tree"},
+                                    "verification": {"verified": failure != "signature"},
+                                }
+                            }
 
                         def graphql(query, variables):
-                            self.assertEqual(variables["input"]["expectedHeadOid"], refs[target])
+                            self.assertEqual(variables["input"]["expectedHeadOid"], self.BASE)
                             refs[target] = promoted
                             return {"createCommitOnBranch": {"commit": {"oid": promoted}}}
 
-                        with patch.object(CONTROL, "_ref", side_effect=lambda b: {"object": {"sha": refs[b]}} if b in refs else None), \
-                                patch.object(CONTROL, "api", side_effect=api), patch.object(CONTROL, "_commit", side_effect=commit), \
-                                patch.object(CONTROL, "graphql", side_effect=graphql), \
-                                patch.object(CONTROL, "_tree_map", return_value={"product.py": {"sha": "blob", "mode": "100644"}}), \
-                                patch.object(CONTROL, "_blob_bytes", return_value=b"content"), \
-                                patch.object(CONTROL, "dispatch_candidate_checks", side_effect=dispatch), \
-                                patch.object(CONTROL, "_post_comment") as comment, \
-                                patch.object(CONTROL, "_repo", return_value="owner/repo"):
+                        with patch.object(
+                                CONTROL,
+                                "_ref",
+                                side_effect=lambda b: {"object": {"sha": refs[b]}} if b in refs else None,
+                            ), patch.object(
+                                CONTROL, "api", side_effect=api
+                            ), patch.object(
+                                CONTROL, "_commit", side_effect=commit
+                            ), patch.object(
+                                CONTROL, "graphql", side_effect=graphql
+                            ), patch.object(
+                                CONTROL,
+                                "_tree_map",
+                                return_value={"product.py": {"sha": "blob", "mode": "100644"}},
+                            ), patch.object(
+                                CONTROL, "_blob_bytes", return_value=b"content"
+                            ), patch.object(
+                                CONTROL.secrets, "token_hex", return_value=token
+                            ), patch.object(
+                                CONTROL, "_post_comment"
+                            ) as comment, patch.object(
+                                CONTROL, "_repo", return_value="owner/repo"
+                            ):
                             with self.assertRaisesRegex(CONTROL.ControlError, "target preserved"):
-                                CONTROL.promote(17, {"source": source, "target": target,
-                                                     "source_sha": self.SHA, "base_sha": self.BASE})
+                                CONTROL.promote(
+                                    17,
+                                    {
+                                        "source": source,
+                                        "target": target,
+                                        "source_sha": self.SHA,
+                                        "base_sha": self.BASE,
+                                    },
+                                )
+
+                        if failure == "first_dispatch":
+                            self.assertEqual(events, ["stage02.yml:dispatch"])
+                        elif failure == "second_dispatch":
+                            self.assertEqual(
+                                events,
+                                [
+                                    "stage02.yml:dispatch",
+                                    "stage02.yml:bound",
+                                    "stage11-assurance.yml:dispatch",
+                                ],
+                            )
+                            self.assertIn("stage02.yml", bound)
+                            self.assertNotIn("stage11-assurance.yml", bound)
+                        else:
+                            self.assertEqual(events, [])
+
                         self.assertEqual(refs[target], newer if concurrent else promoted)
                         self.assertEqual(refs[source], self.SHA)
                         self.assertFalse(any(c[0] in {"PATCH", "DELETE"} for c in calls))
+                        self.assertFalse(any(
+                            c[0] == "PATCH"
+                            and isinstance(c[2], dict)
+                            and c[2].get("force") is True
+                            for c in calls
+                        ))
                         comment.assert_not_called()
+
+        self.assertEqual(scenario_count, 16)
+
 
 
 if __name__ == "__main__":
