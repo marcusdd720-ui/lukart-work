@@ -1,6 +1,6 @@
 """Versioned render profiles. No document content belongs here.
 
-OFFICIAL_PL_V1 binds exact font bytes.  A host with a different or missing font must fail
+OFFICIAL_PL_V1 binds exact font bytes. A host with a different or missing font must fail
 closed and requires an explicit profile-version change rather than silent substitution.
 """
 from __future__ import annotations
@@ -12,13 +12,45 @@ from pathlib import Path
 from lukart_work.domain.models import VersionPin
 from lukart_work.validation.rules import digest
 
-from .contracts import RenderProfile
+from .contracts import RenderProfile, StyleSpec
 
 _FONT_ROOT = Path(os.environ.get("LUKART_RENDER_FONT_DIR", "/usr/share/fonts/truetype/liberation"))
 _REGULAR = _FONT_ROOT / "LiberationSerif-Regular.ttf"
 _BOLD = _FONT_ROOT / "LiberationSerif-Bold.ttf"
 _REGULAR_SHA256 = "705903ae1382f0150f115d6f10a30f5b2f3d6ade649c474afe6366c39174fb65"
 _BOLD_SHA256 = "9e66c25e20868756bf12eb24a520a4552727c9cd108f577f7ae33e3c0110e39c"
+
+
+def _style(
+    token: str,
+    *,
+    size: int,
+    bold: bool = False,
+    before: int = 0,
+    after: int = 6,
+    left: int = 0,
+    hanging: int = 0,
+    alignment: str = "LEFT",
+    keep_with_next: bool = False,
+    keep_together: bool = False,
+    widow_control: bool = True,
+    page_break_before: bool = False,
+) -> StyleSpec:
+    return StyleSpec(
+        token=token,
+        font_size_pt=size,
+        bold=bold,
+        line_spacing_milli=1150,
+        space_before_pt=before,
+        space_after_pt=after,
+        left_indent_mm=left,
+        hanging_indent_mm=hanging,
+        alignment=alignment,
+        keep_with_next=keep_with_next,
+        keep_together=keep_together,
+        widow_control=widow_control,
+        page_break_before=page_break_before,
+    )
 
 
 def _hash(path: Path) -> str:
@@ -40,12 +72,17 @@ OFFICIAL_PL_V1 = RenderProfile(
     font_family="Liberation Serif",
     font_regular_sha256=_REGULAR_SHA256,
     font_bold_sha256=_BOLD_SHA256,
-    body_font_pt=11,
-    heading_font_pt=12,
-    title_font_pt=13,
-    line_spacing_milli=1150,
-    paragraph_after_pt=6,
-    section_before_pt=10,
+    styles=(
+        _style("document.heading.primary", size=13, bold=True, after=10, alignment="CENTER", keep_with_next=True),
+        _style("document.heading.secondary", size=12, bold=True, before=10, after=6, keep_with_next=True),
+        _style("document.party_block", size=11, after=8, keep_together=True),
+        _style("document.request", size=11, left=7, hanging=5, after=5, keep_together=True),
+        _style("document.body", size=11, after=6, alignment="JUSTIFY"),
+        _style("document.legal_basis", size=11, after=6, alignment="JUSTIFY", keep_together=True),
+        _style("document.quote", size=10, left=7, after=6, keep_together=True),
+        _style("document.signature", size=11, before=18, after=0, keep_together=True),
+        _style("document.attachment", size=11, left=7, hanging=5, after=4, keep_together=True),
+    ),
     requests_label="Wnioski",
     attachments_label="Załączniki",
 )
@@ -63,6 +100,13 @@ def profile_font_paths(profile: RenderProfile) -> tuple[Path, Path]:
             f"RENDER_FONT_HASH_MISMATCH:regular={actual_regular}:bold={actual_bold}"
         )
     return _REGULAR, _BOLD
+
+
+def profile_styles(profile: RenderProfile) -> dict[str, StyleSpec]:
+    styles = {style.token: style for style in profile.styles}
+    if len(styles) != len(profile.styles):
+        raise RuntimeError("RENDER_STYLE_DUPLICATE")
+    return styles
 
 
 def profile_pin(profile: RenderProfile = OFFICIAL_PL_V1) -> VersionPin:
