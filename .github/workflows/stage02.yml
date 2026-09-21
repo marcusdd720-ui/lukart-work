@@ -111,6 +111,29 @@ jobs:
 
       - run: python -B -X utf8 scripts/prepare_ci_database.py
 
+      - name: Self-hosted ingestion isolation diagnostic
+        shell: bash
+        run: |
+          python -B -X utf8 - <<'PY'
+          import resource
+          import sys
+          from pathlib import Path
+          print("python=", sys.version)
+          print("rlimit_as_before=", resource.getrlimit(resource.RLIMIT_AS))
+          for line in Path("/proc/self/status").read_text().splitlines():
+              if line.startswith(("VmSize:", "VmRSS:")):
+                  print(line)
+          resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
+          print("rlimit_as_after=", resource.getrlimit(resource.RLIMIT_AS))
+          from lukart_work.ingestion.extract import extract
+          result = extract(b"synthetic text", "text/plain")
+          print("direct_extract_status=", result.status)
+          from lukart_work.ingestion.service import parse_isolated
+          isolated = parse_isolated(b"synthetic text", "text/plain")
+          print("isolated_extract_status=", isolated.status)
+          print("isolated_warnings=", isolated.warnings)
+          PY
+
       - name: Focused Stage 09
         run: python -B -X utf8 -m unittest -v tests.test_stage09
 
