@@ -137,7 +137,10 @@ A Stage 11 landing is eligible only when all of the following are true:
 3. Current PR head SHA equals the explicitly supplied reviewed SHA.
 4. Current base SHA equals the explicitly supplied expected base SHA.
 5. The reviewed head commit is GitHub `verified=true`.
-6. Required Stage 11 checks for that exact head SHA are terminal SUCCESS.
+6. Required Stage 11 checks for that exact head SHA are terminal SUCCESS. Only
+   `validation` and `stage11-rendering` participate in this assurance gate; unrelated
+   GitHub Actions checks (including the currently executing `control` job during
+   cleanup) cannot satisfy the gate and do not self-deadlock it.
 7. An authenticated independent review receipt binds that exact head and base SHA,
    with `p0=0` and `p1=0` as described below.
 8. Immediately before mutation, `main` must still equal the expected base SHA.
