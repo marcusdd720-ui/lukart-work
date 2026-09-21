@@ -89,6 +89,32 @@ jobs:
       - name: Install package
         run: python -m pip install -e .
 
+      - name: Self-hosted ingestion isolation diagnostic
+        shell: bash
+        run: |
+          python -B -X utf8 - <<'PY'
+          import os
+          import resource
+          import sys
+          from pathlib import Path
+          print("python=", sys.version)
+          print("platform=", sys.platform)
+          print("rlimit_as_before=", resource.getrlimit(resource.RLIMIT_AS))
+          status = Path("/proc/self/status").read_text()
+          for line in status.splitlines():
+              if line.startswith(("VmSize:", "VmRSS:")):
+                  print(line)
+          resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
+          print("rlimit_as_after=", resource.getrlimit(resource.RLIMIT_AS))
+          from lukart_work.ingestion.extract import extract
+          result = extract(b"synthetic text", "text/plain")
+          print("direct_extract_status=", result.status)
+          from lukart_work.ingestion.service import parse_isolated
+          isolated = parse_isolated(b"synthetic text", "text/plain")
+          print("isolated_extract_status=", isolated.status)
+          print("isolated_warnings=", isolated.warnings)
+          PY
+
       - name: Delivery-control guard tests
         run: python -B -X utf8 -m unittest -v tests.test_stage11_delivery_control
 
