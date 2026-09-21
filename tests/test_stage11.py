@@ -70,6 +70,15 @@ class Stage11RenderingTests(unittest.TestCase):
         # Template defaults may remain in styles.xml, but every emitted content run is pinned.
         self.assertIn("Liberation Serif", document)
 
+    def test_docx_pagination_is_profile_controlled(self):
+        bundle = self.engine.render(self.request, self.records)
+        with ZipFile(BytesIO(bundle.docx), "r") as package:
+            footer_names = [name for name in package.namelist() if name.startswith("word/footer") and name.endswith(".xml")]
+            self.assertEqual(len(footer_names), 1)
+            footer = package.read(footer_names[0]).decode("utf-8")
+        self.assertIn("PAGE", footer)
+        self.assertIn(OFFICIAL_PL_V1.font_family, footer)
+
     def test_pdf_embeds_font_and_forbids_active_content(self):
         bundle = self.engine.render(self.request, self.records)
         self.assertTrue(bundle.pdf.startswith(b"%PDF-"))
