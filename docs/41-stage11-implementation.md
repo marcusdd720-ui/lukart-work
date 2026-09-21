@@ -133,7 +133,14 @@ rysuje numer strony w kontrolowanej stopce.
 
 ## Powiązanie autoryzacji
 
-`RenderReceipt.authorization_hash` wiąże wynik z hashem autoryzacji wejściowego
-`RenderRequest`. Sam czysty renderer nie uwierzytelnia użytkownika i nie udaje takiej
-kompetencji; weryfikacja autoryzacji pozostaje obowiązkiem zaufanej granicy usługowej.
-Receipt nie pozwala jednak zgubić tożsamości autoryzowanego uruchomienia.
+`authorization_binding(SemanticDocument, RenderProfile)` wylicza kanoniczne powiązanie
+dokładnej reprezentacji semantycznej z dokładnym profilem renderowania. `RenderingEngine`
+odrzuca żądanie, jeżeli `RenderRequest.authorization_hash` nie odpowiada temu powiązaniu.
+Zmiana nagłówka, treści, referencji, sekcji lub profilu po utworzeniu autoryzacji powoduje
+więc fail-closed przed emisją artefaktu.
+
+To powiązanie zapewnia integralność wejścia, ale samo nie jest uwierzytelnieniem użytkownika.
+Decyzja, że konkretne wejście może zostać wyrenderowane, nadal należy do zaufanej granicy
+pre-render opisanej w `docs/01-specification.md`. Czysty renderer nie może sam sobie
+przyznać takiej kompetencji. `RenderReceipt.authorization_hash` zachowuje dokładną tożsamość
+autoryzowanego uruchomienia do dalszej kontroli `RenderTarget` / `RequestRelease`.
