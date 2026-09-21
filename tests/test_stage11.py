@@ -86,6 +86,21 @@ class Stage11RenderingTests(unittest.TestCase):
         self.assertNotEqual(receipt.semantic_digest, receipt.layout_digest)
         self.assertNotEqual(receipt.render_model_digest, receipt.layout_digest)
 
+    def test_presentation_change_does_not_change_semantic_digest(self):
+        first = self.engine.render(self.request, self.records)
+        altered_profile = OFFICIAL_PL_V1.model_copy(update={"body_font_pt": 12})
+        altered_request = RenderRequest(
+            document=self.request.document,
+            profile=profile_pin(altered_profile),
+            authorization_hash=H,
+        )
+        second = self.engine.render(altered_request, self.records, altered_profile)
+        self.assertEqual(first.meta.receipt.semantic_digest, second.meta.receipt.semantic_digest)
+        self.assertEqual(first.meta.receipt.render_model_digest, second.meta.receipt.render_model_digest)
+        self.assertNotEqual(first.meta.receipt.layout_digest, second.meta.receipt.layout_digest)
+        self.assertNotEqual(first.meta.receipt.artifacts[0].content_hash, second.meta.receipt.artifacts[0].content_hash)
+        self.assertNotEqual(first.meta.receipt.artifacts[1].content_hash, second.meta.receipt.artifacts[1].content_hash)
+
     def test_missing_record_fails_closed(self):
         records = dict(self.records)
         records.pop(self.request.document.parties[0])
