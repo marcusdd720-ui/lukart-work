@@ -130,6 +130,8 @@ def assemble_render_model(
         raise Violation("REFERENCE_TYPE")
     if draft.snapshot_hash != document.snapshot_hash:
         raise Violation("INVALID_HASH")
+    if document.sections != draft.sections:
+        raise Violation("INVALID_HASH")
     if draft.status not in ("VALIDATED", "APPROVED", "RENDERED"):
         raise Violation("GATE_DENIED")
 
