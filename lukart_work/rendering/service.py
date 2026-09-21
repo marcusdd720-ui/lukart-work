@@ -54,19 +54,26 @@ def _anchor_text(anchor: SourceAnchor) -> str:
     return f"SourceDocument:{anchor.document_id}#{loc.unit}:{loc.value}"
 
 
+def _block_lines(text: str) -> list[str]:
+    # Newlines are presentation data. Preserve order but never invent content.
+    return text.splitlines() or [""]
+
+
 def _semantic_lines(document: SemanticDocument) -> list[str]:
-    lines = [document.header, "", "PARTIES"]
-    lines.extend(f"- {_ref_text(ref)}" for ref in document.parties)
-    lines += ["", "REQUESTS"]
-    lines.extend(f"- {_ref_text(ref)}" for ref in document.requests)
-    for index, section in enumerate(document.sections, start=1):
-        lines += ["", f"SECTION {index} [{_ref_text(section.section)}]"]
-        lines.extend(statement.text for statement in section.statements)
+    # Internal revision identifiers are provenance, not user-facing legal text.
+    # The complete SemanticDocument (including those refs) remains bound by
+    # semantic_hash; visible bytes contain only presentation-ready text plus
+    # neutral structural labels that do not disclose internal UUIDs.
+    lines = _block_lines(document.header)
+    for section in document.sections:
+        lines.append("")
+        for statement in section.statements:
+            lines.extend(_block_lines(statement.text))
     if document.attachments:
-        lines += ["", "ATTACHMENTS"]
-        lines.extend(f"- {_anchor_text(anchor)}" for anchor in document.attachments)
+        lines += ["", "Załączniki:"]
+        lines.extend(f"{index}. Załącznik" for index, _ in enumerate(document.attachments, start=1))
     if document.signature_party is not None:
-        lines += ["", "SIGNATURE", _ref_text(document.signature_party)]
+        lines += ["", "____________________________", "Podpis"]
     return lines
 
 
