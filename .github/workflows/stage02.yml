@@ -21,7 +21,7 @@ permissions:
 jobs:
   validation:
     name: validation
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, lukart-stage11]
     services:
       postgres:
         image: postgres:18
