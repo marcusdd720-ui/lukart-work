@@ -188,9 +188,12 @@ def _pdf(document: SemanticDocument, semantic_hash: str, spec: dict) -> bytes:
         words = raw.split(" ")
         current = ""
         rendered = []
+        max_width = width - left - right
         for word in words:
+            if pdfmetrics.stringWidth(word, _FONT, font_size) > max_width:
+                raise RenderError("RENDER_UNBREAKABLE_TOKEN")
             candidate = word if not current else current + " " + word
-            if pdfmetrics.stringWidth(candidate, _FONT, font_size) <= width - left - right:
+            if pdfmetrics.stringWidth(candidate, _FONT, font_size) <= max_width:
                 current = candidate
             else:
                 if current:
@@ -267,7 +270,12 @@ def _verify(format_name: str, data: bytes, document: SemanticDocument, semantic_
             if semantic_hash.encode() not in archive.read("docProps/custom.xml"):
                 raise RenderError("RENDER_BINDING_MISSING")
     elif format_name == "PDF":
-        if _extract_pdf(data).splitlines() != expected_lines:
+        # PDF layout may wrap one semantic paragraph over several visual lines.
+        # Compare the ordered visible text after whitespace normalization rather
+        # than treating visual line breaks as semantic changes.
+        actual_text = " ".join(_extract_pdf(data).split())
+        expected_text = " ".join(" ".join(expected_lines).split())
+        if actual_text != expected_text:
             raise RenderError("RENDER_SEMANTIC_MISMATCH")
         if semantic_hash.encode() not in data:
             raise RenderError("RENDER_BINDING_MISSING")
