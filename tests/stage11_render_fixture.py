@@ -6,6 +6,7 @@ from lukart_work.domain.models import (
     Draft, Ref, Request, Section, SectionContract, SectionText, Statement,
 )
 from lukart_work.rendering.profiles import OFFICIAL_PL_V1, profile_pin
+from lukart_work.rendering.service import authorization_binding
 from tests.fixtures import H, PIN, anchor, common, evidence, fact, party, ref, uid
 
 
@@ -100,9 +101,10 @@ def build_fixture():
         ref(section): section,
         ref(request): request,
     }
+    render_profile = profile_pin(OFFICIAL_PL_V1)
     request_contract = RenderRequest(
         document=document,
-        profile=profile_pin(OFFICIAL_PL_V1),
-        authorization_hash=H,
+        profile=render_profile,
+        authorization_hash=authorization_binding(document, render_profile),
     )
     return request_contract, records
