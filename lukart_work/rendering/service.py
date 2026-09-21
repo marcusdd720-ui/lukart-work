@@ -174,7 +174,7 @@ class RenderingEngineService:
                             now,
                             policies,
                         )
-                        artifact = RenderedArtifact(
+                        candidate = RenderedArtifact(
                             artifact_id=target,
                             tenant_id=draft.tenant_id,
                             case_id=draft.case_id,
@@ -196,7 +196,19 @@ class RenderingEngineService:
                             byte_length=metadata.byte_length,
                             created_at=now,
                         )
-                        tx.put_object("rendered_artifact", target, artifact)
+                        existing = next(
+                            (item for item in tx.objects("rendered_artifact", RenderedArtifact)
+                             if item.artifact_id == target),
+                            None,
+                        )
+                        if existing is None:
+                            tx.put_object("rendered_artifact", target, candidate)
+                            artifact = candidate
+                        else:
+                            comparable_existing = existing.model_copy(update={"created_at": now})
+                            if comparable_existing != candidate:
+                                raise Violation("CONFLICT")
+                            artifact = existing
                         artifacts.append(artifact)
 
                     execution = RenderingExecution(
