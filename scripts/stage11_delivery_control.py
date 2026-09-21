@@ -43,9 +43,11 @@ PROCEDURE_BOOTSTRAP_PATHS = frozenset({
     ".github/workflows/stage02.yml",
     ".github/workflows/stage11-assurance.yml",
     "docs/STAGE11_DELIVERY_AUTOMATION.md",
+    "lukart_work/ingestion/service.py",
     "reports/manifest.sha256.json",
     "reports/stage10-status.json",
     "scripts/stage11_delivery_control.py",
+    "tests/test_stage04.py",
     "tests/test_stage11_delivery_control.py",
 })
 FORBIDDEN_PROMOTION_PATHS = {

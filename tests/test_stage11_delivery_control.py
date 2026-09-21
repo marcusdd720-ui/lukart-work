@@ -616,9 +616,11 @@ class P1RegressionTests(unittest.TestCase):
     def test_stage11_bootstrap_exception_requires_exact_base_and_procedure_only_diff(self):
         branch = CONTROL.PROCEDURE_BOOTSTRAP_BRANCH
         base = CONTROL.PROCEDURE_BOOTSTRAP_BASE
-        self.assertEqual(len(CONTROL.PROCEDURE_BOOTSTRAP_PATHS), 7)
+        self.assertEqual(len(CONTROL.PROCEDURE_BOOTSTRAP_PATHS), 9)
         self.assertIn(".github/workflows/stage02.yml", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertIn(".github/workflows/stage11-assurance.yml", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
+        self.assertIn("lukart_work/ingestion/service.py", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
+        self.assertIn("tests/test_stage04.py", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertEqual(CONTROL.require_stage11_tests(branch, False, base_sha=base,
                          changed_paths=list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS)), "PROCEDURE_ONLY_BOOTSTRAP")
         for wrong_base, paths in ((self.BASE, list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS)),
