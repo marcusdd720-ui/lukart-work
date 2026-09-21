@@ -11,7 +11,8 @@ dependencies = ["pydantic==2.13.5"]
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]==3.3.3"]
-ingestion = ["pypdf==6.10.0"]\nrendering = ["reportlab==5.0.1"]
+ingestion = ["pypdf==6.10.0"]
+rendering = ["reportlab==5.0.1"]
 
 [tool.setuptools.packages.find]
 include = ["lukart_work*"]
