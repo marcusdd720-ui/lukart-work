@@ -1,6 +1,6 @@
 """Renderer-neutral Stage 11 contracts.
 
-These models are internal product contracts, not legal-domain entities.  They deliberately
+These models are internal product contracts, not legal-domain entities. They deliberately
 separate semantic content identity, layout identity and concrete artifact identity.
 """
 from __future__ import annotations
@@ -25,6 +25,30 @@ RenderRole = Literal[
     "ATTACHMENT_HEADING",
     "ATTACHMENT_ITEM",
 ]
+
+StyleToken = Literal[
+    "document.heading.primary",
+    "document.heading.secondary",
+    "document.party_block",
+    "document.request",
+    "document.body",
+    "document.legal_basis",
+    "document.quote",
+    "document.signature",
+    "document.attachment",
+]
+
+REQUIRED_STYLE_TOKENS = (
+    "document.heading.primary",
+    "document.heading.secondary",
+    "document.party_block",
+    "document.request",
+    "document.body",
+    "document.legal_basis",
+    "document.quote",
+    "document.signature",
+    "document.attachment",
+)
 
 
 class RenderBlock(Value):
@@ -57,6 +81,28 @@ class RenderModel(Value):
         return self
 
 
+class StyleSpec(Value):
+    token: StyleToken
+    font_size_pt: Annotated[int, Field(strict=True, ge=8, le=28)]
+    bold: bool
+    line_spacing_milli: Annotated[int, Field(strict=True, ge=900, le=2000)]
+    space_before_pt: Annotated[int, Field(strict=True, ge=0, le=72)]
+    space_after_pt: Annotated[int, Field(strict=True, ge=0, le=36)]
+    left_indent_mm: Annotated[int, Field(strict=True, ge=0, le=50)]
+    hanging_indent_mm: Annotated[int, Field(strict=True, ge=0, le=20)]
+    alignment: Literal["LEFT", "CENTER", "RIGHT", "JUSTIFY"]
+    keep_with_next: bool
+    keep_together: bool
+    widow_control: bool
+    page_break_before: bool
+
+    @model_validator(mode="after")
+    def indentation_contract(self):
+        if self.hanging_indent_mm > self.left_indent_mm:
+            raise ValueError("INVALID_HANGING_INDENT")
+        return self
+
+
 class RenderProfile(Value):
     profile_id: Text
     version: Text
@@ -70,32 +116,28 @@ class RenderProfile(Value):
     font_family: Text
     font_regular_sha256: Hash
     font_bold_sha256: Hash
-    body_font_pt: Annotated[int, Field(strict=True, ge=8, le=18)]
-    heading_font_pt: Annotated[int, Field(strict=True, ge=9, le=24)]
-    title_font_pt: Annotated[int, Field(strict=True, ge=9, le=28)]
-    line_spacing_milli: Annotated[int, Field(strict=True, ge=900, le=2000)]
-    paragraph_after_pt: Annotated[int, Field(strict=True, ge=0, le=36)]
-    section_before_pt: Annotated[int, Field(strict=True, ge=0, le=72)]
+    styles: Annotated[tuple[StyleSpec, ...], Field(min_length=9, max_length=9)]
     requests_label: Text
     attachments_label: Text
 
     @model_validator(mode="after")
-    def page_contract(self):
+    def profile_contract(self):
         if self.margin_left_mm + self.margin_right_mm >= self.page_width_mm:
             raise ValueError("INVALID_HORIZONTAL_MARGINS")
         if self.margin_top_mm + self.margin_bottom_mm >= self.page_height_mm:
             raise ValueError("INVALID_VERTICAL_MARGINS")
+        tokens = tuple(style.token for style in self.styles)
+        if len(set(tokens)) != len(tokens) or set(tokens) != set(REQUIRED_STYLE_TOKENS):
+            raise ValueError("STYLE_TOKEN_SET")
         return self
 
 
 class LayoutBlock(Value):
     role: RenderRole
-    style_token: Text
+    style_token: StyleToken
     text: Text
     refs: tuple[Ref, ...] = ()
     ordinal: Annotated[int | None, Field(strict=True, ge=1)] = None
-    keep_with_next: bool = False
-    page_break_before: bool = False
 
 
 class LayoutTree(Value):
@@ -120,6 +162,7 @@ class RenderArtifact(Value):
 class RenderReceipt(Value):
     draft: Ref
     snapshot_hash: Hash
+    authorization_hash: Hash
     semantic_digest: Hash
     render_model_digest: Hash
     layout_digest: Hash
