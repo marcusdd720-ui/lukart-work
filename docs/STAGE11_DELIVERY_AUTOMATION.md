@@ -76,7 +76,7 @@ errors or skips. Delivery-control tests cannot substitute for rendering tests.
 
 The historical PR #17 bootstrap exception is retired after its merge. The sole current
 procedure-only exception is
-`codex/stage11-postmerge-assurance-remediation` at exact base
+`codex/stage11-postmerge-assurance-remediation-verified` at exact base
 `74364cb7b648feaff30cff465a5beade8d5f3498`. It requires a nonempty complete diff
 restricted to the three current `PROCEDURE_BOOTSTRAP_PATHS` in the control script:
 this policy, the control script, and its guard tests.
