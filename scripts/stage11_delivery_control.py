@@ -278,9 +278,7 @@ def _wait_for_bound_dispatch_run(
     )
 
 
-def dispatch_candidate_checks(branch: str, sha: str) -> dict[str, int]:
-    if not branch.startswith(STAGE_BRANCH_PREFIX):
-        raise ControlError("candidate CI branch is outside Stage 11 namespace")
+def _dispatch_exact_sha_checks(branch: str, sha: str) -> dict[str, int]:
     candidate_sha = _require_sha(sha, "candidate_sha")
     dispatch_token = secrets.token_hex(16)
     if not DISPATCH_TOKEN_RE.fullmatch(dispatch_token):
@@ -319,6 +317,16 @@ def dispatch_candidate_checks(branch: str, sha: str) -> dict[str, int]:
 
     _assert_ref_sha(branch, candidate_sha, "after exact-SHA CI dispatch binding")
     return bound_runs
+
+
+def dispatch_candidate_checks(branch: str, sha: str) -> dict[str, int]:
+    if not branch.startswith(STAGE_BRANCH_PREFIX):
+        raise ControlError("candidate CI branch is outside Stage 11 namespace")
+    return _dispatch_exact_sha_checks(branch, sha)
+
+
+def dispatch_post_landing_checks(sha: str) -> dict[str, int]:
+    return _dispatch_exact_sha_checks("main", sha)
 
 
 def _event() -> dict[str, Any]:
@@ -629,6 +637,25 @@ def _check_gate(sha: str, *, required_event: str) -> None:
         )
 
 
+def _check_post_landing_gate(sha: str) -> str:
+    failures: list[str] = []
+    # Normal in-workflow landing uses explicit workflow_dispatch because a
+    # GITHUB_TOKEN-authenticated write does not recursively create push runs.
+    # The one-time externally transported bootstrap may instead have a trusted
+    # exact-SHA push run.  Either event is acceptable, but one complete event
+    # family must satisfy both required workflows.
+    for event in ("workflow_dispatch", "push"):
+        try:
+            _check_gate(sha, required_event=event)
+            return event
+        except ControlError as exc:
+            failures.append(f"{event}: {exc}")
+    raise ControlError(
+        "post-landing exact-SHA assurance is missing for all trusted event paths: "
+        + " | ".join(failures)
+    )
+
+
 def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> None:
     required = {"head_sha", "base_sha"}
     if set(args) != required:
@@ -754,6 +781,13 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
             "failed; Stage 11 is BLOCKED"
         )
 
+    try:
+        bound_runs = dispatch_post_landing_checks(landed_sha)
+    except Exception as exc:
+        raise ControlError(
+            f"landing succeeded but exact-SHA post-landing dispatch binding failed: {exc}"
+        ) from exc
+
     closed = api("PATCH", f"/pulls/{issue_number}", {"state": "closed"})
     if closed.get("state") != "closed":
         raise ControlError(
@@ -765,7 +799,7 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
         issue_number,
         "\n".join(
             [
-                "STAGE11_LANDING: PASS",
+                "STAGE11_LANDING: DISPATCH_BOUND",
                 f"sha={landed_sha}",
                 f"base_sha={base_sha}",
                 f"head_sha={head_sha}",
@@ -773,6 +807,10 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
                 f"policy_sha256={policy_digest}",
                 f"procedure_sha256={procedure_digest}",
                 "landing_mode=ATOMIC_EXPECTED_HEAD",
+                "dispatch_runs=" + ",".join(
+                    f"{workflow}:{bound_runs[workflow]}"
+                    for workflow in CANDIDATE_WORKFLOWS
+                ),
                 "signature=VERIFIED",
                 "post_merge=REQUIRED",
             ]
@@ -820,7 +858,7 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
     if main_commit["commit"]["tree"]["sha"] != branch_commit["commit"]["tree"]["sha"]:
         raise ControlError("landing tree differs from reviewed Stage 11 candidate tree")
 
-    _check_gate(main_sha, required_event="push")
+    assurance_event = _check_post_landing_gate(main_sha)
 
     # Re-read both refs after all potentially slow assurance calls.  There is no
     # compare-and-swap delete in the GitHub REST/GraphQL ref APIs, so deletion
@@ -843,7 +881,7 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
                 f"policy_sha256={policy_digest}",
                 f"procedure_sha256={procedure_digest}",
                 "signature=VERIFIED",
-                "workflow_provenance=BOUND_TO_PUSH",
+                f"workflow_provenance=BOUND_TO_{assurance_event.upper()}",
             ]
         ),
     )
