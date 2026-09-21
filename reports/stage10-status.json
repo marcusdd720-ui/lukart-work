@@ -1,6 +1,6 @@
 {
   "stage": "10 Validation Engine",
-  "tests": 385,
+  "tests": 394,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -34,7 +34,7 @@
     "lukart_work/ingestion/__init__.py": "52e6c258c9e8a72f5434e125b7f5aa51af9d2d79efc18bb31795aad0ad5826f7",
     "lukart_work/ingestion/extract.py": "c3c0102acc0785fb2316270ebe35a1bf954920e5304e11885635f765ae2d3661",
     "lukart_work/ingestion/models.py": "7f97898a491b2553b694fbe0fd5ee44456c1fb919934cea8f15ffde799decedb",
-    "lukart_work/ingestion/service.py": "866bfad8a86a9fd96b85abf26ccc8529a149653b4f6dc4758b621ce05df0aef3",
+    "lukart_work/ingestion/service.py": "dd186cb4295bb79a4e1f51e24604b8534f4ca0d9dce27f845ffe5cb0fa4767ab",
     "lukart_work/ingestion/worker.py": "277e94dcd0d4d38f30b9202df642ed7b4885682693a3cb7d3eec0ad9a6144a81",
     "lukart_work/planner/__init__.py": "f00d6a626bfedb60ac38606ea6d70e0d6b0dbe47e0b27616fb7c4bbdf518d370",
     "lukart_work/planner/contracts.py": "c8c6f0d5a0b0fc7f8b8e840bcb94a812871bf72e0b36dbdd3259701b87125c0f",
@@ -69,7 +69,7 @@
     "scripts/prepare_stage02_database.py": "62a595b7c26b33619d7ca76ed8eae50553c5270ba7c9f372365175ed2fcfd559",
     "scripts/refresh_manifest.py": "c29f0a79f93a20c7a686909f71c628b1f618057effef60534244fd4c1ea76aeb",
     "scripts/render_cross_repo_contract.py": "80476b1aa02bc2a058ddce3fe11b111e9b48185242672bb43100340818b53e04",
-    "scripts/stage11_delivery_control.py": "c1888654d61de03cdda1ed9ab27c65c1dd827b2d71ee3320f27493c2a8b2ee5a",
+    "scripts/stage11_delivery_control.py": "ed25d0ea5a4e158d488f834bb6594d592e2059b6585d611bf0978b91cb1997d1",
     "scripts/start_stage02_postgres.ps1": "49a7c29522606d091080901c6d0a4fe2b8e0401b551b77079f414571e6d21065",
     "scripts/validate_stage06_schemas.py": "e4135f24d41939a00be4aae06a95326fbb3db6c0eaba3040a0037259e2d45a94",
     "scripts/validate_stage07_schemas.py": "db267606a7bce858dd08cc27c263cece5a9e88626bbc6ba83d0075d69265073f",
@@ -94,7 +94,7 @@
     "tests/test_remediation.py": "cb4dad854cfb7a38d15be60d969eee483deabc3303c0bf41a35e6eed61c0d8d2",
     "tests/test_stage02.py": "6d6d0fd923f413747e6332f60ffd5b6dfbf448a9571dc2a96bf68f63962af7eb",
     "tests/test_stage03.py": "a8d2f4ed93cc3f29a5371d3450615e32b58692d725bd89499e1a9f5cb6f76a58",
-    "tests/test_stage04.py": "06a174c28e5e9dcd51eb85bc0209ab7b594f6208dca30df0c3122ae2bd57971f",
+    "tests/test_stage04.py": "6f24fd7e57de3e2bb03d89d4a4ba79ad7849dcbe2dabdc7f059198dc30bb2a47",
     "tests/test_stage05.py": "e21fc9d0153ef2c8520a6e1b6448928f8b752fa2cbb93b43c6cde79a26aec0f4",
     "tests/test_stage06.py": "c5453c7e382aef7b56685ea80c340dab2a20e64e86cdfa73264033a3c41dc4e2",
     "tests/test_stage07.py": "eef47126a8e6cef64eb24638b26c78d1ef77053550b37b6f654f46ca2a5e66ca",
@@ -102,6 +102,6 @@
     "tests/test_stage09.py": "8ee891d4a386a3afc74078614afdc2b5f6dac41454112d5b86738b9bf8569c85",
     "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa",
     "tests/test_stage10.py": "68f9266483ef07ac8940f748d9fbafb79cecbf88fce66a4a8c403514dc1764b1",
-    "tests/test_stage11_delivery_control.py": "485e885ae1329bf2ced3346a3f382e239ea56091423c21d2eff92efae8143339"
+    "tests/test_stage11_delivery_control.py": "299b9611a5e415e5cfa5657f2e1f4b807cdc484f9e8b631d6a19d8a694adafaf"
   }
 }
