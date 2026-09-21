@@ -72,7 +72,9 @@ def _docx_paragraph(text, style):
         f'<w:jc w:val="{_word_alignment(style.alignment)}"/>'
         f'<w:spacing w:after="{style.space_after_pt * 20}" w:line="276" w:lineRule="auto"/>'
         '</w:pPr><w:r><w:rPr>'
-        f'<w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:eastAsia="Aptos"/>'
+        f'<w:rFonts w:ascii="{escape(style.font_family, quote=True)}" '
+        f'w:hAnsi="{escape(style.font_family, quote=True)}" '
+        f'w:eastAsia="{escape(style.font_family, quote=True)}"/>'
         f'{bold}<w:sz w:val="{size}"/><w:szCs w:val="{size}"/>'
         '</w:rPr>' + ''.join(runs) + '</w:r></w:p>'
     )
@@ -85,6 +87,7 @@ def render_docx(document: SemanticDocument, profile: RenderProfile) -> bytes:
     )
     section = (
         '<w:sectPr>'
+        '<w:footerReference w:type="default" r:id="rId2"/>'
         f'<w:pgSz w:w="{_twips(profile.page_width_mm)}" w:h="{_twips(profile.page_height_mm)}"/>'
         f'<w:pgMar w:top="{_twips(profile.margin_top_mm)}" '
         f'w:right="{_twips(profile.margin_outer_mm)}" '
@@ -95,7 +98,8 @@ def render_docx(document: SemanticDocument, profile: RenderProfile) -> bytes:
     )
     document_xml = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
         f'<w:body>{body}{section}</w:body></w:document>'
     )
     styles_xml = (
@@ -112,6 +116,7 @@ def render_docx(document: SemanticDocument, profile: RenderProfile) -> bytes:
             '<Default Extension="xml" ContentType="application/xml"/>'
             '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
             '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+            '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>'
             '</Types>'
         ),
         '_rels/.rels': (
@@ -126,7 +131,15 @@ def render_docx(document: SemanticDocument, profile: RenderProfile) -> bytes:
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+            '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>'
             '</Relationships>'
+        ),
+        'word/footer1.xml': (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:p><w:pPr><w:jc w:val="center"/></w:pPr>'
+            '<w:fldSimple w:instr="PAGE"><w:r><w:rPr><w:sz w:val="16"/></w:rPr>'
+            '<w:t>1</w:t></w:r></w:fldSimple></w:p></w:ftr>'
         ),
     }
     buffer = BytesIO()

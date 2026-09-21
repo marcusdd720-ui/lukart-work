@@ -48,13 +48,6 @@ class RenderingEngineService(CommandService):
             if principal.actor.kind not in ('HUMAN', 'SERVICE'):
                 raise Violation('FORBIDDEN')
 
-    @staticmethod
-    def _head(target, records, heads, kind='Draft'):
-        if target.kind != kind:
-            raise Violation('SCHEMA_INVALID')
-        entity = resolve(target, records, target.tenant_id if hasattr(target, 'tenant_id') else None, target.case_id if hasattr(target, 'case_id') else None)
-        return entity
-
     def _current_draft(self, request, principal, records, heads, status):
         draft = self._target(request, records, heads, 'Draft')
         if draft.status != status:
@@ -88,7 +81,7 @@ class RenderingEngineService(CommandService):
             or any(checks[name].outcome != 'PASS' for name in PRE_RENDER_CHECKS)
         ):
             raise Violation('GATE_DENIED')
-        if set(run.findings) != {r for r in run.findings}:
+        if len(run.findings) != len(set(run.findings)):
             raise Violation('INVALID_HASH')
         for finding_ref in run.findings:
             finding = resolve(
