@@ -1,4 +1,16 @@
-# LUKART WORK — controlled drafting and validation
+# LUKART WORK — controlled drafting, validation and rendering
+
+Stage 11 (pakiet 0.11.0): deterministyczny Rendering Engine zgodny z Architecture Gate #25.
+Jedno `SemanticDocument` jest składane do renderer-neutral `RenderModel`, następnie do
+`LayoutTree`, z którego powstają DOCX i PDF. `OFFICIAL_PL_V1` wiąże layout i dokładne
+bajty fontu; brak lub podmiana fontu oznacza FAIL. `RenderReceipt` rozdziela
+`semantic_digest`, `render_model_digest`, `layout_digest` i hashe artefaktów.
+Renderer nie generuje treści prawnej i nie nadaje sam statusu FINAL.
+[Gotowość](docs/40-stage11-readiness.md), [implementacja](docs/41-stage11-implementation.md),
+[kryteria odbioru](docs/42-stage11-acceptance.md).
+
+Stage 11 pozostaje otwarty do czasu finalnego exact-SHA CI, niezależnego review,
+merge oraz post-merge validation.
 
 Stage 10 (pakiet 0.10.0): walidacja pomiędzy GENERATED a późniejszym renderingiem.
 `lukart_work.validation.service.ValidationEngineService` udostępnia `execute` dla jawnych
