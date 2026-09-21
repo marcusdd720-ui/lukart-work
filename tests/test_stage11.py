@@ -47,6 +47,7 @@ class Stage11RenderingTests(unittest.TestCase):
         first = subprocess.check_output(command, cwd=root, text=True).strip()
         second = subprocess.check_output(command, cwd=root, text=True).strip()
         self.assertEqual(json.loads(first), json.loads(second))
+        print("STAGE11_RENDER_IDENTITY=" + first)
 
     def test_docx_declares_single_profile_font_and_preserves_polish_text(self):
         bundle = self.engine.render(self.request, self.records)
