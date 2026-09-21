@@ -3,6 +3,7 @@ import base64
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 from io import BytesIO
+from pathlib import Path
 import json
 import os
 import subprocess
@@ -105,6 +106,21 @@ class ExtractionTests(unittest.TestCase):
             self.assertEqual(body.status, 'FAILED')
             self.assertFalse(body.fragments)
             self.assertNotIn('private text', body.model_dump_json())
+
+    def test_worker_environment_rejects_inherited_loader_path(self):
+        expected = extract(b'synthetic', 'text/plain').model_dump_json().encode()
+        with patch.dict(os.environ, {'LD_LIBRARY_PATH': '/tmp/untrusted-loader-path'}, clear=False):
+            with patch('lukart_work.ingestion.service.subprocess.run',
+                       return_value=subprocess.CompletedProcess([], 0, expected)) as run:
+                body = parse_isolated(b'synthetic', 'text/plain')
+        self.assertEqual(body.status, 'EXTRACTED')
+        worker_env = run.call_args.kwargs['env']
+        trusted_lib = Path(sys.base_prefix) / 'lib'
+        if sys.platform != 'win32' and trusted_lib.is_dir():
+            self.assertEqual(worker_env.get('LD_LIBRARY_PATH'), str(trusted_lib))
+            self.assertNotEqual(worker_env.get('LD_LIBRARY_PATH'), '/tmp/untrusted-loader-path')
+        else:
+            self.assertNotIn('LD_LIBRARY_PATH', worker_env)
 
     def test_worker_timeout_and_bad_output_are_safe(self):
         with patch('lukart_work.ingestion.service.subprocess.run', side_effect=subprocess.TimeoutExpired('parser', 15)):
