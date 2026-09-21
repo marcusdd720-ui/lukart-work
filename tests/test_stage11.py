@@ -48,9 +48,9 @@ class Stage11RenderingTests(unittest.TestCase):
         second = subprocess.check_output(command, cwd=root, text=True).strip()
         actual = json.loads(first)
         self.assertEqual(actual, json.loads(second))
+        print("STAGE11_RENDER_IDENTITY=" + first)
         golden = json.loads((root / "tests/golden_cases/stage11_render_identity.json").read_text(encoding="utf-8"))
         self.assertEqual(actual, golden)
-        print("STAGE11_RENDER_IDENTITY=" + first)
 
     def test_docx_declares_single_profile_font_and_preserves_polish_text(self):
         bundle = self.engine.render(self.request, self.records)
@@ -84,6 +84,7 @@ class Stage11RenderingTests(unittest.TestCase):
         self.assertEqual(receipt.draft, self.request.document.draft)
         self.assertEqual(receipt.snapshot_hash, self.request.document.snapshot_hash)
         self.assertEqual(receipt.render_profile, profile_pin(OFFICIAL_PL_V1))
+        self.assertEqual(receipt.authorization_hash, self.request.authorization_hash)
         self.assertEqual(tuple(a.format for a in receipt.artifacts), ("DOCX", "PDF"))
         self.assertEqual(receipt.artifacts[0].byte_length, len(bundle.docx))
         self.assertEqual(receipt.artifacts[1].byte_length, len(bundle.pdf))
@@ -92,7 +93,11 @@ class Stage11RenderingTests(unittest.TestCase):
 
     def test_presentation_change_does_not_change_semantic_digest(self):
         first = self.engine.render(self.request, self.records)
-        altered_profile = OFFICIAL_PL_V1.model_copy(update={"body_font_pt": 12})
+        altered_styles = tuple(
+            style.model_copy(update={"font_size_pt": 12}) if style.token == "document.body" else style
+            for style in OFFICIAL_PL_V1.styles
+        )
+        altered_profile = OFFICIAL_PL_V1.model_copy(update={"styles": altered_styles})
         altered_request = RenderRequest(
             document=self.request.document,
             profile=profile_pin(altered_profile),
@@ -104,6 +109,25 @@ class Stage11RenderingTests(unittest.TestCase):
         self.assertNotEqual(first.meta.receipt.layout_digest, second.meta.receipt.layout_digest)
         self.assertNotEqual(first.meta.receipt.artifacts[0].content_hash, second.meta.receipt.artifacts[0].content_hash)
         self.assertNotEqual(first.meta.receipt.artifacts[1].content_hash, second.meta.receipt.artifacts[1].content_hash)
+
+    def test_layout_formatting_is_controlled_by_profile_tokens(self):
+        bundle = self.engine.render(self.request, self.records)
+        token_map = {style.token: style for style in OFFICIAL_PL_V1.styles}
+        for block in bundle.meta.layout.blocks:
+            self.assertIn(block.style_token, token_map)
+        self.assertEqual(
+            {block.style_token for block in bundle.meta.layout.blocks},
+            {
+                "document.heading.primary",
+                "document.heading.secondary",
+                "document.party_block",
+                "document.request",
+                "document.body",
+                "document.legal_basis",
+                "document.signature",
+                "document.attachment",
+            },
+        )
 
     def test_missing_record_fails_closed(self):
         records = dict(self.records)
@@ -139,7 +163,11 @@ class Stage11RenderingTests(unittest.TestCase):
             self.engine.render(bad, self.records)
 
     def test_profile_substitution_fails_closed(self):
-        mutated = OFFICIAL_PL_V1.model_copy(update={"body_font_pt": 12})
+        mutated_styles = tuple(
+            style.model_copy(update={"font_size_pt": 12}) if style.token == "document.body" else style
+            for style in OFFICIAL_PL_V1.styles
+        )
+        mutated = OFFICIAL_PL_V1.model_copy(update={"styles": mutated_styles})
         bad = RenderRequest(
             document=self.request.document,
             profile=self.request.profile,
