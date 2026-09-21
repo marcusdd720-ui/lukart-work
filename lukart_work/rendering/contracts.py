@@ -205,6 +205,7 @@ class RenderingExecution(Value):
     tenant_id: UUID
     case_id: UUID
     input_case_sequence: Annotated[int, Field(ge=1)]
+    request_hash: Hash
     draft: Ref
     draft_hash: Hash
     validation_run_id: UUID
