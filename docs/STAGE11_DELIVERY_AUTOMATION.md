@@ -78,11 +78,15 @@ The historical PR #17 bootstrap exception and the pre-zero-cost remediation bran
 retired. The sole current procedure-only exception is
 `codex/stage11-case1-zero-cost-verified` at exact base
 `74364cb7b648feaff30cff465a5beade8d5f3498`. It requires a nonempty complete diff
-restricted to the seven current `PROCEDURE_BOOTSTRAP_PATHS` in the control script:
+restricted to the nine current `PROCEDURE_BOOTSTRAP_PATHS` in the control script:
 this policy, the control script, its guard tests, the two deterministic generated
 Stage 10 evidence files (`reports/stage10-status.json` and `reports/manifest.sha256.json`),
 and exactly the two assurance workflow files whose runner selectors are bound to the
-zero-cost trusted self-hosted runner (`stage02.yml` and `stage11-assurance.yml`).
+zero-cost trusted self-hosted runner (`stage02.yml` and `stage11-assurance.yml`), plus
+the isolated-worker compatibility fix (`lukart_work/ingestion/service.py`) and its
+single regression (`tests/test_stage04.py`). The worker fix derives the child loader
+path only from the trusted interpreter prefix and does not inherit caller-controlled
+`LD_LIBRARY_PATH`.
 
 Any product path, any other workflow modification, generated-evidence modification
 outside those two named deterministic reports, deletion or other path outside that
