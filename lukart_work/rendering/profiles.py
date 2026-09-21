@@ -1,30 +1,30 @@
-"""Versioned render profiles.  No document content belongs here."""
+"""Versioned render profiles. No document content belongs here.
+
+OFFICIAL_PL_V1 binds exact font bytes.  A host with a different or missing font must fail
+closed and requires an explicit profile-version change rather than silent substitution.
+"""
 from __future__ import annotations
 
 from hashlib import sha256
 from pathlib import Path
-
-import reportlab
 
 from lukart_work.domain.models import VersionPin
 from lukart_work.validation.rules import digest
 
 from .contracts import RenderProfile
 
-
-def _reportlab_font(name: str) -> Path:
-    path = Path(reportlab.__file__).resolve().parent / "fonts" / name
-    if not path.is_file():
-        raise RuntimeError(f"RENDER_FONT_MISSING:{name}")
-    return path
+_FONT_ROOT = Path("/usr/share/fonts/truetype/liberation")
+_REGULAR = _FONT_ROOT / "LiberationSerif-Regular.ttf"
+_BOLD = _FONT_ROOT / "LiberationSerif-Bold.ttf"
+_REGULAR_SHA256 = "9caef765d2e891c10dd73658894f01e660fe0c1c83e0bda7d6edf561d8f623d4"
+_BOLD_SHA256 = "443a4dbd694b6e4689925947b456e0532e10b19c90fa32eb39ea6c2cd9db9ebd"
 
 
 def _hash(path: Path) -> str:
+    if not path.is_file():
+        raise RuntimeError(f"RENDER_FONT_MISSING:{path}")
     return sha256(path.read_bytes()).hexdigest()
 
-
-_REGULAR = _reportlab_font("Vera.ttf")
-_BOLD = _reportlab_font("VeraBd.ttf")
 
 OFFICIAL_PL_V1 = RenderProfile(
     profile_id="OFFICIAL_PL",
@@ -36,9 +36,9 @@ OFFICIAL_PL_V1 = RenderProfile(
     margin_right_mm=20,
     margin_bottom_mm=22,
     margin_left_mm=25,
-    font_family="Bitstream Vera Sans",
-    font_regular_sha256=_hash(_REGULAR),
-    font_bold_sha256=_hash(_BOLD),
+    font_family="Liberation Serif",
+    font_regular_sha256=_REGULAR_SHA256,
+    font_bold_sha256=_BOLD_SHA256,
     body_font_pt=11,
     heading_font_pt=12,
     title_font_pt=13,
@@ -53,11 +53,16 @@ OFFICIAL_PL_V1 = RenderProfile(
 def profile_font_paths(profile: RenderProfile) -> tuple[Path, Path]:
     if (profile.profile_id, profile.version) != (OFFICIAL_PL_V1.profile_id, OFFICIAL_PL_V1.version):
         raise RuntimeError("RENDER_PROFILE_UNSUPPORTED")
-    regular, bold = _REGULAR, _BOLD
-    if _hash(regular) != profile.font_regular_sha256 or _hash(bold) != profile.font_bold_sha256:
+    if profile.font_regular_sha256 != _REGULAR_SHA256 or profile.font_bold_sha256 != _BOLD_SHA256:
+        raise RuntimeError("RENDER_PROFILE_FONT_PIN_INVALID")
+    if _hash(_REGULAR) != profile.font_regular_sha256 or _hash(_BOLD) != profile.font_bold_sha256:
         raise RuntimeError("RENDER_FONT_HASH_MISMATCH")
-    return regular, bold
+    return _REGULAR, _BOLD
 
 
 def profile_pin(profile: RenderProfile = OFFICIAL_PL_V1) -> VersionPin:
-    return VersionPin(id=f"render-profile:{profile.profile_id}", version=profile.version, content_hash=digest(profile))
+    return VersionPin(
+        id=f"render-profile:{profile.profile_id}",
+        version=profile.version,
+        content_hash=digest(profile),
+    )
