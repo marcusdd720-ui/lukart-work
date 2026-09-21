@@ -255,11 +255,13 @@ After post-merge assurance:
 
 1. the Stage 11 branch must still point to the reviewed candidate SHA;
 2. the PR must be CLOSED and still bind the expected Stage 11 head;
-3. the exact `main` landing SHA and candidate SHA must both remain unchanged through a
+3. cleanup receives the reviewed `base_sha` explicitly and the landing commit parents
+   must equal exactly `[base_sha]`;
+4. the exact `main` landing SHA and candidate SHA must both remain unchanged through a
    final ref re-read after the potentially slow assurance calls;
-4. the landing tree must equal the reviewed candidate tree;
-5. no external post-merge comment is consumed as trusted input;
-6. automated cleanup records `ref_disposition=PRESERVED_NO_CAS_DELETE` and performs
+5. the landing tree must equal the reviewed candidate tree;
+6. no external post-merge comment is consumed as trusted input;
+7. automated cleanup records `ref_disposition=PRESERVED_NO_CAS_DELETE` and performs
    no DELETE or source-ref mutation.
 
 Optional later branch retirement is outside the Stage 11 assurance transaction. Until a
