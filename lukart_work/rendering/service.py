@@ -10,7 +10,8 @@ from pydantic import ValidationError
 
 from lukart_work.core.service import safe_error
 from lukart_work.storage.objects import ObjectStore, RetentionPolicies, artifact_id
-from lukart_work.validation.contracts import ValidationExecution
+from lukart_work.validation.contracts import ValidationExecution, ValidationProjection
+from lukart_work.validation.service import ValidationEngineService
 from lukart_work.validation.rules import Violation, digest, strict_json
 from .adapters import render_format
 from .compiler import build_semantic_document, compile_render_tree
@@ -71,6 +72,23 @@ class RenderingEngineService:
             correlation = request.meta.correlation_id
             request_hash = digest(request)
             execution_id = uuid5(request.meta.idempotency_key, "rendering-execution")
+
+            projection = ValidationEngineService(self.repository, self.authority).query(
+                json.dumps({
+                    "contract": "urn:lukart:work:ValidationQuery:1.0.0",
+                    "operation": "GetValidation",
+                    "tenant_id": str(request.meta.tenant_id),
+                    "case_id": str(request.meta.case_id),
+                    "run_id": str(request.validation_run_id),
+                }),
+                token,
+            )
+            if (
+                not isinstance(projection, ValidationProjection)
+                or projection.freshness != "CURRENT"
+                or not projection.eligible_for_approval
+            ):
+                raise Violation("GATE_DENIED")
 
             with self.authority.session(token) as principal:
                 principal.require(request.meta.tenant_id, request.meta.case_id, request.operation)
