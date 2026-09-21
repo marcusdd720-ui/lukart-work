@@ -1306,10 +1306,16 @@ class PostMergeRemediationRegressionTests(unittest.TestCase):
                 patch.object(CONTROL, "_procedure_identity", return_value=("policy", "procedure")), \
                 patch.object(CONTROL, "_post_comment", side_effect=lambda issue, body: comments.append(body)), \
                 patch.object(CONTROL, "api") as api:
+            with self.assertRaisesRegex(CONTROL.ControlError, "expected base SHA"):
+                CONTROL.cleanup(
+                    {},
+                    17,
+                    {"branch": self.BRANCH, "branch_sha": self.HEAD, "main_sha": main_sha, "base_sha": "d" * 40},
+                )
             CONTROL.cleanup(
                 {},
                 17,
-                {"branch": self.BRANCH, "branch_sha": self.HEAD, "main_sha": main_sha},
+                {"branch": self.BRANCH, "branch_sha": self.HEAD, "main_sha": main_sha, "base_sha": self.BASE},
             )
 
         receipt_input.assert_not_called()
@@ -1353,7 +1359,7 @@ class PostMergeRemediationRegressionTests(unittest.TestCase):
                 CONTROL.cleanup(
                     {},
                     17,
-                    {"branch": self.BRANCH, "branch_sha": self.HEAD, "main_sha": main_sha},
+                    {"branch": self.BRANCH, "branch_sha": self.HEAD, "main_sha": main_sha, "base_sha": self.BASE},
                 )
 
         receipt_input.assert_not_called()

@@ -856,12 +856,13 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
 
 
 def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> None:
-    required = {"branch", "branch_sha", "main_sha"}
+    required = {"branch", "branch_sha", "main_sha", "base_sha"}
     if set(args) != required:
         raise ControlError(f"cleanup requires exactly {sorted(required)}")
     branch = args["branch"]
     branch_sha = _require_sha(args["branch_sha"], "branch_sha")
     main_sha = _require_sha(args["main_sha"], "main_sha")
+    base_sha = _require_sha(args["base_sha"], "base_sha")
     if not branch.startswith(STAGE_BRANCH_PREFIX):
         raise ControlError("cleanup branch is outside Stage 11 namespace")
 
@@ -886,8 +887,8 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
     main_commit = _commit(main_sha)
     branch_commit = _commit(branch_sha)
     parents = [p["sha"] for p in main_commit.get("parents", [])]
-    if len(parents) != 1:
-        raise ControlError("atomic landing commit must have exactly one base parent")
+    if parents != [base_sha]:
+        raise ControlError("atomic landing commit parent does not equal expected base SHA")
     if not main_commit["commit"]["verification"].get("verified"):
         raise ControlError("atomic landing commit is not GitHub-verified")
     if not branch_commit["commit"]["verification"].get("verified"):
@@ -914,6 +915,7 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
                 "STAGE11_POST_MERGE_VERIFICATION: PASS",
                 f"sha={main_sha}",
                 f"candidate_sha={branch_sha}",
+                f"base_sha={base_sha}",
                 f"tree_sha={main_commit['commit']['tree']['sha']}",
                 f"policy_sha256={policy_digest}",
                 f"procedure_sha256={procedure_digest}",
@@ -930,6 +932,7 @@ def cleanup(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> N
                 f"sha={main_sha}",
                 f"preserved_branch={branch}",
                 f"preserved_branch_sha={branch_sha}",
+                f"base_sha={base_sha}",
                 "ref_disposition=PRESERVED_NO_CAS_DELETE",
                 "source_ref_mutation=NONE",
             ]
