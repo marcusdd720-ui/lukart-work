@@ -16,6 +16,7 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Mm, Pt
 from reportlab import pdfbase
@@ -295,6 +296,36 @@ def render_docx(layout: LayoutTree, profile: RenderProfile = OFFICIAL_PL_V1) -> 
     section.bottom_margin = Mm(profile.margin_bottom_mm)
     section.left_margin = Mm(profile.margin_left_mm)
 
+    if profile.header_text:
+        header = section.header.paragraphs[0]
+        header.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = header.add_run(profile.header_text)
+        _set_run_font(run, profile, size=profile.header_footer_font_pt, bold=False)
+
+    footer = section.footer.paragraphs[0]
+    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    if profile.footer_text:
+        run = footer.add_run(profile.footer_text)
+        _set_run_font(run, profile, size=profile.header_footer_font_pt, bold=False)
+    if profile.page_numbers:
+        if profile.footer_text:
+            separator = footer.add_run(" — ")
+            _set_run_font(separator, profile, size=profile.header_footer_font_pt, bold=False)
+        page_run = footer.add_run()
+        _set_run_font(page_run, profile, size=profile.header_footer_font_pt, bold=False)
+        begin = OxmlElement("w:fldChar")
+        begin.set(qn("w:fldCharType"), "begin")
+        instruction = OxmlElement("w:instrText")
+        instruction.set(qn("xml:space"), "preserve")
+        instruction.text = " PAGE "
+        separate = OxmlElement("w:fldChar")
+        separate.set(qn("w:fldCharType"), "separate")
+        display = OxmlElement("w:t")
+        display.text = "1"
+        end = OxmlElement("w:fldChar")
+        end.set(qn("w:fldCharType"), "end")
+        page_run._r.extend((begin, instruction, separate, display, end))
+
     # Remove the package's initial empty paragraph so artifact identity depends only on layout.
     body = document._element.body
     for paragraph in list(body.findall(qn("w:p"))):
@@ -399,10 +430,29 @@ def render_pdf(layout: LayoutTree, profile: RenderProfile = OFFICIAL_PL_V1) -> b
     pdf.setSubject("")
 
     y = top
+    page_number = 1
+
+    def draw_running_elements() -> None:
+        pdf.setFont(regular_name, profile.header_footer_font_pt)
+        if profile.header_text:
+            pdf.drawCentredString(page_width / 2, page_height - profile.footer_offset_mm * mm, profile.header_text)
+        footer_parts = []
+        if profile.footer_text:
+            footer_parts.append(profile.footer_text)
+        if profile.page_numbers:
+            footer_parts.append(str(page_number))
+        if footer_parts:
+            pdf.drawCentredString(
+                page_width / 2,
+                profile.footer_offset_mm * mm,
+                " — ".join(footer_parts),
+            )
 
     def new_page() -> None:
-        nonlocal y
+        nonlocal y, page_number
+        draw_running_elements()
         pdf.showPage()
+        page_number += 1
         y = top
 
     styles = profile_styles(profile)
@@ -467,6 +517,7 @@ def render_pdf(layout: LayoutTree, profile: RenderProfile = OFFICIAL_PL_V1) -> b
             y -= line_height
         y -= after
 
+    draw_running_elements()
     pdf.save()
     return output.getvalue()
 
