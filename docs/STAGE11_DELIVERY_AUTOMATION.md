@@ -60,7 +60,8 @@ The candidate SHA is a first-class identity and must be validated directly.
    - `stage11-rendering` from `.github/workflows/stage11-assurance.yml`.
 7. Gate verification checks both the trusted check producer (`github-actions`) and the
    workflow-run provenance. Pre-merge evidence must come from `workflow_dispatch` runs
-   whose workflow path and `head_sha` match the expected candidate exactly.
+   whose workflow path, `head_sha` and `head_branch` match the expected candidate and
+   reviewed Stage 11 branch exactly.
 8. Missing, stale, nonterminal, failed, untrusted, wrong-event, wrong-workflow, or
    differently bound evidence blocks merge.
 
@@ -70,7 +71,8 @@ instead of `workflow_dispatch`, but only for
 `codex/stage11-case1-zero-cost-verified`, exact base
 `74364cb7b648feaff30cff465a5beade8d5f3498`, a GitHub-verified candidate and the
 exact ten-file all-`modified` bootstrap scope. Both required workflow paths must be
-terminal SUCCESS on the exact same candidate SHA; evidence families are never mixed.
+terminal SUCCESS on the exact same candidate SHA and exact canonical bootstrap branch;
+evidence families are never mixed.
 This exception exists only to install the trusted procedure when the old default-branch
 control cannot dispatch/install its own remediation. Normal Stage 11 continues to
 require `workflow_dispatch`.
@@ -247,8 +249,9 @@ After atomic landing, Stage 11 remains open until:
 5. Required post-merge checks are terminal SUCCESS on the exact resulting `main` SHA.
 6. Normal guarded landing requires a complete exact-SHA `workflow_dispatch` evidence
    family for both required workflow paths. The one-time external bootstrap transport
-   may instead use a complete trusted exact-SHA `push` evidence family. Evidence from
-   different event families is not mixed to manufacture PASS.
+   may instead use a complete trusted exact-SHA `push` evidence family. Post-landing
+   evidence must also bind `head_branch=main`. Evidence from different branches or event
+   families is not mixed to manufacture PASS.
 7. The control itself records the post-merge receipt only after recomputing these
    machine-verifiable conditions. External comments are never trusted as authorization
    or evidence for this step.
