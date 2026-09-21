@@ -31,7 +31,7 @@ The renderer serializes exactly the fields already present in `SemanticDocument`
 
 DOCX is generated as a minimal deterministic OOXML package with fixed ZIP timestamps and explicit A4/margin settings. Unicode text is stored as UTF-8 XML.
 
-PDF is generated with ReportLab in invariant mode. The renderer embeds the packaged Bitstream Vera TTF from ReportLab so Polish Unicode text does not depend on a system font. Output is A4 with bounded margins and page numbers.
+PDF is generated with ReportLab in invariant mode. The PDF renderer requires the Ubuntu 24.04 DejaVu Sans font at the profile-pinned path `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`; absence fails closed rather than falling back to a font that cannot represent Polish text. Output is A4 with bounded margins and page numbers. The runtime image is part of the execution environment and the rendered bytes remain hash-bound evidence.
 
 HTML is static escaped markup with no script or external active content. TXT is exact UTF-8 semantic text.
 
