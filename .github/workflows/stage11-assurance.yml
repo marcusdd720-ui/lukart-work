@@ -111,6 +111,9 @@ jobs:
       - name: Delivery-control guard tests
         run: python -B -X utf8 -m unittest -v tests.test_stage11_delivery_control
 
+      - name: Export contracts
+        run: python -B -X utf8 export_contracts.py
+
       - name: Stage 11 rendering tests
         shell: bash
         env:
@@ -122,7 +125,6 @@ jobs:
           import os
           from pathlib import Path
           import subprocess
-          import unittest
           from scripts.stage11_delivery_control import (
               PROCEDURE_BOOTSTRAP_BASE, PROCEDURE_BOOTSTRAP_BRANCH, require_stage11_tests,
           )
@@ -139,11 +141,40 @@ jobs:
           mode = require_stage11_tests(branch, present, base_sha=PROCEDURE_BOOTSTRAP_BASE, changed_paths=paths)
           print(f"stage11_assurance_mode={mode}", flush=True)
           if mode == "RENDERING_TESTS_REQUIRED":
-              suite = unittest.defaultTestLoader.loadTestsFromName("tests.test_stage11")
-              result = unittest.TextTestRunner(verbosity=2).run(suite)
-              if not result.wasSuccessful() or result.skipped or not result.testsRun:
-                  raise SystemExit("Stage 11 rendering evidence incomplete or failed")
+              subprocess.run(
+                  ["python", "-B", "-X", "utf8", "scripts/verify_stage11.py"],
+                  check=True,
+              )
           PY
+
+      - name: Independent JSON Schema validation
+        run: python -B -X utf8 scripts/validate_stage11_schemas.py
+
+      - name: Package verification
+        run: python -B -X utf8 verify_package.py
+
+      - name: Refresh global integrity manifest
+        run: python -B -X utf8 scripts/refresh_manifest.py
+
+      - name: Stage 11 integrity
+        run: python -B -X utf8 scripts/check_stage11_integrity.py
 
       - name: Whitespace check
         run: git diff --check
+
+      - name: Generated evidence is reproducible
+        run: |
+          git diff --exit-code
+          test -z "$(git ls-files --others --exclude-standard -- schemas reports examples tests/golden_cases docs/02-entity-catalog.md)"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage11-generated
+          path: |
+            schemas/Render*.schema.json
+            schemas/Rendering*.schema.json
+            reports/stage11-status.json
+            reports/stage11-schema-validation.json
+            reports/package-validation.json
+            reports/manifest.sha256.json

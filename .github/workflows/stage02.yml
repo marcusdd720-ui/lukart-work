@@ -168,5 +168,7 @@ jobs:
             reports/package-validation.json
             reports/manifest.sha256.json
             schemas/Validation*.schema.json
+            schemas/Render*.schema.json
+            schemas/Rendering*.schema.json
             reports/stage10-status.json
             reports/stage10-schema-validation.json
