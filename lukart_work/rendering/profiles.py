@@ -16,8 +16,8 @@ from .contracts import RenderProfile
 _FONT_ROOT = Path("/usr/share/fonts/truetype/liberation")
 _REGULAR = _FONT_ROOT / "LiberationSerif-Regular.ttf"
 _BOLD = _FONT_ROOT / "LiberationSerif-Bold.ttf"
-_REGULAR_SHA256 = "9caef765d2e891c10dd73658894f01e660fe0c1c83e0bda7d6edf561d8f623d4"
-_BOLD_SHA256 = "443a4dbd694b6e4689925947b456e0532e10b19c90fa32eb39ea6c2cd9db9ebd"
+_REGULAR_SHA256 = "705903ae1382f0150f115d6f10a30f5b2f3d6ade649c474afe6366c39174fb65"
+_BOLD_SHA256 = "9e66c25e20868756bf12eb24a520a4552727c9cd108f577f7ae33e3c0110e39c"
 
 
 def _hash(path: Path) -> str:
