@@ -65,6 +65,18 @@ def _sha(data: bytes) -> str:
     return sha256(data).hexdigest()
 
 
+def authorization_binding(document: SemanticDocument, profile: "VersionPin") -> str:
+    """Exact input binding produced by the trusted pre-render authorization boundary.
+
+    This is an integrity binding, not an authentication mechanism. The public/trusted
+    service boundary remains responsible for deciding that rendering is authorized.
+    """
+    return digest({
+        "semantic_digest": digest(document),
+        "render_profile": profile.model_dump(mode="json"),
+    })
+
+
 def renderer_pin() -> "VersionPin":
     from lukart_work.domain.models import VersionPin
 
@@ -564,6 +576,8 @@ class RenderingEngine:
         records: Mapping[Ref, object],
         profile: RenderProfile = OFFICIAL_PL_V1,
     ) -> RenderedBundle:
+        if request.authorization_hash != authorization_binding(request.document, request.profile):
+            raise Violation("GATE_DENIED")
         if request.profile != profile_pin(profile):
             raise Violation("INVALID_HASH")
         model = assemble_render_model(request.document, records, profile)
