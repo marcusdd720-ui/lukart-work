@@ -612,22 +612,6 @@ def _check_gate(sha: str, *, required_event: str, expected_branch: str) -> None:
             and run.get("name") in REQUIRED_STAGE11_CHECKS
         )
     ]
-    nonterminal = [
-        run["name"]
-        for run in trusted_runs
-        if run.get("status") != "completed"
-    ]
-    failing = [
-        run["name"]
-        for run in trusted_runs
-        if run.get("status") == "completed"
-        and run.get("conclusion") not in {"success", "neutral", "skipped"}
-    ]
-    if nonterminal or failing:
-        raise ControlError(
-            f"checks are not terminal-green: pending={nonterminal}, failing={failing}"
-        )
-
     by_name: dict[str, list[dict[str, Any]]] = {}
     for run in trusted_runs:
         by_name.setdefault(run["name"], []).append(run)
@@ -658,9 +642,12 @@ def _check_gate(sha: str, *, required_event: str, expected_branch: str) -> None:
             and run.get("event") == required_event
             and run.get("path") == expected_path
         ]
-        if not any(
-            run.get("status") == "completed" and run.get("conclusion") == "success"
-            for run in matching
+        if (
+            not matching
+            or any(
+                run.get("status") != "completed" or run.get("conclusion") != "success"
+                for run in matching
+            )
         ):
             workflow_failures.append(
                 {
@@ -668,6 +655,7 @@ def _check_gate(sha: str, *, required_event: str, expected_branch: str) -> None:
                     "path": expected_path,
                     "event": required_event,
                     "branch": expected_branch,
+                    "matching_runs": len(matching),
                 }
             )
     if workflow_failures:
