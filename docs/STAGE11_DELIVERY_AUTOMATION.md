@@ -66,11 +66,14 @@ The candidate SHA is a first-class identity and must be validated directly.
    manufacture PASS or poison the correct evidence.
 8. Missing, stale, nonterminal, failed, untrusted, wrong-event, wrong-workflow, or
    differently bound evidence blocks merge.
+9. Check-run, workflow-run and dispatch-correlation listings are fully paginated.
+   Evidence outside the first 100 results cannot be silently ignored, including a
+   failed exact-provenance run on a later page.
 
 The sole external Case 1 bootstrap is different only at the event transport boundary:
 `check_procedure_bootstrap_candidate` permits a complete `push` evidence family
 instead of `workflow_dispatch`, but only for
-`codex/stage11-case1-zero-cost-verified`, exact base
+`codex/stage11-case1-bootstrap-pagination-repair`, exact base
 `74364cb7b648feaff30cff465a5beade8d5f3498`, a GitHub-verified candidate and the
 exact ten-file all-`modified` bootstrap scope. Both required workflow paths must be
 terminal SUCCESS on the exact same candidate SHA and exact canonical bootstrap branch;
@@ -91,7 +94,7 @@ errors or skips. Delivery-control tests cannot substitute for rendering tests.
 
 The historical PR #17 bootstrap exception and the pre-zero-cost remediation branch are
 retired. The sole current procedure-only exception is
-`codex/stage11-case1-zero-cost-verified` at exact base
+`codex/stage11-case1-bootstrap-pagination-repair` at exact base
 `74364cb7b648feaff30cff465a5beade8d5f3498`. It requires a nonempty complete diff
 restricted to the ten current `PROCEDURE_BOOTSTRAP_PATHS` in the control script:
 this policy, the control script, its guard tests, the two deterministic generated
@@ -110,12 +113,15 @@ exact set blocks the exception. The workflow reports
 `PROCEDURE_ONLY_BOOTSTRAP`; this is not rendering validation.
 
 For this one Case 1 remediation only, the same mode is permitted on `main` after
-atomic landing when the complete diff from exact base
-`74364cb7b648feaff30cff465a5beade8d5f3498` is exactly the same ten paths.
-An empty, partial, additional, renamed or deleted path set fails closed. This bounded
-post-landing exception certifies only installation of the trusted remediation
-procedure; it does not certify the Stage 11 rendering product. Ordinary Stage 11
-delivery still requires real `tests/test_stage11.py`.
+atomic landing only when the landing commit is the direct single child of exact base
+`74364cb7b648feaff30cff465a5beade8d5f3498` and the complete no-renames
+name-status diff from that base contains exactly the same ten paths, each with status
+`M`. A later descendant of the landing commit cannot reuse the exception; an empty,
+partial, additional, added, renamed or deleted path set fails closed. The landing and
+cleanup controls still require the landing tree to equal the exact reviewed candidate
+tree. This bounded post-landing exception certifies only installation of the trusted
+remediation procedure; it does not certify the Stage 11 rendering product. Ordinary
+Stage 11 delivery still requires real `tests/test_stage11.py`.
 
 ## Promotion transaction contract
 
