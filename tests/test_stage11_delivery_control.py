@@ -607,7 +607,8 @@ class P1RegressionTests(unittest.TestCase):
                 self.assertEqual(api.call_args_list, [unittest.mock.call("GET", "")])
 
     def test_stage11_missing_tests_fail_closed_for_ordinary_branches(self):
-        for branch in ("codex/stage11-rendering", "codex/stage11-procedure-bootstrap-pr15-copy", "main"):
+        for branch in ("codex/stage11-rendering", "codex/stage11-postmerge-assurance-remediation-verified",
+                       "codex/stage11-procedure-bootstrap-pr15-copy", "main"):
             with self.subTest(branch=branch), self.assertRaises(CONTROL.ControlError):
                 CONTROL.require_stage11_tests(branch, False, base_sha=CONTROL.PROCEDURE_BOOTSTRAP_BASE,
                                              changed_paths=list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS))
@@ -615,6 +616,9 @@ class P1RegressionTests(unittest.TestCase):
     def test_stage11_bootstrap_exception_requires_exact_base_and_procedure_only_diff(self):
         branch = CONTROL.PROCEDURE_BOOTSTRAP_BRANCH
         base = CONTROL.PROCEDURE_BOOTSTRAP_BASE
+        self.assertEqual(len(CONTROL.PROCEDURE_BOOTSTRAP_PATHS), 7)
+        self.assertIn(".github/workflows/stage02.yml", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
+        self.assertIn(".github/workflows/stage11-assurance.yml", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertEqual(CONTROL.require_stage11_tests(branch, False, base_sha=base,
                          changed_paths=list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS)), "PROCEDURE_ONLY_BOOTSTRAP")
         for wrong_base, paths in ((self.BASE, list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS)),

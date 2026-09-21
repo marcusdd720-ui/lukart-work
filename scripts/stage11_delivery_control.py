@@ -37,9 +37,11 @@ CANDIDATE_WORKFLOWS = ("stage02.yml", "stage11-assurance.yml")
 # Bounded procedure-only exception for the current remediation branch.  The
 # historical PR #17 bootstrap exception is retired after merge; ordinary Stage 11
 # branches still require real rendering tests.
-PROCEDURE_BOOTSTRAP_BRANCH = "codex/stage11-postmerge-assurance-remediation-verified"
+PROCEDURE_BOOTSTRAP_BRANCH = "codex/stage11-case1-zero-cost-verified"
 PROCEDURE_BOOTSTRAP_BASE = "74364cb7b648feaff30cff465a5beade8d5f3498"
 PROCEDURE_BOOTSTRAP_PATHS = frozenset({
+    ".github/workflows/stage02.yml",
+    ".github/workflows/stage11-assurance.yml",
     "docs/STAGE11_DELIVERY_AUTOMATION.md",
     "reports/manifest.sha256.json",
     "reports/stage10-status.json",
