@@ -364,6 +364,14 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:RenderArtifactRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:RenderBundle",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -384,6 +392,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 94,
+  "json_files_parsed": 96,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }

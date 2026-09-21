@@ -1,7 +1,7 @@
 {
   "result": "PASS",
   "engine": "jsonschema 4.26.0 Draft202012Validator",
-  "schemas_checked": 94,
+  "schemas_checked": 96,
   "schema_hashes": {
     "schemas/AIRequest.schema.json": "54555e50f93fbe1e62e5ccb21f8d0c0dae253f7f511d03e2cadfa9f7f47c5ed3",
     "schemas/AIResult.schema.json": "edb50d1825d2ed46efcf3a5a26ecbb385b499cdc543af217d6907fb5c03d5bae",
@@ -70,6 +70,8 @@
     "schemas/RegistryRequest.schema.json": "0d30e612a28bede5841ac4e92fcfffb6d495e3c9595fd724836e5b1f7f40f291",
     "schemas/ReleaseReceipt.schema.json": "b99f315fa408ac199bd2f206577df69a976d25a93078c813e3ba6d349a704e50",
     "schemas/ReleaseResult.schema.json": "9cabea607c33fd1ba65d5775687fbebeed45685a96ebc57766ef64ea40c1d337",
+    "schemas/RenderArtifactRecord.schema.json": "c7469dd389941949d690b6950b6977cc6292bb7958405b56a6d7f2952b028045",
+    "schemas/RenderBundle.schema.json": "b2ece9f1560626e1caade448213c523f8af80b78711cb624247a8aacf16bf60c",
     "schemas/RenderRequest.schema.json": "a08ac7f2c61c59a65a2c4ce554eebea46d9243d156b072d2e5bcb392fe032029",
     "schemas/RenderTarget.schema.json": "55daad867c5c799a1965a5ee73a56b37c68d371f5bcb8e6ff93878a82eaeb4f4",
     "schemas/Request.schema.json": "1f71980208693c436aae871ed7caae2df19ce9eb69adc7b53a792dabb62eb6c0",
