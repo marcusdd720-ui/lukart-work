@@ -73,6 +73,34 @@ class Stage11RenderingTests(unittest.TestCase):
         self.assertIn("Syntetyczne pismo – Łódź", text)
         self.assertIn("Zażółć gęślą jaźń.", text)
 
+    def test_stage11_pdf_preserves_wrapped_long_paragraph(self):
+        document = semantic_document()
+        section = document.sections[0]
+        statement = section.statements[1].model_copy(update={
+            "text": " ".join(["Długi syntetyczny akapit"] * 30),
+        })
+        document = document.model_copy(update={
+            "sections": (section.model_copy(update={"statements": (section.statements[0], statement)}),),
+        })
+        request, auth = render_request(document)
+        result = self.engine.render(request, expected_authorization_hash=auth, formats=("PDF",))
+        extracted = " ".join(
+            " ".join((page.extract_text() or "").split())
+            for page in PdfReader(BytesIO(result.bytes_by_format["PDF"])).pages
+        )
+        self.assertIn(" ".join(statement.text.split()), extracted)
+
+    def test_stage11_pdf_rejects_unbreakable_overflow_token(self):
+        document = semantic_document()
+        section = document.sections[0]
+        statement = section.statements[1].model_copy(update={"text": "X" * 400})
+        document = document.model_copy(update={
+            "sections": (section.model_copy(update={"statements": (section.statements[0], statement)}),),
+        })
+        request, auth = render_request(document)
+        with self.assertRaisesRegex(RenderError, "RENDER_UNBREAKABLE_TOKEN"):
+            self.engine.render(request, expected_authorization_hash=auth, formats=("PDF",))
+
     def test_stage11_docx_is_a4_with_binder_margin_and_no_semantic_invention(self):
         request, auth = render_request()
         result = self.engine.render(request, expected_authorization_hash=auth, formats=("DOCX",))
