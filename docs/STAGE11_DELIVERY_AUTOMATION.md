@@ -1,6 +1,6 @@
 # Stage 11 Delivery Automation Policy
 
-Status: TRUSTED BOOTSTRAP POLICY
+Status: TRUSTED PROCEDURE POLICY
 Scope: `marcusdd720-ui/lukart-work`, Stage 11 only.
 Target branch: `main`.
 Stage branches: `codex/stage11-*`.
@@ -14,9 +14,15 @@ independent-review, provenance or repository-integrity requirements.
 
 ## Non-authority
 
-This policy does not authorize force-push to `main`, direct writes to `main`, bypassing
-failed checks, rewriting historical evidence, changing repository protection, weakening
-tests, exposing secrets, or starting Stage 12.
+This policy does not authorize force-push to `main`, non-CAS writes to `main`,
+bypassing failed checks, rewriting historical evidence, changing repository protection,
+weakening tests, exposing secrets, or starting Stage 12.
+
+The sole direct `main` mutation authorized by this policy is the guarded Stage 11
+atomic landing described below. It uses GitHub GraphQL
+`createCommitOnBranch(expectedHeadOid=<reviewed base SHA>)` only after exact-SHA CI
+and authenticated independent review have passed. A stale base must cause the mutation
+to fail without changing `main`.
 
 The delivery-control workflow is trusted procedure code. Stage 11 product promotion is
 not allowed to modify that procedure, this policy, or any workflow under
@@ -68,17 +74,19 @@ Missing `tests/test_stage11.py` fails assurance, including ordinary `codex/stage
 branches. When present, the suite must execute at least one test with no failures,
 errors or skips. Delivery-control tests cannot substitute for rendering tests.
 
-The sole pre-merge procedure-only exception is the existing PR #17 branch
-`codex/stage11-procedure-bootstrap-pr15`. It requires ancestor base
-`f9b55b1562bb9b3bf2d1db1a5cdb84690619082f` and a nonempty complete diff from that
-base restricted to the eight `PROCEDURE_BOOTSTRAP_PATHS` in the control script.
-Those are the three existing Stage 10/11 workflow files, this policy, the control
-script, its guard tests, and the two existing generated evidence reports.
-Any product/test deletion or other path outside that list blocks the exception.
-The workflow reports `PROCEDURE_ONLY_BOOTSTRAP`; this is not rendering validation.
-The exception does not apply to `main` or similarly named branches. Post-merge
-rendering assurance without product tests remains blocked; this pre-merge bootstrap
-does not award Stage 11 completion or authorize a merge.
+The historical PR #17 bootstrap exception is retired after its merge. The sole current
+procedure-only exception is
+`codex/stage11-postmerge-assurance-remediation-verified` at exact base
+`74364cb7b648feaff30cff465a5beade8d5f3498`. It requires a nonempty complete diff
+restricted to the three current `PROCEDURE_BOOTSTRAP_PATHS` in the control script:
+this policy, the control script, and its guard tests.
+
+Any product path, workflow modification, generated-evidence modification, deletion or
+other path outside that exact set blocks the exception. The workflow reports
+`PROCEDURE_ONLY_BOOTSTRAP`; this is not rendering validation. The exception does not
+apply to `main` or similarly named branches. Post-merge rendering assurance without
+real `tests/test_stage11.py` remains blocked; this exception only permits review and
+delivery of the trusted remediation procedure.
 
 ## Promotion transaction contract
 
@@ -106,9 +114,9 @@ Promotion is fail-closed.
    and merge gates remain separate and mandatory.
 9. No failure may be converted into implicit PASS.
 
-## Guarded merge contract
+## Guarded atomic landing contract
 
-A Stage 11 merge is eligible only when all of the following are true:
+A Stage 11 landing is eligible only when all of the following are true:
 
 1. PR targets `main` and its head branch matches `codex/stage11-*`.
 2. PR is open and not draft.
@@ -118,8 +126,19 @@ A Stage 11 merge is eligible only when all of the following are true:
 6. Required Stage 11 checks for that exact head SHA are terminal SUCCESS.
 7. An authenticated independent review receipt binds that exact head and base SHA,
    with `p0=0` and `p1=0` as described below.
-8. Merge uses merge-commit semantics and binds the expected head SHA.
-9. Any mismatch, stale state, missing evidence or unknown state blocks the merge.
+8. Immediately before mutation, `main` must still equal the expected base SHA.
+9. The ordinary GitHub PR merge endpoint is not used because it can pin the PR head
+   SHA but cannot atomically require a specific base SHA.
+10. The exact reviewed candidate file changes are replayed onto `main` through
+    `createCommitOnBranch` with `expectedHeadOid=<exact reviewed base SHA>`.
+    A stale base therefore fails before any `main` write.
+11. The resulting GitHub-signed landing commit must be `verified=true`, have exactly
+    the expected base as its single parent, and have a tree identical to the reviewed
+    candidate tree.
+12. Only after that identity check may the PR be closed and a
+    `STAGE11_LANDING: PASS` receipt be emitted.
+13. Any mismatch, stale state, missing evidence, CAS failure or unknown state blocks
+    the landing.
 
 ### Independent review receipt authentication
 
@@ -167,37 +186,65 @@ and replaces promotion PASS with a narrower `DISPATCH_BOUND` receipt.
 Fresh exact-SHA CI and a new independent Case 1 review are required; no PASS transfers
 from either failed candidate.
 
+### Post-merge remediation after main 74364cb
+
+The independent post-merge audit of
+`74364cb7b648feaff30cff465a5beade8d5f3498` found no P0, but found three additional
+P1 weaknesses and one P2 cleanup-semantics defect inherited from the base procedure:
+
+- ref deletion could remove a newer concurrent branch HEAD;
+- post-merge PASS was accepted through unauthenticated substring matching;
+- the PR merge endpoint could observe the expected base and then mutate a newer `main`,
+  because only the head SHA was atomically pinned;
+- cleanup incorrectly coupled the mutable Work source ref to the signed promotion SHA.
+
+This remediation removes destructive automated ref deletion, removes external
+post-merge receipts from the trust path, replaces the non-atomic PR merge call with
+expected-head CAS landing, and removes mutable Work-source identity from cleanup.
+All four behaviors require dedicated regression coverage and fresh exact-SHA review.
+
 ## Post-merge contract
 
-After merge, Stage 11 remains open until:
+After atomic landing, Stage 11 remains open until:
 
-1. `main` contains the resulting merge commit.
-2. The merge commit is GitHub verified.
-3. The merge parents bind the pre-merge base and reviewed candidate.
-4. Required post-merge checks are terminal SUCCESS on the exact resulting `main` SHA.
-5. Post-merge workflow provenance is verified against the expected workflow paths and the
-   `push` event for that exact `main` SHA.
-6. Tree/content identity is consistent with the reviewed candidate where the merge is
-   content-only.
-7. A post-merge verification receipt records exact identities and known limitations.
+1. `main` contains the resulting landing commit.
+2. The landing commit is GitHub verified.
+3. Its sole parent equals the reviewed pre-landing base SHA.
+4. Its tree equals the reviewed candidate tree exactly.
+5. Required post-merge checks are terminal SUCCESS on the exact resulting `main` SHA.
+6. Post-merge workflow provenance is verified against the expected workflow paths and
+   the `push` event for that exact `main` SHA.
+7. The control itself records the post-merge receipt only after recomputing these
+   machine-verifiable conditions. External comments are never trusted as authorization
+   or evidence for this step.
 
 Push-triggered post-merge workflows use the resulting `main` commit SHA directly.
 
 ## Cleanup contract
 
-The Stage 11 branch may be deleted only after post-merge PASS and only when:
+GitHub's ref deletion APIs do not provide an expected-head compare-and-swap. Therefore
+Stage 11 cleanup is deliberately non-destructive.
 
-1. the branch still points to the reviewed candidate SHA;
-2. that SHA is an ancestor of the verified resulting `main`;
-3. the merged PR is CLOSED/MERGED;
-4. no newer commit appeared on the branch;
-5. cleanup itself is idempotent and fail-closed.
+After post-merge assurance:
+
+1. the Stage 11 branch must still point to the reviewed candidate SHA;
+2. the PR must be CLOSED and still bind the expected Stage 11 head;
+3. the exact `main` landing SHA and candidate SHA must both remain unchanged through a
+   final ref re-read after the potentially slow assurance calls;
+4. the landing tree must equal the reviewed candidate tree;
+5. no external post-merge comment is consumed as trusted input;
+6. automated cleanup records `ref_disposition=PRESERVED_NO_CAS_DELETE` and performs
+   no DELETE or source-ref mutation.
+
+Optional later branch retirement is outside the Stage 11 assurance transaction. Until a
+true expected-head delete primitive is available, preserving a stale branch is preferred
+to risking deletion of a newer concurrent HEAD.
 
 ## Standing authorization for Stage 11
 
-Within this exact Stage 11 scope, guarded merge and guarded branch cleanup may proceed
-automatically after all machine-verifiable gates and the exact-SHA independent review
-PASS. No additional human confirmation is required for those two bounded actions.
+Within this exact Stage 11 scope, guarded atomic landing and non-destructive cleanup may
+proceed automatically after all machine-verifiable gates and the exact-SHA independent
+review PASS. No additional human confirmation is required for those two bounded actions.
 
 Any deviation from this policy requires a new decision.
 
