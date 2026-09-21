@@ -43,7 +43,7 @@ class Stage11RenderingTests(unittest.TestCase):
 
     def test_fresh_process_reproduction_is_stable(self):
         root = Path(__file__).resolve().parents[1]
-        command = [sys.executable, "-B", "-X", "utf8", "tests/stage11_subprocess_fixture.py"]
+        command = [sys.executable, "-B", "-X", "utf8", "-m", "tests.stage11_subprocess_fixture"]
         first = subprocess.check_output(command, cwd=root, text=True).strip()
         second = subprocess.check_output(command, cwd=root, text=True).strip()
         self.assertEqual(json.loads(first), json.loads(second))
