@@ -102,3 +102,38 @@ Renderer odrzuca:
 - uszkodzony DOCX/PDF,
 - aktywną zawartość,
 - hash mismatch.
+
+
+## Semanticzne tokeny projektu dokumentu
+
+Adaptery formatów nie mają własnej ukrytej tabeli typografii. Każdy `LayoutBlock`
+wskazuje `style_token`, a pełna polityka wizualna jest zdefiniowana w wersjonowanym
+`RenderProfile.styles`.
+
+Każdy `StyleSpec` kontroluje:
+- rozmiar i wagę fontu,
+- interlinię,
+- odstępy,
+- wcięcia,
+- wyrównanie,
+- `keep_with_next`,
+- `keep_together`,
+- kontrolę wdów/sierot,
+- jawny page break.
+
+DOCX i PDF odczytują te same tokeny. Rola semantyczna służy do znaczenia bloku;
+parametry wizualne nie są wybierane ponownie przez adapter.
+
+## Nagłówek, stopka i numeracja
+
+`RenderProfile` jawnie określa politykę nagłówka, stopki oraz numeracji stron.
+`OFFICIAL_PL_V1` nie dodaje dekoracyjnego nagłówka ani provenance, natomiast włącza
+deterministyczną numerację stron. DOCX wykorzystuje kontrolowane pole `PAGE`; PDF
+rysuje numer strony w kontrolowanej stopce.
+
+## Powiązanie autoryzacji
+
+`RenderReceipt.authorization_hash` wiąże wynik z hashem autoryzacji wejściowego
+`RenderRequest`. Sam czysty renderer nie uwierzytelnia użytkownika i nie udaje takiej
+kompetencji; weryfikacja autoryzacji pozostaje obowiązkiem zaufanej granicy usługowej.
+Receipt nie pozwala jednak zgubić tożsamości autoryzowanego uruchomienia.
