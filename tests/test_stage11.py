@@ -120,6 +120,23 @@ class Stage11RenderingTests(unittest.TestCase):
         self.assertNotIn("<script>", html)
         self.assertNotIn("javascript:", html.lower())
 
+    def test_stage11_visible_output_does_not_expose_internal_case_ids(self):
+        request, auth = render_request()
+        result = self.engine.render(request, expected_authorization_hash=auth,
+                                    formats=("DOCX", "PDF", "HTML", "TXT"))
+        visible_texts = [
+            result.bytes_by_format["TXT"].decode("utf-8"),
+            result.bytes_by_format["HTML"].decode("utf-8"),
+            "\n".join((page.extract_text() or "") for page in PdfReader(BytesIO(result.bytes_by_format["PDF"])).pages),
+        ]
+        with ZipFile(BytesIO(result.bytes_by_format["DOCX"])) as archive:
+            visible_texts.append(archive.read("word/document.xml").decode("utf-8"))
+        for visible in visible_texts:
+            self.assertNotIn("00000000-0000-0000-", visible)
+            self.assertNotIn("Party:", visible)
+            self.assertNotIn("Request:", visible)
+            self.assertNotIn("Section:", visible)
+
     def test_stage11_bytes_are_deterministic_for_same_input(self):
         request, auth = render_request()
         first = self.engine.render(request, expected_authorization_hash=auth, formats=("DOCX", "PDF", "HTML", "TXT"))
