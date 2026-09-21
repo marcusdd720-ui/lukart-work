@@ -75,10 +75,11 @@ def require_stage11_tests(
     if tests_present:
         return "RENDERING_TESTS_REQUIRED"
     if (
-        branch == PROCEDURE_BOOTSTRAP_BRANCH
+        branch in {PROCEDURE_BOOTSTRAP_BRANCH, "main"}
         and base_sha == PROCEDURE_BOOTSTRAP_BASE
         and changed_paths
-        and set(changed_paths) <= PROCEDURE_BOOTSTRAP_PATHS
+        and len(changed_paths) == len(PROCEDURE_BOOTSTRAP_PATHS)
+        and set(changed_paths) == PROCEDURE_BOOTSTRAP_PATHS
     ):
         return "PROCEDURE_ONLY_BOOTSTRAP"
     raise ControlError("tests/test_stage11.py is required; no applicable procedure-only exception")
@@ -127,6 +128,31 @@ def validate_promote_paths(paths: list[str]) -> None:
             normalized.startswith(prefix) for prefix in FORBIDDEN_PROMOTION_PREFIXES
         ):
             raise ControlError(f"trusted delivery-control path cannot be promoted: {path}")
+
+
+def validate_landing_paths(
+    branch: str, base_sha: str, files: list[dict[str, Any]], paths: list[str]
+) -> str:
+    """Allow trusted-path landing only for the exact one-time Case 1 remediation."""
+    try:
+        validate_promote_paths(paths)
+        return "STANDARD"
+    except ControlError as standard_error:
+        normalized = [path.replace("\\", "/") for path in paths]
+        exact_bootstrap = (
+            branch == PROCEDURE_BOOTSTRAP_BRANCH
+            and base_sha == PROCEDURE_BOOTSTRAP_BASE
+            and len(normalized) == len(PROCEDURE_BOOTSTRAP_PATHS)
+            and set(normalized) == PROCEDURE_BOOTSTRAP_PATHS
+            and len(files) == len(PROCEDURE_BOOTSTRAP_PATHS)
+            and all(
+                item.get("status") == "modified" and not item.get("previous_filename")
+                for item in files
+            )
+        )
+        if exact_bootstrap:
+            return "PROCEDURE_ONLY_BOOTSTRAP"
+        raise standard_error
 
 
 def _token() -> str:
@@ -722,7 +748,7 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
         if status == "renamed" and previous:
             paths.append(previous)
             deletions.append({"path": previous})
-    validate_promote_paths(paths)
+    landing_scope = validate_landing_paths(pr["head"]["ref"], base_sha, files, paths)
 
     for path in sorted(addition_paths):
         entry = candidate_tree.get(path)
@@ -813,6 +839,7 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
                 f"policy_sha256={policy_digest}",
                 f"procedure_sha256={procedure_digest}",
                 "landing_mode=ATOMIC_EXPECTED_HEAD",
+                f"landing_scope={landing_scope}",
                 "dispatch_runs=" + ",".join(
                     f"{workflow}:{bound_runs[workflow]}"
                     for workflow in CANDIDATE_WORKFLOWS

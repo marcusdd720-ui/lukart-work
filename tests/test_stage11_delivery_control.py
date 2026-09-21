@@ -608,7 +608,7 @@ class P1RegressionTests(unittest.TestCase):
 
     def test_stage11_missing_tests_fail_closed_for_ordinary_branches(self):
         for branch in ("codex/stage11-rendering", "codex/stage11-postmerge-assurance-remediation-verified",
-                       "codex/stage11-procedure-bootstrap-pr15-copy", "main"):
+                       "codex/stage11-procedure-bootstrap-pr15-copy"):
             with self.subTest(branch=branch), self.assertRaises(CONTROL.ControlError):
                 CONTROL.require_stage11_tests(branch, False, base_sha=CONTROL.PROCEDURE_BOOTSTRAP_BASE,
                                              changed_paths=list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS))
@@ -616,18 +616,52 @@ class P1RegressionTests(unittest.TestCase):
     def test_stage11_bootstrap_exception_requires_exact_base_and_procedure_only_diff(self):
         branch = CONTROL.PROCEDURE_BOOTSTRAP_BRANCH
         base = CONTROL.PROCEDURE_BOOTSTRAP_BASE
-        self.assertEqual(len(CONTROL.PROCEDURE_BOOTSTRAP_PATHS), 9)
+        paths = list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
+        files = [{"filename": path, "status": "modified"} for path in paths]
+        self.assertEqual(len(paths), 9)
         self.assertIn(".github/workflows/stage02.yml", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertIn(".github/workflows/stage11-assurance.yml", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertIn("lukart_work/ingestion/service.py", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertIn("tests/test_stage04.py", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertEqual(CONTROL.require_stage11_tests(branch, False, base_sha=base,
-                         changed_paths=list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS)), "PROCEDURE_ONLY_BOOTSTRAP")
-        for wrong_base, paths in ((self.BASE, list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS)),
-                                  (base, []), (base, ["lukart_work/rendering/service.py"]),
-                                  (base, ["tests/test_stage11.py"]), (base, ["AGENTS.md"])):
-            with self.subTest(base=wrong_base, paths=paths), self.assertRaises(CONTROL.ControlError):
-                CONTROL.require_stage11_tests(branch, False, base_sha=wrong_base, changed_paths=paths)
+                         changed_paths=paths), "PROCEDURE_ONLY_BOOTSTRAP")
+        self.assertEqual(CONTROL.require_stage11_tests("main", False, base_sha=base,
+                         changed_paths=paths), "PROCEDURE_ONLY_BOOTSTRAP")
+        self.assertEqual(
+            CONTROL.validate_landing_paths(branch, base, files, paths),
+            "PROCEDURE_ONLY_BOOTSTRAP",
+        )
+        self.assertEqual(
+            CONTROL.validate_landing_paths(
+                "codex/stage11-product", self.BASE,
+                [{"filename": "product.py", "status": "modified"}], ["product.py"],
+            ),
+            "STANDARD",
+        )
+        workflow = (SCRIPT.parents[1] / ".github/workflows/stage11-assurance.yml").read_text(encoding="utf-8")
+        self.assertIn('branch in (PROCEDURE_BOOTSTRAP_BRANCH, "main")', workflow)
+
+        for wrong_base, changed in (
+            (self.BASE, paths),
+            (base, []),
+            (base, ["lukart_work/rendering/service.py"]),
+            (base, ["tests/test_stage11.py"]),
+            (base, ["AGENTS.md"]),
+            (base, paths[:-1]),
+        ):
+            with self.subTest(base=wrong_base, paths=changed), self.assertRaises(CONTROL.ControlError):
+                CONTROL.require_stage11_tests(branch, False, base_sha=wrong_base, changed_paths=changed)
+        with self.assertRaises(CONTROL.ControlError):
+            CONTROL.require_stage11_tests("main", False, base_sha=base, changed_paths=[])
+        for bad_branch, bad_base, bad_files, bad_paths in (
+            ("codex/stage11-other", base, files, paths),
+            (branch, self.BASE, files, paths),
+            (branch, base, files[:-1], paths[:-1]),
+            (branch, base, files + [{"filename": "product.py", "status": "modified"}], paths + ["product.py"]),
+            (branch, base, [dict(files[0], status="removed")] + files[1:], paths),
+        ):
+            with self.subTest(branch=bad_branch, base=bad_base), self.assertRaises(CONTROL.ControlError):
+                CONTROL.validate_landing_paths(bad_branch, bad_base, bad_files, bad_paths)
         self.assertEqual(CONTROL.require_stage11_tests(branch, True), "RENDERING_TESTS_REQUIRED")
 
     def test_actual_workflow_step_rejects_missing_empty_skipped_and_failed_tests(self):

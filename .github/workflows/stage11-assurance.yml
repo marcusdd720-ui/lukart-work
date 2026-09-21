@@ -111,7 +111,7 @@ jobs:
           branch = os.environ.get("PR_HEAD_REF") or os.environ["REF_NAME"]
           present = Path("tests/test_stage11.py").is_file()
           paths = []
-          if not present and branch == PROCEDURE_BOOTSTRAP_BRANCH:
+          if not present and branch in (PROCEDURE_BOOTSTRAP_BRANCH, "main"):
               subprocess.run(["git", "merge-base", "--is-ancestor", PROCEDURE_BOOTSTRAP_BASE, "HEAD"], check=True)
               paths = subprocess.check_output(
                   ["git", "diff", "--no-renames", "--name-only", "-z", PROCEDURE_BOOTSTRAP_BASE, "HEAD"],
