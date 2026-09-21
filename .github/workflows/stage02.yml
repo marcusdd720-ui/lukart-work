@@ -115,23 +115,33 @@ jobs:
         shell: bash
         run: |
           python -B -X utf8 - <<'PY'
-          import resource
+          import base64
+          import json
+          import os
+          import subprocess
           import sys
           from pathlib import Path
-          print("python=", sys.version)
-          print("rlimit_as_before=", resource.getrlimit(resource.RLIMIT_AS))
-          for line in Path("/proc/self/status").read_text().splitlines():
-              if line.startswith(("VmSize:", "VmRSS:")):
-                  print(line)
-          resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
-          print("rlimit_as_after=", resource.getrlimit(resource.RLIMIT_AS))
-          from lukart_work.ingestion.extract import extract
-          result = extract(b"synthetic text", "text/plain")
-          print("direct_extract_status=", result.status)
-          from lukart_work.ingestion.service import parse_isolated
-          isolated = parse_isolated(b"synthetic text", "text/plain")
-          print("isolated_extract_status=", isolated.status)
-          print("isolated_warnings=", isolated.warnings)
+
+          payload = json.dumps({
+              "data": base64.b64encode(b"synthetic text").decode(),
+              "media_type": "text/plain",
+          }).encode()
+          env = {
+              k: v for k, v in os.environ.items()
+              if k.upper() in {"SYSTEMROOT", "WINDIR", "TEMP", "TMP", "PATH", "LANG", "LC_ALL", "PYTHONUTF8"}
+          }
+          process = subprocess.run(
+              [sys.executable, "-B", "-m", "lukart_work.ingestion.worker"],
+              input=payload,
+              stdout=subprocess.PIPE,
+              stderr=subprocess.PIPE,
+              cwd=Path.cwd(),
+              env=env,
+              timeout=15,
+          )
+          print("worker_returncode=", process.returncode)
+          print("worker_stdout=", process.stdout.decode("utf-8", errors="replace")[:2000])
+          print("worker_stderr=", process.stderr.decode("utf-8", errors="replace")[:4000])
           PY
 
       - name: Focused Stage 09
