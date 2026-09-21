@@ -605,7 +605,10 @@ def _check_gate(sha: str, *, required_event: str) -> None:
     trusted_runs = [
         run
         for run in runs
-        if run.get("app", {}).get("slug") == "github-actions"
+        if (
+            run.get("app", {}).get("slug") == "github-actions"
+            and run.get("name") in REQUIRED_STAGE11_CHECKS
+        )
     ]
     nonterminal = [
         run["name"]

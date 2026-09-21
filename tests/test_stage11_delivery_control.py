@@ -167,6 +167,12 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                             "conclusion": "success",
                             "app": {"slug": "github-actions"},
                         },
+                        {
+                            "name": "control",
+                            "status": "in_progress",
+                            "conclusion": None,
+                            "app": {"slug": "github-actions"},
+                        },
                     ]
                 }
             if path == (
