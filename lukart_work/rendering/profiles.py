@@ -6,6 +6,7 @@ closed and requires an explicit profile-version change rather than silent substi
 from __future__ import annotations
 
 from hashlib import sha256
+import os
 from pathlib import Path
 
 from lukart_work.domain.models import VersionPin
@@ -13,7 +14,7 @@ from lukart_work.validation.rules import digest
 
 from .contracts import RenderProfile
 
-_FONT_ROOT = Path("/usr/share/fonts/truetype/liberation")
+_FONT_ROOT = Path(os.environ.get("LUKART_RENDER_FONT_DIR", "/usr/share/fonts/truetype/liberation"))
 _REGULAR = _FONT_ROOT / "LiberationSerif-Regular.ttf"
 _BOLD = _FONT_ROOT / "LiberationSerif-Bold.ttf"
 _REGULAR_SHA256 = "705903ae1382f0150f115d6f10a30f5b2f3d6ade649c474afe6366c39174fb65"
