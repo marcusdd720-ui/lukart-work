@@ -1021,6 +1021,227 @@ class P1RegressionTests(unittest.TestCase):
         self.assertEqual(scenario_count, 16)
 
 
+class PostMergeRemediationRegressionTests(unittest.TestCase):
+    HEAD = "a" * 40
+    BASE = "b" * 40
+    LANDED = "c" * 40
+    BRANCH = "codex/stage11-remediation-test"
+    OWNER = {"id": 123, "login": "owner", "type": "User"}
+
+    def review_receipt(self):
+        return {
+            "user": dict(self.OWNER),
+            "author_association": "OWNER",
+            "performed_via_github_app": None,
+            "body": (
+                "STAGE11_INDEPENDENT_REVIEW: PASS\n"
+                f"sha={self.HEAD}\n"
+                f"base_sha={self.BASE}\n"
+                "p0=0\n"
+                "p1=0\n"
+                "merge=NOT_PERFORMED"
+            ),
+        }
+
+    def pr(self, *, state="open"):
+        return {
+            "state": state,
+            "draft": False,
+            "base": {"ref": "main", "sha": self.BASE},
+            "head": {"ref": self.BRANCH, "sha": self.HEAD},
+            "merged": False,
+        }
+
+    def head_commit(self):
+        return {
+            "commit": {
+                "verification": {"verified": True},
+                "tree": {"sha": "candidate-tree"},
+            }
+        }
+
+    def landed_commit(self):
+        return {
+            "commit": {
+                "verification": {"verified": True},
+                "tree": {"sha": "candidate-tree"},
+            },
+            "parents": [{"sha": self.BASE}],
+        }
+
+    def test_atomic_landing_binds_expected_base_sha_and_avoids_pr_merge_api(self):
+        calls = []
+        comments = []
+        seen_variables = {}
+
+        def fake_api(method, path, payload=None):
+            calls.append((method, path, payload))
+            if method == "GET" and path == "":
+                return {"owner": dict(self.OWNER)}
+            if method == "GET" and path == f"/compare/{self.BASE}...{self.HEAD}":
+                return {
+                    "behind_by": 0,
+                    "ahead_by": 1,
+                    "files": [{"filename": "product.py", "status": "modified"}],
+                }
+            if method == "PATCH" and path == "/pulls/17":
+                self.assertEqual(payload, {"state": "closed"})
+                return {"state": "closed"}
+            self.fail(f"unexpected API call: {method} {path} {payload}")
+
+        def fake_graphql(query, variables):
+            seen_variables.update(variables)
+            self.assertEqual(variables["input"]["expectedHeadOid"], self.BASE)
+            self.assertEqual(variables["input"]["branch"]["branchName"], "main")
+            return {"createCommitOnBranch": {"commit": {"oid": self.LANDED}}}
+
+        with patch.object(CONTROL, "_pr_from_event", return_value=self.pr()), \
+                patch.object(CONTROL, "_commit", side_effect=lambda sha: (
+                    self.head_commit() if sha == self.HEAD else self.landed_commit()
+                )), \
+                patch.object(CONTROL, "_check_gate"), \
+                patch.object(CONTROL, "_comments", return_value=[self.review_receipt()]), \
+                patch.object(CONTROL, "api", side_effect=fake_api), \
+                patch.object(CONTROL, "_ref", return_value={"object": {"sha": self.BASE}}), \
+                patch.object(CONTROL, "_tree_map", return_value={
+                    "product.py": {"sha": "blob", "mode": "100644"}
+                }), \
+                patch.object(CONTROL, "_blob_bytes", return_value=b"content"), \
+                patch.object(CONTROL, "graphql", side_effect=fake_graphql), \
+                patch.object(CONTROL, "_repo", return_value="owner/repo"), \
+                patch.object(CONTROL, "_procedure_identity", return_value=("policy", "procedure")), \
+                patch.object(CONTROL, "_post_comment", side_effect=lambda issue, body: comments.append(body)):
+            CONTROL.merge({}, 17, {"head_sha": self.HEAD, "base_sha": self.BASE})
+
+        self.assertEqual(seen_variables["input"]["expectedHeadOid"], self.BASE)
+        self.assertFalse(any(method == "PUT" and "/merge" in path for method, path, _ in calls))
+        self.assertEqual(len(comments), 1)
+        self.assertTrue(comments[0].startswith("STAGE11_LANDING: PASS\n"))
+        self.assertIn("landing_mode=ATOMIC_EXPECTED_HEAD", comments[0])
+
+    def test_atomic_landing_rejects_last_moment_base_drift_without_main_mutation(self):
+        calls = []
+
+        def fake_api(method, path, payload=None):
+            calls.append((method, path, payload))
+            if method == "GET" and path == "":
+                return {"owner": dict(self.OWNER)}
+            if method == "GET" and path == f"/compare/{self.BASE}...{self.HEAD}":
+                return {
+                    "behind_by": 0,
+                    "ahead_by": 1,
+                    "files": [{"filename": "product.py", "status": "modified"}],
+                }
+            self.fail(f"unexpected API call after CAS failure: {method} {path} {payload}")
+
+        def fail_cas(query, variables):
+            self.assertEqual(variables["input"]["expectedHeadOid"], self.BASE)
+            raise CONTROL.ControlError("expectedHeadOid mismatch")
+
+        with patch.object(CONTROL, "_pr_from_event", return_value=self.pr()), \
+                patch.object(CONTROL, "_commit", return_value=self.head_commit()), \
+                patch.object(CONTROL, "_check_gate"), \
+                patch.object(CONTROL, "_comments", return_value=[self.review_receipt()]), \
+                patch.object(CONTROL, "api", side_effect=fake_api), \
+                patch.object(CONTROL, "_ref", return_value={"object": {"sha": self.BASE}}), \
+                patch.object(CONTROL, "_tree_map", return_value={
+                    "product.py": {"sha": "blob", "mode": "100644"}
+                }), \
+                patch.object(CONTROL, "_blob_bytes", return_value=b"content"), \
+                patch.object(CONTROL, "graphql", side_effect=fail_cas), \
+                patch.object(CONTROL, "_repo", return_value="owner/repo"), \
+                patch.object(CONTROL, "_post_comment") as post:
+            with self.assertRaisesRegex(CONTROL.ControlError, "atomic base-SHA landing failed"):
+                CONTROL.merge({}, 17, {"head_sha": self.HEAD, "base_sha": self.BASE})
+
+        self.assertFalse(any(method in {"PUT", "PATCH", "POST", "DELETE"} for method, _, _ in calls))
+        post.assert_not_called()
+
+    def test_cleanup_is_non_destructive_and_does_not_require_source_sha_identity(self):
+        main_sha = self.LANDED
+        refs_seen = []
+        comments = []
+
+        def fake_ref(branch):
+            refs_seen.append(branch)
+            if branch == "main":
+                return {"object": {"sha": main_sha}}
+            if branch == self.BRANCH:
+                return {"object": {"sha": self.HEAD}}
+            self.fail(f"cleanup consulted unrelated source ref: {branch}")
+
+        def fake_commit(sha):
+            if sha == main_sha:
+                return self.landed_commit()
+            if sha == self.HEAD:
+                return self.head_commit()
+            self.fail(f"unexpected commit lookup: {sha}")
+
+        closed_pr = self.pr(state="closed")
+        with patch.object(CONTROL, "_pr_from_event", return_value=closed_pr), \
+                patch.object(CONTROL, "_ref", side_effect=fake_ref), \
+                patch.object(CONTROL, "_commit", side_effect=fake_commit), \
+                patch.object(CONTROL, "_check_gate"), \
+                patch.object(CONTROL, "_comments") as receipt_input, \
+                patch.object(CONTROL, "_procedure_identity", return_value=("policy", "procedure")), \
+                patch.object(CONTROL, "_post_comment", side_effect=lambda issue, body: comments.append(body)), \
+                patch.object(CONTROL, "api") as api:
+            CONTROL.cleanup(
+                {},
+                17,
+                {"branch": self.BRANCH, "branch_sha": self.HEAD, "main_sha": main_sha},
+            )
+
+        receipt_input.assert_not_called()
+        api.assert_not_called()
+        self.assertNotIn("work/stage11-remediation-test", refs_seen)
+        self.assertEqual(len(comments), 2)
+        self.assertTrue(comments[0].startswith("STAGE11_POST_MERGE_VERIFICATION: PASS\n"))
+        self.assertIn("ref_disposition=PRESERVED_NO_CAS_DELETE", comments[1])
+        self.assertIn("source_ref_mutation=NONE", comments[1])
+
+    def test_cleanup_rechecks_head_after_assurance_and_never_deletes_newer_ref(self):
+        main_sha = self.LANDED
+        newer = "d" * 40
+        counts = {"main": 0, self.BRANCH: 0}
+        comments = []
+
+        def fake_ref(branch):
+            counts[branch] += 1
+            if branch == "main":
+                return {"object": {"sha": main_sha}}
+            if branch == self.BRANCH:
+                sha = self.HEAD if counts[branch] == 1 else newer
+                return {"object": {"sha": sha}}
+            self.fail(f"unexpected ref: {branch}")
+
+        def fake_commit(sha):
+            if sha == main_sha:
+                return self.landed_commit()
+            if sha == self.HEAD:
+                return self.head_commit()
+            self.fail(f"unexpected commit: {sha}")
+
+        with patch.object(CONTROL, "_pr_from_event", return_value=self.pr(state="closed")), \
+                patch.object(CONTROL, "_ref", side_effect=fake_ref), \
+                patch.object(CONTROL, "_commit", side_effect=fake_commit), \
+                patch.object(CONTROL, "_check_gate"), \
+                patch.object(CONTROL, "_comments") as receipt_input, \
+                patch.object(CONTROL, "_post_comment", side_effect=lambda issue, body: comments.append(body)), \
+                patch.object(CONTROL, "api") as api:
+            with self.assertRaisesRegex(CONTROL.ControlError, "candidate branch moved"):
+                CONTROL.cleanup(
+                    {},
+                    17,
+                    {"branch": self.BRANCH, "branch_sha": self.HEAD, "main_sha": main_sha},
+                )
+
+        receipt_input.assert_not_called()
+        api.assert_not_called()
+        self.assertEqual(comments, [])
+        self.assertEqual(counts[self.BRANCH], 2)
+
+
 
 if __name__ == "__main__":
     unittest.main()
