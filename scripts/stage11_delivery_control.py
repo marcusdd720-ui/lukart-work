@@ -37,7 +37,7 @@ CANDIDATE_WORKFLOWS = ("stage02.yml", "stage11-assurance.yml")
 # Bounded procedure-only exception for the current remediation branch.  The
 # historical PR #17 bootstrap exception is retired after merge; ordinary Stage 11
 # branches still require real rendering tests.
-PROCEDURE_BOOTSTRAP_BRANCH = "codex/stage11-case1-zero-cost-verified"
+PROCEDURE_BOOTSTRAP_BRANCH = "codex/stage11-case1-bootstrap-pagination-repair"
 PROCEDURE_BOOTSTRAP_BASE = "74364cb7b648feaff30cff465a5beade8d5f3498"
 PROCEDURE_BOOTSTRAP_PATHS = frozenset({
     ".github/workflows/stage02.yml",
@@ -252,16 +252,31 @@ def _assert_ref_sha(branch: str, expected_sha: str, phase: str) -> None:
         )
 
 
+def _paged_items(path: str, key: str, *, context: str) -> list[dict[str, Any]]:
+    """Read every GitHub REST page for a bounded assurance collection."""
+    items: list[dict[str, Any]] = []
+    page = 1
+    while True:
+        request_path = path if page == 1 else f"{path}&page={page}"
+        data = api("GET", request_path)
+        batch = data.get(key) if isinstance(data, dict) else None
+        if not isinstance(batch, list):
+            raise ControlError(f"{context} listing is malformed")
+        if any(not isinstance(item, dict) for item in batch):
+            raise ControlError(f"{context} listing contains malformed items")
+        items.extend(batch)
+        if len(batch) < 100:
+            return items
+        page += 1
+
+
 def _workflow_dispatch_runs(workflow: str) -> list[dict[str, Any]]:
     workflow_id = urllib.parse.quote(workflow, safe="")
-    data = api(
-        "GET",
+    return _paged_items(
         f"/actions/workflows/{workflow_id}/runs?event=workflow_dispatch&per_page=100",
+        "workflow_runs",
+        context=f"workflow runs for {workflow}",
     )
-    runs = data.get("workflow_runs") if isinstance(data, dict) else None
-    if not isinstance(runs, list):
-        raise ControlError(f"workflow run listing is malformed for {workflow}")
-    return [run for run in runs if isinstance(run, dict)]
 
 
 def _wait_for_bound_dispatch_run(
@@ -599,8 +614,11 @@ def _check_gate(sha: str, *, required_event: str, expected_branch: str) -> None:
     if required_event not in {"workflow_dispatch", "push"}:
         raise ControlError(f"unsupported gate event: {required_event}")
 
-    data = api("GET", f"/commits/{candidate_sha}/check-runs?per_page=100")
-    runs = data.get("check_runs", [])
+    runs = _paged_items(
+        f"/commits/{candidate_sha}/check-runs?per_page=100",
+        "check_runs",
+        context=f"check-runs for {candidate_sha}",
+    )
     if not runs:
         raise ControlError("no check-runs found for candidate")
 
@@ -628,10 +646,11 @@ def _check_gate(sha: str, *, required_event: str, expected_branch: str) -> None:
         )
 
     query_event = urllib.parse.quote(required_event, safe="")
-    action_runs = api(
-        "GET",
+    action_runs = _paged_items(
         f"/actions/runs?head_sha={candidate_sha}&event={query_event}&per_page=100",
-    ).get("workflow_runs", [])
+        "workflow_runs",
+        context=f"workflow provenance for {candidate_sha}",
+    )
     workflow_failures = []
     for check_name, expected_path in REQUIRED_STAGE11_WORKFLOWS.items():
         matching = [
