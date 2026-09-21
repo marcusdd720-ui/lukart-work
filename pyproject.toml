@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lukart-work-domain-contracts"
-version = "0.10.0"
-description = "Architecture 00 Case Core with controlled drafting and fail-closed validation"
+version = "0.11.0"
+description = "Architecture 00 Case Core with controlled drafting, validation and deterministic rendering"
 requires-python = ">=3.11"
-dependencies = ["pydantic==2.13.5"]
+dependencies = ["pydantic==2.13.5", "python-docx==1.2.0", "reportlab==4.4.9"]
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]==3.3.3"]
