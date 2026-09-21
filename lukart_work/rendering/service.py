@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha256
 from io import BytesIO
+from importlib.metadata import version as metadata_version
 from pathlib import Path
 from typing import Mapping
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
@@ -26,8 +27,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from lukart_work.contracts.messages import RenderRequest, SemanticDocument
-from lukart_work.domain.models import Draft, Evidence, Institution, Party, Ref, Request, Section
-from lukart_work.validation.rules import Violation, digest
+from lukart_work.domain.models import Draft, Entity, Evidence, Institution, Party, Ref, Request, Section
+from lukart_work.validation.rules import Violation, digest, ref as entity_ref
 
 from .contracts import (
     LayoutBlock,
@@ -83,8 +84,14 @@ def renderer_pin() -> "VersionPin":
     root = Path(__file__).resolve().parent
     names = ("contracts.py", "profiles.py", "service.py")
     identity = {
-        name: _sha((root / name).read_bytes().replace(b"\r\n", b"\n"))
-        for name in names
+        "sources": {
+            name: _sha((root / name).read_bytes().replace(b"\r\n", b"\n"))
+            for name in names
+        },
+        "dependencies": {
+            "python-docx": metadata_version("python-docx"),
+            "reportlab": metadata_version("reportlab"),
+        },
     }
     return VersionPin(
         id="lukart-work-renderer",
@@ -97,7 +104,9 @@ def _record(records: Mapping[Ref, object], target: Ref, scope: tuple[object, obj
     item = records.get(target)
     if item is None:
         raise Violation("BROKEN_REFERENCE")
-    if (getattr(item, "tenant_id", None), getattr(item, "case_id", None)) != scope:
+    if not isinstance(item, Entity) or entity_ref(item) != target:
+        raise Violation("INVALID_HASH")
+    if (item.tenant_id, item.case_id) != scope:
         raise Violation("CROSS_CASE")
     return item
 
