@@ -46,7 +46,10 @@ class Stage11RenderingTests(unittest.TestCase):
         command = [sys.executable, "-B", "-X", "utf8", "-m", "tests.stage11_subprocess_fixture"]
         first = subprocess.check_output(command, cwd=root, text=True).strip()
         second = subprocess.check_output(command, cwd=root, text=True).strip()
-        self.assertEqual(json.loads(first), json.loads(second))
+        actual = json.loads(first)
+        self.assertEqual(actual, json.loads(second))
+        golden = json.loads((root / "tests/golden_cases/stage11_render_identity.json").read_text(encoding="utf-8"))
+        self.assertEqual(actual, golden)
         print("STAGE11_RENDER_IDENTITY=" + first)
 
     def test_docx_declares_single_profile_font_and_preserves_polish_text(self):
