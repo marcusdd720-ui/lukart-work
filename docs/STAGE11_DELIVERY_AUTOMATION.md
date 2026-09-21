@@ -135,10 +135,14 @@ A Stage 11 landing is eligible only when all of the following are true:
 11. The resulting GitHub-signed landing commit must be `verified=true`, have exactly
     the expected base as its single parent, and have a tree identical to the reviewed
     candidate tree.
-12. Only after that identity check may the PR be closed and a
-    `STAGE11_LANDING: PASS` receipt be emitted.
-13. Any mismatch, stale state, missing evidence, CAS failure or unknown state blocks
-    the landing.
+12. Because a `GITHUB_TOKEN`-authenticated branch write does not recursively create
+    ordinary push workflows, the control explicitly dispatches both exact-SHA assurance
+    workflows against `main@<landing SHA>` and binds the concrete materialized runs
+    before closing the PR.
+13. Only after identity verification and dispatch binding may the PR be closed and a
+    `STAGE11_LANDING: DISPATCH_BOUND` receipt be emitted. This is not post-landing PASS.
+14. Any mismatch, stale state, missing evidence, CAS failure, dispatch-binding failure
+    or unknown state blocks the landing.
 
 ### Independent review receipt authentication
 
@@ -200,8 +204,9 @@ P1 weaknesses and one P2 cleanup-semantics defect inherited from the base proced
 
 This remediation removes destructive automated ref deletion, removes external
 post-merge receipts from the trust path, replaces the non-atomic PR merge call with
-expected-head CAS landing, and removes mutable Work-source identity from cleanup.
-All four behaviors require dedicated regression coverage and fresh exact-SHA review.
+expected-head CAS landing, explicitly dispatches post-landing exact-SHA assurance, and
+removes mutable Work-source identity from cleanup. All behaviors require dedicated
+regression coverage and fresh exact-SHA review.
 
 ## Post-merge contract
 
@@ -212,13 +217,17 @@ After atomic landing, Stage 11 remains open until:
 3. Its sole parent equals the reviewed pre-landing base SHA.
 4. Its tree equals the reviewed candidate tree exactly.
 5. Required post-merge checks are terminal SUCCESS on the exact resulting `main` SHA.
-6. Post-merge workflow provenance is verified against the expected workflow paths and
-   the `push` event for that exact `main` SHA.
+6. Normal guarded landing requires a complete exact-SHA `workflow_dispatch` evidence
+   family for both required workflow paths. The one-time external bootstrap transport
+   may instead use a complete trusted exact-SHA `push` evidence family. Evidence from
+   different event families is not mixed to manufacture PASS.
 7. The control itself records the post-merge receipt only after recomputing these
    machine-verifiable conditions. External comments are never trusted as authorization
    or evidence for this step.
 
-Push-triggered post-merge workflows use the resulting `main` commit SHA directly.
+The normal path uses explicit dispatch because a `GITHUB_TOKEN` write does not
+recursively create ordinary push runs. The bootstrap fallback exists only so the
+verified remediation can be installed externally without weakening exact-SHA provenance.
 
 ## Cleanup contract
 
