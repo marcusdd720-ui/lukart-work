@@ -41,6 +41,8 @@ PROCEDURE_BOOTSTRAP_BRANCH = "codex/stage11-postmerge-assurance-remediation-veri
 PROCEDURE_BOOTSTRAP_BASE = "74364cb7b648feaff30cff465a5beade8d5f3498"
 PROCEDURE_BOOTSTRAP_PATHS = frozenset({
     "docs/STAGE11_DELIVERY_AUTOMATION.md",
+    "reports/manifest.sha256.json",
+    "reports/stage10-status.json",
     "scripts/stage11_delivery_control.py",
     "tests/test_stage11_delivery_control.py",
 })

@@ -78,11 +78,13 @@ The historical PR #17 bootstrap exception is retired after its merge. The sole c
 procedure-only exception is
 `codex/stage11-postmerge-assurance-remediation-verified` at exact base
 `74364cb7b648feaff30cff465a5beade8d5f3498`. It requires a nonempty complete diff
-restricted to the three current `PROCEDURE_BOOTSTRAP_PATHS` in the control script:
-this policy, the control script, and its guard tests.
+restricted to the five current `PROCEDURE_BOOTSTRAP_PATHS` in the control script:
+this policy, the control script, its guard tests, and the two deterministic generated
+Stage 10 evidence files (`reports/stage10-status.json` and `reports/manifest.sha256.json`).
 
-Any product path, workflow modification, generated-evidence modification, deletion or
-other path outside that exact set blocks the exception. The workflow reports
+Any product path, workflow modification, generated-evidence modification outside those
+two named deterministic reports, deletion or other path outside that exact set blocks
+the exception. The workflow reports
 `PROCEDURE_ONLY_BOOTSTRAP`; this is not rendering validation. The exception does not
 apply to `main` or similarly named branches. Post-merge rendering assurance without
 real `tests/test_stage11.py` remains blocked; this exception only permits review and
