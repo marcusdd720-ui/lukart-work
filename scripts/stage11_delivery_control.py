@@ -592,8 +592,10 @@ def _has_independent_review(
     return False
 
 
-def _check_gate(sha: str, *, required_event: str) -> None:
+def _check_gate(sha: str, *, required_event: str, expected_branch: str) -> None:
     candidate_sha = _require_sha(sha, "gate_sha")
+    if not isinstance(expected_branch, str) or not expected_branch:
+        raise ControlError("expected gate branch is missing")
     if required_event not in {"workflow_dispatch", "push"}:
         raise ControlError(f"unsupported gate event: {required_event}")
 
@@ -652,6 +654,7 @@ def _check_gate(sha: str, *, required_event: str) -> None:
             run
             for run in action_runs
             if run.get("head_sha") == candidate_sha
+            and run.get("head_branch") == expected_branch
             and run.get("event") == required_event
             and run.get("path") == expected_path
         ]
@@ -664,6 +667,7 @@ def _check_gate(sha: str, *, required_event: str) -> None:
                     "check": check_name,
                     "path": expected_path,
                     "event": required_event,
+                    "branch": expected_branch,
                 }
             )
     if workflow_failures:
@@ -691,7 +695,7 @@ def check_procedure_bootstrap_candidate(branch: str, sha: str, base_sha: str) ->
     scope = validate_landing_paths(branch, reviewed_base, files, paths)
     if scope != "PROCEDURE_ONLY_BOOTSTRAP":
         raise ControlError("procedure bootstrap scope is not exact")
-    _check_gate(candidate_sha, required_event="push")
+    _check_gate(candidate_sha, required_event="push", expected_branch=branch)
 
 
 def _check_post_landing_gate(sha: str) -> str:
@@ -703,7 +707,7 @@ def _check_post_landing_gate(sha: str) -> str:
     # family must satisfy both required workflows.
     for event in ("workflow_dispatch", "push"):
         try:
-            _check_gate(sha, required_event=event)
+            _check_gate(sha, required_event=event, expected_branch="main")
             return event
         except ControlError as exc:
             failures.append(f"{event}: {exc}")
@@ -732,7 +736,11 @@ def merge(event: dict[str, Any], issue_number: int, args: dict[str, str]) -> Non
     head = _commit(head_sha)
     if not head["commit"]["verification"].get("verified"):
         raise ControlError("Stage 11 candidate commit is not GitHub-verified")
-    _check_gate(head_sha, required_event="workflow_dispatch")
+    _check_gate(
+        head_sha,
+        required_event="workflow_dispatch",
+        expected_branch=pr["head"]["ref"],
+    )
 
     comments = _comments(issue_number)
     owner = api("GET", "").get("owner", {})

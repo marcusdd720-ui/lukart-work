@@ -149,6 +149,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
 
     def test_check_gate_binds_required_workflows_to_exact_sha_and_event(self) -> None:
         sha = "a" * 40
+        branch = "codex/stage11-rendering-engine"
         original_api = CONTROL.api
 
         def fake_api(method, path, payload=None):
@@ -185,6 +186,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                             "path": ".github/workflows/stage02.yml",
                             "event": "workflow_dispatch",
                             "head_sha": sha,
+                            "head_branch": branch,
                             "status": "completed",
                             "conclusion": "success",
                         },
@@ -192,6 +194,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                             "path": ".github/workflows/stage11-assurance.yml",
                             "event": "workflow_dispatch",
                             "head_sha": sha,
+                            "head_branch": branch,
                             "status": "completed",
                             "conclusion": "success",
                         },
@@ -201,12 +204,13 @@ class Stage11DeliveryControlTests(unittest.TestCase):
 
         CONTROL.api = fake_api
         try:
-            CONTROL._check_gate(sha, required_event="workflow_dispatch")
+            CONTROL._check_gate(sha, required_event="workflow_dispatch", expected_branch=branch)
         finally:
             CONTROL.api = original_api
 
     def test_check_gate_rejects_untrusted_or_wrong_provenance(self) -> None:
         sha = "a" * 40
+        branch = "codex/stage11-rendering-engine"
         original_api = CONTROL.api
 
         def fake_api(method, path, payload=None):
@@ -235,7 +239,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                 CONTROL.ControlError,
                 "required trusted GitHub Actions checks",
             ):
-                CONTROL._check_gate(sha, required_event="workflow_dispatch")
+                CONTROL._check_gate(sha, required_event="workflow_dispatch", expected_branch=branch)
         finally:
             CONTROL.api = original_api
 
@@ -263,6 +267,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                         "path": ".github/workflows/stage02.yml",
                         "event": "pull_request",
                         "head_sha": sha,
+                        "head_branch": branch,
                         "status": "completed",
                         "conclusion": "success",
                     },
@@ -270,6 +275,7 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                         "path": ".github/workflows/stage11-assurance.yml",
                         "event": "pull_request",
                         "head_sha": sha,
+                        "head_branch": branch,
                         "status": "completed",
                         "conclusion": "success",
                     },
@@ -282,7 +288,31 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                 CONTROL.ControlError,
                 "workflow provenance",
             ):
-                CONTROL._check_gate(sha, required_event="workflow_dispatch")
+                CONTROL._check_gate(sha, required_event="workflow_dispatch", expected_branch=branch)
+        finally:
+            CONTROL.api = original_api
+
+        def fake_wrong_branch_api(method, path, payload=None):
+            if path == f"/commits/{sha}/check-runs?per_page=100":
+                return {
+                    "check_runs": [
+                        {"name": "validation", "status": "completed", "conclusion": "success", "app": {"slug": "github-actions"}},
+                        {"name": "stage11-rendering", "status": "completed", "conclusion": "success", "app": {"slug": "github-actions"}},
+                    ]
+                }
+            return {
+                "workflow_runs": [
+                    {"path": ".github/workflows/stage02.yml", "event": "workflow_dispatch", "head_sha": sha,
+                     "head_branch": "codex/stage11-other", "status": "completed", "conclusion": "success"},
+                    {"path": ".github/workflows/stage11-assurance.yml", "event": "workflow_dispatch", "head_sha": sha,
+                     "head_branch": "codex/stage11-other", "status": "completed", "conclusion": "success"},
+                ]
+            }
+
+        CONTROL.api = fake_wrong_branch_api
+        try:
+            with self.assertRaisesRegex(CONTROL.ControlError, "workflow provenance"):
+                CONTROL._check_gate(sha, required_event="workflow_dispatch", expected_branch=branch)
         finally:
             CONTROL.api = original_api
 
@@ -682,7 +712,7 @@ class P1RegressionTests(unittest.TestCase):
                 patch.object(CONTROL, "_check_gate") as gate:
             CONTROL.check_procedure_bootstrap_candidate(branch, bootstrap_sha, base)
         assert_ref.assert_called_once_with(branch, bootstrap_sha, "during procedure bootstrap gate")
-        gate.assert_called_once_with(bootstrap_sha, required_event="push")
+        gate.assert_called_once_with(bootstrap_sha, required_event="push", expected_branch=branch)
 
         for bad_branch, bad_base in (("codex/stage11-other", base), (branch, self.BASE)):
             with self.subTest(bootstrap_branch=bad_branch, bootstrap_base=bad_base), \
@@ -1269,7 +1299,8 @@ class PostMergeRemediationRegressionTests(unittest.TestCase):
     def test_post_landing_gate_prefers_dispatch_and_allows_complete_bootstrap_push(self):
         calls = []
 
-        def dispatch_success(sha, *, required_event):
+        def dispatch_success(sha, *, required_event, expected_branch):
+            self.assertEqual(expected_branch, "main")
             calls.append(required_event)
             if required_event == "workflow_dispatch":
                 return None
@@ -1283,7 +1314,8 @@ class PostMergeRemediationRegressionTests(unittest.TestCase):
         self.assertEqual(calls, ["workflow_dispatch"])
 
         calls.clear()
-        def push_fallback(sha, *, required_event):
+        def push_fallback(sha, *, required_event, expected_branch):
+            self.assertEqual(expected_branch, "main")
             calls.append(required_event)
             if required_event == "workflow_dispatch":
                 raise CONTROL.ControlError("no dispatched post-landing run")
