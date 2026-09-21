@@ -14,7 +14,7 @@ permissions:
 jobs:
   control:
     if: startsWith(github.event.comment.body, '/stage11 ')
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux, X64, lukart-stage11]
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ github.token }}

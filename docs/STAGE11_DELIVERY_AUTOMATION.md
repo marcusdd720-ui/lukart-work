@@ -78,11 +78,12 @@ The historical PR #17 bootstrap exception and the pre-zero-cost remediation bran
 retired. The sole current procedure-only exception is
 `codex/stage11-case1-zero-cost-verified` at exact base
 `74364cb7b648feaff30cff465a5beade8d5f3498`. It requires a nonempty complete diff
-restricted to the nine current `PROCEDURE_BOOTSTRAP_PATHS` in the control script:
+restricted to the ten current `PROCEDURE_BOOTSTRAP_PATHS` in the control script:
 this policy, the control script, its guard tests, the two deterministic generated
 Stage 10 evidence files (`reports/stage10-status.json` and `reports/manifest.sha256.json`),
-and exactly the two assurance workflow files whose runner selectors are bound to the
-zero-cost trusted self-hosted runner (`stage02.yml` and `stage11-assurance.yml`), plus
+and exactly the three Stage 11 workflow files whose runner selectors are bound to the
+zero-cost trusted self-hosted runner (`stage02.yml`, `stage11-assurance.yml` and
+`stage11-control.yml`), plus
 the isolated-worker compatibility fix (`lukart_work/ingestion/service.py`) and its
 single regression (`tests/test_stage04.py`). The worker fix derives the child loader
 path only from the trusted interpreter prefix and does not inherit caller-controlled
@@ -95,7 +96,7 @@ exact set blocks the exception. The workflow reports
 
 For this one Case 1 remediation only, the same mode is permitted on `main` after
 atomic landing when the complete diff from exact base
-`74364cb7b648feaff30cff465a5beade8d5f3498` is exactly the same nine paths.
+`74364cb7b648feaff30cff465a5beade8d5f3498` is exactly the same ten paths.
 An empty, partial, additional, renamed or deleted path set fails closed. This bounded
 post-landing exception certifies only installation of the trusted remediation
 procedure; it does not certify the Stage 11 rendering product. Ordinary Stage 11
@@ -106,7 +107,7 @@ delivery still requires real `tests/test_stage11.py`.
 Promotion is fail-closed.
 
 1. The work branch must be strictly ahead of the supplied base and not behind it.
-2. Trusted procedure/workflow paths cannot be promoted by the ordinary product path. The sole Case 1 bootstrap landing may replay them only when branch, exact base, all nine paths and `modified` statuses match the bounded remediation contract exactly.
+2. Trusted procedure/workflow paths cannot be promoted by the ordinary product path. The sole Case 1 bootstrap landing may replay them only when branch, exact base, all ten paths and `modified` statuses match the bounded remediation contract exactly.
 3. The promoted GitHub commit must be `verified=true`.
 4. The promoted commit tree must equal the exact source tree.
 5. Both exact-SHA assurance dispatches must be correlated to concrete newly created

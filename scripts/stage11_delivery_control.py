@@ -42,6 +42,7 @@ PROCEDURE_BOOTSTRAP_BASE = "74364cb7b648feaff30cff465a5beade8d5f3498"
 PROCEDURE_BOOTSTRAP_PATHS = frozenset({
     ".github/workflows/stage02.yml",
     ".github/workflows/stage11-assurance.yml",
+    ".github/workflows/stage11-control.yml",
     "docs/STAGE11_DELIVERY_AUTOMATION.md",
     "lukart_work/ingestion/service.py",
     "reports/manifest.sha256.json",
