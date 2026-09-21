@@ -113,10 +113,23 @@ jobs:
           paths = []
           if not present and branch in (PROCEDURE_BOOTSTRAP_BRANCH, "main"):
               subprocess.run(["git", "merge-base", "--is-ancestor", PROCEDURE_BOOTSTRAP_BASE, "HEAD"], check=True)
-              paths = subprocess.check_output(
-                  ["git", "diff", "--no-renames", "--name-only", "-z", PROCEDURE_BOOTSTRAP_BASE, "HEAD"],
+              if branch == "main":
+                  lineage = subprocess.check_output(
+                      ["git", "rev-list", "--parents", "-n", "1", "HEAD"],
+                      text=True,
+                  ).split()
+                  if lineage[1:] != [PROCEDURE_BOOTSTRAP_BASE]:
+                      raise SystemExit("procedure bootstrap on main must be the direct child of the exact bootstrap base")
+              fields = subprocess.check_output(
+                  ["git", "diff", "--no-renames", "--name-status", "-z", PROCEDURE_BOOTSTRAP_BASE, "HEAD"],
                   text=True,
               ).split("\0")[:-1]
+              if len(fields) % 2:
+                  raise SystemExit("malformed procedure bootstrap name-status diff")
+              statuses = fields[0::2]
+              paths = fields[1::2]
+              if any(status != "M" for status in statuses):
+                  raise SystemExit("procedure bootstrap requires exactly modified files; add/delete/rename is forbidden")
           mode = require_stage11_tests(branch, present, base_sha=PROCEDURE_BOOTSTRAP_BASE, changed_paths=paths)
           print(f"stage11_assurance_mode={mode}", flush=True)
           if mode == "RENDERING_TESTS_REQUIRED":
