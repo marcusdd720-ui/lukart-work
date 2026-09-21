@@ -39,6 +39,18 @@ def parser_pin():
     return VersionPin(id='pypdf', version=version, content_hash=sha256(contents).hexdigest())
 
 
+def _worker_env():
+    allowed = {'SYSTEMROOT', 'WINDIR', 'TEMP', 'TMP', 'PATH', 'LANG', 'LC_ALL', 'PYTHONUTF8'}
+    env = {k: v for k, v in os.environ.items() if k.upper() in allowed}
+    # setup-python can require its private lib directory for a child interpreter.
+    # Never inherit caller-controlled LD_LIBRARY_PATH; derive the only allowed
+    # loader path from the trusted interpreter prefix itself.
+    runtime_lib = Path(sys.base_prefix) / 'lib'
+    if sys.platform != 'win32' and runtime_lib.is_dir():
+        env['LD_LIBRARY_PATH'] = str(runtime_lib)
+    return env
+
+
 def parse_isolated(data, media_type):
     failed = lambda: ExtractionBody(media_type='application/octet-stream', classification='UNKNOWN', status='FAILED',
         fragments=(), candidates=(), warnings=('UNTRUSTED_SOURCE', 'REVIEW_REQUIRED', 'PARSER_REJECTED'))
@@ -47,8 +59,7 @@ def parse_isolated(data, media_type):
             input=json.dumps({'data': base64.b64encode(data).decode(), 'media_type': media_type}).encode(),
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15,
             cwd=Path(__file__).resolve().parents[2],
-            env={k:v for k,v in os.environ.items() if k.upper() in
-                 {'SYSTEMROOT', 'WINDIR', 'TEMP', 'TMP', 'PATH', 'LANG', 'LC_ALL', 'PYTHONUTF8'}})
+            env=_worker_env())
         if process.returncode or len(process.stdout) > 8 * 1024 * 1024:
             return failed()
         return ExtractionBody.model_validate_json(process.stdout)

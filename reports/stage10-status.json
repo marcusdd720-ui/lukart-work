@@ -1,6 +1,6 @@
 {
   "stage": "10 Validation Engine",
-  "tests": 385,
+  "tests": 399,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -34,7 +34,7 @@
     "lukart_work/ingestion/__init__.py": "52e6c258c9e8a72f5434e125b7f5aa51af9d2d79efc18bb31795aad0ad5826f7",
     "lukart_work/ingestion/extract.py": "c3c0102acc0785fb2316270ebe35a1bf954920e5304e11885635f765ae2d3661",
     "lukart_work/ingestion/models.py": "7f97898a491b2553b694fbe0fd5ee44456c1fb919934cea8f15ffde799decedb",
-    "lukart_work/ingestion/service.py": "866bfad8a86a9fd96b85abf26ccc8529a149653b4f6dc4758b621ce05df0aef3",
+    "lukart_work/ingestion/service.py": "dd186cb4295bb79a4e1f51e24604b8534f4ca0d9dce27f845ffe5cb0fa4767ab",
     "lukart_work/ingestion/worker.py": "277e94dcd0d4d38f30b9202df642ed7b4885682693a3cb7d3eec0ad9a6144a81",
     "lukart_work/planner/__init__.py": "f00d6a626bfedb60ac38606ea6d70e0d6b0dbe47e0b27616fb7c4bbdf518d370",
     "lukart_work/planner/contracts.py": "c8c6f0d5a0b0fc7f8b8e840bcb94a812871bf72e0b36dbdd3259701b87125c0f",
@@ -45,6 +45,10 @@
     "lukart_work/registry/__init__.py": "306be9c456a7b0cdcd4f080f49573afcb430bdf9bbe1eb40023ac3cb8fc7e402",
     "lukart_work/registry/contracts.py": "c05d5bf1baa06b387430491d1eff82e7fe794cc3336f76ac2927d544bc9d35a8",
     "lukart_work/registry/service.py": "6045e7257207b12dad0ef13beaaed38ebba1b9d0a9129b20e91adf5293f2cf17",
+    "lukart_work/rendering/__init__.py": "13e3528eab6bbbc5b3c9ea8cf3bda995a8e9d7445d07ce0b655d1788741358b5",
+    "lukart_work/rendering/contracts.py": "cd84066d0b87e8c49420efa551750728399ed030dd0a1797b77dda5837555dd1",
+    "lukart_work/rendering/profiles.py": "0a393721b927ab10962b9c5087fcdc5cc6347e65d5f4afab5647819dac71d72a",
+    "lukart_work/rendering/service.py": "f4bd2c2d40d130fcd0daffdfba7ce08e4e51106b2004958d8de0c146e9db7905",
     "lukart_work/storage/__init__.py": "834dc25215367ffa1b5154b3df409c7dfb1ef56cf2181843e88911ff14a79ed1",
     "lukart_work/storage/backup.py": "12442bdffa17a7758a9c17b7b0e00fc8a0e80d34e853098613220065b97ca8b5",
     "lukart_work/storage/migration.sql": "ff4633c2ed0da8578c5c0c1abd1806266388e1f5190ed472a754db656e603ad6",
@@ -94,7 +98,7 @@
     "tests/test_remediation.py": "cb4dad854cfb7a38d15be60d969eee483deabc3303c0bf41a35e6eed61c0d8d2",
     "tests/test_stage02.py": "6d6d0fd923f413747e6332f60ffd5b6dfbf448a9571dc2a96bf68f63962af7eb",
     "tests/test_stage03.py": "a8d2f4ed93cc3f29a5371d3450615e32b58692d725bd89499e1a9f5cb6f76a58",
-    "tests/test_stage04.py": "06a174c28e5e9dcd51eb85bc0209ab7b594f6208dca30df0c3122ae2bd57971f",
+    "tests/test_stage04.py": "9e01ac0379316aba05888bf273fb045fe17ae2977164be5f6758c36adff62bc0",
     "tests/test_stage05.py": "e21fc9d0153ef2c8520a6e1b6448928f8b752fa2cbb93b43c6cde79a26aec0f4",
     "tests/test_stage06.py": "c5453c7e382aef7b56685ea80c340dab2a20e64e86cdfa73264033a3c41dc4e2",
     "tests/test_stage07.py": "eef47126a8e6cef64eb24638b26c78d1ef77053550b37b6f654f46ca2a5e66ca",
@@ -102,6 +106,7 @@
     "tests/test_stage09.py": "8ee891d4a386a3afc74078614afdc2b5f6dac41454112d5b86738b9bf8569c85",
     "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa",
     "tests/test_stage10.py": "68f9266483ef07ac8940f748d9fbafb79cecbf88fce66a4a8c403514dc1764b1",
+    "tests/test_stage11.py": "140dda3801850eb99931df848572cfdd424db7dae9aab3bc4225704ec31fca52",
     "tests/test_stage11_delivery_control.py": "485e885ae1329bf2ced3346a3f382e239ea56091423c21d2eff92efae8143339"
   }
 }

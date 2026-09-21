@@ -1,0 +1,120 @@
+{
+  "$defs": {
+    "RenderArtifactRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "enum": [
+            "DOCX",
+            "PDF",
+            "HTML",
+            "TXT"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/pdf",
+            "text/html; charset=utf-8",
+            "text/plain; charset=utf-8"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "byte_length": {
+          "minimum": 1,
+          "title": "Byte Length",
+          "type": "integer"
+        },
+        "semantic_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Semantic Hash",
+          "type": "string"
+        },
+        "profile": {
+          "$ref": "#/$defs/VersionPin"
+        }
+      },
+      "required": [
+        "format",
+        "media_type",
+        "content_hash",
+        "byte_length",
+        "semantic_hash",
+        "profile"
+      ],
+      "title": "RenderArtifactRecord",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "semantic_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Semantic Hash",
+      "type": "string"
+    },
+    "profile": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/RenderArtifactRecord"
+      },
+      "minItems": 1,
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "verification_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Verification Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "semantic_hash",
+    "profile",
+    "artifacts",
+    "verification_hash"
+  ],
+  "title": "RenderBundle",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:RenderBundle:1.0.0"
+}
