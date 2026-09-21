@@ -83,6 +83,11 @@ OFFICIAL_PL_V1 = RenderProfile(
         _style("document.signature", size=11, before=18, after=0, keep_together=True),
         _style("document.attachment", size=11, left=7, hanging=5, after=4, keep_together=True),
     ),
+    header_text=None,
+    footer_text=None,
+    page_numbers=True,
+    header_footer_font_pt=9,
+    footer_offset_mm=10,
     requests_label="Wnioski",
     attachments_label="Załączniki",
 )
