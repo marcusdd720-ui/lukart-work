@@ -398,6 +398,8 @@ class Stage11DeliveryControlTests(unittest.TestCase):
         )
         self.assertIn("ref: ${{ github.sha }}", text)
         self.assertIn("persist-credentials: false", text)
+        self.assertIn("runs-on: [self-hosted, Linux, X64, lukart-stage11]", text)
+        self.assertNotIn("runs-on: ubuntu-", text)
         self.assertNotIn("AUTHORIZATION: bearer", text)
         self.assertNotIn("git remote add origin", text)
         self.assertNotIn("git -c http.extraheader=", text)
@@ -618,9 +620,10 @@ class P1RegressionTests(unittest.TestCase):
         base = CONTROL.PROCEDURE_BOOTSTRAP_BASE
         paths = list(CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         files = [{"filename": path, "status": "modified"} for path in paths]
-        self.assertEqual(len(paths), 9)
+        self.assertEqual(len(paths), 10)
         self.assertIn(".github/workflows/stage02.yml", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertIn(".github/workflows/stage11-assurance.yml", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
+        self.assertIn(".github/workflows/stage11-control.yml", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertIn("lukart_work/ingestion/service.py", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertIn("tests/test_stage04.py", CONTROL.PROCEDURE_BOOTSTRAP_PATHS)
         self.assertEqual(CONTROL.require_stage11_tests(branch, False, base_sha=base,
