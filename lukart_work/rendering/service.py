@@ -38,7 +38,7 @@ from .contracts import (
     RenderProfile,
     RenderReceipt,
 )
-from .profiles import OFFICIAL_PL_V1, profile_font_paths, profile_pin
+from .profiles import OFFICIAL_PL_V1, profile_font_paths, profile_pin, profile_styles
 
 
 STYLE_TOKEN = {
@@ -229,9 +229,6 @@ def build_layout(model: RenderModel, profile: RenderProfile = OFFICIAL_PL_V1) ->
                 text=block.text,
                 refs=block.refs,
                 ordinal=block.ordinal,
-                keep_with_next=block.role
-                in ("DOCUMENT_HEADER", "REQUEST_HEADING", "SECTION_HEADING", "ATTACHMENT_HEADING"),
-                page_break_before=False,
             )
         )
     return LayoutTree(
@@ -303,31 +300,32 @@ def render_docx(layout: LayoutTree, profile: RenderProfile = OFFICIAL_PL_V1) -> 
     for paragraph in list(body.findall(qn("w:p"))):
         body.remove(paragraph)
 
+    styles = profile_styles(profile)
+    alignments = {
+        "LEFT": WD_ALIGN_PARAGRAPH.LEFT,
+        "CENTER": WD_ALIGN_PARAGRAPH.CENTER,
+        "RIGHT": WD_ALIGN_PARAGRAPH.RIGHT,
+        "JUSTIFY": WD_ALIGN_PARAGRAPH.JUSTIFY,
+    }
     for block in layout.blocks:
+        style = styles.get(block.style_token)
+        if style is None:
+            raise Violation("RENDER_STYLE_UNSUPPORTED")
         paragraph = document.add_paragraph()
         fmt = paragraph.paragraph_format
-        fmt.line_spacing = profile.line_spacing_milli / 1000
-        fmt.space_after = Pt(profile.paragraph_after_pt)
-        fmt.keep_with_next = block.keep_with_next
-        if block.role in ("SECTION_HEADING", "REQUEST_HEADING", "ATTACHMENT_HEADING"):
-            fmt.space_before = Pt(profile.section_before_pt)
-        if block.role in ("REQUEST_ITEM", "ATTACHMENT_ITEM"):
-            fmt.left_indent = Mm(7)
-            fmt.first_line_indent = Mm(-5)
-        if block.role == "SIGNATURE":
-            fmt.space_before = Pt(18)
-        if block.role == "DOCUMENT_HEADER":
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-        size = profile.body_font_pt
-        bold = False
-        if block.role == "DOCUMENT_HEADER":
-            size, bold = profile.title_font_pt, True
-        elif block.role in ("SECTION_HEADING", "REQUEST_HEADING", "ATTACHMENT_HEADING"):
-            size, bold = profile.heading_font_pt, True
+        fmt.line_spacing = style.line_spacing_milli / 1000
+        fmt.space_before = Pt(style.space_before_pt)
+        fmt.space_after = Pt(style.space_after_pt)
+        fmt.left_indent = Mm(style.left_indent_mm)
+        fmt.first_line_indent = Mm(-style.hanging_indent_mm) if style.hanging_indent_mm else None
+        fmt.keep_with_next = style.keep_with_next
+        fmt.keep_together = style.keep_together
+        fmt.widow_control = style.widow_control
+        fmt.page_break_before = style.page_break_before
+        paragraph.alignment = alignments[style.alignment]
 
         run = paragraph.add_run(_display_text(block))
-        _set_run_font(run, profile, size=size, bold=bold)
+        _set_run_font(run, profile, size=style.font_size_pt, bold=style.bold)
 
     buffer = BytesIO()
     document.save(buffer)
@@ -407,38 +405,63 @@ def render_pdf(layout: LayoutTree, profile: RenderProfile = OFFICIAL_PL_V1) -> b
         pdf.showPage()
         y = top
 
-    for block in layout.blocks:
-        size = profile.body_font_pt
-        font = regular_name
-        before = 0.0
-        after = profile.paragraph_after_pt
-        if block.role == "DOCUMENT_HEADER":
-            size, font = profile.title_font_pt, bold_name
-        elif block.role in ("SECTION_HEADING", "REQUEST_HEADING", "ATTACHMENT_HEADING"):
-            size, font = profile.heading_font_pt, bold_name
-            before = profile.section_before_pt
-        elif block.role == "SIGNATURE":
-            before = 18.0
-
-        line_height = size * (profile.line_spacing_milli / 1000)
+    styles = profile_styles(profile)
+    for block_index, block in enumerate(layout.blocks):
+        style = styles.get(block.style_token)
+        if style is None:
+            raise Violation("RENDER_STYLE_UNSUPPORTED")
+        size = style.font_size_pt
+        font = bold_name if style.bold else regular_name
+        before = float(style.space_before_pt)
+        after = float(style.space_after_pt)
+        line_height = size * (style.line_spacing_milli / 1000)
         text = _display_text(block)
-        block_left = left + (7 * mm if block.role in ("REQUEST_ITEM", "ATTACHMENT_ITEM") else 0)
+        block_left = left + style.left_indent_mm * mm
         available = right - block_left
         lines = _wrap_pdf(text, font, size, available)
+
+        if style.page_break_before and y != top:
+            new_page()
+
         reserve = before + max(1, len(lines)) * line_height + after
-        if block.keep_with_next:
-            reserve += profile.body_font_pt * (profile.line_spacing_milli / 1000)
-        if y - reserve < bottom:
+        if style.keep_with_next and block_index + 1 < len(layout.blocks):
+            next_block = layout.blocks[block_index + 1]
+            next_style = styles.get(next_block.style_token)
+            if next_style is None:
+                raise Violation("RENDER_STYLE_UNSUPPORTED")
+            reserve += next_style.space_before_pt + (
+                next_style.font_size_pt * (next_style.line_spacing_milli / 1000)
+            )
+        if style.keep_together and reserve <= (top - bottom) and y - reserve < bottom:
+            new_page()
+        elif style.keep_with_next and y - reserve < bottom:
             new_page()
 
         y -= before
         pdf.setFont(font, size)
-        for line in lines:
-            if y - line_height < bottom:
+        for index, line in enumerate(lines):
+            remaining = len(lines) - index
+            capacity = int(max(0, y - bottom) // line_height)
+            if y - line_height < bottom or (
+                style.widow_control and remaining > 1 and capacity == 1
+            ):
                 new_page()
                 pdf.setFont(font, size)
-            if block.role == "DOCUMENT_HEADER":
+            if style.alignment == "CENTER":
                 pdf.drawCentredString(page_width / 2, y, line)
+            elif style.alignment == "RIGHT":
+                pdf.drawRightString(right, y, line)
+            elif style.alignment == "JUSTIFY" and index < len(lines) - 1 and " " in line:
+                words = line.split()
+                if len(words) > 1:
+                    text_width = sum(pdfmetrics.stringWidth(word, font, size) for word in words)
+                    word_space = max(0.0, (available - text_width) / (len(words) - 1))
+                    cursor = block_left
+                    for word in words:
+                        pdf.drawString(cursor, y, word)
+                        cursor += pdfmetrics.stringWidth(word, font, size) + word_space
+                else:
+                    pdf.drawString(block_left, y, line)
             else:
                 pdf.drawString(block_left, y, line)
             y -= line_height
@@ -516,6 +539,7 @@ class RenderingEngine:
         receipt = RenderReceipt(
             draft=model.draft,
             snapshot_hash=model.snapshot_hash,
+            authorization_hash=request.authorization_hash,
             semantic_digest=digest(request.document),
             render_model_digest=digest(model),
             layout_digest=digest(layout),
