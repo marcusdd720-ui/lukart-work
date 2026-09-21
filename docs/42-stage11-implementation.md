@@ -25,7 +25,7 @@ Profile identity is the SHA-256 digest of the complete normalized profile specif
 
 ## Semantic representation
 
-The renderer serializes exactly the fields already present in `SemanticDocument`: header, typed Party and Request references, ordered SectionText statements, attachments and optional signature-party reference. It does not resolve missing display names or request wording from CASE state because doing so would make the renderer a second source of legal/domain meaning.
+The renderer presents the already prepared header and ordered SectionText statement text. Party, Request, Section and signature references remain provenance metadata bound by the SemanticDocument hash and are not exposed as internal UUIDs in user-facing bytes. Attachments are represented only by neutral ordinal labels because SourceAnchor identifiers are audit metadata. The renderer does not resolve missing display names or request wording from CASE state because doing so would make it a second source of legal/domain meaning.
 
 ## Formats
 
