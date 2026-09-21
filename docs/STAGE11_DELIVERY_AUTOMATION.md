@@ -64,6 +64,17 @@ The candidate SHA is a first-class identity and must be validated directly.
 8. Missing, stale, nonterminal, failed, untrusted, wrong-event, wrong-workflow, or
    differently bound evidence blocks merge.
 
+The sole external Case 1 bootstrap is different only at the event transport boundary:
+`check_procedure_bootstrap_candidate` permits a complete `push` evidence family
+instead of `workflow_dispatch`, but only for
+`codex/stage11-case1-zero-cost-verified`, exact base
+`74364cb7b648feaff30cff465a5beade8d5f3498`, a GitHub-verified candidate and the
+exact ten-file all-`modified` bootstrap scope. Both required workflow paths must be
+terminal SUCCESS on the exact same candidate SHA; evidence families are never mixed.
+This exception exists only to install the trusted procedure when the old default-branch
+control cannot dispatch/install its own remediation. Normal Stage 11 continues to
+require `workflow_dispatch`.
+
 This design deliberately uses `workflow_dispatch`, which GitHub allows to create a new
 workflow run even when the dispatch originates from a workflow authenticated with
 `GITHUB_TOKEN`. No PAT or long-lived GitHub App credential is required for this path.

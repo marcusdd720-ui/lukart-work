@@ -673,6 +673,22 @@ class P1RegressionTests(unittest.TestCase):
                 CONTROL.validate_landing_paths(bad_branch, bad_base, bad_files, bad_paths)
         self.assertEqual(CONTROL.require_stage11_tests(branch, True), "RENDERING_TESTS_REQUIRED")
 
+        bootstrap_sha = "e" * 40
+        candidate_commit = {"commit": {"verification": {"verified": True}}}
+        compare = {"behind_by": 0, "ahead_by": 1, "files": files}
+        with patch.object(CONTROL, "_assert_ref_sha") as assert_ref, \
+                patch.object(CONTROL, "_commit", return_value=candidate_commit), \
+                patch.object(CONTROL, "api", return_value=compare), \
+                patch.object(CONTROL, "_check_gate") as gate:
+            CONTROL.check_procedure_bootstrap_candidate(branch, bootstrap_sha, base)
+        assert_ref.assert_called_once_with(branch, bootstrap_sha, "during procedure bootstrap gate")
+        gate.assert_called_once_with(bootstrap_sha, required_event="push")
+
+        for bad_branch, bad_base in (("codex/stage11-other", base), (branch, self.BASE)):
+            with self.subTest(bootstrap_branch=bad_branch, bootstrap_base=bad_base), \
+                    self.assertRaises(CONTROL.ControlError):
+                CONTROL.check_procedure_bootstrap_candidate(bad_branch, bootstrap_sha, bad_base)
+
     def test_actual_workflow_step_rejects_missing_empty_skipped_and_failed_tests(self):
         workflow = (SCRIPT.parents[1] / ".github/workflows/stage11-assurance.yml").read_text(encoding="utf-8")
         code = textwrap.dedent(workflow.split("python -B -X utf8 - <<'PY'\n", 1)[1].split("          PY", 1)[0])

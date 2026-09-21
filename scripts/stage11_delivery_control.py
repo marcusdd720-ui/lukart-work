@@ -673,6 +673,27 @@ def _check_gate(sha: str, *, required_event: str) -> None:
         )
 
 
+def check_procedure_bootstrap_candidate(branch: str, sha: str, base_sha: str) -> None:
+    """One-time external bootstrap gate; normal Stage 11 still requires dispatch."""
+    candidate_sha = _require_sha(sha, "bootstrap_candidate_sha")
+    reviewed_base = _require_sha(base_sha, "bootstrap_base_sha")
+    if branch != PROCEDURE_BOOTSTRAP_BRANCH or reviewed_base != PROCEDURE_BOOTSTRAP_BASE:
+        raise ControlError("procedure bootstrap candidate identity is not authorized")
+    _assert_ref_sha(branch, candidate_sha, "during procedure bootstrap gate")
+    commit = _commit(candidate_sha)
+    if not commit["commit"]["verification"].get("verified"):
+        raise ControlError("procedure bootstrap candidate is not GitHub-verified")
+    compare = api("GET", f"/compare/{reviewed_base}...{candidate_sha}")
+    if compare.get("behind_by") != 0 or int(compare.get("ahead_by", 0)) < 1:
+        raise ControlError("procedure bootstrap candidate is not strictly ahead of exact base")
+    files = compare.get("files", [])
+    paths = [item.get("filename", "") for item in files]
+    scope = validate_landing_paths(branch, reviewed_base, files, paths)
+    if scope != "PROCEDURE_ONLY_BOOTSTRAP":
+        raise ControlError("procedure bootstrap scope is not exact")
+    _check_gate(candidate_sha, required_event="push")
+
+
 def _check_post_landing_gate(sha: str) -> str:
     failures: list[str] = []
     # Normal in-workflow landing uses explicit workflow_dispatch because a
