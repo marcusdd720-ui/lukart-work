@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 from html import escape, unescape
 from io import BytesIO
-from importlib import resources
-from textwrap import wrap
+from pathlib import Path
 from xml.etree import ElementTree as ET
 from zipfile import ZipFile, ZIP_STORED, ZipInfo
 
@@ -147,16 +146,18 @@ def _html(document: SemanticDocument, semantic_hash: str, spec: dict) -> bytes:
     return "".join(parts).encode("utf-8")
 
 
-_FONT = "LUKART-Vera"
+_FONT = "LUKART-DejaVuSans"
+_FONT_PATH = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
 
 
 def _ensure_pdf_font():
     if _FONT in pdfmetrics.getRegisteredFontNames():
         return
-    font_path = resources.files("reportlab").joinpath("fonts/Vera.ttf")
-    if not font_path.is_file():
+    # Ubuntu 24.04 runner/runtime dependency. Fail closed rather than silently
+    # substitute a font that cannot represent Polish legal text.
+    if not _FONT_PATH.is_file():
         raise RenderError("RENDER_FONT_UNAVAILABLE")
-    pdfmetrics.registerFont(TTFont(_FONT, str(font_path)))
+    pdfmetrics.registerFont(TTFont(_FONT, str(_FONT_PATH)))
 
 
 def _pdf(document: SemanticDocument, semantic_hash: str, spec: dict) -> bytes:
