@@ -55,8 +55,12 @@ def profile_font_paths(profile: RenderProfile) -> tuple[Path, Path]:
         raise RuntimeError("RENDER_PROFILE_UNSUPPORTED")
     if profile.font_regular_sha256 != _REGULAR_SHA256 or profile.font_bold_sha256 != _BOLD_SHA256:
         raise RuntimeError("RENDER_PROFILE_FONT_PIN_INVALID")
-    if _hash(_REGULAR) != profile.font_regular_sha256 or _hash(_BOLD) != profile.font_bold_sha256:
-        raise RuntimeError("RENDER_FONT_HASH_MISMATCH")
+    actual_regular = _hash(_REGULAR)
+    actual_bold = _hash(_BOLD)
+    if actual_regular != profile.font_regular_sha256 or actual_bold != profile.font_bold_sha256:
+        raise RuntimeError(
+            f"RENDER_FONT_HASH_MISMATCH:regular={actual_regular}:bold={actual_bold}"
+        )
     return _REGULAR, _BOLD
 
 
