@@ -22,7 +22,8 @@ from lukart_work.drafting.contracts import (
     DraftingTerminalResult, ModelExecutionReceipt,
 )
 from lukart_work.contracts.versions import contract_version
-from lukart_work.validation.contracts import STAGE10_CONTRACTS\nfrom lukart_work.rendering.contracts import STAGE11_CONTRACTS
+from lukart_work.validation.contracts import STAGE10_CONTRACTS
+from lukart_work.rendering.contracts import STAGE11_CONTRACTS
 from lukart_work.validation.rules import parse_entity
 ROOT=Path(__file__).parent
 EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEvidenceRequest,CandidateReviewRecord,
@@ -55,6 +56,9 @@ for p in (ROOT/'lukart_work/domain').glob('*.py'):
     for node in ast.walk(tree):
         if isinstance(node,ast.ImportFrom):assert not any(x in (node.module or '').split('.') for x in ('ui','rendering','openai','anthropic','lukart_ros'))
 checks.append({'check':'domain-import-boundaries','result':'PASS'})
-result={'python':platform.python_version(),'pydantic':importlib.metadata.version('pydantic'),'baseline_sha256':hashlib.sha256((ROOT/'docs/00-baseline.md').read_bytes().replace(b'\r\n', b'\n')).hexdigest(),'checks':checks,'json_files_parsed':len(list((ROOT/'schemas').glob('*.json'))),'independent_json_schema_engine':'NOT_EXECUTED'}
-(ROOT/'reports/package-validation.json').write_text(json.dumps(result,indent=2)+'\n')
+result={'python':platform.python_version(),'pydantic':importlib.metadata.version('pydantic'),'baseline_sha256':hashlib.sha256((ROOT/'docs/00-baseline.md').read_bytes().replace(b'\r
+', b'
+')).hexdigest(),'checks':checks,'json_files_parsed':len(list((ROOT/'schemas').glob('*.json'))),'independent_json_schema_engine':'NOT_EXECUTED'}
+(ROOT/'reports/package-validation.json').write_text(json.dumps(result,indent=2)+'
+')
 print(json.dumps({'checks':len(checks),'json_files_parsed':result['json_files_parsed'],'result':'PASS'}))
