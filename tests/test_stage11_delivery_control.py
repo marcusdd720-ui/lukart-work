@@ -346,6 +346,78 @@ class Stage11DeliveryControlTests(unittest.TestCase):
         finally:
             CONTROL.api = original_api
 
+    def test_check_gate_paginates_and_rejects_failure_on_second_page(self) -> None:
+        sha = "a" * 40
+        branch = "codex/stage11-rendering-engine"
+        actions_path = (
+            f"/actions/runs?head_sha={sha}"
+            "&event=workflow_dispatch&per_page=100"
+        )
+        first_page = [
+            {
+                "path": ".github/workflows/stage02.yml" if index % 2 == 0
+                        else ".github/workflows/stage11-assurance.yml",
+                "event": "workflow_dispatch",
+                "head_sha": sha,
+                "head_branch": branch,
+                "status": "completed",
+                "conclusion": "success",
+            }
+            for index in range(100)
+        ]
+
+        def fake_api(method, path, payload=None):
+            if path == f"/commits/{sha}/check-runs?per_page=100":
+                return {
+                    "check_runs": [
+                        {"name": "validation", "status": "completed", "conclusion": "success",
+                         "app": {"slug": "github-actions"}},
+                        {"name": "stage11-rendering", "status": "completed", "conclusion": "success",
+                         "app": {"slug": "github-actions"}},
+                    ]
+                }
+            if path == actions_path:
+                return {"workflow_runs": first_page}
+            if path == actions_path + "&page=2":
+                return {
+                    "workflow_runs": [{
+                        "path": ".github/workflows/stage02.yml",
+                        "event": "workflow_dispatch",
+                        "head_sha": sha,
+                        "head_branch": branch,
+                        "status": "completed",
+                        "conclusion": "failure",
+                    }]
+                }
+            raise AssertionError(path)
+
+        with patch.object(CONTROL, "api", side_effect=fake_api):
+            with self.assertRaisesRegex(CONTROL.ControlError, "workflow provenance"):
+                CONTROL._check_gate(
+                    sha,
+                    required_event="workflow_dispatch",
+                    expected_branch=branch,
+                )
+
+    def test_workflow_dispatch_run_listing_paginates(self) -> None:
+        workflow = "stage02.yml"
+        first_path = (
+            "/actions/workflows/stage02.yml/runs"
+            "?event=workflow_dispatch&per_page=100"
+        )
+        first_page = [{"id": index + 1} for index in range(100)]
+
+        def fake_api(method, path, payload=None):
+            if path == first_path:
+                return {"workflow_runs": first_page}
+            if path == first_path + "&page=2":
+                return {"workflow_runs": [{"id": 101}]}
+            raise AssertionError(path)
+
+        with patch.object(CONTROL, "api", side_effect=fake_api):
+            runs = CONTROL._workflow_dispatch_runs(workflow)
+        self.assertEqual([run["id"] for run in runs], list(range(1, 102)))
+
     def test_promotion_preserves_target_when_ci_dispatch_fails(self) -> None:
         source_sha = "a" * 40
         base_sha = "b" * 40
@@ -709,6 +781,10 @@ class P1RegressionTests(unittest.TestCase):
         )
         workflow = (SCRIPT.parents[1] / ".github/workflows/stage11-assurance.yml").read_text(encoding="utf-8")
         self.assertIn('branch in (PROCEDURE_BOOTSTRAP_BRANCH, "main")', workflow)
+        self.assertIn('lineage[1:] != [PROCEDURE_BOOTSTRAP_BASE]', workflow)
+        self.assertIn('"--name-status"', workflow)
+        self.assertIn('status != "M"', workflow)
+        self.assertIn("direct child of the exact bootstrap base", workflow)
 
         for wrong_base, changed in (
             (self.BASE, paths),
