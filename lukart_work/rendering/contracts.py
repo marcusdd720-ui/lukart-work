@@ -117,6 +117,11 @@ class RenderProfile(Value):
     font_regular_sha256: Hash
     font_bold_sha256: Hash
     styles: Annotated[tuple[StyleSpec, ...], Field(min_length=9, max_length=9)]
+    header_text: Text | None = None
+    footer_text: Text | None = None
+    page_numbers: bool
+    header_footer_font_pt: Annotated[int, Field(strict=True, ge=8, le=12)]
+    footer_offset_mm: Annotated[int, Field(strict=True, ge=5, le=25)]
     requests_label: Text
     attachments_label: Text
 
