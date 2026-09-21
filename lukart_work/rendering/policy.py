@@ -123,4 +123,4 @@ def adapter_pin(output_format: str, root=None) -> VersionPin:
 
 
 def stage11_actions(actions=frozenset()):
-    return frozenset(actions) | {"RenderDocument"}
+    return frozenset(actions) | {"RenderDocument", "GetValidation"}
