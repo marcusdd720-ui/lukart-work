@@ -1108,6 +1108,11 @@ class PostMergeRemediationRegressionTests(unittest.TestCase):
                 }), \
                 patch.object(CONTROL, "_blob_bytes", return_value=b"content"), \
                 patch.object(CONTROL, "graphql", side_effect=fake_graphql), \
+                patch.object(
+                    CONTROL,
+                    "dispatch_post_landing_checks",
+                    return_value={"stage02.yml": 301, "stage11-assurance.yml": 302},
+                ), \
                 patch.object(CONTROL, "_repo", return_value="owner/repo"), \
                 patch.object(CONTROL, "_procedure_identity", return_value=("policy", "procedure")), \
                 patch.object(CONTROL, "_post_comment", side_effect=lambda issue, body: comments.append(body)):
@@ -1116,8 +1121,10 @@ class PostMergeRemediationRegressionTests(unittest.TestCase):
         self.assertEqual(seen_variables["input"]["expectedHeadOid"], self.BASE)
         self.assertFalse(any(method == "PUT" and "/merge" in path for method, path, _ in calls))
         self.assertEqual(len(comments), 1)
-        self.assertTrue(comments[0].startswith("STAGE11_LANDING: PASS\n"))
+        self.assertTrue(comments[0].startswith("STAGE11_LANDING: DISPATCH_BOUND\n"))
         self.assertIn("landing_mode=ATOMIC_EXPECTED_HEAD", comments[0])
+        self.assertIn("stage02.yml:301", comments[0])
+        self.assertIn("stage11-assurance.yml:302", comments[0])
 
     def test_atomic_landing_rejects_last_moment_base_drift_without_main_mutation(self):
         calls = []
@@ -1156,6 +1163,70 @@ class PostMergeRemediationRegressionTests(unittest.TestCase):
 
         self.assertFalse(any(method in {"PUT", "PATCH", "POST", "DELETE"} for method, _, _ in calls))
         post.assert_not_called()
+
+    def test_post_landing_dispatch_binds_main_to_exact_sha(self):
+        token = "e" * 32
+        posted = set()
+        run_ids = {"stage02.yml": 401, "stage11-assurance.yml": 402}
+
+        def fake_api(method, path, payload=None):
+            if method == "POST" and path.endswith("/dispatches"):
+                workflow = path.split("/")[3]
+                self.assertEqual(payload["ref"], "main")
+                self.assertEqual(payload["inputs"]["candidate_sha"], self.LANDED)
+                self.assertEqual(payload["inputs"]["dispatch_token"], token)
+                posted.add(workflow)
+                return None
+            if method == "GET" and "/runs?" in path:
+                workflow = path.split("/")[3]
+                if workflow not in posted:
+                    return {"workflow_runs": []}
+                return {
+                    "workflow_runs": [{
+                        "id": run_ids[workflow],
+                        "display_title": _workflow_dispatch_title(workflow, token),
+                        "event": "workflow_dispatch",
+                        "head_sha": self.LANDED,
+                        "head_branch": "main",
+                        "path": f".github/workflows/{workflow}",
+                    }]
+                }
+            self.fail(f"unexpected API call: {method} {path} {payload}")
+
+        with patch.object(CONTROL, "_ref", return_value={"object": {"sha": self.LANDED}}), \
+                patch.object(CONTROL, "api", side_effect=fake_api), \
+                patch.object(CONTROL.secrets, "token_hex", return_value=token):
+            self.assertEqual(
+                CONTROL.dispatch_post_landing_checks(self.LANDED),
+                run_ids,
+            )
+
+    def test_post_landing_gate_prefers_dispatch_and_allows_complete_bootstrap_push(self):
+        calls = []
+
+        def dispatch_success(sha, *, required_event):
+            calls.append(required_event)
+            if required_event == "workflow_dispatch":
+                return None
+            self.fail("push fallback should not be consulted after dispatch success")
+
+        with patch.object(CONTROL, "_check_gate", side_effect=dispatch_success):
+            self.assertEqual(
+                CONTROL._check_post_landing_gate(self.LANDED),
+                "workflow_dispatch",
+            )
+        self.assertEqual(calls, ["workflow_dispatch"])
+
+        calls.clear()
+        def push_fallback(sha, *, required_event):
+            calls.append(required_event)
+            if required_event == "workflow_dispatch":
+                raise CONTROL.ControlError("no dispatched post-landing run")
+            return None
+
+        with patch.object(CONTROL, "_check_gate", side_effect=push_fallback):
+            self.assertEqual(CONTROL._check_post_landing_gate(self.LANDED), "push")
+        self.assertEqual(calls, ["workflow_dispatch", "push"])
 
     def test_cleanup_is_non_destructive_and_does_not_require_source_sha_identity(self):
         main_sha = self.LANDED
