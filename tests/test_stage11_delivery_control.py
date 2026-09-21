@@ -174,6 +174,12 @@ class Stage11DeliveryControlTests(unittest.TestCase):
                             "conclusion": None,
                             "app": {"slug": "github-actions"},
                         },
+                        {
+                            "name": "stage11-rendering",
+                            "status": "completed",
+                            "conclusion": "failure",
+                            "app": {"slug": "github-actions"},
+                        },
                     ]
                 }
             if path == (
@@ -310,6 +316,30 @@ class Stage11DeliveryControlTests(unittest.TestCase):
             }
 
         CONTROL.api = fake_wrong_branch_api
+        try:
+            with self.assertRaisesRegex(CONTROL.ControlError, "workflow provenance"):
+                CONTROL._check_gate(sha, required_event="workflow_dispatch", expected_branch=branch)
+        finally:
+            CONTROL.api = original_api
+
+        def fake_exact_failure_api(method, path, payload=None):
+            if path == f"/commits/{sha}/check-runs?per_page=100":
+                return {
+                    "check_runs": [
+                        {"name": "validation", "status": "completed", "conclusion": "success", "app": {"slug": "github-actions"}},
+                        {"name": "stage11-rendering", "status": "completed", "conclusion": "success", "app": {"slug": "github-actions"}},
+                    ]
+                }
+            return {
+                "workflow_runs": [
+                    {"path": ".github/workflows/stage02.yml", "event": "workflow_dispatch", "head_sha": sha,
+                     "head_branch": branch, "status": "completed", "conclusion": "failure"},
+                    {"path": ".github/workflows/stage11-assurance.yml", "event": "workflow_dispatch", "head_sha": sha,
+                     "head_branch": branch, "status": "completed", "conclusion": "success"},
+                ]
+            }
+
+        CONTROL.api = fake_exact_failure_api
         try:
             with self.assertRaisesRegex(CONTROL.ControlError, "workflow provenance"):
                 CONTROL._check_gate(sha, required_event="workflow_dispatch", expected_branch=branch)

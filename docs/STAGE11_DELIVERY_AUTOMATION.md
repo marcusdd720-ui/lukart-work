@@ -61,7 +61,9 @@ The candidate SHA is a first-class identity and must be validated directly.
 7. Gate verification checks both the trusted check producer (`github-actions`) and the
    workflow-run provenance. Pre-merge evidence must come from `workflow_dispatch` runs
    whose workflow path, `head_sha` and `head_branch` match the expected candidate and
-   reviewed Stage 11 branch exactly.
+   reviewed Stage 11 branch exactly. Terminal/failure status is evaluated only on that
+   exact provenance family; a check-run from another branch/event at the same SHA cannot
+   manufacture PASS or poison the correct evidence.
 8. Missing, stale, nonterminal, failed, untrusted, wrong-event, wrong-workflow, or
    differently bound evidence blocks merge.
 
@@ -251,7 +253,8 @@ After atomic landing, Stage 11 remains open until:
    family for both required workflow paths. The one-time external bootstrap transport
    may instead use a complete trusted exact-SHA `push` evidence family. Post-landing
    evidence must also bind `head_branch=main`. Evidence from different branches or event
-   families is not mixed to manufacture PASS.
+   families is not mixed to manufacture PASS, and failed checks emitted earlier on a
+   temporary bootstrap branch do not override a complete green `main` evidence family.
 7. The control itself records the post-merge receipt only after recomputing these
    machine-verifiable conditions. External comments are never trusted as authorization
    or evidence for this step.
