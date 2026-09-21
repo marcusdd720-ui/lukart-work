@@ -13,9 +13,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 from lukart_work.contracts.messages import RenderRequest
 from lukart_work.rendering.profiles import OFFICIAL_PL_V1, profile_font_paths, profile_pin
-from lukart_work.rendering.service import RenderingEngine
+from lukart_work.rendering.service import RenderingEngine, authorization_binding
 from lukart_work.validation.rules import Violation
-from tests.fixtures import H
 from tests.stage11_render_fixture import build_fixture
 
 
@@ -110,7 +109,9 @@ class Stage11RenderingTests(unittest.TestCase):
         altered_request = RenderRequest(
             document=self.request.document,
             profile=profile_pin(altered_profile),
-            authorization_hash=H,
+            authorization_hash=authorization_binding(
+                self.request.document, profile_pin(altered_profile)
+            ),
         )
         second = self.engine.render(altered_request, self.records, altered_profile)
         self.assertEqual(first.meta.receipt.semantic_digest, second.meta.receipt.semantic_digest)
@@ -166,9 +167,21 @@ class Stage11RenderingTests(unittest.TestCase):
         bad = RenderRequest(
             document=bad_doc,
             profile=self.request.profile,
-            authorization_hash=H,
+            authorization_hash=authorization_binding(bad_doc, self.request.profile),
         )
         with self.assertRaisesRegex(Violation, "INVALID_HASH"):
+            self.engine.render(bad, self.records)
+
+    def test_stale_authorization_binding_rejects_semantic_drift(self):
+        changed = self.request.document.model_copy(
+            update={"header": "NIEAUTORYZOWANA ZMIANA NAGŁÓWKA"}
+        )
+        bad = RenderRequest(
+            document=changed,
+            profile=self.request.profile,
+            authorization_hash=self.request.authorization_hash,
+        )
+        with self.assertRaisesRegex(Violation, "GATE_DENIED"):
             self.engine.render(bad, self.records)
 
     def test_profile_substitution_fails_closed(self):
@@ -180,7 +193,9 @@ class Stage11RenderingTests(unittest.TestCase):
         bad = RenderRequest(
             document=self.request.document,
             profile=self.request.profile,
-            authorization_hash=H,
+            authorization_hash=authorization_binding(
+                self.request.document, self.request.profile
+            ),
         )
         with self.assertRaisesRegex(Violation, "INVALID_HASH"):
             self.engine.render(bad, self.records, mutated)
@@ -189,7 +204,11 @@ class Stage11RenderingTests(unittest.TestCase):
         doc = self.request.document.model_copy(
             update={"header": 'WNIOSEK <script>alert("x")</script> & dalsza treść'}
         )
-        bad = RenderRequest(document=doc, profile=self.request.profile, authorization_hash=H)
+        bad = RenderRequest(
+            document=doc,
+            profile=self.request.profile,
+            authorization_hash=authorization_binding(doc, self.request.profile),
+        )
         bundle = self.engine.render(bad, self.records)
         with ZipFile(BytesIO(bundle.docx), "r") as package:
             xml = package.read("word/document.xml").decode("utf-8")
