@@ -79,6 +79,15 @@ def tags(digest=MODEL_DIGEST):
     }
 
 
+class PromptBuilder:
+    def __init__(self, text="synthetic prompt", pin=PROVIDER):
+        self.text = text
+        self.pin = pin
+
+    def __call__(self, invocation):
+        return self.text
+
+
 class FakeTransport:
     def __init__(self, values):
         self.values = list(values)
@@ -162,6 +171,14 @@ class Stage13ProviderTests(unittest.TestCase):
             with self.subTest(endpoint=endpoint), self.assertRaises(ProviderPolicyError):
                 config(endpoint=endpoint)
 
+    def test_prompt_builder_pin_must_match_request(self):
+        item = invocation()
+        provider = OllamaProvider(
+            config(), PromptBuilder(pin=GENERATOR), FakeTransport([])
+        )
+        with self.assertRaises(ProviderPolicyError):
+            provider.propose(item)
+
     def test_success_binds_model_digest_and_receipt(self):
         item = invocation()
         transport = FakeTransport([
@@ -169,7 +186,7 @@ class Stage13ProviderTests(unittest.TestCase):
             {"model": "synthetic:1b", "done": True, "response": result_json(item)},
             tags(),
         ])
-        provider = OllamaProvider(config(), lambda _: "synthetic prompt", transport)
+        provider = OllamaProvider(config(), PromptBuilder(), transport)
         raw = provider.propose(item)
         self.assertEqual(raw["request_id"], str(item.request.request_id))
         receipt = provider.execution_receipt(item.request.request_id)
@@ -184,7 +201,7 @@ class Stage13ProviderTests(unittest.TestCase):
 
     def test_missing_model_fails_before_generation(self):
         provider = OllamaProvider(
-            config(), lambda _: "synthetic prompt", FakeTransport([{"models": []}])
+            config(), PromptBuilder(), FakeTransport([{"models": []}])
         )
         with self.assertRaises(ProviderModelMissing):
             provider.propose(invocation())
@@ -196,7 +213,7 @@ class Stage13ProviderTests(unittest.TestCase):
             {"model": "synthetic:1b", "done": True, "response": result_json(item)},
             tags("f" * 64),
         ])
-        provider = OllamaProvider(config(), lambda _: "synthetic prompt", transport)
+        provider = OllamaProvider(config(), PromptBuilder(), transport)
         with self.assertRaises(ProviderProtocolError):
             provider.propose(item)
         with self.assertRaises(ProviderProtocolError):
@@ -205,7 +222,7 @@ class Stage13ProviderTests(unittest.TestCase):
     def test_timeout_is_not_retried(self):
         item = invocation()
         transport = FakeTransport([tags(), ProviderTimeout()])
-        provider = OllamaProvider(config(), lambda _: "synthetic prompt", transport)
+        provider = OllamaProvider(config(), PromptBuilder(), transport)
         with self.assertRaises(ProviderTimeout):
             provider.propose(item)
         self.assertEqual(
@@ -222,7 +239,7 @@ class Stage13ProviderTests(unittest.TestCase):
         for envelope in bad:
             with self.subTest(envelope=envelope):
                 provider = OllamaProvider(
-                    config(), lambda _: "synthetic prompt",
+                    config(), PromptBuilder(),
                     FakeTransport([tags(), envelope, tags()]),
                 )
                 with self.assertRaises(ProviderProtocolError):
@@ -231,7 +248,7 @@ class Stage13ProviderTests(unittest.TestCase):
     def test_malformed_ai_result_rejected(self):
         item = invocation()
         provider = OllamaProvider(
-            config(), lambda _: "synthetic prompt",
+            config(), PromptBuilder(),
             FakeTransport([
                 tags(),
                 {"model": "synthetic:1b", "done": True, "response": '{"status":"FINAL"}'},
@@ -245,7 +262,7 @@ class Stage13ProviderTests(unittest.TestCase):
         item = invocation()
         other = invocation(2)
         provider = OllamaProvider(
-            config(), lambda _: "synthetic prompt",
+            config(), PromptBuilder(),
             FakeTransport([
                 tags(),
                 {"model": "synthetic:1b", "done": True, "response": result_json(other)},
@@ -259,7 +276,7 @@ class Stage13ProviderTests(unittest.TestCase):
         item = invocation()
         cfg = config(max_prompt_bytes=1024)
         provider = OllamaProvider(
-            cfg, lambda _: "x" * 1025, FakeTransport([tags()])
+            cfg, PromptBuilder("x" * 1025), FakeTransport([tags()])
         )
         with self.assertRaises(ProviderResponseTooLarge):
             provider.propose(item)
@@ -267,7 +284,7 @@ class Stage13ProviderTests(unittest.TestCase):
     def test_concurrency_backpressure_is_fail_closed(self):
         item = invocation()
         blocking = BlockingTransport(item)
-        provider = OllamaProvider(config(max_concurrency=1), lambda _: "prompt", blocking)
+        provider = OllamaProvider(config(max_concurrency=1), PromptBuilder("prompt"), blocking)
         with ThreadPoolExecutor(max_workers=1) as pool:
             first = pool.submit(provider.propose, item)
             self.assertTrue(blocking.entered.wait(timeout=5))
@@ -276,10 +293,24 @@ class Stage13ProviderTests(unittest.TestCase):
             blocking.release.set()
             first.result()
 
+    def test_duplicate_inflight_request_id_is_rejected(self):
+        item = invocation()
+        blocking = BlockingTransport(item)
+        provider = OllamaProvider(
+            config(max_concurrency=2), PromptBuilder("prompt"), blocking
+        )
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            first = pool.submit(provider.propose, item)
+            self.assertTrue(blocking.entered.wait(timeout=5))
+            with self.assertRaises(ProviderProtocolError):
+                provider.propose(item)
+            blocking.release.set()
+            first.result()
+
     def test_cancellation_is_propagated_to_transport(self):
         item = invocation()
         blocking = BlockingTransport(item)
-        provider = OllamaProvider(config(), lambda _: "prompt", blocking)
+        provider = OllamaProvider(config(), PromptBuilder("prompt"), blocking)
         with ThreadPoolExecutor(max_workers=1) as pool:
             future = pool.submit(provider.propose, item)
             self.assertTrue(blocking.entered.wait(timeout=5))
@@ -290,7 +321,7 @@ class Stage13ProviderTests(unittest.TestCase):
 
     def test_health_reports_digest_drift_without_claiming_ready(self):
         provider = OllamaProvider(
-            config(), lambda _: "prompt", FakeTransport([tags("f" * 64)])
+            config(), PromptBuilder("prompt"), FakeTransport([tags("f" * 64)])
         )
         self.assertEqual(provider.health()["status"], "DRIFT")
 

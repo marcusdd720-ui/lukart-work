@@ -110,6 +110,7 @@ class OllamaConfig:
     response_timeout: float = 120.0
     max_response_bytes: int = 2_000_000
     max_prompt_bytes: int = 1_000_000
+    max_request_bytes: int = 3_000_000
     max_concurrency: int = 1
     keep_alive: str = "5m"
     options: Mapping[str, object] = field(default_factory=dict)
@@ -133,7 +134,20 @@ class OllamaConfig:
             or parsed.path not in ("", "/")
         ):
             raise ProviderPolicyError()
-        if host not in set(self.allowed_hosts):
+        try:
+            allowed_hosts = tuple(self.allowed_hosts)
+        except TypeError as exc:
+            raise ProviderPolicyError() from exc
+        if (
+            not allowed_hosts
+            or any(not isinstance(value, str) or not value for value in allowed_hosts)
+            or len(set(allowed_hosts)) != len(allowed_hosts)
+        ):
+            raise ProviderPolicyError()
+        object.__setattr__(self, "allowed_hosts", allowed_hosts)
+        if host not in set(allowed_hosts):
+            raise ProviderPolicyError()
+        if not isinstance(self.local_only, bool):
             raise ProviderPolicyError()
         if self.local_only and not _is_loopback_host(host):
             raise ProviderPolicyError()
@@ -156,9 +170,29 @@ class OllamaConfig:
         except (TypeError, ValueError) as exc:
             raise ProviderPolicyError() from exc
         object.__setattr__(self, "options", frozen_options)
-        if self.connect_timeout <= 0 or self.response_timeout <= 0:
+        if (
+            isinstance(self.connect_timeout, bool)
+            or isinstance(self.response_timeout, bool)
+            or not isinstance(self.connect_timeout, (int, float))
+            or not isinstance(self.response_timeout, (int, float))
+            or not math.isfinite(self.connect_timeout)
+            or not math.isfinite(self.response_timeout)
+            or self.connect_timeout <= 0
+            or self.response_timeout <= 0
+        ):
             raise ProviderPolicyError()
-        if self.max_response_bytes < 1024 or self.max_prompt_bytes < 1024:
+        if (
+            not all(
+                isinstance(value, int) and not isinstance(value, bool)
+                for value in (
+                    self.max_response_bytes, self.max_prompt_bytes,
+                    self.max_request_bytes, self.max_concurrency,
+                )
+            )
+            or self.max_response_bytes < 1024
+            or self.max_prompt_bytes < 1024
+            or self.max_request_bytes < 1024
+        ):
             raise ProviderPolicyError()
         if self.max_concurrency < 1 or self.max_concurrency > 64:
             raise ProviderPolicyError()
@@ -231,6 +265,8 @@ class OllamaHttpTransport:
                 ).encode("utf-8")
             except (TypeError, ValueError) as exc:
                 raise ProviderProtocolError() from exc
+            if len(body) > self.config.max_request_bytes:
+                raise ProviderResponseTooLarge()
             headers["Content-Type"] = "application/json"
         try:
             connection.connect()
@@ -278,8 +314,12 @@ class OllamaProvider:
         self.transport = transport or OllamaHttpTransport(config)
         self._capacity = threading.BoundedSemaphore(config.max_concurrency)
         self._lock = threading.Lock()
+        builder_pin = getattr(prompt_builder, "pin", None)
+        if not isinstance(builder_pin, VersionPin):
+            raise ProviderPolicyError()
         self._receipts: OrderedDict[UUID, ModelExecutionReceipt] = OrderedDict()
         self._cancelled: set[UUID] = set()
+        self._inflight: set[UUID] = set()
 
     def cancel(self, request_id: UUID):
         with self._lock:
@@ -328,8 +368,16 @@ class OllamaProvider:
         request_id = invocation.request.request_id
         if not self._capacity.acquire(blocking=False):
             raise ProviderBusy()
+        registered = False
         try:
+            with self._lock:
+                if request_id in self._inflight or request_id in self._receipts:
+                    raise ProviderProtocolError()
+                self._inflight.add(request_id)
+                registered = True
             self._check_cancelled(request_id)
+            if self.prompt_builder.pin != invocation.request.prompt:
+                raise ProviderPolicyError()
             before = self._model_digest(request_id)
             if before != self.config.model.content_hash:
                 raise ProviderProtocolError()
@@ -391,6 +439,8 @@ class OllamaProvider:
         finally:
             with self._lock:
                 self._cancelled.discard(request_id)
+                if registered:
+                    self._inflight.discard(request_id)
             self._capacity.release()
 
     def execution_receipt(self, request_id: UUID) -> ModelExecutionReceipt:
