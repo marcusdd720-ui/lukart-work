@@ -46,7 +46,7 @@ Preconditions:
 
 1. caller is the repository owner;
 2. the comment belongs to an open, non-draft, unmerged PR;
-3. PR base is `main`;
+3. PR head and base belong to the same repository, and PR base is `main`;
 4. PR head branch is exactly `codex/stage12-audit-provenance`; the procedure-remediation branch is not eligible;
 5. current PR head equals `source_sha`;
 6. current branch ref equals `source_sha`;
