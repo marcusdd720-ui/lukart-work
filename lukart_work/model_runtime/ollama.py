@@ -13,6 +13,7 @@ import ipaddress
 import json
 import socket
 import threading
+from types import MappingProxyType
 from typing import Callable, Mapping
 from urllib.parse import urlsplit
 from uuid import UUID
