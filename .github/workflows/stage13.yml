@@ -131,7 +131,11 @@ jobs:
           PY
 
       - name: Refresh global integrity manifest
-        run: python -B -X utf8 scripts/refresh_manifest.py
+        run: |
+          python -B -X utf8 scripts/refresh_manifest.py
+          mkdir -p build/stage13
+          cp reports/manifest.sha256.json build/stage13/manifest.sha256.json
+          git diff -- reports/manifest.sha256.json > build/stage13/manifest.diff || true
 
       - name: Whitespace check
         run: git diff --check
