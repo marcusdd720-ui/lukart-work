@@ -10,7 +10,8 @@ from uuid import UUID
 
 from pydantic import Field, model_validator
 
-from lukart_work.domain.models import Hash, Ref, Text, Value, VersionPin
+from lukart_work.contracts.messages import ValidationRunPin
+from lukart_work.domain.models import Hash, Positive, Ref, Text, Value, VersionPin
 
 RenderRole = Literal[
     "DOCUMENT_HEADER",
@@ -51,6 +52,28 @@ REQUIRED_STYLE_TOKENS = (
 )
 
 
+class RenderAuthority(Value):
+    """Exact trusted pre-render provenance retained in every rendered artifact receipt."""
+
+    semantic_digest: Hash
+    draft: Ref
+    draft_hash: Hash
+    plan: Ref
+    plan_hash: Hash
+    snapshot_id: UUID
+    snapshot_hash: Hash
+    validation_run: ValidationRunPin
+    validation_execution_hash: Hash
+    validation_projection_hash: Hash
+    case_sequence: Positive
+
+    @model_validator(mode="after")
+    def reference_contract(self):
+        if self.draft.kind != "Draft" or self.plan.kind != "DocumentPlan":
+            raise ValueError("REFERENCE_TYPE")
+        return self
+
+
 class RenderBlock(Value):
     role: RenderRole
     text: Text
@@ -72,12 +95,15 @@ class RenderModel(Value):
     case_id: UUID
     draft: Ref
     snapshot_hash: Hash
+    authority: RenderAuthority
     blocks: Annotated[tuple[RenderBlock, ...], Field(min_length=1, max_length=5000)]
 
     @model_validator(mode="after")
     def draft_contract(self):
         if self.draft.kind != "Draft":
             raise ValueError("REFERENCE_TYPE")
+        if self.authority.draft != self.draft or self.authority.snapshot_hash != self.snapshot_hash:
+            raise ValueError("AUTHORITY_MISMATCH")
         return self
 
 
@@ -150,6 +176,7 @@ class LayoutTree(Value):
     case_id: UUID
     draft: Ref
     snapshot_hash: Hash
+    authority: RenderAuthority
     profile: VersionPin
     blocks: Annotated[tuple[LayoutBlock, ...], Field(min_length=1, max_length=5000)]
 
@@ -167,6 +194,7 @@ class RenderArtifact(Value):
 class RenderReceipt(Value):
     draft: Ref
     snapshot_hash: Hash
+    authority: RenderAuthority
     authorization_hash: Hash
     semantic_digest: Hash
     render_model_digest: Hash
@@ -177,6 +205,10 @@ class RenderReceipt(Value):
 
     @model_validator(mode="after")
     def artifacts_contract(self):
+        if self.authority.draft != self.draft or self.authority.snapshot_hash != self.snapshot_hash:
+            raise ValueError("AUTHORITY_MISMATCH")
+        if self.authority.semantic_digest != self.semantic_digest:
+            raise ValueError("AUTHORITY_MISMATCH")
         formats = tuple(a.format for a in self.artifacts)
         if formats != ("DOCX", "PDF"):
             raise ValueError("ARTIFACT_ORDER")
