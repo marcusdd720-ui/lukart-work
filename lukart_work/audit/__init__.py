@@ -1,8 +1,12 @@
-from .contracts import AuditPackage, AuditRevisionPin, AuditTrace, STAGE12_CONTRACTS
+from .contracts import (
+    AuditCommandPin, AuditObjectPin, AuditPackage, AuditRevisionPin, AuditTrace, STAGE12_CONTRACTS,
+)
 from .service import AuditService, audit_pin, audit_policy_artifact, verify_audit_package
 
 __all__ = (
     'AuditRevisionPin',
+    'AuditObjectPin',
+    'AuditCommandPin',
     'AuditPackage',
     'AuditTrace',
     'STAGE12_CONTRACTS',
