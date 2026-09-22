@@ -162,6 +162,7 @@ def _assert_owner_actor(event: dict[str, Any]) -> None:
         or actor.get("type") != "User"
         or owner.get("type") != "User"
         or association != "OWNER"
+        or comment.get("performed_via_github_app") is not None
     ):
         raise ControlError(
             "only the authenticated repository-owner HUMAN boundary may invoke Stage 12 control"

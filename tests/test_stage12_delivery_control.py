@@ -411,6 +411,7 @@ class Stage12DeliveryControlTests(unittest.TestCase):
             "comment": {
                 "user": {"login": "owner", "id": 1, "type": "User"},
                 "author_association": "OWNER",
+                "performed_via_github_app": None,
             },
             "repository": {"owner": {"login": "owner", "id": 1, "type": "User"}},
         }
@@ -423,6 +424,18 @@ class Stage12DeliveryControlTests(unittest.TestCase):
         for event in variants:
             with self.assertRaises(CONTROL.ControlError):
                 CONTROL._assert_owner_actor(event)
+
+    def test_owner_boundary_rejects_github_app_performed_comment(self):
+        event = {
+            "comment": {
+                "user": {"login": "owner", "id": 1, "type": "User"},
+                "author_association": "OWNER",
+                "performed_via_github_app": {"id": 99, "slug": "synthetic-app"},
+            },
+            "repository": {"owner": {"login": "owner", "id": 1, "type": "User"}},
+        }
+        with self.assertRaisesRegex(CONTROL.ControlError, "repository-owner HUMAN"):
+            CONTROL._assert_owner_actor(event)
 
     def test_stage12_control_workflow_is_isolated_from_stage11_command_namespace(self):
         text = (ROOT / ".github" / "workflows" / "stage12-control.yml").read_text(encoding="utf-8")

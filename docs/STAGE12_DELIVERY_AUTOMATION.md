@@ -44,7 +44,7 @@ The control derives the target branch from the pull request that received the co
 
 Preconditions:
 
-1. caller is the repository owner;
+1. caller is the repository-owner HUMAN and `comment.performed_via_github_app` is `null`;
 2. the comment belongs to an open, non-draft, unmerged PR;
 3. PR head and base belong to the same repository, and PR base is `main`;
 4. PR head branch is exactly `codex/stage12-audit-provenance`; the procedure-remediation branch is not eligible;
