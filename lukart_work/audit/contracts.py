@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import Field, model_validator
 
 from lukart_work.contracts.messages import DomainEvent
-from lukart_work.domain.models import Hash, Ref, SourceAnchor, Value, VersionPin
+from lukart_work.domain.models import Hash, Ref, SourceAnchor, Text, Value, VersionPin
 
 
 class AuditRevisionPin(Value):
@@ -14,16 +14,16 @@ class AuditRevisionPin(Value):
 
 
 class AuditObjectPin(Value):
-    category: str
+    category: Text
     object_id: UUID
-    contract: str
+    contract: Text
     content_hash: Hash
 
 
 class AuditCommandPin(Value):
     idempotency_key: UUID
     input_hash: Hash
-    contract: str
+    contract: Text
     content_hash: Hash
 
 
