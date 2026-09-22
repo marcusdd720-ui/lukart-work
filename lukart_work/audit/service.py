@@ -108,7 +108,9 @@ class AuditService:
         )
         object_pins = tuple(
             AuditObjectPin(category=category, object_id=object_id, contract=contract, content_hash=content_hash)
-            for category, object_id, contract, content_hash in object_rows
+            for category, object_id, contract, content_hash in sorted(
+                object_rows, key=lambda row: (row[0], str(row[1]))
+            )
         )
         command_pins = tuple(
             AuditCommandPin(
@@ -117,14 +119,19 @@ class AuditService:
                 contract=contract,
                 content_hash=content_hash,
             )
-            for idempotency_key, input_hash, contract, content_hash in command_rows
+            for idempotency_key, input_hash, contract, content_hash in sorted(
+                command_rows, key=lambda row: str(row[0])
+            )
         )
         package = AuditPackage(
             contract='urn:lukart:work:AuditPackage:1.0.0',
             tenant_id=principal.tenant_id,
             case_id=principal.case_id,
             case_sequence=tx.sequence(),
-            heads=tuple(ref(entity) for entity in tx.heads()),
+            heads=tuple(sorted(
+                (ref(entity) for entity in tx.heads()),
+                key=lambda target: (target.kind, str(target.id), target.revision),
+            )),
             revisions=revision_pins,
             objects=object_pins,
             commands=command_pins,
