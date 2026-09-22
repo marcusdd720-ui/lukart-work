@@ -26,8 +26,16 @@ class Stage12DeliveryControlTests(unittest.TestCase):
             "state": "open",
             "draft": False,
             "merged": False,
-            "base": {"ref": "main", "sha": base or self.BASE},
-            "head": {"ref": branch or self.BRANCH, "sha": head or self.SOURCE},
+            "base": {
+                "ref": "main",
+                "sha": base or self.BASE,
+                "repo": {"id": 1, "full_name": "owner/repo"},
+            },
+            "head": {
+                "ref": branch or self.BRANCH,
+                "sha": head or self.SOURCE,
+                "repo": {"id": 1, "full_name": "owner/repo"},
+            },
         }
 
     def source_commit(self, *, tree: str | None = None):
@@ -111,6 +119,12 @@ class Stage12DeliveryControlTests(unittest.TestCase):
                 self.SOURCE,
                 self.BASE,
             )
+
+    def test_cross_repository_head_is_rejected(self):
+        pr = self.pr()
+        pr["head"]["repo"] = {"id": 2, "full_name": "fork/repo"}
+        with self.assertRaisesRegex(CONTROL.ControlError, "same repository"):
+            CONTROL._validate_pr_preconditions(pr, self.SOURCE, self.BASE)
 
     def test_source_sha_mismatch_is_rejected(self):
         with self.assertRaisesRegex(CONTROL.ControlError, "source SHA"):
