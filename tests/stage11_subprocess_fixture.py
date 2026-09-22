@@ -5,8 +5,8 @@ from lukart_work.rendering.service import RenderingEngine
 from tests.stage11_render_fixture import build_fixture
 
 
-request, records = build_fixture()
-bundle = RenderingEngine().render(request, records)
+request, records, validation = build_fixture()
+bundle = RenderingEngine().render(request, records, validation)
 print(json.dumps({
     "docx": bundle.meta.receipt.artifacts[0].content_hash,
     "pdf": bundle.meta.receipt.artifacts[1].content_hash,
@@ -15,4 +15,8 @@ print(json.dumps({
     "layout": bundle.meta.receipt.layout_digest,
     "renderer": bundle.meta.receipt.renderer.content_hash,
     "profile": bundle.meta.receipt.render_profile.content_hash,
+    "validation": bundle.meta.receipt.authority.validation_run.content_hash,
+    "projection": bundle.meta.receipt.authority.validation_projection_hash,
+    "plan": bundle.meta.receipt.authority.plan_hash,
+    "draft": bundle.meta.receipt.authority.draft_hash,
 }, sort_keys=True))
