@@ -140,16 +140,18 @@ class Stage13ProviderTests(unittest.TestCase):
             ollama_parameters_hash(options={"temperature": 0}),
         )
 
-    def test_options_are_frozen_after_hash_validation(self):
-        source = {"temperature": 0}
+    def test_options_are_deeply_frozen_after_hash_validation(self):
+        source = {"sampling": {"temperature": 0}, "stop": ["END"]}
         value = config(
             options=source,
             model_parameters_hash=ollama_parameters_hash(options=source),
         )
-        source["temperature"] = 1
-        self.assertEqual(value.options["temperature"], 0)
+        source["sampling"]["temperature"] = 1
+        source["stop"].append("LATER")
+        self.assertEqual(value.options["sampling"]["temperature"], 0)
+        self.assertEqual(value.options["stop"], ("END",))
         with self.assertRaises(TypeError):
-            value.options["temperature"] = 2
+            value.options["sampling"]["temperature"] = 2
 
     def test_transport_rejects_oversized_body_without_stale_active_request(self):
         transport = OllamaHttpTransport(config(max_request_bytes=1024))
@@ -163,6 +165,13 @@ class Stage13ProviderTests(unittest.TestCase):
     def test_strict_outer_json_rejects_duplicate_keys(self):
         with self.assertRaises(ProviderProtocolError):
             strict_json_bytes(b'{"done":true,"done":false}')
+
+    def test_transport_rejects_unapproved_method_path_pairs(self):
+        transport = OllamaHttpTransport(config())
+        with self.assertRaises(ProviderPolicyError):
+            transport.json_request("POST", "/api/tags", {}, UUID(int=997))
+        with self.assertRaises(ProviderPolicyError):
+            transport.json_request("GET", "/api/generate", None, UUID(int=998))
 
     def test_remote_endpoint_denied_by_default(self):
         with self.assertRaises(ProviderPolicyError):
@@ -320,6 +329,14 @@ class Stage13ProviderTests(unittest.TestCase):
                 provider.propose(item)
             blocking.release.set()
             first.result()
+
+    def test_cancel_unknown_request_does_not_accumulate_state(self):
+        provider = OllamaProvider(
+            config(), PromptBuilder("prompt"), FakeTransport([])
+        )
+        with self.assertRaises(ProviderProtocolError):
+            provider.cancel(UUID(int=12345))
+        self.assertEqual(provider._cancelled, set())
 
     def test_cancellation_is_propagated_to_transport(self):
         item = invocation()
