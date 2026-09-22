@@ -379,6 +379,7 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
                     "No product file changes."
                 ),
             },
+            "fileChanges": {},
             "expectedHeadOid": source_sha,
         }
     }

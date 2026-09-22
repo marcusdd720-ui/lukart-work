@@ -154,7 +154,7 @@
   "reports/stage09-schema-validation.json": "f7f42ca52e803b0f21d646c50d5b6d06bd41cd50c171ac009d6389fa478dd5a5",
   "reports/stage09-status.json": "5d11212e22559aba5a041a5402100ebabb422ba1cfc5724ccdbb0aabd9e6bf7e",
   "reports/stage10-schema-validation.json": "c07b4e2b29ebb768f97e2d426d74695209f82df981908ed11e709a9259fa7bfc",
-  "reports/stage10-status.json": "385fd39fad412d0e50ef63e793285f0a16e777457e36d73775f9d030b312f920",
+  "reports/stage10-status.json": "3f2a696e4e9b0c0c7e2c90cac63e42c7d35792abea42ee968128552bd3e58616",
   "reports/status.json": "b3a0315e0fc695b5b8a343f03f2842d7c07c35f881ac2b6c9d9229e318fd2c85",
   "reports/unittest.txt": "001f4d7399e2b3f597dc4a9f6b5370544ede14b6abb2a4dea66bc83e263744b1",
   "schemas/AIRequest.schema.json": "54555e50f93fbe1e62e5ccb21f8d0c0dae253f7f511d03e2cadfa9f7f47c5ed3",
@@ -265,7 +265,7 @@
   "scripts/refresh_manifest.py": "c29f0a79f93a20c7a686909f71c628b1f618057effef60534244fd4c1ea76aeb",
   "scripts/render_cross_repo_contract.py": "80476b1aa02bc2a058ddce3fe11b111e9b48185242672bb43100340818b53e04",
   "scripts/stage11_delivery_control.py": "ed25d0ea5a4e158d488f834bb6594d592e2059b6585d611bf0978b91cb1997d1",
-  "scripts/stage12_delivery_control.py": "496e6ee8702d90c2a813ee9f432a7cb9452040552ffc7516c28955d12a824d4a",
+  "scripts/stage12_delivery_control.py": "16fc3eb5d069c6382adb7c68ff2da888cf3659951a80366d695e368009aadd29",
   "scripts/start_stage02_postgres.ps1": "49a7c29522606d091080901c6d0a4fe2b8e0401b551b77079f414571e6d21065",
   "scripts/validate_stage06_schemas.py": "e4135f24d41939a00be4aae06a95326fbb3db6c0eaba3040a0037259e2d45a94",
   "scripts/validate_stage07_schemas.py": "db267606a7bce858dd08cc27c263cece5a9e88626bbc6ba83d0075d69265073f",
@@ -309,6 +309,6 @@
   "tests/test_stage11.py": "bcd367f3b061c637c01560a0eb0f5dae92a5512f06c080c7da108bbc90d6ad58",
   "tests/test_stage11_delivery_control.py": "299b9611a5e415e5cfa5657f2e1f4b807cdc484f9e8b631d6a19d8a694adafaf",
   "tests/test_stage12.py": "71dc88c94431f6772300d0608d39756316fb8541fc78b15c06573de938247633",
-  "tests/test_stage12_delivery_control.py": "8c7dc68c449e39e9494f3a536c29abe211c5815473e9427bc76976c0ea7005ef",
+  "tests/test_stage12_delivery_control.py": "f1693b4b59a36b82144001086996d5ad38d2edccaefaf64201df41e594078589",
   "verify_package.py": "372409d95b4d314ebb4db2ad202b6c759bdad35e623504047821d55a3623c48f"
 }

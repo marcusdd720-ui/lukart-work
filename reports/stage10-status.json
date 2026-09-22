@@ -77,7 +77,7 @@
     "scripts/refresh_manifest.py": "c29f0a79f93a20c7a686909f71c628b1f618057effef60534244fd4c1ea76aeb",
     "scripts/render_cross_repo_contract.py": "80476b1aa02bc2a058ddce3fe11b111e9b48185242672bb43100340818b53e04",
     "scripts/stage11_delivery_control.py": "ed25d0ea5a4e158d488f834bb6594d592e2059b6585d611bf0978b91cb1997d1",
-    "scripts/stage12_delivery_control.py": "496e6ee8702d90c2a813ee9f432a7cb9452040552ffc7516c28955d12a824d4a",
+    "scripts/stage12_delivery_control.py": "16fc3eb5d069c6382adb7c68ff2da888cf3659951a80366d695e368009aadd29",
     "scripts/start_stage02_postgres.ps1": "49a7c29522606d091080901c6d0a4fe2b8e0401b551b77079f414571e6d21065",
     "scripts/validate_stage06_schemas.py": "e4135f24d41939a00be4aae06a95326fbb3db6c0eaba3040a0037259e2d45a94",
     "scripts/validate_stage07_schemas.py": "db267606a7bce858dd08cc27c263cece5a9e88626bbc6ba83d0075d69265073f",
@@ -115,6 +115,6 @@
     "tests/test_stage11.py": "bcd367f3b061c637c01560a0eb0f5dae92a5512f06c080c7da108bbc90d6ad58",
     "tests/test_stage11_delivery_control.py": "299b9611a5e415e5cfa5657f2e1f4b807cdc484f9e8b631d6a19d8a694adafaf",
     "tests/test_stage12.py": "71dc88c94431f6772300d0608d39756316fb8541fc78b15c06573de938247633",
-    "tests/test_stage12_delivery_control.py": "8c7dc68c449e39e9494f3a536c29abe211c5815473e9427bc76976c0ea7005ef"
+    "tests/test_stage12_delivery_control.py": "f1693b4b59a36b82144001086996d5ad38d2edccaefaf64201df41e594078589"
   }
 }
