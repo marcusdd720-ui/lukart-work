@@ -105,7 +105,7 @@ class Stage12DeliveryControlTests(unittest.TestCase):
                     CONTROL._require_sha(value, "x")
 
     def test_wrong_stage12_branch_namespace_is_rejected(self):
-        with self.assertRaisesRegex(CONTROL.ControlError, "branch namespace"):
+        with self.assertRaisesRegex(CONTROL.ControlError, "exact authorized Stage 12 product branch"):
             CONTROL._validate_pr_preconditions(
                 self.pr(branch="codex/stage11-rendering"),
                 self.SOURCE,
@@ -281,7 +281,7 @@ class Stage12DeliveryControlTests(unittest.TestCase):
         api.assert_not_called()
 
     def test_dispatch_rejects_stage11_branch(self):
-        with self.assertRaisesRegex(CONTROL.ControlError, "outside Stage 12 namespace"):
+        with self.assertRaisesRegex(CONTROL.ControlError, "exact Stage 12 product branch"):
             CONTROL.dispatch_assurance("codex/stage11-rendering", self.NEW)
 
     def test_dispatch_binds_exact_run_and_rechecks_ref(self):
@@ -339,11 +339,32 @@ class Stage12DeliveryControlTests(unittest.TestCase):
 
     def test_owner_boundary_is_fail_closed(self):
         event = {
-            "comment": {"user": {"login": "attacker"}},
-            "repository": {"owner": {"login": "owner"}},
+            "comment": {
+                "user": {"login": "attacker", "id": 2, "type": "User"},
+                "author_association": "OWNER",
+            },
+            "repository": {"owner": {"login": "owner", "id": 1, "type": "User"}},
         }
-        with self.assertRaisesRegex(CONTROL.ControlError, "repository owner"):
+        with self.assertRaisesRegex(CONTROL.ControlError, "repository-owner HUMAN"):
             CONTROL._assert_owner_actor(event)
+
+    def test_owner_boundary_requires_id_type_and_owner_association(self):
+        valid = {
+            "comment": {
+                "user": {"login": "owner", "id": 1, "type": "User"},
+                "author_association": "OWNER",
+            },
+            "repository": {"owner": {"login": "owner", "id": 1, "type": "User"}},
+        }
+        CONTROL._assert_owner_actor(valid)
+        variants = [
+            {**valid, "comment": {**valid["comment"], "author_association": "MEMBER"}},
+            {**valid, "comment": {**valid["comment"], "user": {"login": "owner", "id": 2, "type": "User"}}},
+            {**valid, "repository": {"owner": {"login": "owner", "id": 1, "type": "Organization"}}},
+        ]
+        for event in variants:
+            with self.assertRaises(CONTROL.ControlError):
+                CONTROL._assert_owner_actor(event)
 
     def test_stage12_control_workflow_is_isolated_from_stage11_command_namespace(self):
         text = (ROOT / ".github" / "workflows" / "stage12-control.yml").read_text(encoding="utf-8")
