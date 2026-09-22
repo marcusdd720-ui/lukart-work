@@ -26,14 +26,17 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
-from lukart_work.contracts.messages import RenderRequest, SemanticDocument
-from lukart_work.domain.models import Draft, Entity, Evidence, Institution, Party, Ref, Request, Section
+from lukart_work.contracts.messages import RenderRequest, SemanticDocument, ValidationRunPin
+from lukart_work.domain.models import Decision, DocumentPlan, Draft, Entity, Evidence, Institution, Party, Ref, Request, Section
+from lukart_work.validation.contracts import PRE_RENDER_CHECKS, ValidationProjection
+from lukart_work.validation.policy import validation_pin
 from lukart_work.validation.rules import Violation, digest, ref as entity_ref
 
 from .contracts import (
     LayoutBlock,
     LayoutTree,
     RenderArtifact,
+    RenderAuthority,
     RenderBlock,
     RenderBundleMeta,
     RenderModel,
@@ -66,15 +69,21 @@ def _sha(data: bytes) -> str:
     return sha256(data).hexdigest()
 
 
-def authorization_binding(document: SemanticDocument, profile: "VersionPin") -> str:
-    """Exact input binding produced by the trusted pre-render authorization boundary.
+def authorization_binding(
+    document: SemanticDocument,
+    profile: "VersionPin",
+    authority: RenderAuthority,
+) -> str:
+    """Bind exact semantic input, render profile and authoritative Stage 10 evidence.
 
-    This is an integrity binding, not an authentication mechanism. The public/trusted
-    service boundary remains responsible for deciding that rendering is authorized.
+    This is an integrity binding, not an authentication mechanism. The trusted
+    pre-render boundary remains responsible for deciding that the exact bound input
+    is authorized for rendering.
     """
     return digest({
         "semantic_digest": digest(document),
         "render_profile": profile.model_dump(mode="json"),
+        "authority": authority.model_dump(mode="json"),
     })
 
 
@@ -111,6 +120,120 @@ def _record(records: Mapping[Ref, object], target: Ref, scope: tuple[object, obj
     return item
 
 
+def derive_render_authority(
+    document: SemanticDocument,
+    records: Mapping[Ref, object],
+    validation: ValidationProjection,
+    render_profile: "VersionPin",
+) -> RenderAuthority:
+    """Verify and pin the exact current Stage 10 authority used by the renderer."""
+    scope = (document.tenant_id, document.case_id)
+    execution = validation.execution
+    run = execution.run
+
+    if validation.freshness != "CURRENT" or not validation.eligible_for_approval or validation.reasons:
+        raise Violation("STALE")
+    if execution.id != run.id:
+        raise Violation("INVALID_HASH")
+
+    current_policy = validation_pin()
+    if (
+        execution.validator != current_policy
+        or run.policy != current_policy
+        or execution.manifest.policy != current_policy
+    ):
+        raise Violation("STALE")
+    if (
+        digest(execution.manifest) != run.execution_manifest_hash
+        or execution.manifest.draft_hash != run.draft_hash
+        or execution.manifest.snapshot_hash != run.snapshot_hash
+        or execution.manifest.review_hash != (
+            digest(execution.review) if execution.review is not None else None
+        )
+    ):
+        raise Violation("INVALID_HASH")
+
+    input_draft = _record(records, run.draft, scope)
+    if not isinstance(input_draft, Draft) or digest(input_draft) != run.draft_hash:
+        raise Violation("INVALID_HASH")
+
+    output_draft = _record(records, execution.output_draft, scope)
+    if not isinstance(output_draft, Draft):
+        raise Violation("REFERENCE_TYPE")
+    if (
+        entity_ref(output_draft) != document.draft
+        or digest(output_draft) != execution.output_hash
+        or output_draft.status != "VALIDATED"
+    ):
+        raise Violation("STALE")
+    if (
+        output_draft.snapshot_hash != document.snapshot_hash
+        or run.snapshot_hash != output_draft.snapshot_hash
+        or execution.manifest.snapshot_hash != output_draft.snapshot_hash
+    ):
+        raise Violation("INVALID_HASH")
+    if output_draft.reproduction.render_profile != render_profile:
+        raise Violation("GATE_DENIED")
+    if document.sections != output_draft.sections:
+        raise Violation("INVALID_HASH")
+
+    dependency_pairs = execution.manifest.dependency_hashes
+    dependency_refs = tuple(target for target, _ in dependency_pairs)
+    if dependency_refs != execution.dependencies or len(set(dependency_refs)) != len(dependency_refs):
+        raise Violation("INVALID_HASH")
+    for target, expected_hash in dependency_pairs:
+        item = _record(records, target, scope)
+        if digest(item) != expected_hash:
+            raise Violation("STALE")
+
+    plan = _record(records, output_draft.plan, scope)
+    if not isinstance(plan, DocumentPlan):
+        raise Violation("REFERENCE_TYPE")
+    if (
+        plan.status != "APPROVED"
+        or plan.approval is None
+        or plan.input_snapshot_id != output_draft.snapshot_id
+        or plan.input_snapshot_hash != output_draft.snapshot_hash
+        or tuple(section.section for section in output_draft.sections) != plan.section_order
+    ):
+        raise Violation("GATE_DENIED")
+    if output_draft.plan not in dependency_refs or plan.approval not in dependency_refs:
+        raise Violation("STALE")
+    approval = _record(records, plan.approval, scope)
+    if not isinstance(approval, Decision):
+        raise Violation("REFERENCE_TYPE")
+    if (
+        approval.status != "RECORDED"
+        or approval.decision_type != "PLAN_APPROVAL"
+        or approval.outcome != "ACCEPT"
+        or entity_ref(plan) not in approval.targets
+    ):
+        raise Violation("GATE_DENIED")
+
+    checks = {check.check: check for check in run.checks}
+    expected_checks = set(PRE_RENDER_CHECKS) | {"render"}
+    if len(checks) != len(run.checks) or set(checks) != expected_checks:
+        raise Violation("GATE_DENIED")
+    if any(checks[name].outcome != "PASS" for name in PRE_RENDER_CHECKS):
+        raise Violation("GATE_DENIED")
+    if checks["render"].outcome != "NOT_RUN":
+        raise Violation("GATE_DENIED")
+
+    return RenderAuthority(
+        semantic_digest=digest(document),
+        draft=entity_ref(output_draft),
+        draft_hash=digest(output_draft),
+        plan=entity_ref(plan),
+        plan_hash=digest(plan),
+        snapshot_id=output_draft.snapshot_id,
+        snapshot_hash=output_draft.snapshot_hash,
+        validation_run=ValidationRunPin(id=run.id, content_hash=digest(run)),
+        validation_execution_hash=digest(execution),
+        validation_projection_hash=digest(validation),
+        case_sequence=execution.committed_sequence,
+    )
+
+
 def _party_text(item: object) -> str:
     if isinstance(item, Party):
         name = item.display_name
@@ -144,17 +267,25 @@ def _attachment_label(records: Mapping[Ref, object], anchor, scope) -> tuple[str
 def assemble_render_model(
     document: SemanticDocument,
     records: Mapping[Ref, object],
+    authority: RenderAuthority,
     profile: RenderProfile = OFFICIAL_PL_V1,
 ) -> RenderModel:
     scope = (document.tenant_id, document.case_id)
     draft = _record(records, document.draft, scope)
     if not isinstance(draft, Draft):
         raise Violation("REFERENCE_TYPE")
-    if draft.snapshot_hash != document.snapshot_hash:
+    if (
+        draft.snapshot_hash != document.snapshot_hash
+        or document.sections != draft.sections
+        or authority.semantic_digest != digest(document)
+        or authority.draft != document.draft
+        or authority.draft_hash != digest(draft)
+        or authority.plan != draft.plan
+        or authority.snapshot_id != draft.snapshot_id
+        or authority.snapshot_hash != draft.snapshot_hash
+    ):
         raise Violation("INVALID_HASH")
-    if document.sections != draft.sections:
-        raise Violation("INVALID_HASH")
-    if draft.status not in ("VALIDATED", "APPROVED", "RENDERED"):
+    if draft.status != "VALIDATED":
         raise Violation("GATE_DENIED")
 
     blocks: list[RenderBlock] = [
@@ -234,6 +365,7 @@ def assemble_render_model(
         case_id=document.case_id,
         draft=document.draft,
         snapshot_hash=document.snapshot_hash,
+        authority=authority,
         blocks=tuple(blocks),
     )
 
@@ -258,6 +390,7 @@ def build_layout(model: RenderModel, profile: RenderProfile = OFFICIAL_PL_V1) ->
         case_id=model.case_id,
         draft=model.draft,
         snapshot_hash=model.snapshot_hash,
+        authority=model.authority,
         profile=profile_pin(profile),
         blocks=tuple(blocks),
     )
@@ -583,13 +716,19 @@ class RenderingEngine:
         self,
         request: RenderRequest,
         records: Mapping[Ref, object],
+        validation: ValidationProjection,
         profile: RenderProfile = OFFICIAL_PL_V1,
     ) -> RenderedBundle:
-        if request.authorization_hash != authorization_binding(request.document, request.profile):
-            raise Violation("GATE_DENIED")
         if request.profile != profile_pin(profile):
             raise Violation("INVALID_HASH")
-        model = assemble_render_model(request.document, records, profile)
+        authority = derive_render_authority(
+            request.document, records, validation, request.profile
+        )
+        if request.authorization_hash != authorization_binding(
+            request.document, request.profile, authority
+        ):
+            raise Violation("GATE_DENIED")
+        model = assemble_render_model(request.document, records, authority, profile)
         layout = build_layout(model, profile)
         docx = render_docx(layout, profile)
         pdf = render_pdf(layout, profile)
@@ -613,6 +752,7 @@ class RenderingEngine:
         receipt = RenderReceipt(
             draft=model.draft,
             snapshot_hash=model.snapshot_hash,
+            authority=model.authority,
             authorization_hash=request.authorization_hash,
             semantic_digest=digest(request.document),
             render_model_digest=digest(model),
@@ -639,4 +779,11 @@ class RenderingEngine:
         if bundle.meta.receipt.render_model_digest != digest(bundle.meta.model):
             raise Violation("INVALID_HASH")
         if bundle.meta.receipt.layout_digest != digest(bundle.meta.layout):
+            raise Violation("INVALID_HASH")
+        if not (
+            bundle.meta.receipt.authority == bundle.meta.model.authority
+            == bundle.meta.layout.authority
+        ):
+            raise Violation("INVALID_HASH")
+        if bundle.meta.receipt.authority.semantic_digest != bundle.meta.receipt.semantic_digest:
             raise Violation("INVALID_HASH")
