@@ -28,7 +28,7 @@ These capabilities remain authoritative. Stage 12 must extend them, not replace 
 
 1. No dedicated Audit / Provenance module exists.
 2. No authorized read-only audit package API exists.
-3. No deterministic package binds case sequence, complete revision hashes, current heads, the full verified event chain and outbox membership.
+3. No deterministic package binds case sequence, complete revision hashes, immutable object metadata, command receipts, current heads, the full verified event chain and outbox membership.
 4. No standalone package integrity verifier exists.
 5. No Stage 12 trace binds provenance traversal to the audit events that recorded the relevant revisions.
 6. No dedicated Stage 12 adversarial/integration regression exists.
@@ -38,6 +38,7 @@ These capabilities remain authoritative. Stage 12 must extend them, not replace 
 
 - lw_core.events remains the only writable audit ledger.
 - Canonical versioned revisions remain in Case Core; Stage 12 only pins their exact Ref + content hash.
+- Immutable Core objects and command receipts remain in their canonical tables; Stage 12 pins only identifiers, contracts and hashes, never original object payloads or source bytes.
 - AuditService is read-only and cannot create, update or delete domain/audit state.
 - AuditRead is an explicit capability.
 - AI principals are not accepted as the audit-read trust boundary.
@@ -53,6 +54,7 @@ Stage 12 can close only after:
 
 - deterministic package generation;
 - complete revision Ref/hash inventory and head binding;
+- deterministic immutable object metadata and command-receipt inventories;
 - continuous case-sequence coverage;
 - full event-hash verification;
 - exact event/outbox correspondence;
