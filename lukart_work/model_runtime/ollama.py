@@ -118,6 +118,10 @@ class OllamaConfig:
     def __post_init__(self):
         parsed = urlsplit(self.endpoint)
         host = parsed.hostname
+        try:
+            parsed.port
+        except ValueError as exc:
+            raise ProviderPolicyError() from exc
         if (
             parsed.scheme not in ("http", "https")
             or not host
@@ -134,6 +138,23 @@ class OllamaConfig:
             raise ProviderPolicyError()
         if not self.model_name or any(ord(ch) < 32 for ch in self.model_name):
             raise ProviderPolicyError()
+        if not all(isinstance(pin, VersionPin) for pin in (self.provider, self.model, self.generator)):
+            raise ProviderPolicyError()
+        if (
+            not isinstance(self.model_parameters_hash, str)
+            or len(self.model_parameters_hash) != 64
+            or any(ch not in "0123456789abcdef" for ch in self.model_parameters_hash)
+        ):
+            raise ProviderPolicyError()
+        try:
+            frozen_options = MappingProxyType(dict(self.options))
+            json.dumps(
+                dict(frozen_options), ensure_ascii=False, allow_nan=False,
+                sort_keys=True, separators=(",", ":")
+            )
+        except (TypeError, ValueError) as exc:
+            raise ProviderPolicyError() from exc
+        object.__setattr__(self, "options", frozen_options)
         if self.connect_timeout <= 0 or self.response_timeout <= 0:
             raise ProviderPolicyError()
         if self.max_response_bytes < 1024 or self.max_prompt_bytes < 1024:

@@ -130,6 +130,17 @@ class Stage13ProviderTests(unittest.TestCase):
             ollama_parameters_hash(options={"temperature": 0}),
         )
 
+    def test_options_are_frozen_after_hash_validation(self):
+        source = {"temperature": 0}
+        value = config(
+            options=source,
+            model_parameters_hash=ollama_parameters_hash(options=source),
+        )
+        source["temperature"] = 1
+        self.assertEqual(value.options["temperature"], 0)
+        with self.assertRaises(TypeError):
+            value.options["temperature"] = 2
+
     def test_remote_endpoint_denied_by_default(self):
         with self.assertRaises(ProviderPolicyError):
             config(endpoint="http://example.com:11434", allowed_hosts=("example.com",))

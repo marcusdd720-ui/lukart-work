@@ -1,16 +1,42 @@
-name: Stage 13 baseline performance evidence
+name: Stage 13 performance and offline assurance
+run-name: stage13-${{ inputs.dispatch_token || github.sha }}
 
 on:
+  push:
   pull_request:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Exact candidate SHA to validate
+        required: true
+        type: string
+      dispatch_token:
+        description: Correlation token for exact-SHA assurance
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
-  baseline:
+  assurance:
     runs-on: [self-hosted, Linux, X64, lukart-stage11]
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: disposable-ci-password
+          POSTGRES_DB: lukart_stage02_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
+      LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
+      LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_core_runtime password=disposable-runtime-password
     steps:
       - name: Resolve exact tested source
         id: source
@@ -19,49 +45,103 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           EVENT_SHA: ${{ github.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          DISPATCH_SHA: ${{ inputs.candidate_sha }}
         run: |
           set -euo pipefail
-          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
-            sha="${PR_HEAD_SHA}"
-          else
-            sha="${EVENT_SHA}"
-          fi
-          [[ "${sha}" =~ ^[0-9a-f]{40}$ ]]
+          case "${EVENT_NAME}" in
+            workflow_dispatch)
+              sha="${DISPATCH_SHA}"
+              [[ "${sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid candidate_sha"; exit 1; }
+              [[ "${EVENT_SHA}" == "${sha}" ]] || {
+                echo "workflow_dispatch ref resolved to ${EVENT_SHA}, expected ${sha}"
+                exit 1
+              }
+              ;;
+            pull_request)
+              sha="${PR_HEAD_SHA}"
+              [[ "${sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid pull_request head SHA"; exit 1; }
+              ;;
+            push)
+              sha="${EVENT_SHA}"
+              [[ "${sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "invalid push SHA"; exit 1; }
+              ;;
+            *)
+              echo "unsupported event: ${EVENT_NAME}"
+              exit 1
+              ;;
+          esac
           echo "sha=${sha}" >> "${GITHUB_OUTPUT}"
           echo "TESTED_SHA=${sha}" >> "${GITHUB_ENV}"
+          echo "Resolved exact tested SHA: ${sha}"
 
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.source.outputs.sha }}
           persist-credentials: false
 
+      - name: Assert exact tested source
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          [[ "${actual}" == "${TESTED_SHA}" ]]
+          echo "tested_sha=${actual}"
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
 
-      - run: python -m pip install .
+      - run: python -m pip install '.[postgres,ingestion]' 'jsonschema==4.26.0'
 
-      - name: Stage 13 exact-SHA baseline
-        run: python -B -X utf8 scripts/stage13_benchmark.py --mode BASELINE --output reports/stage13-baseline.json
+      - name: Export contracts
+        run: python -B -X utf8 export_contracts.py
 
-      - name: Validate baseline evidence
+      - name: Prepare isolated PostgreSQL
+        run: python -B -X utf8 scripts/prepare_ci_database.py
+
+      - name: Focused Stage 13 provider assurance
+        run: python -B -X utf8 -m unittest -v tests.test_stage13
+
+      - name: Full repository regression
+        run: python -B -X utf8 scripts/verify_stage13.py
+
+      - name: Independent JSON Schema validation
+        run: python -B -X utf8 scripts/validate_stage10_schemas.py
+
+      - name: Package verification
+        run: python -B -X utf8 verify_package.py
+
+      - name: Post-implementation benchmark
+        run: python -B -X utf8 scripts/stage13_benchmark.py --mode POST_IMPLEMENTATION --output build/stage13/performance.json
+
+      - name: Validate performance evidence shape
         run: |
           python - <<'PY'
           import json, os
           from pathlib import Path
-          p = json.loads(Path("reports/stage13-baseline.json").read_text())
+          p = json.loads(Path("build/stage13/performance.json").read_text())
           assert p["tested_sha"] == os.environ["TESTED_SHA"]
           assert p["network_io"] == "NOT_USED"
           assert p["case_data"] == "SYNTHETIC_ONLY"
-          assert len(p["results"]) >= 4
           for row in p["results"]:
               assert row["iterations"] >= 5
               assert row["min"] <= row["p50"] <= row["p95"] <= row["p99"] <= row["max"]
-          print("STAGE13_BASELINE: PASS")
+          print("STAGE13_PERFORMANCE_EVIDENCE: PASS")
           PY
+
+      - name: Refresh global integrity manifest
+        run: python -B -X utf8 scripts/refresh_manifest.py
+
+      - name: Whitespace check
+        run: git diff --check
+
+      - name: Generated evidence is reproducible
+        run: |
+          git diff --exit-code
+          test -z "$(git ls-files --others --exclude-standard -- schemas reports examples tests/golden_cases docs/02-entity-catalog.md)"
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: stage13-baseline-${{ steps.source.outputs.sha }}
-          path: reports/stage13-baseline.json
+          name: stage13-assurance-${{ steps.source.outputs.sha }}
+          path: build/stage13/
