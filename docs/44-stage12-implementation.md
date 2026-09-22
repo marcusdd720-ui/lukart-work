@@ -10,6 +10,7 @@ Authoritative write path:
 
 Case command
 -> Core transaction
+-> immutable versioned revisions
 -> immutable DomainEvent
 -> lw_core.events
 -> lw_core.outbox
@@ -17,10 +18,11 @@ Case command
 Stage 12 read path:
 
 authorized AuditRead
+-> UnitOfWork.records()
 -> UnitOfWork.events()
 -> contract/hash/predecessor-chain validation
 -> UnitOfWork.outbox()
--> exact event/outbox completeness check
+-> exact revision/head/event/outbox binding
 -> deterministic AuditPackage
 
 No second writable audit table, history stream or mutable provenance registry is introduced.
@@ -32,7 +34,8 @@ AuditPackage 1.0.0 binds:
 - tenant_id;
 - case_id;
 - exact case_sequence;
-- deterministic current heads;
+- deterministically ordered complete revision inventory as Ref + SHA-256 content hash;
+- deterministic current heads, each required to exist in the revision inventory;
 - complete validated DomainEvent sequence;
 - SHA-256 digest of every event;
 - exact outbox event IDs in canonical event order;
@@ -46,13 +49,18 @@ The Pydantic contract rejects:
 - duplicate event IDs;
 - outbox mismatch;
 - wrong case scope;
-- sequence regression;
-- event sequence beyond case_sequence;
+- revision duplication or non-deterministic revision order;
+- a head missing from the revision inventory;
+- non-deterministic head order;
+- case-sequence regression or a missing sequence;
+- an event sequence beyond the package case_sequence;
 - predecessor-chain mismatch;
-- duplicate heads;
-- wrong chain head declaration.
+- wrong chain head declaration;
+- a final event sequence that does not equal package case_sequence.
 
-verify_audit_package additionally recomputes every event digest from canonical structured content and rejects a forged declared digest.
+Repeated events at the same case_sequence are valid because one command may emit a primary event and an additional dependency invalidation event.
+
+verify_audit_package additionally recomputes every event digest from canonical structured content and rejects a forged declared event digest. Revision hashes are produced only after UnitOfWork.records() validates the authoritative stored revision contract and stored content hash.
 
 ## AuditService
 
@@ -62,7 +70,8 @@ AuditService:
 - requires AuditRead;
 - rejects AI principals;
 - runs inside the existing case-scoped repository transaction and RLS context;
-- calls tx.events(), which validates stored contract, stored bytes hash and the complete predecessor chain;
+- calls tx.records(), which validates stored revision contracts and hashes;
+- calls tx.events(), which validates stored event contract, stored bytes hash and the complete predecessor chain;
 - calls tx.outbox() and requires one-to-one equality with the event stream;
 - performs no writes.
 
@@ -91,7 +100,7 @@ The package contains audit metadata, refs, hashes and event data already stored 
 
 The predecessor chain and package digest are integrity mechanisms, not signatures.
 
-A verifier can detect inconsistent or partially corrupted package content. Authenticating an exported package to an external party would require a separately authorized signing/attestation mechanism and is outside Stage 12 v1.
+A verifier can detect inconsistent or partially corrupted package content. The package pins complete revision hashes, but it deliberately does not embed the full revision payloads; authoritative revision-content verification remains a trusted repository read performed by AuditService. Authenticating an exported package to an external party would require a separately authorized signing/attestation mechanism and is outside Stage 12 v1.
 
 ## Implementation files
 
