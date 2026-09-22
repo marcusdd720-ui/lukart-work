@@ -19,6 +19,7 @@ Stage 12 read path:
 
 authorized AuditRead
 -> UnitOfWork.records()
+-> UnitOfWork.audit_inventory()
 -> UnitOfWork.events()
 -> contract/hash/predecessor-chain validation
 -> UnitOfWork.outbox()
@@ -35,6 +36,8 @@ AuditPackage 1.0.0 binds:
 - case_id;
 - exact case_sequence;
 - deterministically ordered complete revision inventory as Ref + SHA-256 content hash;
+- deterministically ordered immutable Core object inventory as category + object_id + contract + content hash;
+- deterministically ordered command-receipt inventory as idempotency_key + input hash + contract + result content hash;
 - deterministic current heads, each required to exist in the revision inventory;
 - complete validated DomainEvent sequence;
 - SHA-256 digest of every event;
@@ -71,6 +74,7 @@ AuditService:
 - rejects AI principals;
 - runs inside the existing case-scoped repository transaction and RLS context;
 - calls tx.records(), which validates stored revision contracts and hashes;
+- calls tx.audit_inventory(), which verifies stored object/command payload hashes and returns metadata only;
 - calls tx.events(), which validates stored event contract, stored bytes hash and the complete predecessor chain;
 - calls tx.outbox() and requires one-to-one equality with the event stream;
 - performs no writes.
@@ -94,7 +98,7 @@ Missing revisions or unavailable original source bytes fail closed.
 
 ## Privacy
 
-The package contains audit metadata, refs, hashes and event data already stored in the canonical event ledger. It does not copy original source-document bytes into AuditPackage.
+The package contains audit metadata, refs, immutable object/command identifiers and hashes, and event data already stored in the canonical ledger. Object payloads and command-result payloads are not copied into AuditPackage, and original source-document bytes are never embedded.
 
 ## Cryptographic boundary
 
@@ -107,6 +111,7 @@ A verifier can detect inconsistent or partially corrupted package content. The p
 - lukart_work/audit/__init__.py
 - lukart_work/audit/contracts.py
 - lukart_work/audit/service.py
+- additive read-only UnitOfWork.audit_inventory() in lukart_work/core/postgres.py
 - tests/test_stage12.py
 - docs/43-stage12-readiness.md
 - docs/44-stage12-implementation.md
