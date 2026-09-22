@@ -89,12 +89,38 @@ def strict_json_bytes(raw: bytes):
         raise ProviderProtocolError() from exc
 
 
+def _freeze_json(value):
+    if isinstance(value, Mapping):
+        frozen = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise ProviderPolicyError()
+            frozen[key] = _freeze_json(item)
+        return MappingProxyType(frozen)
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze_json(item) for item in value)
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float) and math.isfinite(value):
+        return value
+    raise ProviderPolicyError()
+
+
+def _thaw_json(value):
+    if isinstance(value, Mapping):
+        return {key: _thaw_json(item) for key, item in value.items()}
+    if isinstance(value, tuple):
+        return [_thaw_json(item) for item in value]
+    return value
+
+
 def ollama_parameters_hash(*, options=None, keep_alive="5m") -> str:
     """Bind every generation parameter controlled by this adapter."""
+    normalized_options = _thaw_json(_freeze_json(options or {}))
     return digest({
         "stream": False,
         "format": AIResult.model_json_schema(),
-        "options": dict(options or {}),
+        "options": normalized_options,
         "keep_alive": keep_alive,
     })
 
@@ -163,9 +189,11 @@ class OllamaConfig:
         ):
             raise ProviderPolicyError()
         try:
-            frozen_options = MappingProxyType(dict(self.options))
+            frozen_options = _freeze_json(self.options)
+            if not isinstance(frozen_options, Mapping):
+                raise ProviderPolicyError()
             json.dumps(
-                dict(frozen_options), ensure_ascii=False, allow_nan=False,
+                _thaw_json(frozen_options), ensure_ascii=False, allow_nan=False,
                 sort_keys=True, separators=(",", ":")
             )
         except (TypeError, ValueError) as exc:
@@ -242,7 +270,14 @@ class OllamaHttpTransport:
             connection.close()
 
     def json_request(self, method: str, path: str, payload, request_id: UUID):
-        if path not in ("/api/tags", "/api/generate"):
+        if (method, path) not in (
+            ("GET", "/api/tags"),
+            ("POST", "/api/generate"),
+        ):
+            raise ProviderPolicyError()
+        if (path == "/api/tags" and payload is not None) or (
+            path == "/api/generate" and payload is None
+        ):
             raise ProviderPolicyError()
         body = None
         headers = {"Accept": "application/json"}
@@ -326,6 +361,8 @@ class OllamaProvider:
 
     def cancel(self, request_id: UUID):
         with self._lock:
+            if request_id not in self._inflight:
+                raise ProviderProtocolError()
             self._cancelled.add(request_id)
         cancel = getattr(self.transport, "cancel", None)
         if cancel is not None:
@@ -401,7 +438,7 @@ class OllamaProvider:
                 "stream": False,
                 "format": AIResult.model_json_schema(),
                 "keep_alive": self.config.keep_alive,
-                "options": dict(self.config.options),
+                "options": _thaw_json(self.config.options),
             }
             envelope = self.transport.json_request(
                 "POST", "/api/generate", payload, request_id
