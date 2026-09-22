@@ -10,10 +10,11 @@ from lukart_work.contracts.messages import AIRequest, AIResult
 from lukart_work.domain.models import Ref, VersionPin
 from lukart_work.drafting.contracts import DraftingInvocation
 from lukart_work.model_runtime import (
-    OllamaConfig, OllamaProvider, ProviderBusy, ProviderCancelled,
+    OllamaConfig, OllamaHttpTransport, OllamaProvider, ProviderBusy, ProviderCancelled,
     ProviderModelMissing, ProviderPolicyError, ProviderProtocolError,
     ProviderResponseTooLarge, ProviderTimeout, ollama_parameters_hash,
 )
+from lukart_work.model_runtime.ollama import strict_json_bytes
 
 H = "a" * 64
 MODEL_DIGEST = "c" * 64
@@ -149,6 +150,19 @@ class Stage13ProviderTests(unittest.TestCase):
         self.assertEqual(value.options["temperature"], 0)
         with self.assertRaises(TypeError):
             value.options["temperature"] = 2
+
+    def test_transport_rejects_oversized_body_without_stale_active_request(self):
+        transport = OllamaHttpTransport(config(max_request_bytes=1024))
+        request_id = UUID(int=999)
+        with self.assertRaises(ProviderResponseTooLarge):
+            transport.json_request(
+                "POST", "/api/generate", {"prompt": "x" * 2048}, request_id
+            )
+        self.assertEqual(transport._active, {})
+
+    def test_strict_outer_json_rejects_duplicate_keys(self):
+        with self.assertRaises(ProviderProtocolError):
+            strict_json_bytes(b'{"done":true,"done":false}')
 
     def test_remote_endpoint_denied_by_default(self):
         with self.assertRaises(ProviderPolicyError):
