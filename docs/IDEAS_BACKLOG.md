@@ -70,3 +70,58 @@ Before adoption:
 6. add a regression/audit check if the hierarchy becomes operationally critical.
 
 Evidence Before Standard.
+
+
+---
+
+## Legal Document Compiler / controlled legal language architecture
+
+Status: BACKLOG — DO NOT IMPLEMENT INSIDE STAGE 11
+Priority: P0 immediately after Stage 11 closure
+Trigger: successful Stage 11 merge + post-merge validation
+
+### Problem
+
+For identical case inputs, a generative drafting pass can still produce different wording,
+argument emphasis or rhetorical strength.  A strong prompt alone is not a durable
+15+ year reproducibility mechanism.
+
+### Candidate architecture
+
+Evaluate, do not assume, the following options:
+
+1. prompt + linguistic review;
+2. `LegalDraftingPolicy + Legal Surface Realizer`;
+3. `Legal Document Compiler + Legal Semantic IR + AdvocacyPolicy +
+   Semantic Equivalence Gate + Language Quality Gate v2`.
+
+The third option is currently the most promising hypothesis, not an adopted standard.
+
+### Required properties
+
+- same approved input identity -> same approved artifact;
+- every semantic change has an explicit reason;
+- `DocumentChangeManifest`;
+- separate semantic and presentation digests;
+- assertiveness proportional to evidence and legal-authority strength;
+- no unsupported certainty;
+- no unjustified hedging;
+- no emotional or theatrical aggression;
+- professional, firm Polish legal language;
+- legal-language transformation may not add facts, law, intent or requests;
+- semantic-equivalence verification after language realization;
+- golden corpus and adversarial evaluation before promotion into the Canon.
+
+### Adoption gate
+
+After Stage 11:
+
+1. define a controlled benchmark;
+2. compare the candidate architectures;
+3. measure semantic stability, fact/law/request preservation, language quality,
+   reproducibility, maintenance complexity, latency and cost;
+4. adversarially test failure modes;
+5. choose the simplest architecture that meets the measurable target;
+6. promote only with evidence.
+
+Evidence Before Standard.
