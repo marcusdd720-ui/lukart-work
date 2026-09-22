@@ -40,7 +40,10 @@ Stage 12 is not closed merely because code exists.
 
 Implementation and synthetic Stage 12 tests are present on codex/stage12-audit-provenance.
 
-Fresh final candidate SHA: NOT YET ESTABLISHED.
+Builder Red Team: COMPLETED. Completeness gaps found during review (case-sequence gaps, full revision inventory, immutable object/command inventory) were repaired before candidate freeze. This is builder review, not independent review.
+Unresolved builder P0/P1: 0 based on static/adversarial review; authoritative CI remains required.
+
+Fresh final candidate SHA: ESTABLISHED BY THIS FREEZE COMMIT; verify from live branch before using it as evidence.
 Focused authoritative CI: NOT YET VERIFIED.
 Full regression: NOT YET VERIFIED.
 Independent review: NOT YET PERFORMED.
