@@ -13,6 +13,20 @@ class AuditRevisionPin(Value):
     content_hash: Hash
 
 
+class AuditObjectPin(Value):
+    category: str
+    object_id: UUID
+    contract: str
+    content_hash: Hash
+
+
+class AuditCommandPin(Value):
+    idempotency_key: UUID
+    input_hash: Hash
+    contract: str
+    content_hash: Hash
+
+
 class AuditPackage(Value):
     contract: Literal['urn:lukart:work:AuditPackage:1.0.0']
     tenant_id: UUID
@@ -20,6 +34,8 @@ class AuditPackage(Value):
     case_sequence: Annotated[int, Field(ge=1)]
     heads: tuple[Ref, ...]
     revisions: tuple[AuditRevisionPin, ...]
+    objects: tuple[AuditObjectPin, ...]
+    commands: tuple[AuditCommandPin, ...]
     events: tuple[DomainEvent, ...]
     event_hashes: tuple[Hash, ...]
     outbox_event_ids: tuple[UUID, ...]
@@ -45,6 +61,13 @@ class AuditPackage(Value):
         head_keys = tuple((r.kind, str(r.id), r.revision) for r in self.heads)
         if head_keys != tuple(sorted(head_keys)):
             raise ValueError('AUDIT_HEAD_ORDER')
+
+        object_keys = tuple((item.category, str(item.object_id)) for item in self.objects)
+        if len(set(object_keys)) != len(object_keys) or object_keys != tuple(sorted(object_keys)):
+            raise ValueError('AUDIT_OBJECT_ORDER')
+        command_keys = tuple(str(item.idempotency_key) for item in self.commands)
+        if len(set(command_keys)) != len(command_keys) or command_keys != tuple(sorted(command_keys)):
+            raise ValueError('AUDIT_COMMAND_ORDER')
 
         previous = None
         last_sequence = 0
@@ -85,4 +108,4 @@ class AuditTrace(Value):
         return self
 
 
-STAGE12_CONTRACTS = (AuditRevisionPin, AuditPackage, AuditTrace)
+STAGE12_CONTRACTS = (AuditRevisionPin, AuditObjectPin, AuditCommandPin, AuditPackage, AuditTrace)
