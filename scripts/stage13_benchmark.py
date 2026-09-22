@@ -22,7 +22,11 @@ from uuid import UUID
 from lukart_work.contracts.messages import AIRequest
 from lukart_work.domain.models import VersionPin
 from lukart_work.drafting.contracts import ModelExecutionReceipt
-from lukart_work.validation.rules import digest
+from lukart_work.validation.rules import RevisionLedger, digest
+from lukart_work.model_runtime import OllamaConfig, ollama_parameters_hash
+from lukart_work.rendering.service import RenderingEngine
+from tests.fixtures import case, uid
+from tests.stage11_render_fixture import build_fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 H = "a" * 64
@@ -41,12 +45,15 @@ def measure(name: str, fn, iterations: int) -> dict:
     # Warm once to exclude one-time import/cache effects from warm execution.
     fn()
     timings = []
+    cpu_timings = []
     tracemalloc.start()
     try:
         for _ in range(iterations):
+            cpu_started = time.process_time_ns()
             started = time.perf_counter_ns()
             fn()
             timings.append((time.perf_counter_ns() - started) / 1_000_000.0)
+            cpu_timings.append((time.process_time_ns() - cpu_started) / 1_000_000.0)
         _, peak = tracemalloc.get_traced_memory()
     finally:
         tracemalloc.stop()
@@ -57,6 +64,8 @@ def measure(name: str, fn, iterations: int) -> dict:
         "min": min(timings),
         "max": max(timings),
         "mean": statistics.fmean(timings),
+        "mean_cpu_ms": statistics.fmean(cpu_timings),
+        "throughput_per_second_at_p50": 1000.0 / percentile(timings, 0.50) if percentile(timings, 0.50) else None,
         "p50": percentile(timings, 0.50),
         "p95": percentile(timings, 0.95),
         "p99": percentile(timings, 0.99),
@@ -90,6 +99,8 @@ def cold_import(iterations: int = 5) -> dict:
         "min": min(timings),
         "max": max(timings),
         "mean": statistics.fmean(timings),
+        "mean_cpu_ms": None,
+        "throughput_per_second_at_p50": 1000.0 / percentile(timings, 0.50) if percentile(timings, 0.50) else None,
         "p50": percentile(timings, 0.50),
         "p95": percentile(timings, 0.95),
         "p99": percentile(timings, 0.99),
@@ -146,6 +157,57 @@ def main() -> int:
             1000,
         ),
     ]
+    if args.mode == "POST_IMPLEMENTATION":
+        render_request, render_records, render_validation = build_fixture()
+        engine = RenderingEngine()
+        bundle = engine.render(render_request, render_records, render_validation)
+
+        replay_ledger = RevisionLedger()
+        replay_entity = case()
+        replay_command = uid(770)
+        replay_ledger.append(replay_entity, 0, 0, replay_command)
+
+        provider_pin = VersionPin(
+            id="urn:lukart:stage13:provider", version="1.0.0", content_hash="d" * 64
+        )
+        model_pin = VersionPin(
+            id="urn:lukart:stage13:model", version="synthetic", content_hash="c" * 64
+        )
+        generator_pin = VersionPin(
+            id="urn:lukart:stage13:generator", version="1.0.0", content_hash="e" * 64
+        )
+        params_hash = ollama_parameters_hash()
+
+        def provider_config():
+            return OllamaConfig(
+                endpoint="http://127.0.0.1:11434",
+                model_name="synthetic:1b",
+                provider=provider_pin,
+                model=model_pin,
+                generator=generator_pin,
+                model_parameters_hash=params_hash,
+            )
+
+        def concurrent_digest():
+            values = [dict(payload, batch=i) for i in range(64)]
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                list(pool.map(digest, values))
+
+        results.extend([
+            measure(
+                "render_docx_pdf_bundle",
+                lambda: engine.render(render_request, render_records, render_validation),
+                5,
+            ),
+            measure("render_bundle_validate", lambda: engine.validate(bundle), 50),
+            measure(
+                "revision_ledger_harness_idempotent_replay",
+                lambda: replay_ledger.append(replay_entity, 0, 0, replay_command),
+                1000,
+            ),
+            measure("ollama_config_validate", provider_config, 500),
+            measure("canonical_digest_concurrency_4x64", concurrent_digest, 10),
+        ])
     report = {
         "contract": "urn:lukart:work:Stage13Benchmark:1.0.0",
         "mode": args.mode,
