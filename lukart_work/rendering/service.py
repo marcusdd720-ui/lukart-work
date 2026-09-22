@@ -188,6 +188,33 @@ def derive_render_authority(
         if digest(item) != expected_hash:
             raise Violation("STALE")
 
+    # Every entity whose mutable presentation data is resolved into DOCX/PDF must be
+    # covered by the exact Stage 10 authority. The semantic authorization hash binds
+    # selection, but it cannot authorize a record that validation never pinned.
+    render_source_refs = {
+        *document.parties,
+        *document.requests,
+        *(section.section for section in document.sections),
+    }
+    if document.signature_party is not None:
+        render_source_refs.add(document.signature_party)
+    for target in tuple(render_source_refs):
+        _record(records, target, scope)
+    for anchor in document.attachments:
+        matches = [
+            target
+            for target, item in records.items()
+            if isinstance(item, Evidence)
+            and (item.tenant_id, item.case_id) == scope
+            and item.source == anchor
+        ]
+        if len(matches) != 1:
+            raise Violation("PROVENANCE_MISSING")
+        _record(records, matches[0], scope)
+        render_source_refs.add(matches[0])
+    if not render_source_refs <= set(dependency_refs):
+        raise Violation("STALE")
+
     plan = _record(records, output_draft.plan, scope)
     if not isinstance(plan, DocumentPlan):
         raise Violation("REFERENCE_TYPE")

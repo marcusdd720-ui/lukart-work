@@ -248,6 +248,20 @@ class Stage11RenderingTests(unittest.TestCase):
         with self.assertRaisesRegex(Violation, "BROKEN_REFERENCE"):
             self.engine.render(self.request, records, self.validation)
 
+    def test_render_source_outside_validation_authority_fails_closed(self):
+        records = dict(self.records)
+        original_ref = self.request.document.parties[0]
+        party = records[original_ref]
+        outsider = party.model_copy(update={"id": type(party.id)(int=444)})
+        from lukart_work.validation.rules import ref as make_ref
+        outsider_ref = make_ref(outsider)
+        records[outsider_ref] = outsider
+        document = self.request.document.model_copy(update={"parties": (outsider_ref,)})
+        with self.assertRaisesRegex(Violation, "STALE"):
+            derive_render_authority(
+                document, records, self.validation, self.request.profile
+            )
+
     def test_duplicate_attachment_provenance_fails_closed(self):
         records = dict(self.records)
         evidence_ref = next(ref for ref in records if ref.kind == "Evidence")
