@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   baseline:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, lukart-stage11]
     steps:
       - name: Resolve exact tested source
         id: source
