@@ -43,9 +43,10 @@ Implementation and synthetic Stage 12 tests are present on codex/stage12-audit-p
 Builder Red Team: COMPLETED. Completeness gaps found during review (case-sequence gaps, full revision inventory, immutable object/command inventory, SQL-collation-independent ordering) were repaired before candidate freeze. This is builder review, not independent review.
 Unresolved builder P0/P1: 0 based on static/adversarial review; authoritative CI remains required.
 
-Fresh final candidate SHA: ESTABLISHED BY THE LATEST FREEZE COMMIT; verify from live branch before using it as evidence.
-Focused authoritative CI: NOT YET VERIFIED.
-Full regression: NOT YET VERIFIED.
+Fresh final candidate SHA: ESTABLISHED BY THIS POST-REPAIR FREEZE COMMIT; verify from live branch before using it as evidence.
+Previous exact-SHA CI `35736613777` on `c4c4f446f25a089ff4299f5cdb17c7124d79369f`: FAIL at full regression only. Evidence showed one Stage 12 strict-fixture construction error and one expected Stage 11 provenance-golden drift caused by the Stage 12 change to the ValidationEngine source pin. Both were repaired without changing renderer bytes or Stage 12 production semantics.
+Focused authoritative CI: RE-RUN REQUIRED ON NEW EXACT SHA.
+Full regression: RE-RUN REQUIRED ON NEW EXACT SHA.
 Independent review: NOT YET PERFORMED.
 Merge: NOT PERFORMED.
 Post-merge validation: NOT PERFORMED.
