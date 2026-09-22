@@ -105,6 +105,18 @@ class Stage12DeliveryControlTests(unittest.TestCase):
                 with self.assertRaises(CONTROL.ControlError):
                     CONTROL.parse_command(body)
 
+    def test_stage11_independent_review_receipt_cannot_be_reused(self):
+        with self.assertRaisesRegex(CONTROL.ControlError, "requires exactly"):
+            CONTROL.promote(
+                52,
+                {
+                    "source_sha": self.SOURCE,
+                    "source_tree": self.TREE,
+                    "base_sha": self.BASE,
+                    "stage11_review_receipt": "STAGE11_INDEPENDENT_REVIEW: PASS",
+                },
+            )
+
     def test_sha_requires_exact_lowercase_40_hex(self):
         self.assertEqual(CONTROL._require_sha(self.SOURCE, "source_sha"), self.SOURCE)
         for value in ("a" * 39, "A" * 40, "g" * 40, "a" * 41):
