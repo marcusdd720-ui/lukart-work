@@ -18,9 +18,15 @@ GRAPHQL = "https://api.github.com/graphql"
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 DISPATCH_TOKEN_RE = re.compile(r"^[0-9a-f]{32}$")
 STAGE_PRODUCT_BRANCH = "codex/stage12-audit-provenance"
-ASSURANCE_WORKFLOW = "stage12-assurance.yml"
-ASSURANCE_WORKFLOW_PATH = ".github/workflows/stage12-assurance.yml"
-DISPATCH_RUN_NAME_PREFIX = "stage12-dispatch-"
+CANDIDATE_WORKFLOWS = ("stage02.yml", "stage11-assurance.yml")
+CANDIDATE_WORKFLOW_PATHS = {
+    "stage02.yml": ".github/workflows/stage02.yml",
+    "stage11-assurance.yml": ".github/workflows/stage11-assurance.yml",
+}
+# These immutable workflows already exist in the reviewed Stage 12 product tree.
+# Their historical run-name prefix remains unchanged; Stage 12 consumes them only
+# as exact-SHA CI evidence and does not consume Stage 11 receipts or authority.
+EXISTING_CI_DISPATCH_RUN_NAME_PREFIX = "stage11-dispatch-"
 DISPATCH_POLL_ATTEMPTS = 30
 DISPATCH_POLL_INTERVAL_SECONDS = 1.0
 
@@ -193,16 +199,19 @@ def _paged_items(path: str, key: str, *, context: str) -> list[dict[str, Any]]:
         page += 1
 
 
-def _workflow_dispatch_runs() -> list[dict[str, Any]]:
-    workflow = urllib.parse.quote(ASSURANCE_WORKFLOW, safe="")
+def _workflow_dispatch_runs(workflow: str) -> list[dict[str, Any]]:
+    if workflow not in CANDIDATE_WORKFLOWS:
+        raise ControlError(f"untrusted Stage 12 candidate workflow: {workflow}")
+    workflow_id = urllib.parse.quote(workflow, safe="")
     return _paged_items(
-        f"/actions/workflows/{workflow}/runs?event=workflow_dispatch&per_page=100",
+        f"/actions/workflows/{workflow_id}/runs?event=workflow_dispatch&per_page=100",
         "workflow_runs",
-        context="Stage 12 assurance workflow runs",
+        context=f"Stage 12 candidate CI runs for {workflow}",
     )
 
 
 def _wait_for_bound_dispatch_run(
+    workflow: str,
     branch: str,
     candidate_sha: str,
     dispatch_token: str,
@@ -211,10 +220,11 @@ def _wait_for_bound_dispatch_run(
     attempts: int = DISPATCH_POLL_ATTEMPTS,
     interval_seconds: float = DISPATCH_POLL_INTERVAL_SECONDS,
 ) -> int:
-    expected_title = f"{DISPATCH_RUN_NAME_PREFIX}{dispatch_token}"
+    expected_title = f"{EXISTING_CI_DISPATCH_RUN_NAME_PREFIX}{dispatch_token}"
+    expected_path = CANDIDATE_WORKFLOW_PATHS[workflow]
     for attempt in range(attempts):
         correlated: list[dict[str, Any]] = []
-        for run in _workflow_dispatch_runs():
+        for run in _workflow_dispatch_runs(workflow):
             run_id = run.get("id")
             if type(run_id) is not int or run_id in baseline_ids:
                 continue
@@ -230,7 +240,7 @@ def _wait_for_bound_dispatch_run(
             if (
                 run.get("head_sha") != candidate_sha
                 or run.get("head_branch") != branch
-                or run.get("path") != ASSURANCE_WORKFLOW_PATH
+                or run.get("path") != expected_path
             ):
                 raise ControlError(
                     "Stage 12 assurance dispatch bound to wrong source: "
@@ -244,7 +254,7 @@ def _wait_for_bound_dispatch_run(
     raise ControlError("Stage 12 assurance workflow run did not materialize")
 
 
-def dispatch_assurance(branch: str, candidate_sha: str) -> int:
+def dispatch_assurance(branch: str, candidate_sha: str) -> dict[str, int]:
     if branch != STAGE_PRODUCT_BRANCH:
         raise ControlError("Stage 12 assurance branch is not the exact Stage 12 product branch")
     candidate_sha = _require_sha(candidate_sha, "candidate_sha")
@@ -252,30 +262,37 @@ def dispatch_assurance(branch: str, candidate_sha: str) -> int:
     if not DISPATCH_TOKEN_RE.fullmatch(dispatch_token):
         raise ControlError("generated dispatch token is invalid")
 
-    _assert_ref_sha(branch, candidate_sha, "before assurance dispatch")
-    baseline_ids = {
-        run["id"] for run in _workflow_dispatch_runs() if type(run.get("id")) is int
-    }
-    workflow = urllib.parse.quote(ASSURANCE_WORKFLOW, safe="")
-    api(
-        "POST",
-        f"/actions/workflows/{workflow}/dispatches",
-        {
-            "ref": branch,
-            "inputs": {
-                "candidate_sha": candidate_sha,
-                "dispatch_token": dispatch_token,
+    bound: dict[str, int] = {}
+    _assert_ref_sha(branch, candidate_sha, "before candidate CI dispatch")
+    for workflow in CANDIDATE_WORKFLOWS:
+        baseline_ids = {
+            run["id"]
+            for run in _workflow_dispatch_runs(workflow)
+            if type(run.get("id")) is int
+        }
+        _assert_ref_sha(branch, candidate_sha, f"before dispatch of {workflow}")
+        workflow_id = urllib.parse.quote(workflow, safe="")
+        api(
+            "POST",
+            f"/actions/workflows/{workflow_id}/dispatches",
+            {
+                "ref": branch,
+                "inputs": {
+                    "candidate_sha": candidate_sha,
+                    "dispatch_token": dispatch_token,
+                },
             },
-        },
-    )
-    run_id = _wait_for_bound_dispatch_run(
-        branch,
-        candidate_sha,
-        dispatch_token,
-        baseline_ids,
-    )
-    _assert_ref_sha(branch, candidate_sha, "after assurance dispatch binding")
-    return run_id
+        )
+        bound[workflow] = _wait_for_bound_dispatch_run(
+            workflow,
+            branch,
+            candidate_sha,
+            dispatch_token,
+            baseline_ids,
+        )
+        _assert_ref_sha(branch, candidate_sha, f"after binding {workflow}")
+    _assert_ref_sha(branch, candidate_sha, "after candidate CI dispatch binding")
+    return bound
 
 
 def _abort_promotion(target: str, promoted_sha: str, reason: str) -> None:
@@ -394,7 +411,7 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
         if _ref_sha("main") != base_sha:
             raise ControlError("main changed during Stage 12 promotion")
 
-        assurance_run_id = dispatch_assurance(branch, promoted_sha)
+        assurance_runs = dispatch_assurance(branch, promoted_sha)
 
         final_pr = _pr(issue_number)
         if final_pr.get("head", {}).get("sha") != promoted_sha:
@@ -414,7 +431,9 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
             f"new_tree={source_tree}",
             f"base_sha={base_sha}",
             "verification=VERIFIED",
-            f"assurance_run_id={assurance_run_id}",
+            "assurance_runs=" + ",".join(
+                f"{name}:{assurance_runs[name]}" for name in CANDIDATE_WORKFLOWS
+            ),
             "main_changed=NO",
             "merge=NOT_PERFORMED",
         ]
