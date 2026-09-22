@@ -17,7 +17,7 @@ API = "https://api.github.com"
 GRAPHQL = "https://api.github.com/graphql"
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 DISPATCH_TOKEN_RE = re.compile(r"^[0-9a-f]{32}$")
-STAGE_BRANCH_PREFIX = "codex/stage12-"
+STAGE_PRODUCT_BRANCH = "codex/stage12-audit-provenance"
 ASSURANCE_WORKFLOW = "stage12-assurance.yml"
 ASSURANCE_WORKFLOW_PATH = ".github/workflows/stage12-assurance.yml"
 DISPATCH_RUN_NAME_PREFIX = "stage12-dispatch-"
@@ -146,11 +146,19 @@ def _event() -> dict[str, Any]:
 
 
 def _assert_owner_actor(event: dict[str, Any]) -> None:
-    actor = event.get("comment", {}).get("user", {}).get("login")
-    owner = event.get("repository", {}).get("owner", {}).get("login")
-    if actor != owner:
+    comment = event.get("comment", {})
+    actor = comment.get("user", {})
+    owner = event.get("repository", {}).get("owner", {})
+    association = comment.get("author_association")
+    if (
+        actor.get("login") != owner.get("login")
+        or actor.get("id") != owner.get("id")
+        or actor.get("type") != "User"
+        or owner.get("type") != "User"
+        or association != "OWNER"
+    ):
         raise ControlError(
-            f"only repository owner may invoke Stage 12 control; actor={actor!r}"
+            "only the authenticated repository-owner HUMAN boundary may invoke Stage 12 control"
         )
 
 
@@ -237,8 +245,8 @@ def _wait_for_bound_dispatch_run(
 
 
 def dispatch_assurance(branch: str, candidate_sha: str) -> int:
-    if not branch.startswith(STAGE_BRANCH_PREFIX):
-        raise ControlError("Stage 12 assurance branch is outside Stage 12 namespace")
+    if branch != STAGE_PRODUCT_BRANCH:
+        raise ControlError("Stage 12 assurance branch is not the exact Stage 12 product branch")
     candidate_sha = _require_sha(candidate_sha, "candidate_sha")
     dispatch_token = secrets.token_hex(16)
     if not DISPATCH_TOKEN_RE.fullmatch(dispatch_token):
@@ -290,8 +298,8 @@ def _validate_pr_preconditions(
     branch = head.get("ref")
     if base.get("ref") != "main":
         raise ControlError("Stage 12 PR base must be main")
-    if not isinstance(branch, str) or not branch.startswith(STAGE_BRANCH_PREFIX):
-        raise ControlError("Stage 12 PR head is outside Stage 12 branch namespace")
+    if branch != STAGE_PRODUCT_BRANCH:
+        raise ControlError("Stage 12 PR head is not the exact authorized Stage 12 product branch")
     if head.get("sha") != source_sha:
         raise ControlError("Stage 12 source SHA does not equal current PR head")
     if base.get("sha") != base_sha:
