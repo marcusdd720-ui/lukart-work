@@ -38,6 +38,11 @@ class Stage12Tests(unittest.TestCase):
         self.assertEqual(first.implementation, audit_pin())
         self.assertEqual(first.chain_head_hash, first.event_hashes[-1])
         self.assertEqual(first.outbox_event_ids, tuple(event.audit.event_id for event in first.events))
+        revision_refs = tuple(item.ref for item in first.revisions)
+        revision_keys = tuple((r.kind, str(r.id), r.revision) for r in revision_refs)
+        self.assertTrue(set(first.heads) <= set(revision_refs))
+        self.assertEqual(revision_keys, tuple(sorted(revision_keys)))
+        self.assertTrue(all(len(item.content_hash) == 64 for item in first.revisions))
         self.assertEqual(verify_audit_package(first, expected_implementation=audit_pin()), digest(first))
 
     def test_trace_follows_fact_to_source_and_audit_events(self):
