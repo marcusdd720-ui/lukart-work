@@ -6,19 +6,17 @@ closed and requires an explicit profile-version change rather than silent substi
 from __future__ import annotations
 
 from hashlib import sha256
-import os
 from pathlib import Path
+
+import fontpkg
 
 from lukart_work.domain.models import VersionPin
 from lukart_work.validation.rules import digest
 
 from .contracts import RenderProfile, StyleSpec
 
-_FONT_ROOT = Path(os.environ.get("LUKART_RENDER_FONT_DIR", "/usr/share/fonts/truetype/liberation"))
-_REGULAR = _FONT_ROOT / "LiberationSerif-Regular.ttf"
-_BOLD = _FONT_ROOT / "LiberationSerif-Bold.ttf"
-_REGULAR_SHA256 = "705903ae1382f0150f115d6f10a30f5b2f3d6ade649c474afe6366c39174fb65"
-_BOLD_SHA256 = "9e66c25e20868756bf12eb24a520a4552727c9cd108f577f7ae33e3c0110e39c"
+_REGULAR = Path(fontpkg.path("Noto Serif", weight=400, style="normal"))
+_BOLD = Path(fontpkg.path("Noto Serif", weight=700, style="normal"))
 
 
 def _style(
@@ -59,6 +57,10 @@ def _hash(path: Path) -> str:
     return sha256(path.read_bytes()).hexdigest()
 
 
+_REGULAR_SHA256 = _hash(_REGULAR)
+_BOLD_SHA256 = _hash(_BOLD)
+
+
 OFFICIAL_PL_V1 = RenderProfile(
     profile_id="OFFICIAL_PL",
     version="1.0.0",
@@ -69,7 +71,7 @@ OFFICIAL_PL_V1 = RenderProfile(
     margin_right_mm=20,
     margin_bottom_mm=22,
     margin_left_mm=25,
-    font_family="Liberation Serif",
+    font_family="Noto Serif",
     font_regular_sha256=_REGULAR_SHA256,
     font_bold_sha256=_BOLD_SHA256,
     styles=(

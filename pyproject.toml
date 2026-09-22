@@ -11,6 +11,8 @@ dependencies = [
   "pydantic==2.13.5",
   "python-docx==1.2.0",
   "reportlab==4.4.9",
+  "fontpkg==0.2.2",
+  "fontpkg-noto-serif==2.15",
 ]
 
 [project.optional-dependencies]
