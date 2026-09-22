@@ -10,7 +10,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from docx import Document
-from docx.shared import Mm
+from docx.shared import Twips
 from reportlab.pdfbase.ttfonts import TTFont
 
 from lukart_work.contracts.messages import RenderRequest
@@ -81,9 +81,12 @@ class Stage11RenderingTests(unittest.TestCase):
         self.assertIn("PAGE", footer)
         self.assertIn(OFFICIAL_PL_V1.font_family, footer)
         document = Document(BytesIO(bundle.docx))
+        expected_twips = round(
+            OFFICIAL_PL_V1.footer_offset_mm / 25.4 * 72 * 20
+        )
         self.assertEqual(
             document.sections[0].footer_distance,
-            Mm(OFFICIAL_PL_V1.footer_offset_mm),
+            Twips(expected_twips),
         )
 
     def test_pdf_embeds_font_and_forbids_active_content(self):
