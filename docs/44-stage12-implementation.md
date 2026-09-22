@@ -104,7 +104,7 @@ The package contains audit metadata, refs, immutable object/command identifiers 
 
 The predecessor chain and package digest are integrity mechanisms, not signatures.
 
-A verifier can detect inconsistent or partially corrupted package content. The package pins complete revision hashes, but it deliberately does not embed the full revision payloads; authoritative revision-content verification remains a trusted repository read performed by AuditService. Authenticating an exported package to an external party would require a separately authorized signing/attestation mechanism and is outside Stage 12 v1.
+A verifier can detect inconsistent or partially corrupted package content. The package pins complete revision, object and command-result hashes, but it deliberately does not embed their full payloads; authoritative content verification remains a trusted repository read performed by AuditService. Stage 12 relies on the existing database-owner, immutability-trigger and RLS trust boundary and does not claim to detect a privileged administrator who disables those controls and consistently rewrites both a payload and its stored hash. Authenticating an exported package to an external party would require a separately authorized signing/attestation mechanism and is outside Stage 12 v1.
 
 ## Implementation files
 
