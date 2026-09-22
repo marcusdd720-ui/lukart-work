@@ -60,8 +60,8 @@ class Stage12Tests(unittest.TestCase):
 
     def test_tampered_declared_event_hash_is_rejected(self):
         package = self.audit.package(self.token)
-        body = package.model_dump(mode='json')
-        body['event_hashes'][-1] = '0' * 64
+        body = package.model_dump(mode='python')
+        body['event_hashes'] = body['event_hashes'][:-1] + ('0' * 64,)
         body['chain_head_hash'] = '0' * 64
         forged = AuditPackage.model_validate(body)
         with self.assertRaises(Violation) as ctx:
@@ -70,7 +70,7 @@ class Stage12Tests(unittest.TestCase):
 
     def test_missing_case_sequence_is_rejected(self):
         package = self.audit.package(self.token)
-        body = package.model_dump(mode='json')
+        body = package.model_dump(mode='python')
         body['case_sequence'] += 1
         with self.assertRaises(ValidationError):
             AuditPackage.model_validate(body)
