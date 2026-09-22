@@ -1,13 +1,16 @@
 """Synthetic Stage 11 rendering fixture. No real case data."""
 from uuid import UUID
 
-from lukart_work.contracts.messages import RenderRequest, SemanticDocument
+from lukart_work.contracts.messages import CheckResult, RenderRequest, SemanticDocument, ValidationRun
 from lukart_work.domain.models import (
-    Draft, Ref, Request, Section, SectionContract, SectionText, Statement,
+    Decision, DocumentPlan, Draft, Ref, Request, Section, SectionContract, SectionText, Statement,
 )
 from lukart_work.rendering.profiles import OFFICIAL_PL_V1, profile_pin
-from lukart_work.rendering.service import authorization_binding
-from tests.fixtures import H, PIN, anchor, common, evidence, fact, party, ref, uid
+from lukart_work.rendering.service import authorization_binding, derive_render_authority
+from lukart_work.validation.contracts import PRE_RENDER_CHECKS, ValidationExecution, ValidationManifest, ValidationProjection
+from lukart_work.validation.policy import validation_pin
+from lukart_work.validation.rules import digest
+from tests.fixtures import ACTOR, H, NOW, anchor, common, evidence, fact, next_rev, party, ref, uid
 
 
 def build_fixture():
@@ -37,18 +40,50 @@ def build_fixture():
         statements=(statement_fact, statement_legal),
     )
 
+    render_profile = profile_pin(OFFICIAL_PL_V1)
+    plan_approval_ref = Ref(kind="Decision", id=uid(22), revision=1)
+    plan = DocumentPlan(
+        **common(20),
+        kind="DocumentPlan",
+        status="APPROVED",
+        filing=Ref(kind="Filing", id=uid(70), revision=1),
+        input_snapshot_id=uid(30),
+        input_snapshot_hash=H,
+        objectives=(ref(f),),
+        recipient=ref(p),
+        position_scope="Syntetyczny zakres testowy.",
+        argument_order=(),
+        evidence=(ref(e),),
+        section_order=(section_ref,),
+        approval=plan_approval_ref,
+    )
+    plan_approval = Decision(
+        **common(22),
+        kind="Decision",
+        status="RECORDED",
+        decision_type="PLAN_APPROVAL",
+        targets=(ref(plan),),
+        outcome="ACCEPT",
+        rationale="Syntetyczne zatwierdzenie planu.",
+        decided_by=ACTOR,
+        supersedes=None,
+        snapshot_target=None,
+        render_target=None,
+    )
     base_reproduction = __import__("tests.fixtures", fromlist=["draft"]).draft().reproduction
-    d = Draft(
+    reproduction = base_reproduction.model_copy(update={"render_profile": render_profile})
+    generated = Draft(
         **common(10),
         kind="Draft",
-        status="VALIDATED",
-        plan=Ref(kind="DocumentPlan", id=uid(20), revision=1),
+        status="GENERATED",
+        plan=ref(plan),
         snapshot_id=uid(30),
         snapshot_hash=H,
         sections=(section_text,),
-        reproduction=base_reproduction,
+        reproduction=reproduction,
         supersedes=None,
     )
+    validated = next_rev(generated, status="VALIDATED")
 
     section = Section(
         **common(21),
@@ -81,30 +116,81 @@ def build_fixture():
     )
 
     document = SemanticDocument(
-        tenant_id=d.tenant_id,
-        case_id=d.case_id,
-        draft=ref(d),
-        snapshot_hash=d.snapshot_hash,
+        tenant_id=validated.tenant_id,
+        case_id=validated.case_id,
+        draft=ref(validated),
+        snapshot_hash=validated.snapshot_hash,
         header="WNIOSEK O PONOWNE ROZPATRZENIE SPRAWY",
         parties=(ref(p),),
         requests=(ref(request),),
-        sections=d.sections,
+        sections=validated.sections,
         attachments=(anchor(),),
         signature_party=ref(p),
     )
 
     records = {
-        ref(d): d,
+        ref(generated): generated,
+        ref(validated): validated,
+        ref(plan): plan,
+        ref(plan_approval): plan_approval,
         ref(p): p,
         ref(e): e,
         ref(f): f,
         ref(section): section,
         ref(request): request,
     }
-    render_profile = profile_pin(OFFICIAL_PL_V1)
+    policy = validation_pin()
+    dependencies = tuple(sorted(
+        (ref(generated), ref(plan), ref(plan_approval), ref(section), ref(request), ref(p), ref(e), ref(f)),
+        key=lambda item: (item.kind, str(item.id), item.revision),
+    ))
+    manifest = ValidationManifest(
+        policy=policy,
+        draft_hash=digest(generated),
+        snapshot_hash=H,
+        dependency_hashes=tuple((target, digest(records[target])) for target in dependencies),
+        review_hash=None,
+        evaluation_date=NOW.date(),
+        procedural_context=(),
+    )
+    run = ValidationRun(
+        id=uid(50),
+        tenant_id=validated.tenant_id,
+        case_id=validated.case_id,
+        draft=ref(generated),
+        draft_hash=digest(generated),
+        snapshot_hash=H,
+        policy=policy,
+        completed_at=NOW,
+        checks=tuple(CheckResult(check=name, outcome="PASS", validator=policy) for name in PRE_RENDER_CHECKS)
+            + (CheckResult(check="render", outcome="NOT_RUN", validator=policy),),
+        findings=(),
+        render_hashes=(),
+        execution_manifest_hash=digest(manifest),
+    )
+    execution = ValidationExecution(
+        id=run.id,
+        run=run,
+        output_draft=ref(validated),
+        output_hash=digest(validated),
+        evaluation_date=NOW.date(),
+        input_sequence=1,
+        committed_sequence=2,
+        review=None,
+        dependencies=dependencies,
+        validator=policy,
+        manifest=manifest,
+    )
+    validation = ValidationProjection(
+        execution=execution,
+        freshness="CURRENT",
+        eligible_for_approval=True,
+        reasons=(),
+    )
+    authority = derive_render_authority(document, records, validation, render_profile)
     request_contract = RenderRequest(
         document=document,
         profile=render_profile,
-        authorization_hash=authorization_binding(document, render_profile),
+        authorization_hash=authorization_binding(document, render_profile, authority),
     )
-    return request_contract, records
+    return request_contract, records, validation
