@@ -148,7 +148,7 @@
   "reports/stage09-schema-validation.json": "f7f42ca52e803b0f21d646c50d5b6d06bd41cd50c171ac009d6389fa478dd5a5",
   "reports/stage09-status.json": "5d11212e22559aba5a041a5402100ebabb422ba1cfc5724ccdbb0aabd9e6bf7e",
   "reports/stage10-schema-validation.json": "c07b4e2b29ebb768f97e2d426d74695209f82df981908ed11e709a9259fa7bfc",
-  "reports/stage10-status.json": "08500ba6b102e22b3662990b8ae790bde3fad22654d1997e51df624786d495cb",
+  "reports/stage10-status.json": "718ab50f5a5f0a11bbfd773550cb109006f7dbabb83141819d32506fe076431a",
   "reports/status.json": "b3a0315e0fc695b5b8a343f03f2842d7c07c35f881ac2b6c9d9229e318fd2c85",
   "reports/unittest.txt": "001f4d7399e2b3f597dc4a9f6b5370544ede14b6abb2a4dea66bc83e263744b1",
   "schemas/AIRequest.schema.json": "54555e50f93fbe1e62e5ccb21f8d0c0dae253f7f511d03e2cadfa9f7f47c5ed3",
@@ -302,6 +302,6 @@
   "tests/test_stage10.py": "68f9266483ef07ac8940f748d9fbafb79cecbf88fce66a4a8c403514dc1764b1",
   "tests/test_stage11.py": "bcd367f3b061c637c01560a0eb0f5dae92a5512f06c080c7da108bbc90d6ad58",
   "tests/test_stage11_delivery_control.py": "299b9611a5e415e5cfa5657f2e1f4b807cdc484f9e8b631d6a19d8a694adafaf",
-  "tests/test_stage12_delivery_control.py": "c38c3cdbe9d6a25df2bc2381382be228e2ba6da34a3368dee498875aa184abbc",
+  "tests/test_stage12_delivery_control.py": "935e798767ebe2c818f4c62005946e45ec9ffe2f038eb0f047252f3f9014ba27",
   "verify_package.py": "372409d95b4d314ebb4db2ad202b6c759bdad35e623504047821d55a3623c48f"
 }
