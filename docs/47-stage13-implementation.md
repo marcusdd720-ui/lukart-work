@@ -15,8 +15,10 @@ It therefore cannot mutate Canonical Case state. It only returns an untrusted `A
 payload plus a `ModelExecutionReceipt`, both of which are validated again by the existing
 Controlled Drafting pipeline before a Draft can be committed.
 
-Prompt assembly is injected as a trusted `prompt_builder(DraftingInvocation) -> str`.
-This prevents the adapter from reaching into Case storage to gather undeclared context.
+Prompt assembly is injected as a `prompt_builder(DraftingInvocation) -> str` whose
+`VersionPin` is mandatory and must equal `AIRequest.prompt` for every request.
+This prevents the adapter from reaching into Case storage to gather undeclared context
+while binding the selected prompt-builder identity to existing Stage 09 provenance.
 The host remains responsible for constructing the already-authorized, bounded prompt.
 
 ## Ollama contract
@@ -83,3 +85,14 @@ Live Ollama execution is NOT YET EXECUTED.
 Offline operation with a physically disconnected network is NOT YET EXECUTED.
 Performance improvement is NOT YET CLAIMED.
 Exact-SHA CI and independent review remain required.
+
+## Evidence limitation: model digest
+
+The adapter observes the installed Ollama model digest through `/api/tags` immediately
+before and after generation and requires both observations to equal the configured model
+VersionPin hash. This detects ordinary model replacement/drift and fails closed.
+
+The current Ollama generate response does not itself contain the installed model digest.
+Therefore Stage 13 does NOT claim atomic cryptographic proof of the exact model bytes
+executing between those two observations. This limitation is tracked by the Red Team and
+must not be overstated in a closure receipt.
