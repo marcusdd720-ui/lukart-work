@@ -1,6 +1,6 @@
 {
   "stage": "10 Validation Engine",
-  "tests": 414,
+  "tests": 422,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -9,6 +9,9 @@
   "stage_10_closed": false,
   "tested_sources": {
     "lukart_work/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lukart_work/audit/__init__.py": "5996e535182d41bf2cc093b3afb50cf54a60e4d978c3afe861efc1c9bf9eb442",
+    "lukart_work/audit/contracts.py": "26f83c4edb5f2793adaacf0cf707a04df8df56235f38c3b7deeb9b43b993cc81",
+    "lukart_work/audit/service.py": "79fe0e7347bf4a67776fe98237a9b877b3e808aad9505e49755712cb3962fe60",
     "lukart_work/contracts/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "lukart_work/contracts/messages.py": "66beb87d047e85be4cf196bc6f72b93783f06475a6e51357a0b314be265c51e6",
     "lukart_work/contracts/ports.py": "e302d9b44ba2b87b9efc0e63a0092415ff4686796a0cbf7ac2add6394e9b1c8d",
@@ -18,7 +21,7 @@
     "lukart_work/core/__init__.py": "83ff4b13ef18736d1ac3d45c688b063abc6597b777c119f4512b98410052454f",
     "lukart_work/core/migration.sql": "3a2fc27d6cf24c53082142b83528053ebb57d822cff9889e0345052dad29f35e",
     "lukart_work/core/policy.py": "61260f8227f62db5eddf3041605c9bbe8420446ad41b32051a89819be7db4a4f",
-    "lukart_work/core/postgres.py": "c97f3a4e86d1bddd6d0e1c8ff78fc5643fcfeb56e4f9e1790d2f6e48b274254b",
+    "lukart_work/core/postgres.py": "24f3b89a9179650d7c39d80a4d496177356838e9726f8e338a1579c243865285",
     "lukart_work/core/requests.py": "3f11a6304b14d6288f3bd1aae40d0f4f7b75938db4d39415e7016803b845d077",
     "lukart_work/core/security.py": "08c1fe3667abe9e862b34be5d63745762d96cbf33b2327897f084e8624345eda",
     "lukart_work/core/service.py": "e6a2cd72d738dbc758ff93c79cf7d3587f46d41b4226682de9061876cf0fe91f",
@@ -109,6 +112,7 @@
     "tests/test_stage09_reproducibility.py": "4ab10b15a1cc30abda1ebcf84c33bb1356220077da7823e492df2fa881c0c6aa",
     "tests/test_stage10.py": "68f9266483ef07ac8940f748d9fbafb79cecbf88fce66a4a8c403514dc1764b1",
     "tests/test_stage11.py": "bcd367f3b061c637c01560a0eb0f5dae92a5512f06c080c7da108bbc90d6ad58",
-    "tests/test_stage11_delivery_control.py": "299b9611a5e415e5cfa5657f2e1f4b807cdc484f9e8b631d6a19d8a694adafaf"
+    "tests/test_stage11_delivery_control.py": "299b9611a5e415e5cfa5657f2e1f4b807cdc484f9e8b631d6a19d8a694adafaf",
+    "tests/test_stage12.py": "71dc88c94431f6772300d0608d39756316fb8541fc78b15c06573de938247633"
   }
 }
