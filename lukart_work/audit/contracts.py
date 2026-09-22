@@ -37,12 +37,14 @@ class AuditPackage(Value):
             audit = event.audit
             if (audit.tenant_id, audit.case_id) != (self.tenant_id, self.case_id):
                 raise ValueError('CROSS_CASE')
-            if audit.sequence < last_sequence or audit.sequence > self.case_sequence:
+            if audit.sequence < last_sequence or audit.sequence > last_sequence + 1:
                 raise ValueError('AUDIT_SEQUENCE')
             if audit.previous_event_hash != previous:
                 raise ValueError('AUDIT_CHAIN')
             previous = event_hash
             last_sequence = audit.sequence
+        if last_sequence != self.case_sequence:
+            raise ValueError('AUDIT_SEQUENCE')
         return self
 
 
