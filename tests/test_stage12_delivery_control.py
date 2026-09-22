@@ -191,7 +191,7 @@ class Stage12DeliveryControlTests(unittest.TestCase):
         self.assertEqual(mutation_input["expectedHeadOid"], self.SOURCE)
         self.assertEqual(mutation_input["branch"]["branchName"], self.BRANCH)
         self.assertNotEqual(mutation_input["branch"]["branchName"], "main")
-        self.assertNotIn("fileChanges", mutation_input)
+        self.assertEqual(mutation_input["fileChanges"], {})
         self.assertEqual(len(comments), 1)
 
     def test_stale_expected_head_fails_closed_without_receipt(self):
