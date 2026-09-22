@@ -1,6 +1,6 @@
 {
   "stage": "10 Validation Engine",
-  "tests": 437,
+  "tests": 438,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -74,7 +74,7 @@
     "scripts/refresh_manifest.py": "c29f0a79f93a20c7a686909f71c628b1f618057effef60534244fd4c1ea76aeb",
     "scripts/render_cross_repo_contract.py": "80476b1aa02bc2a058ddce3fe11b111e9b48185242672bb43100340818b53e04",
     "scripts/stage11_delivery_control.py": "ed25d0ea5a4e158d488f834bb6594d592e2059b6585d611bf0978b91cb1997d1",
-    "scripts/stage12_delivery_control.py": "0684123a22fc81f2e71ff41c4a86dc2ff11220e7553fa813e02815e1e5d02148",
+    "scripts/stage12_delivery_control.py": "d04be15f22e055939969b95115f48d0b173953fbb944e377ce503cc341dcc45e",
     "scripts/start_stage02_postgres.ps1": "49a7c29522606d091080901c6d0a4fe2b8e0401b551b77079f414571e6d21065",
     "scripts/validate_stage06_schemas.py": "e4135f24d41939a00be4aae06a95326fbb3db6c0eaba3040a0037259e2d45a94",
     "scripts/validate_stage07_schemas.py": "db267606a7bce858dd08cc27c263cece5a9e88626bbc6ba83d0075d69265073f",
@@ -111,6 +111,6 @@
     "tests/test_stage10.py": "68f9266483ef07ac8940f748d9fbafb79cecbf88fce66a4a8c403514dc1764b1",
     "tests/test_stage11.py": "bcd367f3b061c637c01560a0eb0f5dae92a5512f06c080c7da108bbc90d6ad58",
     "tests/test_stage11_delivery_control.py": "299b9611a5e415e5cfa5657f2e1f4b807cdc484f9e8b631d6a19d8a694adafaf",
-    "tests/test_stage12_delivery_control.py": "f114362be7033e5e717792c96bfb9639ecc8f1a5857912d8d5b1869e35a25390"
+    "tests/test_stage12_delivery_control.py": "c38c3cdbe9d6a25df2bc2381382be228e2ba6da34a3368dee498875aa184abbc"
   }
 }
