@@ -9,7 +9,7 @@ from lukart_work.core.service import safe_error
 from lukart_work.domain import models as m
 from lukart_work.validation.rules import Violation, digest, ref, walk
 
-from .contracts import AuditPackage, AuditRevisionPin, AuditTrace
+from .contracts import AuditCommandPin, AuditObjectPin, AuditPackage, AuditRevisionPin, AuditTrace
 
 
 AUDIT_POLICY_FILES = (
@@ -90,6 +90,7 @@ class AuditService:
     @staticmethod
     def _package(tx, principal):
         records = tx.records()
+        object_rows, command_rows = tx.audit_inventory()
         events = tx.events()
         outbox = tx.outbox()
         if not events:
@@ -105,6 +106,19 @@ class AuditService:
                 key=lambda item: (item[0].kind, str(item[0].id), item[0].revision),
             )
         )
+        object_pins = tuple(
+            AuditObjectPin(category=category, object_id=object_id, contract=contract, content_hash=content_hash)
+            for category, object_id, contract, content_hash in object_rows
+        )
+        command_pins = tuple(
+            AuditCommandPin(
+                idempotency_key=idempotency_key,
+                input_hash=input_hash,
+                contract=contract,
+                content_hash=content_hash,
+            )
+            for idempotency_key, input_hash, contract, content_hash in command_rows
+        )
         package = AuditPackage(
             contract='urn:lukart:work:AuditPackage:1.0.0',
             tenant_id=principal.tenant_id,
@@ -112,6 +126,8 @@ class AuditService:
             case_sequence=tx.sequence(),
             heads=tuple(ref(entity) for entity in tx.heads()),
             revisions=revision_pins,
+            objects=object_pins,
+            commands=command_pins,
             events=events,
             event_hashes=hashes,
             outbox_event_ids=event_ids,
