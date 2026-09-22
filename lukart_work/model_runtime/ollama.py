@@ -244,18 +244,6 @@ class OllamaHttpTransport:
     def json_request(self, method: str, path: str, payload, request_id: UUID):
         if path not in ("/api/tags", "/api/generate"):
             raise ProviderPolicyError()
-        parsed = self.config.parsed_endpoint
-        port = parsed.port or (443 if parsed.scheme == "https" else 80)
-        cls = (
-            http.client.HTTPSConnection
-            if parsed.scheme == "https"
-            else http.client.HTTPConnection
-        )
-        connection = cls(parsed.hostname, port, timeout=self.config.connect_timeout)
-        with self._lock:
-            if request_id in self._active:
-                raise ProviderProtocolError()
-            self._active[request_id] = connection
         body = None
         headers = {"Accept": "application/json"}
         if payload is not None:
@@ -269,6 +257,20 @@ class OllamaHttpTransport:
             if len(body) > self.config.max_request_bytes:
                 raise ProviderResponseTooLarge()
             headers["Content-Type"] = "application/json"
+
+        parsed = self.config.parsed_endpoint
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        cls = (
+            http.client.HTTPSConnection
+            if parsed.scheme == "https"
+            else http.client.HTTPConnection
+        )
+        connection = cls(parsed.hostname, port, timeout=self.config.connect_timeout)
+        with self._lock:
+            if request_id in self._active:
+                connection.close()
+                raise ProviderProtocolError()
+            self._active[request_id] = connection
         try:
             connection.connect()
             if connection.sock is None:
