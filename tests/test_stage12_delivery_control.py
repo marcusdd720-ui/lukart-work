@@ -69,7 +69,7 @@ class Stage12DeliveryControlTests(unittest.TestCase):
                 patch.object(CONTROL, "_commit", side_effect=lambda sha: commits[sha]), \
                 patch.object(CONTROL, "graphql", side_effect=fake_graphql), \
                 patch.object(CONTROL, "_repo", return_value="owner/repo"), \
-                patch.object(CONTROL, "dispatch_assurance", return_value=777), \
+                patch.object(CONTROL, "dispatch_assurance", return_value={"stage02.yml": 777, "stage11-assurance.yml": 778}), \
                 patch.object(CONTROL, "_post_comment", side_effect=lambda issue, body: comments.append(body)):
             CONTROL.promote(
                 52,
@@ -244,7 +244,7 @@ class Stage12DeliveryControlTests(unittest.TestCase):
                     "graphql",
                     return_value={"createCommitOnBranch": {"commit": {"oid": self.NEW}}},
                 ), \
-                patch.object(CONTROL, "dispatch_assurance", return_value=1), \
+                patch.object(CONTROL, "dispatch_assurance", return_value={"stage02.yml": 1, "stage11-assurance.yml": 2}), \
                 patch.object(CONTROL, "_post_comment"):
             CONTROL.promote(
                 52,
@@ -269,6 +269,7 @@ class Stage12DeliveryControlTests(unittest.TestCase):
             f"new_tree={self.TREE}",
             f"base_sha={self.BASE}",
             "verification=VERIFIED",
+            "assurance_runs=stage02.yml:777,stage11-assurance.yml:778",
             "main_changed=NO",
             "merge=NOT_PERFORMED",
         ):
@@ -284,16 +285,25 @@ class Stage12DeliveryControlTests(unittest.TestCase):
         with self.assertRaisesRegex(CONTROL.ControlError, "exact Stage 12 product branch"):
             CONTROL.dispatch_assurance("codex/stage11-rendering", self.NEW)
 
-    def test_dispatch_binds_exact_run_and_rechecks_ref(self):
+    def test_dispatch_binds_existing_exact_sha_ci_and_rechecks_ref(self):
         token = "e" * 32
-        baseline = [{"id": 10}]
-        correlated = [{
+        baseline_stage02 = [{"id": 10}]
+        baseline_stage11 = [{"id": 20}]
+        correlated_stage02 = [{
             "id": 11,
-            "display_title": f"stage12-dispatch-{token}",
+            "display_title": f"stage11-dispatch-{token}",
             "event": "workflow_dispatch",
             "head_sha": self.NEW,
             "head_branch": self.BRANCH,
-            "path": ".github/workflows/stage12-assurance.yml",
+            "path": ".github/workflows/stage02.yml",
+        }]
+        correlated_stage11 = [{
+            "id": 21,
+            "display_title": f"stage11-dispatch-{token}",
+            "event": "workflow_dispatch",
+            "head_sha": self.NEW,
+            "head_branch": self.BRANCH,
+            "path": ".github/workflows/stage11-assurance.yml",
         }]
         posts = []
 
@@ -304,31 +314,46 @@ class Stage12DeliveryControlTests(unittest.TestCase):
             self.fail(f"unexpected API call: {method} {path}")
 
         with patch.object(CONTROL, "_assert_ref_sha") as ref_check, \
-                patch.object(CONTROL, "_workflow_dispatch_runs", side_effect=[baseline, correlated]), \
+                patch.object(
+                    CONTROL,
+                    "_workflow_dispatch_runs",
+                    side_effect=[
+                        baseline_stage02, correlated_stage02,
+                        baseline_stage11, correlated_stage11,
+                    ],
+                ), \
                 patch.object(CONTROL.secrets, "token_hex", return_value=token), \
                 patch.object(CONTROL, "api", side_effect=fake_api):
-            run_id = CONTROL.dispatch_assurance(self.BRANCH, self.NEW)
+            run_ids = CONTROL.dispatch_assurance(self.BRANCH, self.NEW)
 
-        self.assertEqual(run_id, 11)
-        self.assertEqual(ref_check.call_count, 2)
-        self.assertEqual(len(posts), 1)
-        self.assertEqual(posts[0][1]["ref"], self.BRANCH)
-        self.assertEqual(posts[0][1]["inputs"]["candidate_sha"], self.NEW)
-        self.assertEqual(posts[0][1]["inputs"]["dispatch_token"], token)
+        self.assertEqual(run_ids, {"stage02.yml": 11, "stage11-assurance.yml": 21})
+        self.assertEqual(ref_check.call_count, 6)
+        self.assertEqual(len(posts), 2)
+        self.assertTrue(posts[0][0].endswith("/stage02.yml/dispatches"))
+        self.assertTrue(posts[1][0].endswith("/stage11-assurance.yml/dispatches"))
+        for _path, payload in posts:
+            self.assertEqual(payload["ref"], self.BRANCH)
+            self.assertEqual(payload["inputs"]["candidate_sha"], self.NEW)
+            self.assertEqual(payload["inputs"]["dispatch_token"], token)
 
-    def test_ambiguous_dispatch_is_rejected(self):
+    def test_ambiguous_existing_ci_dispatch_is_rejected(self):
         token = "f" * 32
         run = {
             "id": 21,
-            "display_title": f"stage12-dispatch-{token}",
+            "display_title": f"stage11-dispatch-{token}",
             "event": "workflow_dispatch",
             "head_sha": self.NEW,
             "head_branch": self.BRANCH,
-            "path": ".github/workflows/stage12-assurance.yml",
+            "path": ".github/workflows/stage02.yml",
         }
-        with patch.object(CONTROL, "_workflow_dispatch_runs", return_value=[run, dict(run, id=22)]):
+        with patch.object(
+            CONTROL,
+            "_workflow_dispatch_runs",
+            return_value=[run, dict(run, id=22)],
+        ):
             with self.assertRaisesRegex(CONTROL.ControlError, "ambiguous"):
                 CONTROL._wait_for_bound_dispatch_run(
+                    "stage02.yml",
                     self.BRANCH,
                     self.NEW,
                     token,
@@ -336,6 +361,13 @@ class Stage12DeliveryControlTests(unittest.TestCase):
                     attempts=1,
                     interval_seconds=0,
                 )
+
+    def test_only_reviewed_tree_workflows_are_candidate_ci(self):
+        self.assertEqual(
+            CONTROL.CANDIDATE_WORKFLOWS,
+            ("stage02.yml", "stage11-assurance.yml"),
+        )
+        self.assertNotIn("stage12-procedure-assurance.yml", CONTROL.CANDIDATE_WORKFLOWS)
 
     def test_owner_boundary_is_fail_closed(self):
         event = {
@@ -373,13 +405,20 @@ class Stage12DeliveryControlTests(unittest.TestCase):
         self.assertNotIn("'/stage11 '", text)
         self.assertNotIn("scripts/stage11_delivery_control.py", text)
 
-    def test_stage12_assurance_has_canonical_dispatch_binding(self):
-        text = (ROOT / ".github" / "workflows" / "stage12-assurance.yml").read_text(encoding="utf-8")
-        self.assertIn("run-name: stage12-dispatch-", text)
-        self.assertIn("candidate_sha:", text)
+    def test_stage12_procedure_assurance_is_not_product_candidate_ci(self):
+        text = (ROOT / ".github" / "workflows" / "stage12-procedure-assurance.yml").read_text(encoding="utf-8")
+        self.assertIn("run-name: stage12-procedure-", text)
         self.assertIn("tests.test_stage12_delivery_control", text)
         self.assertIn("tests.test_stage11_delivery_control", text)
-        self.assertIn("tests.test_stage12", text)
+        self.assertNotIn("tests.test_stage12\n", text)
+
+    def test_control_source_has_no_ref_patch_delete_force_or_pr_merge(self):
+        text = SCRIPT.read_text(encoding="utf-8")
+        self.assertNotIn('api("PATCH",', text)
+        self.assertNotIn('api("DELETE",', text)
+        self.assertNotIn('/merge', text)
+        self.assertNotIn('"force": True', text)
+        self.assertNotIn('"force": true', text)
 
 
 if __name__ == "__main__":
