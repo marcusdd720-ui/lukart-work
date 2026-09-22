@@ -43,6 +43,9 @@ class Stage12Tests(unittest.TestCase):
         self.assertTrue(set(first.heads) <= set(revision_refs))
         self.assertEqual(revision_keys, tuple(sorted(revision_keys)))
         self.assertTrue(all(len(item.content_hash) == 64 for item in first.revisions))
+        command_keys = tuple(str(item.idempotency_key) for item in first.commands)
+        self.assertTrue(command_keys)
+        self.assertEqual(command_keys, tuple(sorted(command_keys)))
         self.assertEqual(verify_audit_package(first, expected_implementation=audit_pin()), digest(first))
 
     def test_trace_follows_fact_to_source_and_audit_events(self):
@@ -101,10 +104,31 @@ class Stage12Tests(unittest.TestCase):
         self.assertIsInstance(result, DomainError)
         self.assertEqual(result.code, 'BROKEN_REFERENCE')
 
+    def test_corrupt_immutable_command_metadata_fails_closed(self):
+        import psycopg
+
+        self.assertTrue(core.ADMIN)
+        with psycopg.connect(core.ADMIN) as connection:
+            connection.execute('ALTER TABLE lw_core.commands DISABLE TRIGGER immutable_record')
+            try:
+                connection.execute(
+                    "UPDATE lw_core.commands SET content_hash=%s WHERE tenant_id=%s AND case_id=%s",
+                    ('0' * 64, self.tenant, self.case_id),
+                )
+            finally:
+                connection.execute('ALTER TABLE lw_core.commands ENABLE TRIGGER immutable_record')
+        result = self.audit.package(self.token)
+        self.assertIsInstance(result, DomainError)
+        self.assertEqual(result.code, 'INVALID_HASH')
+
     def test_audit_package_contains_hashes_not_raw_source_bytes(self):
         self.fact()
         package = self.audit.package(self.token)
         self.assertIsInstance(package, AuditPackage, package)
+        object_keys = tuple((item.category, str(item.object_id)) for item in package.objects)
+        self.assertTrue(object_keys)
+        self.assertEqual(object_keys, tuple(sorted(object_keys)))
+        self.assertTrue(all(len(item.content_hash) == 64 for item in package.objects))
         self.assertNotIn('Synthetic payment receipt.', package.model_dump_json())
 
 
