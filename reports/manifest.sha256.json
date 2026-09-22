@@ -4,7 +4,7 @@
   ".github/workflows/stage11-assurance.yml": "f602211756490ef5abcbbd50dc7abcd8017aeabe94ea0701217951136d271831",
   ".github/workflows/stage11-control.yml": "be4b8c41354d19aa02db94f8f6a6145236213768caf0525ecf09f17fef4b582c",
   ".github/workflows/stage12-control.yml": "935fd3e909b7bb70b3aa7c5970288baf6707b471c2e99d594de31531912272d0",
-  ".github/workflows/stage12-procedure-assurance.yml": "91f8a31c2bc949232bee0969cdf72cbd8bffe9edee6bd96289653e2908c172ef",
+  ".github/workflows/stage12-procedure-assurance.yml": "b4a3394d5233652fb0ca49518f915b24d1196af11de76fbd565dbd5c160c4a48",
   ".gitignore": "f4942c2957ab6ce819f46dd1f0a68df886ba92a02808e429a2db3a31e7a13233",
   "AGENTS.md": "3788ae8e301422eba5eca2f870abef337f753d54a5c125818d7b37c5cddb1803",
   "README.md": "35466ffa4c8cd86ad728c4ad5125f19bf4e2ee7553f8e88682fed4f02446cb02",
