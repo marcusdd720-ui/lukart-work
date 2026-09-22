@@ -9,7 +9,7 @@ from lukart_work.core.service import safe_error
 from lukart_work.domain import models as m
 from lukart_work.validation.rules import Violation, digest, ref, walk
 
-from .contracts import AuditPackage, AuditTrace
+from .contracts import AuditPackage, AuditRevisionPin, AuditTrace
 
 
 AUDIT_POLICY_FILES = (
@@ -17,6 +17,9 @@ AUDIT_POLICY_FILES = (
     'audit/service.py',
     'contracts/messages.py',
     'core/postgres.py',
+    'core/security.py',
+    'domain/models.py',
+    'validation/rules.py',
 )
 
 
@@ -41,7 +44,9 @@ def audit_pin(root=None):
 
 def verify_audit_package(package, *, expected_implementation=None):
     checked = AuditPackage.model_validate_json(
-        package.model_dump_json() if isinstance(package, AuditPackage) else AuditPackage.model_validate(package).model_dump_json()
+        package.model_dump_json()
+        if isinstance(package, AuditPackage)
+        else AuditPackage.model_validate(package).model_dump_json()
     )
     actual = tuple(digest(event) for event in checked.events)
     if actual != checked.event_hashes:
@@ -84,6 +89,7 @@ class AuditService:
 
     @staticmethod
     def _package(tx, principal):
+        records = tx.records()
         events = tx.events()
         outbox = tx.outbox()
         if not events:
@@ -92,12 +98,20 @@ class AuditService:
         if tuple(event.audit.event_id for event in outbox) != event_ids:
             raise Violation('PROVENANCE_MISSING')
         hashes = tuple(digest(event) for event in events)
+        revision_pins = tuple(
+            AuditRevisionPin(ref=target, content_hash=digest(entity))
+            for target, entity in sorted(
+                records.items(),
+                key=lambda item: (item[0].kind, str(item[0].id), item[0].revision),
+            )
+        )
         package = AuditPackage(
             contract='urn:lukart:work:AuditPackage:1.0.0',
             tenant_id=principal.tenant_id,
             case_id=principal.case_id,
             case_sequence=tx.sequence(),
             heads=tuple(ref(entity) for entity in tx.heads()),
+            revisions=revision_pins,
             events=events,
             event_hashes=hashes,
             outbox_event_ids=event_ids,
