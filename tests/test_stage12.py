@@ -2,12 +2,14 @@
 import unittest
 from uuid import uuid4
 
+from pydantic import ValidationError
+
 from lukart_work.audit import AuditPackage, AuditService, AuditTrace, audit_pin, verify_audit_package
 from lukart_work.contracts.messages import DomainError
 from lukart_work.core.postgres import PostgresRepository
 from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.core.service import CommandService
-from lukart_work.domain.models import Actor
+from lukart_work.domain.models import Actor, Ref
 from lukart_work.validation.rules import Violation, digest
 
 from tests import test_stage02 as core
@@ -58,6 +60,13 @@ class Stage12Tests(unittest.TestCase):
             verify_audit_package(forged)
         self.assertEqual(ctx.exception.code, 'INVALID_HASH')
 
+    def test_missing_case_sequence_is_rejected(self):
+        package = self.audit.package(self.token)
+        body = package.model_dump(mode='json')
+        body['case_sequence'] += 1
+        with self.assertRaises(ValidationError):
+            AuditPackage.model_validate(body)
+
     def test_audit_read_is_authorized_and_ai_is_not_a_trust_boundary(self):
         denied = self.authority.provision(
             Principal(self.actor, self.tenant, self.case_id, core.ACTIONS)
@@ -73,6 +82,19 @@ class Stage12Tests(unittest.TestCase):
         result = self.audit.package(ai_token)
         self.assertIsInstance(result, DomainError)
         self.assertEqual(result.code, 'FORBIDDEN')
+
+    def test_missing_ref_and_foreign_scope_fail_closed(self):
+        missing = Ref(kind='Fact', id=uuid4(), revision=1)
+        result = self.audit.trace(self.token, missing)
+        self.assertIsInstance(result, DomainError)
+        self.assertEqual(result.code, 'BROKEN_REFERENCE')
+
+        foreign = self.authority.provision(
+            Principal(self.actor, uuid4(), uuid4(), frozenset({'AuditRead'}))
+        )
+        result = self.audit.package(foreign)
+        self.assertIsInstance(result, DomainError)
+        self.assertEqual(result.code, 'BROKEN_REFERENCE')
 
     def test_audit_package_contains_hashes_not_raw_source_bytes(self):
         self.fact()
