@@ -313,6 +313,14 @@ def _validate_pr_preconditions(
     base = pr.get("base", {})
     head = pr.get("head", {})
     branch = head.get("ref")
+    head_repo = head.get("repo", {})
+    base_repo = base.get("repo", {})
+    if (
+        head_repo.get("id") is None
+        or head_repo.get("id") != base_repo.get("id")
+        or head_repo.get("full_name") != base_repo.get("full_name")
+    ):
+        raise ControlError("Stage 12 PR head and base must belong to the same repository")
     if base.get("ref") != "main":
         raise ControlError("Stage 12 PR base must be main")
     if branch != STAGE_PRODUCT_BRANCH:
@@ -402,20 +410,14 @@ def promote(issue_number: int, args: dict[str, str]) -> None:
         if _ref_sha(branch) != promoted_sha:
             raise ControlError("Stage 12 target ref does not point to promoted SHA")
         post_pr = _pr(issue_number)
-        if (
-            post_pr.get("head", {}).get("sha") != promoted_sha
-            or post_pr.get("state") != "open"
-            or post_pr.get("merged")
-        ):
-            raise ControlError("Stage 12 PR post-state is wrong")
+        _validate_pr_preconditions(post_pr, promoted_sha, base_sha)
         if _ref_sha("main") != base_sha:
             raise ControlError("main changed during Stage 12 promotion")
 
         assurance_runs = dispatch_assurance(branch, promoted_sha)
 
         final_pr = _pr(issue_number)
-        if final_pr.get("head", {}).get("sha") != promoted_sha:
-            raise ControlError("Stage 12 PR head moved during assurance binding")
+        _validate_pr_preconditions(final_pr, promoted_sha, base_sha)
         if _ref_sha("main") != base_sha:
             raise ControlError("main changed during assurance binding")
     except ControlError as exc:
