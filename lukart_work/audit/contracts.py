@@ -8,12 +8,18 @@ from lukart_work.contracts.messages import DomainEvent
 from lukart_work.domain.models import Hash, Ref, SourceAnchor, Value, VersionPin
 
 
+class AuditRevisionPin(Value):
+    ref: Ref
+    content_hash: Hash
+
+
 class AuditPackage(Value):
     contract: Literal['urn:lukart:work:AuditPackage:1.0.0']
     tenant_id: UUID
     case_id: UUID
     case_sequence: Annotated[int, Field(ge=1)]
     heads: tuple[Ref, ...]
+    revisions: tuple[AuditRevisionPin, ...]
     events: tuple[DomainEvent, ...]
     event_hashes: tuple[Hash, ...]
     outbox_event_ids: tuple[UUID, ...]
@@ -29,8 +35,17 @@ class AuditPackage(Value):
             raise ValueError('AUDIT_OUTBOX_MISMATCH')
         if self.chain_head_hash != self.event_hashes[-1]:
             raise ValueError('AUDIT_CHAIN_HEAD')
-        if len(set(self.heads)) != len(self.heads):
-            raise ValueError('DUPLICATE_HEAD')
+
+        revision_refs = tuple(item.ref for item in self.revisions)
+        revision_keys = tuple((r.kind, str(r.id), r.revision) for r in revision_refs)
+        if len(set(revision_refs)) != len(revision_refs) or revision_keys != tuple(sorted(revision_keys)):
+            raise ValueError('AUDIT_REVISION_ORDER')
+        if len(set(self.heads)) != len(self.heads) or any(head not in set(revision_refs) for head in self.heads):
+            raise ValueError('AUDIT_HEADS')
+        head_keys = tuple((r.kind, str(r.id), r.revision) for r in self.heads)
+        if head_keys != tuple(sorted(head_keys)):
+            raise ValueError('AUDIT_HEAD_ORDER')
+
         previous = None
         last_sequence = 0
         for event, event_hash in zip(self.events, self.event_hashes):
@@ -70,4 +85,4 @@ class AuditTrace(Value):
         return self
 
 
-STAGE12_CONTRACTS = (AuditPackage, AuditTrace)
+STAGE12_CONTRACTS = (AuditRevisionPin, AuditPackage, AuditTrace)
