@@ -478,6 +478,7 @@ def render_docx(layout: LayoutTree, profile: RenderProfile = OFFICIAL_PL_V1) -> 
     section.right_margin = Mm(profile.margin_right_mm)
     section.bottom_margin = Mm(profile.margin_bottom_mm)
     section.left_margin = Mm(profile.margin_left_mm)
+    section.footer_distance = Mm(profile.footer_offset_mm)
 
     if profile.header_text:
         header = section.header.paragraphs[0]

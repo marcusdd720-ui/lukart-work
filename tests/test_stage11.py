@@ -9,6 +9,8 @@ from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
 
+from docx import Document
+from docx.shared import Mm
 from reportlab.pdfbase.ttfonts import TTFont
 
 from lukart_work.contracts.messages import RenderRequest
@@ -56,16 +58,17 @@ class Stage11RenderingTests(unittest.TestCase):
         with ZipFile(BytesIO(bundle.docx), "r") as package:
             document = package.read("word/document.xml").decode("utf-8")
             styles = package.read("word/styles.xml").decode("utf-8")
+            names = package.namelist()
             all_xml = "\n".join(
                 package.read(name).decode("utf-8", errors="ignore")
-                for name in package.namelist()
+                for name in names
                 if name.endswith(".xml")
             )
         self.assertIn("Zażółć gęślą jaźń", document)
         self.assertIn(OFFICIAL_PL_V1.font_family, document)
         self.assertNotIn("REVIEW_REQUIRED", all_xml)
         self.assertNotIn("AI-generated", all_xml)
-        self.assertNotIn("vbaProject.bin", "\n".join(package.namelist()) if False else "")
+        self.assertFalse(any(name.lower().endswith("vbaproject.bin") for name in names))
         # Template defaults may remain in styles.xml, but every emitted content run is pinned.
         self.assertIn("Lato", document)
 
@@ -77,6 +80,11 @@ class Stage11RenderingTests(unittest.TestCase):
             footer = package.read(footer_names[0]).decode("utf-8")
         self.assertIn("PAGE", footer)
         self.assertIn(OFFICIAL_PL_V1.font_family, footer)
+        document = Document(BytesIO(bundle.docx))
+        self.assertEqual(
+            document.sections[0].footer_distance,
+            Mm(OFFICIAL_PL_V1.footer_offset_mm),
+        )
 
     def test_pdf_embeds_font_and_forbids_active_content(self):
         bundle = self.engine.render(self.request, self.records, self.validation)
