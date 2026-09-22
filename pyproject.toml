@@ -12,7 +12,7 @@ dependencies = [
   "python-docx==1.2.0",
   "reportlab==4.4.9",
   "fontpkg==0.2.2",
-  "fontpkg-noto-serif==2.15",
+  "fontpkg-lato==2.15",
 ]
 
 [project.optional-dependencies]

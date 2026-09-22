@@ -15,8 +15,8 @@ from lukart_work.validation.rules import digest
 
 from .contracts import RenderProfile, StyleSpec
 
-_REGULAR = Path(fontpkg.path("Noto Serif", weight=400, style="normal"))
-_BOLD = Path(fontpkg.path("Noto Serif", weight=700, style="normal"))
+_REGULAR = Path(fontpkg.path("Lato", weight=400, style="normal"))
+_BOLD = Path(fontpkg.path("Lato", weight=700, style="normal"))
 
 
 def _style(
@@ -71,7 +71,7 @@ OFFICIAL_PL_V1 = RenderProfile(
     margin_right_mm=20,
     margin_bottom_mm=22,
     margin_left_mm=25,
-    font_family="Noto Serif",
+    font_family="Lato",
     font_regular_sha256=_REGULAR_SHA256,
     font_bold_sha256=_BOLD_SHA256,
     styles=(

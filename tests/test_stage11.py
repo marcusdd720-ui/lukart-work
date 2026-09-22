@@ -67,7 +67,7 @@ class Stage11RenderingTests(unittest.TestCase):
         self.assertNotIn("AI-generated", all_xml)
         self.assertNotIn("vbaProject.bin", "\n".join(package.namelist()) if False else "")
         # Template defaults may remain in styles.xml, but every emitted content run is pinned.
-        self.assertIn("Noto Serif", document)
+        self.assertIn("Lato", document)
 
     def test_docx_pagination_is_profile_controlled(self):
         bundle = self.engine.render(self.request, self.records, self.validation)

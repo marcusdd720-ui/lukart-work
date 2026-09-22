@@ -101,7 +101,7 @@ def renderer_pin() -> "VersionPin":
             "python-docx": metadata_version("python-docx"),
             "reportlab": metadata_version("reportlab"),
             "fontpkg": metadata_version("fontpkg"),
-            "fontpkg-noto-serif": metadata_version("fontpkg-noto-serif"),
+            "fontpkg-lato": metadata_version("fontpkg-lato"),
         },
     }
     return VersionPin(
