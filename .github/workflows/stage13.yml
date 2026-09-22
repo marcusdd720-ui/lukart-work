@@ -1,0 +1,67 @@
+name: Stage 13 baseline performance evidence
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve exact tested source
+        id: source
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            sha="${PR_HEAD_SHA}"
+          else
+            sha="${EVENT_SHA}"
+          fi
+          [[ "${sha}" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=${sha}" >> "${GITHUB_OUTPUT}"
+          echo "TESTED_SHA=${sha}" >> "${GITHUB_ENV}"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.source.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - run: python -m pip install .
+
+      - name: Stage 13 exact-SHA baseline
+        run: python -B -X utf8 scripts/stage13_benchmark.py --mode BASELINE --output reports/stage13-baseline.json
+
+      - name: Validate baseline evidence
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = json.loads(Path("reports/stage13-baseline.json").read_text())
+          assert p["tested_sha"] == os.environ["TESTED_SHA"]
+          assert p["network_io"] == "NOT_USED"
+          assert p["case_data"] == "SYNTHETIC_ONLY"
+          assert len(p["results"]) >= 4
+          for row in p["results"]:
+              assert row["iterations"] >= 5
+              assert row["min"] <= row["p50"] <= row["p95"] <= row["p99"] <= row["max"]
+          print("STAGE13_BASELINE: PASS")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage13-baseline-${{ steps.source.outputs.sha }}
+          path: reports/stage13-baseline.json
