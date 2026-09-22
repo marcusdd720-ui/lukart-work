@@ -271,6 +271,7 @@
   "tests/golden_cases/document_registry.json": "8f197a4ec40b290c0f046b9786e7694d07a5f5b5723b6a048c144047075089e5",
   "tests/golden_cases/procedural_engine.json": "a7793ea39ca890b01329a99a410ceca105e8a53c90823f6963b70f704eb8b22e",
   "tests/golden_cases/source_to_fact.json": "c4b5cc5d1ff8512da672c47a0e6ead3bbcd76201bee061378935a84896376340",
+  "tests/golden_cases/stage11_render_identity.json": "1d404c9eb19ee76ebd78293f41933a068f622e7c1266d9f4872d5acab8622df3",
   "tests/stage02_restart_probe.py": "a907973b993b77d5daec2d91d61eba065fb8e64678dcb2592967f09b2a9ef25b",
   "tests/test_boundaries.py": "a94da4c12d5f051fae2dcae7a548ed884714e19a96ce114c478bcfceee75c15f",
   "tests/test_contracts.py": "4a29bcbdadf428fad7d11d83cad04da62cbc67bcc42b2bbdc238f7acb84eff8a",
