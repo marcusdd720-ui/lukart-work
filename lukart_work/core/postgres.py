@@ -166,6 +166,27 @@ class UnitOfWork:
             raise Violation('INVALID_HASH')
         return value
 
+    def audit_inventory(self):
+        """Read-only immutable metadata inventory for the Stage 12 audit projection."""
+        objects = self.connection.execute(
+            'SELECT category,object_id,contract,payload,content_hash FROM lw_core.objects '
+            'WHERE tenant_id=%s AND case_id=%s ORDER BY category,object_id', self.scope
+        ).fetchall()
+        commands = self.connection.execute(
+            'SELECT idempotency_key,input_hash,contract,payload,content_hash FROM lw_core.commands '
+            'WHERE tenant_id=%s AND case_id=%s ORDER BY idempotency_key', self.scope
+        ).fetchall()
+        for row in objects:
+            if sha256(row[3].encode('utf-8')).hexdigest() != row[4]:
+                raise Violation('INVALID_HASH')
+        for row in commands:
+            if sha256(row[3].encode('utf-8')).hexdigest() != row[4]:
+                raise Violation('INVALID_HASH')
+        return tuple((category, object_id, contract, content_hash) for category, object_id, contract, _payload, content_hash in objects), tuple(
+            (idempotency_key, input_hash, contract, content_hash)
+            for idempotency_key, input_hash, contract, _payload, content_hash in commands
+        )
+
     def put_object(self, category, object_id, value, source_bytes=None):
         if category == 'source' and getattr(self, 'storage', False):
             from lukart_work.storage.objects import ObjectStore, RetentionPolicies
