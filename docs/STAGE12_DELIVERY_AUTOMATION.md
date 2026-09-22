@@ -73,23 +73,24 @@ Required postconditions:
 
 Any stale expected head must fail before branch mutation. Any failed postcondition is BLOCKED and the resulting state is preserved as evidence; there is no destructive compensation.
 
-## Exact-SHA assurance dispatch
+## Exact-SHA candidate CI dispatch
 
-Because a `GITHUB_TOKEN` branch write does not recursively create ordinary push runs, successful promotion explicitly dispatches `.github/workflows/stage12-assurance.yml` with:
+The reviewed Stage 12 product tree already contains the two immutable CI workflows required for exact-candidate assurance:
 
-- `ref=<exact Stage 12 PR head branch>`;
+- `.github/workflows/stage02.yml`;
+- `.github/workflows/stage11-assurance.yml`.
+
+The Stage 12 control may dispatch those existing workflows **only as CI evidence** because adding a new workflow to the product branch would change the reviewed tree. This does not import Stage 11 command authority, policy authority, independent-review receipts, landing authority, or Stage 11 receipt semantics.
+
+Successful promotion dispatches both existing workflows with:
+
+- `ref=codex/stage12-audit-provenance`;
 - `candidate_sha=<new exact SHA>`;
-- a unique 128-bit hexadecimal `dispatch_token`.
+- one unique 128-bit hexadecimal `dispatch_token`.
 
-The control records the pre-dispatch run IDs, dispatches once, then requires exactly one newly materialized run whose:
+Their historical `stage11-dispatch-<token>` run-name prefix is not renamed, because changing either workflow would alter the reviewed product tree. The Stage 12 control treats that prefix only as immutable workflow correlation metadata and emits exclusively `STAGE12_*` receipts.
 
-- display title is `stage12-dispatch-<dispatch_token>`;
-- event is `workflow_dispatch`;
-- workflow path is `.github/workflows/stage12-assurance.yml`;
-- head SHA equals the new candidate SHA;
-- head branch equals the Stage 12 PR branch.
-
-The branch ref is re-read before dispatch and after binding the run.
+For each workflow the control records pre-dispatch run IDs, dispatches once, and requires exactly one newly materialized run whose event, workflow path, head SHA and head branch bind to the new candidate. The product branch ref is re-read before and after each dispatch binding.
 
 The promotion receipt is intentionally narrow:
 
@@ -102,32 +103,33 @@ source_tree=<tree SHA>
 new_tree=<tree SHA>
 base_sha=<main/base SHA>
 verification=VERIFIED
-assurance_run_id=<run id>
+assurance_runs=stage02.yml:<run id>,stage11-assurance.yml:<run id>
 main_changed=NO
 merge=NOT_PERFORMED
 ```
 
 This receipt does not claim assurance PASS, independent review PASS, merge authority, or Stage 12 closure.
 
-## Stage 12 assurance workflow
+## Procedure assurance workflow
 
-`.github/workflows/stage12-assurance.yml` binds the tested source to an exact SHA for push, pull-request, and workflow-dispatch events.
+`.github/workflows/stage12-procedure-assurance.yml` exists only on the procedure-remediation branch/PR. It assures procedure code; it is not dispatched against the Stage 12 product candidate and is never required to exist in the reviewed product tree.
 
-For the Stage 12 signed candidate it runs, at minimum:
+Procedure assurance includes, at minimum:
 
 - focused Stage 09;
 - focused Stage 10 P1/P2 regressions;
 - full Stage 10 adversarial/integration suite;
 - focused Stage 11 rendering regression;
 - existing Stage 11 delivery-control regression;
-- focused Stage 12 product tests;
-- Stage 12 delivery-control regression;
+- focused Stage 12 delivery-control regression;
 - full repository regression;
 - independent JSON Schema validation;
 - package verification;
 - global manifest refresh plus integrity check;
 - whitespace check;
 - generated-evidence reproducibility check.
+
+After a signed Stage 12 candidate is created, its own existing `stage02.yml` full regression discovers and executes `tests/test_stage12.py`, while `stage11-assurance.yml` independently rechecks Stage 11 rendering identity.
 
 ## Namespace isolation
 
