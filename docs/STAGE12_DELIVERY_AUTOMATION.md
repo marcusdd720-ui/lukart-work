@@ -2,7 +2,8 @@
 
 Status: TRUSTED PROCEDURE CANDIDATE
 Scope: `marcusdd720-ui/lukart-work`, Stage 12 only.
-Product branches: `codex/stage12-*`.
+Authorized Stage 12 product branch for this procedure: `codex/stage12-audit-provenance`.
+Procedure-remediation branch: `codex/stage12-trusted-promotion-procedure` (never a promotion target).
 Command namespace: `/stage12`.
 Receipt namespace: `STAGE12_*`.
 
@@ -46,7 +47,7 @@ Preconditions:
 1. caller is the repository owner;
 2. the comment belongs to an open, non-draft, unmerged PR;
 3. PR base is `main`;
-4. PR head branch matches `codex/stage12-*`;
+4. PR head branch is exactly `codex/stage12-audit-provenance`; the procedure-remediation branch is not eligible;
 5. current PR head equals `source_sha`;
 6. current branch ref equals `source_sha`;
 7. current `main` and PR base SHA equal `base_sha`;
@@ -135,7 +136,7 @@ Stage 11 and Stage 12 remain separate trust domains:
 | Binding | Stage 11 | Stage 12 |
 |---|---|---|
 | command | `/stage11` | `/stage12` |
-| product branch | `codex/stage11-*` | `codex/stage12-*` |
+| product branch | `codex/stage11-*` | `codex/stage12-audit-provenance` (exact current target) |
 | control | `scripts/stage11_delivery_control.py` | `scripts/stage12_delivery_control.py` |
 | workflow | `stage11-control.yml` | `stage12-control.yml` |
 | promotion receipt | `STAGE11_*` | `STAGE12_*` |
@@ -161,7 +162,7 @@ If no already-authorized bootstrap path exists, installation is BLOCKED. Do not 
 The procedure must fail closed for:
 
 - wrong command namespace;
-- wrong branch namespace;
+- any branch other than the exact authorized Stage 12 product branch;
 - stale PR head;
 - stale target ref;
 - stale base/main;
