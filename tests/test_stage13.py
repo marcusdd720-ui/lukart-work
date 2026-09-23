@@ -2,6 +2,11 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
 import threading
 import unittest
 from uuid import UUID
@@ -349,6 +354,43 @@ class Stage13ProviderTests(unittest.TestCase):
             with self.assertRaises(ProviderCancelled):
                 future.result()
         self.assertTrue(blocking.cancelled.is_set())
+
+    def test_post_implementation_benchmark_runs_as_direct_script(self):
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "performance.json"
+            env = os.environ.copy()
+            env["TESTED_SHA"] = "f" * 40
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-B",
+                    "-X",
+                    "utf8",
+                    str(root / "scripts/stage13_benchmark.py"),
+                    "--mode",
+                    "POST_IMPLEMENTATION",
+                    "--output",
+                    str(output),
+                ],
+                cwd=root,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=120,
+                check=False,
+            )
+            self.assertEqual(
+                completed.returncode,
+                0,
+                completed.stdout + "\\n" + completed.stderr,
+            )
+            report = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(report["mode"], "POST_IMPLEMENTATION")
+            self.assertEqual(report["tested_sha"], "f" * 40)
+            operations = {row["operation"] for row in report["results"]}
+            self.assertIn("render_docx_pdf_bundle", operations)
+            self.assertIn("canonical_digest_concurrency_4x64", operations)
 
     def test_health_reports_digest_drift_without_claiming_ready(self):
         provider = OllamaProvider(

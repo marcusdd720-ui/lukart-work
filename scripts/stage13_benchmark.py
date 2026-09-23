@@ -6,6 +6,7 @@ must use exact-SHA results and avoid pretending that noisy CI timings are univer
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import argparse
 import json
 import math
@@ -19,6 +20,10 @@ import time
 import tracemalloc
 from uuid import UUID
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from lukart_work.contracts.messages import AIRequest
 from lukart_work.domain.models import VersionPin
 from lukart_work.drafting.contracts import ModelExecutionReceipt
@@ -28,7 +33,6 @@ from lukart_work.rendering.service import RenderingEngine
 from tests.fixtures import case, uid
 from tests.stage11_render_fixture import build_fixture
 
-ROOT = Path(__file__).resolve().parents[1]
 H = "a" * 64
 PIN = VersionPin(id="urn:lukart:stage13:synthetic", version="1.0.0", content_hash=H)
 
