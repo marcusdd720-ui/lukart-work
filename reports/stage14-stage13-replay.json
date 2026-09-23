@@ -1,0 +1,41 @@
+{
+  "contract": "urn:lukart:work:Stage14Stage13Replay:1.0.0",
+  "source_stage": 13,
+  "evidence_scope": "synthetic CASE-TESTY repository process evidence only",
+  "base_sha": "6985c9623d3ac30a6e0b9b569bd7702b66fa324b",
+  "signed_candidate_sha": "be11a124e47f9ef3aafa054f7aa6756b4e880579",
+  "signed_candidate_tree": "50faee656fe29a4f1ac890ce940d57d003e4e96f",
+  "landing_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+  "observed": {
+    "candidate_sha_count": 24,
+    "full_ci_run_count_lower_bound": 7,
+    "superseded_full_assurance_run_count": 11,
+    "manual_intervention_count": null,
+    "wall_clock_duration": null,
+    "active_execution_duration": null,
+    "queue_wait_duration": null
+  },
+  "full_ci_evidence": [
+    {"run_id":35790011250,"sha":"98e6bd58147ad1094e6c2a8784d00df3196606cd","conclusion":"failure","event_class":"pull_request"},
+    {"run_id":35826184168,"sha":"09a1b7ea215763add3b94cf9134ef1fd831181d3","conclusion":"failure","event_class":"pull_request"},
+    {"run_id":35832948690,"sha":"a2b9026cf59995774c9fd84c14510cc1b171c068","conclusion":"documented_mixed_pass_with_reproducibility_fail","event_class":"workflow_dispatch"},
+    {"run_id":35842839996,"sha":"d047eb2cba7cf4ca5ce59ee8f018898c631f3085","conclusion":"failure","event_class":"pull_request"},
+    {"run_id":35845801186,"sha":"30a43ec5ee4a66d892840910e278fd17e7a18809","conclusion":"success","event_class":"pull_request"},
+    {"run_id":35869217565,"sha":"ac2070d025f8ae39133c5993c111ce7b7e26bc32","conclusion":"success","event_class":"pull_request"},
+    {"run_id":35873362939,"sha":"be11a124e47f9ef3aafa054f7aa6756b4e880579","conclusion":"success","event_class":"pull_request"}
+  ],
+  "superseded_run_ids": [35789035233,35789143742,35789240216,35789381206,35789400804,35789492730,35789594293,35789711957,35789740309,35832952173,35867945066],
+  "replay": {
+    "avoidable_candidate_sha_count_lower_bound": 6,
+    "avoidable_full_ci_count_lower_bound": 1,
+    "necessary_semantic_repair_loops": "present; exact count intentionally not inferred from commit messages alone",
+    "orchestration_batchable_heads": ["91551815be34e9a808ace6d0bc1a3802ca9d9b1b","53c594aeb5429d26fb167c45ee60eade7502907f","98e6bd58147ad1094e6c2a8784d00df3196606cd","d047eb2cba7cf4ca5ce59ee8f018898c631f3085","30a43ec5ee4a66d892840910e278fd17e7a18809","661e5a284a5e486407b397f3f60ab98673fd4a5d","ac2070d025f8ae39133c5993c111ce7b7e26bc32"],
+    "planned_process": ["restore_current_state","identify_delta","minimum_safe_repair","targeted_verification","one_semantic_full_ci_if_required","closure_bundle_batch","manifest_stabilization","candidate_freeze","one_final_exact_sha_ci","independent_review_boundary","human_merge_gate","landing","post_landing_verification","closure_receipt"]
+  },
+  "uncertainty": [
+    "manual_intervention_count is UNKNOWN from repository evidence and is therefore null",
+    "duration metrics are UNKNOWN because comparable start/stop evidence was not reconstructed",
+    "avoidable counts are conservative lower bounds, not exact counterfactual totals",
+    "cancelled baseline-only run 35788835859 is excluded from superseded full-assurance count"
+  ]
+}
