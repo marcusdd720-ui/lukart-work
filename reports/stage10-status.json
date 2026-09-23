@@ -1,6 +1,6 @@
 {
   "stage": "10 Validation Engine",
-  "tests": 471,
+  "tests": 491,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -31,6 +31,8 @@
     "lukart_work/drafting/__init__.py": "d0377974608569b47f4e679b57655e0e103d6ae26ac3c2c8956e4963fd94ab33",
     "lukart_work/drafting/contracts.py": "7008e62e65edfa5f7b0abf7c16a1de29c4e0695e875c1d92a14089d3f045b853",
     "lukart_work/drafting/service.py": "2f48806ca697c27c235a387e57c399c4afa6c4ceb14f0812dffa395f76dc2ca3",
+    "lukart_work/factory/__init__.py": "b94b8c33e400d5dd313d82a2903fcc5637dff561eed005f4627d4c2d61e8bb26",
+    "lukart_work/factory/universum.py": "a41440f15270f478e0e3e1a41a6a54d4c4e7ecb178aca0d00f1a4318f6950009",
     "lukart_work/facts/__init__.py": "781d05bc570c5b702902caf0b47d152b7d311b62680e669a66b9a0fbdcca987a",
     "lukart_work/facts/contracts.py": "bde0111b031cc47ef309ffc5eed7aa7c76229a6eaf427f91c4242bed38b04a51",
     "lukart_work/facts/service.py": "685c06df834f1b8f68f727fd79152e234edd71e5d10741e29a4e1eb44b942f88",
@@ -97,6 +99,7 @@
     "scripts/verify_stage09.py": "de0f4a9305a41e273cb28da02221cc3e5a2a112e35632c499bb1b709fce7353c",
     "scripts/verify_stage10.py": "5f557ba95207f8de9c1a25b3f9007214aa2f1d7c3f0eaf1572262612cb9c69bf",
     "scripts/verify_stage13.py": "2d456ed5e01cec361dba3e981356391120768fe84fe5600057ac0c5b1a1e2236",
+    "scripts/verify_stage14.py": "4b4b1eb89a5d1c7c59207bb8b655f9554968ee97a098a973447e73b4922cdfc4",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/fixtures.py": "2fb1f6982ac34ade2ab164828e67f219c91dda8bebde89d4e4ee2fa6485d9b0d",
     "tests/stage02_restart_probe.py": "a907973b993b77d5daec2d91d61eba065fb8e64678dcb2592967f09b2a9ef25b",
@@ -120,6 +123,7 @@
     "tests/test_stage11_delivery_control.py": "299b9611a5e415e5cfa5657f2e1f4b807cdc484f9e8b631d6a19d8a694adafaf",
     "tests/test_stage12.py": "71dc88c94431f6772300d0608d39756316fb8541fc78b15c06573de938247633",
     "tests/test_stage12_delivery_control.py": "f1693b4b59a36b82144001086996d5ad38d2edccaefaf64201df41e594078589",
-    "tests/test_stage13.py": "495e01039a69aa362b11e468e08c8be6ffa98de3a77c42afcaf0f76b022fa9cc"
+    "tests/test_stage13.py": "495e01039a69aa362b11e468e08c8be6ffa98de3a77c42afcaf0f76b022fa9cc",
+    "tests/test_stage14.py": "c520c9df9d76b23496b6c2dd059432111ab07bb75599f79011ede3f02955bd01"
   }
 }
