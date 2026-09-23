@@ -17,6 +17,7 @@ Stage 13 closure: VERIFIED
 | CI budget | PASS in builder focused suite |
 | candidate freeze | PASS in builder focused suite |
 | independent/HUMAN boundary | PASS in builder focused suite |
+| transitive Stage 11 provenance golden | REPAIR APPLIED; repository re-check pending |
 | repository targeted tests | PENDING |
 | repository full regression | PENDING |
 | canonical manifest synchronized | PENDING |
@@ -27,9 +28,13 @@ Stage 13 closure: VERIFIED
 | post-landing | NOT PERFORMED |
 | Closure Receipt | NOT ELIGIBLE |
 
-Preflight decision: proceed to repository assurance. Do not claim SEND/merge/closure readiness.
+Preflight delta: run 35887457846 on f43666749d28012711026fdac44f677dfc84fea7
+showed only the expected Stage 11 fresh-process provenance-golden drift caused by new executable
+Factory source. Byte identities for DOCX/PDF and non-validation-derived rendering inputs remained stable.
+The golden refresh is bounded and performed before candidate freeze.
+
+Preflight decision: continue repository assurance. Do not claim SEND/merge/closure readiness.
 
 Planned critical path:
-semantic implementation + closure bundle -> first exact repository assurance ->
-single manifest synchronization if that is the only generated diff -> candidate freeze ->
-final exact-SHA CI -> independent review boundary -> HUMAN merge gate.
+golden provenance re-check -> full repository assurance -> single manifest synchronization ->
+candidate freeze -> final exact-SHA CI -> independent review boundary -> HUMAN merge gate.

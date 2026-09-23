@@ -17,6 +17,7 @@ Status: BUILDER RED TEAM COMPLETE / NOT INDEPENDENT REVIEW
 | RT14-11 | P1 | authorization proceeds | repaired during builder Red Team; now minimum-safe-repair |
 | RT14-12 | P1 | post-landing failure writes receipt | blocked; repair selected |
 | RT14-13 | P2 | cosmetic change creates frozen SHA churn | blocked without allowed mutation reason |
+| RT14-14 | P1 | new executable Factory source invalidates Stage 11 provenance golden | observed on exact SHA f43666749d28012711026fdac44f677dfc84fea7 in run 35887457846; DOCX/PDF and semantic/render/profile/plan/draft identities remained byte-stable; validation-derived pins changed as required by validation_pin(); bounded golden provenance refresh applied before candidate freeze |
 
 Focused synthetic builder suite passed locally in isolated scratch execution.
 That smoke result is not repository CI and is not independent review.

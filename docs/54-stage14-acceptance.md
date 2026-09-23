@@ -33,10 +33,20 @@ Conservative optimization lower bounds:
 - avoidable candidate SHA: 6
 - avoidable full CI: 1
 
+## First repository delta
+
+On exact SHA f43666749d28012711026fdac44f677dfc84fea7, collateral run 35887457846
+reached Stage 11 rendering regression and found one fresh-process golden mismatch.
+The rendered DOCX/PDF bytes and semantic, renderer, profile, plan and draft identities were unchanged.
+The validation-dependent validation/projection/model/layout hashes changed because validation_pin()
+intentionally hashes all executable .py/.sql source below lukart_work/, now including Factory.
+This is classified PROVENANCE, not renderer nondeterminism. The bounded golden update is justified
+and occurs before candidate freeze.
+
 ## Current gates
 
 Builder focused smoke: PASS
-Repository targeted verification: PENDING
+Repository targeted verification: PENDING AFTER GOLDEN REPAIR
 Repository full regression: PENDING
 Canonical manifest: PENDING
 Candidate freeze: PENDING
