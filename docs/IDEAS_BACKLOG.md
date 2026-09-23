@@ -70,3 +70,61 @@ Before adoption:
 6. add a regression/audit check if the hierarchy becomes operationally critical.
 
 Evidence Before Standard.
+
+---
+
+## Controlled evolution of UNIVERSUM Execution Kernel
+
+Status: BACKLOG
+Priority: HIGH
+Trigger: Stage 14 closure / future execution-stage planning
+
+### Idea
+
+Allow `UNIVERSUM Execution Kernel` to be updated and extended automatically only within an explicitly authorized execution scope.
+
+During an active Stage, the kernel may evolve automatically when evidence establishes a concrete need, including:
+
+- fixing a real CI or regression defect;
+- applying a minimum safe repair;
+- synchronizing generated evidence and manifests;
+- improving exact-SHA execution or closure mechanics;
+- making narrowly scoped changes required to reach verified closure.
+
+Automatic evolution must remain bounded by the current Stage and its authorized mission.
+
+### Guardrails
+
+Automatic evolution must not become indefinite autonomous expansion.
+
+The kernel must not, without a new explicit scope or HUMAN authorization:
+
+- merge itself into `main`;
+- approve its own independent review;
+- transfer PASS across a changed SHA;
+- introduce unrelated features because they appear useful;
+- start future architectural programs such as a Reliability Control Plane;
+- broaden scope beyond evidence-backed needs of the current Stage.
+
+After Stage 14 closure, further development should be initiated by a new decision need, roadmap item, or Stage, and should follow the same control path:
+
+`evidence → minimum safe change → targeted verification → exact-SHA CI → independent review → HUMAN merge gate`.
+
+### Rationale
+
+The goal is to preserve the speed benefits of autonomous repair and orchestration while preventing uncontrolled scope growth, self-approval, or trust-boundary erosion.
+
+The kernel should become more capable through evidence-backed iteration, not through open-ended self-expansion.
+
+### Adoption rule
+
+Before making this behavior a repository standard:
+
+1. define which change classes are eligible for autonomous repair;
+2. define the exact HUMAN gates that cannot be crossed;
+3. define how candidate freeze interacts with later repair;
+4. define CI-budget and SHA-churn limits;
+5. define how future Stages reopen or extend kernel capabilities;
+6. add regression tests proving that autonomous evolution remains bounded by authorized scope.
+
+Evidence Before Standard.
