@@ -5,7 +5,8 @@ from pathlib import Path
 import sys,unittest
 
 ROOT=Path(__file__).resolve().parents[1]
-suite=unittest.defaultTestLoader.discover(str(ROOT/"tests"))
+sys.path.insert(0,str(ROOT))
+suite=unittest.defaultTestLoader.discover(str(ROOT/"tests"),top_level_dir=str(ROOT))
 result=unittest.TextTestRunner(verbosity=2).run(suite)
 report={
  "contract":"urn:lukart:work:Stage14Verification:1.0.0",
