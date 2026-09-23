@@ -1,6 +1,6 @@
 # Stage 13 — Local Model Runtime Implementation
 
-Status: IMPLEMENTED — CI / independent review pending
+Status: IMPLEMENTED — PRE-FINAL EXACT-SHA CI EVIDENCE AVAILABLE; FINAL EXACT-SHA CI AND INDEPENDENT REVIEW PENDING
 
 Baseline branch starts from `main@6985c9623d3ac30a6e0b9b569bd7702b66fa324b`.
 
@@ -56,6 +56,7 @@ The adapter has bounded:
 - response timeout;
 - maximum response bytes;
 - maximum prompt bytes;
+- maximum request bytes;
 - concurrency.
 
 There is no implicit retry. This prevents retry storms and duplicate inference.
@@ -78,13 +79,30 @@ address non-loopback hosts.
 No cache is implemented. This intentionally avoids stale/private prompt caching in
 application memory beyond the bounded execution receipt map.
 
-## Current evidence ceiling
+## Wykonane evidence przed finalizacją manifestu
 
-Implemented code and deterministic unit tests exist on the Stage 13 branch.
-Live Ollama execution is NOT YET EXECUTED.
-Offline operation with a physically disconnected network is NOT YET EXECUTED.
-Performance improvement is NOT YET CLAIMED.
-Exact-SHA CI and independent review remain required.
+Zamrożony baseline:
+- exact SHA: `6968c9df1130673ecb89417d82cd25ecabfc00fe`;
+- run: `35788342721`;
+- wynik: `SUCCESS`;
+- artefakt baseline został zapisany.
+
+Pre-finalizacja Stage 13:
+- exact SHA: `a2b9026cf59995774c9fd84c14510cc1b171c068`;
+- run: `35832948690`;
+- focused Stage 13 tests: `PASS`;
+- full repository regression: `PASS`, 470 testów, 0 failures, 0 errors, 0 skips;
+- JSON Schema validation: `PASS`;
+- package verification: `PASS`;
+- post-implementation benchmark: `PASS`;
+- performance evidence shape: `PASS`;
+- global manifest refresh: `PASS`;
+- whitespace check: `PASS`;
+- reproducibility clean-diff: `FAIL`, wyłącznie dlatego że canonical
+  `reports/manifest.sha256.json` nie zawierał jeszcze Stage 13 i późniejszych repair deltas.
+
+Po tej dokumentacyjno-manifestowej synchronizacji wymagany jest świeży exact-SHA CI.
+Żaden PASS z `a2b9026...` nie jest automatycznie przenoszony na nowy SHA.
 
 ## Evidence limitation: model digest
 
@@ -94,5 +112,8 @@ VersionPin hash. This detects ordinary model replacement/drift and fails closed.
 
 The current Ollama generate response does not itself contain the installed model digest.
 Therefore Stage 13 does NOT claim atomic cryptographic proof of the exact model bytes
-executing between those two observations. This limitation is tracked by the Red Team and
-must not be overstated in a closure receipt.
+executing between those two observations.
+
+Live Ollama execution remains `NOT EXECUTED`.
+Physically disconnected offline execution remains `NOT EXECUTED`.
+Those limitations must not be overstated in any closure receipt.

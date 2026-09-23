@@ -1,115 +1,108 @@
 # Stage 13 — Hardcore Preflight
 
-Status: PREFLIGHTED — CRITICAL GATES NOT PASSED
+Status: PREFLIGHTED — PRE-FINAL CI; MANIFEST SYNCHRONIZATION AND FINAL EXACT-SHA GATES PENDING
 
-Preflight target before recording this report:
-- repository: `marcusdd720-ui/lukart-work`
-- PR: #55
-- base SHA: `6985c9623d3ac30a6e0b9b569bd7702b66fa324b`
-- target SHA: `53c594aeb5429d26fb167c45ee60eade7502907f`
-- target tree: `ea0d86735630c5808fc6e8dc9ab6b51e675efb99`
-- PR state: OPEN / DRAFT
-- mergeable at observation: true
-- changed files: 10
-- additions/deletions: +1631 / -0
+Evidence snapshot przed tą dokumentacyjno-manifestową synchronizacją:
+- repository: `marcusdd720-ui/lukart-work`;
+- PR: #55;
+- base SHA: `6985c9623d3ac30a6e0b9b569bd7702b66fa324b`;
+- observed candidate SHA: `a2b9026cf59995774c9fd84c14510cc1b171c068`;
+- observed candidate tree: `dafbf5ecbf18636b23cfd4679fb22c51acc3079a`;
+- PR state: OPEN / DRAFT / unmerged;
+- mergeable at observation: true;
+- changed files: 12;
+- additions/deletions: +1810 / -4.
 
 Synthetic CASE-TESTY only.
 
 ## Exact diff topology
 
-Expected Stage 13 paths observed in PR #55:
+Stage 13 scope at the observed candidate consists of the Stage 13 workflow,
+documentation, local model runtime adapter, benchmark/verifier, tests, plus the bounded
+Stage 11 provenance-golden repair required because Stage 13 expanded executable source
+covered by `validation_pin()`.
 
-1. `.github/workflows/stage13.yml`
-2. `docs/46-stage13-readiness.md`
-3. `docs/47-stage13-implementation.md`
-4. `docs/48-stage13-red-team.md`
-5. `docs/49-stage13-acceptance.md`
-6. `lukart_work/model_runtime/__init__.py`
-7. `lukart_work/model_runtime/ollama.py`
-8. `scripts/stage13_benchmark.py`
-9. `scripts/verify_stage13.py`
-10. `tests/test_stage13.py`
+No real CASE data is present.
+No `main` mutation or merge has been performed.
 
-No existing CASE domain model, ledger, authorization, storage, procedural, validation,
-rendering or drafting-service file is modified by this diff.
-
-This preflight report itself is an additional documentation-only delta and therefore
-creates a new exact SHA after it is committed. That new SHA requires a final delta
-preflight and all exact-SHA execution gates below; PASS is not transferred automatically.
+This report update together with canonical manifest synchronization creates a new exact SHA.
+Therefore all machine-verifiable final gates must be executed again on that new SHA.
+No PASS is transferred automatically.
 
 ## Critical controls
 
 | Control | Result | Evidence / blocker |
 |---|---|---|
-| repository / base identity | PASS | live PR base equals `6985c962...` |
-| Stage 12 baseline closure | PASS | live main and Stage 12 closure evidence verified before Stage 13 |
-| synthetic-only scope | PASS (static) | Stage 13 fixtures and docs are synthetic; no real CASE source added |
-| scope topology | PASS (static) | 10 expected additive Stage 13 paths; no existing product boundary modified |
-| provider separation from CASE state | PASS (static) | adapter has no repository / ledger / authority writer |
-| provider receipt binding | PASS (static) | request/provider/model/generator/parameter hash binding implemented |
-| prompt provenance binding | PASS (static) | prompt-builder VersionPin must equal request prompt pin |
-| model availability / digest drift | PASS (static) | pre/post `/api/tags` digest checks; drift fails closed |
-| atomic model-byte attestation | LIMITATION / P2 | Ollama generate response does not bind installed digest; no atomic byte proof claimed |
-| endpoint / SSRF policy | PASS (static) | exact host allowlist; local-only loopback; no userinfo/path/query/fragment |
-| proxy bypass risk | PASS (static) | direct stdlib transport does not consult proxy environment |
-| request / response resource bounds | PASS (static) | prompt/request/response size limits and bounded concurrency |
-| timeout semantics | PASS (static) | positive finite connect/response timeout configuration |
-| retry semantics | PASS (static) | no implicit retry |
-| cancellation state | PASS (static) | only in-flight IDs cancellable; state removed in finally |
-| duplicate execution / in-flight race | PASS (static) | duplicate request ID reservation fails closed |
-| option/provenance mutability | PASS (static) | nested JSON options deeply frozen after hash binding |
-| output trust boundary | PASS (static) | strict outer JSON + Pydantic `AIResult` + request/snapshot binding |
-| foreign-fork self-hosted execution | PASS (static) | workflow same-repository PR guard |
-| workflow permissions | PASS (static) | `contents: read`; checkout credentials not persisted |
-| secrets / credentials | PASS (static) | only disposable CI database values in workflow; no product secret added |
-| privacy / logging | PASS (static) | adapter does not log prompts, responses or credentials |
-| determinism statement | PASS | LLM inference explicitly non-deterministic; deterministic receipts/artifacts separated |
-| benchmark methodology | PASS (design) | repeated samples, percentile/peak-memory evidence, baseline separated from post state |
-| benchmark baseline | FAIL / PENDING | run `35788342721` remains queued; no measurements exist |
-| focused Stage 13 tests | FAIL / PENDING | no runner execution yet |
-| full regression | FAIL / PENDING | no runner execution yet |
-| schema validation | FAIL / PENDING | no Stage 13 exact-SHA execution yet |
-| package verification | FAIL / PENDING | no Stage 13 exact-SHA execution yet |
-| performance artifact | FAIL / PENDING | no exact-SHA artifact yet |
-| manifest integrity | FAIL / PENDING | tracked manifest intentionally awaits actual `refresh_manifest.py` output |
-| reproducibility / clean diff | FAIL / PENDING | requires executed workflow after manifest stabilization |
-| actual live Ollama execution | NOT EXECUTED | no live endpoint/model evidence |
+| repository / base identity | PASS | live PR base `6985c962...` |
+| Stage 12 baseline closure | PASS | Stage 13 branched from closed Stage 12 main |
+| synthetic-only scope | PASS | Stage 13 fixtures/evidence are synthetic |
+| provider separation from CASE state | PASS | adapter receives no repository/ledger/authority writer |
+| provider receipt binding | PASS | request/provider/model/generator/parameter binding covered by tests |
+| prompt provenance binding | PASS | prompt-builder VersionPin bound to request |
+| model availability / digest drift | PASS | pre/post `/api/tags` checks; drift fails closed |
+| atomic model-byte attestation | LIMITATION / P2 | Ollama generate response does not attest installed digest atomically |
+| endpoint / SSRF policy | PASS | allowlist, loopback default, userinfo/path/query/fragment rejection |
+| proxy bypass risk | PASS | stdlib transport does not use proxy environment |
+| resource bounds | PASS | prompt/request/response limits and bounded concurrency |
+| timeout / retry semantics | PASS | finite timeout; no implicit retry |
+| cancellation / duplicate execution | PASS | bounded cancellation and in-flight reservation |
+| options immutability | PASS | nested options deeply frozen after hash binding |
+| output trust boundary | PASS | strict JSON + Pydantic + request/snapshot binding |
+| foreign-fork self-hosted execution | PASS | same-repository PR guard |
+| workflow permissions | PASS | `contents: read`, checkout credentials not persisted |
+| privacy / logging | PASS | no prompt/response/credential logging |
+| baseline benchmark | PASS | run `35788342721`, exact SHA `6968c9df...` |
+| focused Stage 13 tests | PASS on pre-finalization SHA | run `35832948690` |
+| full regression | PASS on pre-finalization SHA | 470 tests, 0 failures/errors/skips |
+| JSON Schema validation | PASS on pre-finalization SHA | run `35832948690` |
+| package verification | PASS on pre-finalization SHA | run `35832948690` |
+| performance artifact | PASS on pre-finalization SHA | run `35832948690`, artifact `10738482694` |
+| manifest refresh | PASS | workflow generated canonical Stage 13 manifest |
+| manifest integrity | PENDING FINAL SHA | manifest is synchronized by this repair; fresh CI required |
+| reproducibility / clean diff | PENDING FINAL SHA | must pass with zero diff after synchronization |
+| live Ollama execution | NOT EXECUTED | no live endpoint/model evidence |
 | physically disconnected offline execution | NOT EXECUTED | no physical offline-run evidence |
-| exact-SHA independent review | FAIL / PENDING | cannot be substituted by builder Red Team |
-| commit signing / promotion candidate | PENDING | final candidate not frozen; current commits are not promotion evidence |
-| human merge authorization | REQUIRED LATER | repository constitution requires human authority before merge |
-| guarded landing | NOT PERFORMED | merge gate not reached |
+| exact-SHA independent review | PENDING | builder review cannot satisfy this gate |
+| commit signing / promotion candidate | PENDING | final candidate not yet frozen/promoted |
+| human merge authorization | REQUIRED LATER | merge requires explicit HUMAN authority |
+| guarded landing | NOT PERFORMED | gate not reached |
 | post-landing verification | NOT PERFORMED | landing not performed |
-| Closure Receipt | NOT ELIGIBLE | critical gates remain open |
+| Closure Receipt | NOT ELIGIBLE | final exact-SHA gates remain open |
 
-## Red Team status
+## Repair evidence
 
-Builder Red Team repair loop identified and repaired multiple P1 issues before this
-preflight. The builder report records zero unresolved P0/P1 at its source-review
-evidence ceiling and one P2 limitation concerning atomic model-byte attestation.
+### Stage 11 provenance golden
 
-This is NOT an independent review and does not satisfy the independent-review gate.
+Failure on `98e6bd...`:
+`test_fresh_process_reproduction_is_stable`.
 
-## CI execution blocker observed during preflight
+Evidence showed byte-identical DOCX/PDF and stable fresh-process output.
+The drift affected validation/projection/model/layout provenance because `validation_pin()`
+covers executable source under `lukart_work/`, and Stage 13 added `model_runtime`.
+Golden provenance was refreshed without weakening renderer assertions.
 
-Frozen pre-implementation baseline:
-- SHA: `6968c9df1130673ecb89417d82cd25ecabfc00fe`
-- Stage 13 run: `35788342721`
-- job: `baseline`
-- status: `queued`
-- steps: not started
+### Post-implementation benchmark
 
-Latest observed Stage 13 target:
-- SHA: `53c594aeb5429d26fb167c45ee60eade7502907f`
-- Stage 13 run: `35789740309`
-- job: `assurance`
-- status: `queued`
-- steps: not started
+Failure on `09a1b7e...`:
+`ModuleNotFoundError: No module named 'tests'`.
 
-Both require the existing self-hosted runner labels:
-`self-hosted, Linux, X64, lukart-stage11`.
+Root cause:
+direct script execution placed `scripts/` rather than repository root on `sys.path`.
+A second latent defect was also found: `ThreadPoolExecutor` was referenced without import.
 
-No test PASS is inferred from queued state.
+Repair on `a2b9026...`:
+- deterministic repo-root bootstrap for direct benchmark execution;
+- missing `ThreadPoolExecutor` import;
+- direct-process regression test for `POST_IMPLEMENTATION`.
+
+Run `35832948690` subsequently passed benchmark and performance-evidence validation.
+
+### Manifest
+
+The only failing final step on `a2b9026...` was `Generated evidence is reproducible`.
+The workflow diff showed the tracked manifest lacked Stage 13 paths and repair deltas.
+The workflow artifact contains the generated canonical manifest and is used as the basis
+for this synchronization.
 
 ## Preflight decision
 
@@ -121,9 +114,17 @@ No test PASS is inferred from queued state.
 
 `PROMOTION_READY: NO`
 
-The next executable gate is restoration of the existing `lukart-stage11` runner,
-followed by the frozen baseline run and the Stage 13 repair loop. The first successful
-Stage 13 execution is expected to regenerate the global manifest; any manifest delta
-must be committed exactly, producing a new SHA followed by fresh exact-SHA CI.
+Najbliższy gate po tej synchronizacji:
+fresh exact-SHA Stage 13 CI na nowym candidate.
+
+Wymagane po nim:
+- zero skipped mandatory gates;
+- clean manifest/reproducibility;
+- final delta Red Team;
+- independent exact-SHA review;
+- HUMAN merge gate;
+- guarded landing;
+- post-landing verification;
+- Stage 13 Closure Receipt.
 
 No merge is authorized or performed by this preflight.

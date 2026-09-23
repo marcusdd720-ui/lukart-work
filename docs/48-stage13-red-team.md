@@ -1,9 +1,6 @@
 # Stage 13 — Builder Red Team
 
-Status: REPAIR LOOP COMPLETE FOR IDENTIFIED CODE FINDINGS; CI PENDING
-
-Reviewed implementation SHA before this report commit:
-`6f94e2faf38f674f9aba57633320389ecb0e0384`
+Status: BUILDER RED TEAM COMPLETE; PRE-FINAL CI EVIDENCE EXECUTED; FINAL EXACT-SHA RE-BIND PENDING
 
 Base:
 `6985c9623d3ac30a6e0b9b569bd7702b66fa324b`
@@ -24,14 +21,16 @@ Scope: synthetic CASE-TESTY only.
 | RT-08 | P1 | whole HTTP request body had no independent hard bound | fixed; `max_request_bytes` added |
 | RT-09 | P1 | self-hosted workflow could execute pull-request code without rejecting foreign fork heads | fixed; same-repository PR guard added |
 | RT-10 | P2 | Ollama `/api/generate` does not return the installed model digest, so exact model bytes cannot be atomically attested during generation | documented evidence ceiling; pre/post `/api/tags` digest equality is required and drift fails closed |
+| RT-11 | P1 | Stage 11 golden provenance became stale because `validation_pin()` covers executable `.py/.sql` source under `lukart_work/` and Stage 13 added `model_runtime` code | repaired; byte-identical DOCX/PDF confirmed and golden provenance refreshed |
+| RT-12 | P1 | direct benchmark execution could not import `tests` and also referenced `ThreadPoolExecutor` without import | repaired; deterministic repo-root bootstrap, missing import and direct-script regression test added |
 
 Unresolved P0: 0.
 
-Unresolved P1 from builder Red Team: 0.
+Unresolved P1 from builder Red Team at the current evidence ceiling: 0.
 
 P2: 1 documented evidence-ceiling limitation (RT-10).
 
-## Adversarial scenarios covered by implementation/tests
+## Adversarial scenarios covered
 
 - remote endpoint denied in local-only mode;
 - endpoint userinfo/path/query rejection;
@@ -41,25 +40,41 @@ P2: 1 documented evidence-ceiling limitation (RT-10).
 - model digest drift;
 - malformed/empty/partial/wrong-model response;
 - request/snapshot substitution;
-- prompt-size and request-size bounding;
+- prompt-size, request-size and response-size bounding;
 - timeout with no implicit retry;
 - concurrency backpressure;
 - duplicate in-flight request ID;
 - cancellation propagation and bounded cancellation state;
 - deep immutability of generation options;
 - execution receipt bound to provider/model/generator/parameter hash;
-- prompt-builder VersionPin bound to the request.
+- prompt-builder VersionPin bound to the request;
+- direct execution of the post-implementation benchmark;
+- fresh-process Stage 11 renderer determinism after Stage 13 provenance expansion.
+
+## Wykonane evidence przed finalizacją manifestu
+
+Run `35832948690` na exact SHA
+`a2b9026cf59995774c9fd84c14510cc1b171c068` wykonał:
+
+- focused Stage 13 tests: PASS;
+- full repository regression: PASS, 470/470 bez failures/errors/skips;
+- JSON Schema validation: PASS;
+- package verification: PASS;
+- post-implementation benchmark: PASS;
+- performance evidence validation: PASS;
+- manifest refresh: PASS;
+- whitespace: PASS;
+- reproducibility clean-diff: FAIL wyłącznie z powodu oczekującej synchronizacji
+  `reports/manifest.sha256.json`.
 
 ## Evidence ceiling
 
-The builder Red Team is not an independent review.
+Builder Red Team nie jest independent review.
 
-The tests above exist in source but are NOT YET VERIFIED by an executed runner for the current candidate.
+Live Ollama endpoint/model nie został wykonany.
+Fizycznie odłączony test offline nie został wykonany.
+Atomic model-byte attestation podczas inferencji nie jest udowodniona.
 
-A real Ollama endpoint/model has NOT been executed.
-
-A physically disconnected network test has NOT been executed.
-
-No performance PASS is claimed.
-
-Final Red Team must be re-bound to the exact frozen candidate after manifest stabilization and fresh CI.
+Finalny Red Team delta check musi zostać związany z exact SHA powstałym po tej
+dokumentacyjno-manifestowej synchronizacji i świeżym CI. Żaden wcześniejszy PASS
+nie jest automatycznie przenoszony.
