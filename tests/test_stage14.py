@@ -8,6 +8,8 @@ from lukart_work.factory.universum import *
 A="a"*40;B="b"*40;TA="c"*40;TB="d"*40
 OK=ClosureBundle(True,True,True,True,True,True)
 def snap(**k): return replace(ExecutionSnapshot(A,TA),**k)
+def ev(*,sha=A,tree=TA,workflow=FINAL_CI_WORKFLOW,terminal=True,passed=True,invalidated=False):
+    return EvidenceRecord(sha,tree,workflow,terminal,passed,invalidated)
 
 class UniversumTests(unittest.TestCase):
     def test_restore(self):
@@ -44,25 +46,43 @@ class UniversumTests(unittest.TestCase):
         self.assertFalse(SupersessionAnalyzer.blocks_candidate(r,candidate_sha=A))
         p=WorkflowExecution(2,B,True,True,True)
         self.assertEqual(SupersessionAnalyzer.classify(p,candidate_sha=A),SupersessionClass.PROTECTED_EVIDENCE)
+        failed_current=WorkflowExecution(3,A,True,False,True)
+        self.assertEqual(SupersessionAnalyzer.classify(failed_current,candidate_sha=A),SupersessionClass.CURRENT)
+        self.assertTrue(SupersessionAnalyzer.blocks_candidate(failed_current,candidate_sha=A))
     def test_evidence_reuse_exact_identity(self):
-        r=EvidenceRecord(A,TA,"stage14.yml",True,True)
-        self.assertTrue(EvidenceReusePolicy.can_reuse(r,source_sha=A,tree_sha=TA,workflow="stage14.yml"))
-        self.assertFalse(EvidenceReusePolicy.can_reuse(r,source_sha=B,tree_sha=TA,workflow="stage14.yml"))
-        self.assertFalse(EvidenceReusePolicy.can_reuse(r,source_sha=A,tree_sha=TB,workflow="stage14.yml"))
+        r=ev()
+        self.assertTrue(EvidenceReusePolicy.can_reuse(r,source_sha=A,tree_sha=TA,workflow=FINAL_CI_WORKFLOW))
+        self.assertFalse(EvidenceReusePolicy.can_reuse(r,source_sha=B,tree_sha=TA,workflow=FINAL_CI_WORKFLOW))
+        self.assertFalse(EvidenceReusePolicy.can_reuse(r,source_sha=A,tree_sha=TB,workflow=FINAL_CI_WORKFLOW))
     def finalish(self,**k):
-        base=dict(focused_tests=GateState.PASS,full_regression=GateState.PASS,closure_bundle=OK,manifest=GateState.PASS,candidate_frozen=True,final_exact_sha_ci=GateState.PASS)
+        base=dict(focused_tests=GateState.PASS,full_regression=GateState.PASS,closure_bundle=OK,manifest=GateState.PASS,candidate_frozen=True,final_exact_sha_ci=GateState.PASS,final_exact_sha_evidence=ev())
         base.update(k);return snap(**base)
+    def test_unbound_final_ci_pass_fails_closed(self):
+        s=self.finalish(final_exact_sha_evidence=None)
+        self.assertEqual(CriticalPathPlanner.plan(s).action,NextAction.MINIMUM_SAFE_REPAIR)
+    def test_wrong_sha_final_ci_pass_fails_closed(self):
+        s=self.finalish(final_exact_sha_evidence=ev(sha=B))
+        self.assertEqual(CriticalPathPlanner.plan(s).action,NextAction.MINIMUM_SAFE_REPAIR)
     def test_new_sha_requires_review(self): self.assertEqual(CriticalPathPlanner.plan(self.finalish()).action,NextAction.INDEPENDENT_REVIEW_BOUNDARY)
     def test_review_fail(self): self.assertEqual(CriticalPathPlanner.plan(self.finalish(independent_review=GateState.FAIL)).action,NextAction.MINIMUM_SAFE_REPAIR)
-    def test_human_gate(self):
+    def test_unbound_review_pass_fails_closed(self):
         s=self.finalish(independent_review=GateState.PASS)
+        self.assertEqual(CriticalPathPlanner.plan(s).action,NextAction.MINIMUM_SAFE_REPAIR)
+    def test_wrong_tree_review_pass_fails_closed(self):
+        s=self.finalish(independent_review=GateState.PASS,independent_review_evidence=ev(tree=TB,workflow=INDEPENDENT_REVIEW_WORKFLOW))
+        self.assertEqual(CriticalPathPlanner.plan(s).action,NextAction.MINIMUM_SAFE_REPAIR)
+    def test_human_gate(self):
+        s=self.finalish(independent_review=GateState.PASS,independent_review_evidence=ev(workflow=INDEPENDENT_REVIEW_WORKFLOW))
         self.assertEqual(CriticalPathPlanner.plan(s).action,NextAction.HUMAN_MERGE_GATE)
         self.assertFalse(HumanGateResolver.merge_permitted(independent_review=GateState.PASS,human_merge_required=True,human_merge_authorized=False))
+    def test_human_gate_cannot_be_disabled(self):
+        with self.assertRaises(ValueError):replace(ExecutionSnapshot(A,TA),human_merge_required=False)
+        self.assertFalse(HumanGateResolver.merge_permitted(independent_review=GateState.PASS,human_merge_required=False,human_merge_authorized=True))
     def test_post_landing_fail(self):
-        s=self.finalish(independent_review=GateState.PASS,human_merge_authorized=True,landed=True,post_landing=GateState.FAIL)
+        s=self.finalish(independent_review=GateState.PASS,independent_review_evidence=ev(workflow=INDEPENDENT_REVIEW_WORKFLOW),human_merge_authorized=True,landed=True,post_landing=GateState.FAIL)
         self.assertEqual(CriticalPathPlanner.plan(s).action,NextAction.POST_LANDING_REPAIR)
     def test_receipt_eligibility(self):
-        s=self.finalish(independent_review=GateState.PASS,human_merge_authorized=True,landed=True,post_landing=GateState.PASS)
+        s=self.finalish(independent_review=GateState.PASS,independent_review_evidence=ev(workflow=INDEPENDENT_REVIEW_WORKFLOW),human_merge_authorized=True,landed=True,post_landing=GateState.PASS)
         self.assertEqual(CriticalPathPlanner.plan(s).action,NextAction.WRITE_CLOSURE_RECEIPT)
     def test_ci_budget(self):
         b=CIBudget();b.consume();b.consume()

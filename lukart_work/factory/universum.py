@@ -24,6 +24,9 @@ class FrozenMutationReason(str,Enum):
 class SupersessionClass(str,Enum):
     CURRENT="CURRENT";SUPERSEDED="SUPERSEDED";PROTECTED_EVIDENCE="PROTECTED_EVIDENCE"
 
+FINAL_CI_WORKFLOW="stage14.yml"
+INDEPENDENT_REVIEW_WORKFLOW="independent-review"
+
 def _sha(v,n):
     if not SHA.fullmatch(v): raise ValueError(f"{n}: exact lowercase 40-hex SHA required")
 
@@ -82,7 +85,8 @@ class SupersessionAnalyzer:
         if r.required_evidence and r.terminal and r.passed:return SupersessionClass.PROTECTED_EVIDENCE
         return SupersessionClass.SUPERSEDED
     @classmethod
-    def blocks_candidate(cls,r,*,candidate_sha):return cls.classify(r,candidate_sha=candidate_sha)==SupersessionClass.CURRENT and not r.terminal
+    def blocks_candidate(cls,r,*,candidate_sha):
+        return cls.classify(r,candidate_sha=candidate_sha)==SupersessionClass.CURRENT and not (r.terminal and r.passed)
 
 @dataclass
 class CIBudget:
@@ -117,13 +121,18 @@ class ClosureBundlePlanner:
 EMPTY=ClosureBundle(False,False,False,False,False,False)
 @dataclass(frozen=True)
 class ExecutionSnapshot:
-    current_sha:str;current_tree:str;focused_tests:GateState=GateState.PENDING;full_regression:GateState=GateState.PENDING;closure_bundle:ClosureBundle=EMPTY;manifest:GateState=GateState.PENDING;candidate_frozen:bool=False;final_exact_sha_ci:GateState=GateState.PENDING;independent_review:GateState=GateState.PENDING;human_merge_required:bool=True;human_merge_authorized:bool=False;landed:bool=False;post_landing:GateState=GateState.PENDING;closure_receipt_written:bool=False;active_failure:FailureClass|None=None;runner_available:bool=True
-    def __post_init__(self):_sha(self.current_sha,"current_sha");_sha(self.current_tree,"current_tree")
+    current_sha:str;current_tree:str;focused_tests:GateState=GateState.PENDING;full_regression:GateState=GateState.PENDING;closure_bundle:ClosureBundle=EMPTY;manifest:GateState=GateState.PENDING;candidate_frozen:bool=False;final_exact_sha_ci:GateState=GateState.PENDING;final_exact_sha_evidence:EvidenceRecord|None=None;independent_review:GateState=GateState.PENDING;independent_review_evidence:EvidenceRecord|None=None;human_merge_required:bool=True;human_merge_authorized:bool=False;landed:bool=False;post_landing:GateState=GateState.PENDING;closure_receipt_written:bool=False;active_failure:FailureClass|None=None;runner_available:bool=True
+    def __post_init__(self):
+        _sha(self.current_sha,"current_sha");_sha(self.current_tree,"current_tree")
+        if self.human_merge_required is not True:raise ValueError("HUMAN merge gate is mandatory")
 @dataclass(frozen=True)
 class PlanStep:state:ClosureState;action:NextAction;reason:str
 
 class CriticalPathPlanner:
     EXEC={FailureClass.INFRA,FailureClass.RUNNER,FailureClass.QUEUE,FailureClass.EXTERNAL_DEPENDENCY}
+    @staticmethod
+    def _bound_pass(s,e,workflow):
+        return e is not None and EvidenceReusePolicy.can_reuse(e,source_sha=s.current_sha,tree_sha=s.current_tree,workflow=workflow)
     @classmethod
     def plan(cls,s):
         P=PlanStep
@@ -138,9 +147,11 @@ class CriticalPathPlanner:
         if not s.candidate_frozen:return P(ClosureState.CANDIDATE_FREEZE,NextAction.FREEZE_CANDIDATE,"freeze")
         if s.final_exact_sha_ci==GateState.FAIL:return P(ClosureState.MINIMUM_SAFE_REPAIR,NextAction.MINIMUM_SAFE_REPAIR,"final CI fail")
         if s.final_exact_sha_ci!=GateState.PASS:return P(ClosureState.FINAL_EXACT_SHA_CI,NextAction.FINAL_EXACT_SHA_CI,"final exact-SHA CI")
+        if not cls._bound_pass(s,s.final_exact_sha_evidence,FINAL_CI_WORKFLOW):return P(ClosureState.MINIMUM_SAFE_REPAIR,NextAction.MINIMUM_SAFE_REPAIR,"unbound final exact-SHA CI PASS")
         if s.independent_review==GateState.FAIL:return P(ClosureState.MINIMUM_SAFE_REPAIR,NextAction.MINIMUM_SAFE_REPAIR,"review fail")
         if s.independent_review!=GateState.PASS:return P(ClosureState.INDEPENDENT_REVIEW,NextAction.INDEPENDENT_REVIEW_BOUNDARY,"independent boundary")
-        if s.human_merge_required and not s.human_merge_authorized:return P(ClosureState.HUMAN_MERGE_GATE,NextAction.HUMAN_MERGE_GATE,"HUMAN gate")
+        if not cls._bound_pass(s,s.independent_review_evidence,INDEPENDENT_REVIEW_WORKFLOW):return P(ClosureState.MINIMUM_SAFE_REPAIR,NextAction.MINIMUM_SAFE_REPAIR,"unbound independent review PASS")
+        if not s.human_merge_authorized:return P(ClosureState.HUMAN_MERGE_GATE,NextAction.HUMAN_MERGE_GATE,"HUMAN gate")
         if not s.landed:return P(ClosureState.LANDING,NextAction.LAND,"landing")
         if s.post_landing==GateState.FAIL:return P(ClosureState.POST_LANDING_VERIFICATION,NextAction.POST_LANDING_REPAIR,"post fail")
         if s.post_landing!=GateState.PASS:return P(ClosureState.POST_LANDING_VERIFICATION,NextAction.POST_LANDING_VERIFICATION,"post verify")
@@ -149,7 +160,8 @@ class CriticalPathPlanner:
 class NextActionResolver(CriticalPathPlanner):pass
 class HumanGateResolver:
     @staticmethod
-    def merge_permitted(*,independent_review,human_merge_required,human_merge_authorized):return independent_review==GateState.PASS and (not human_merge_required or human_merge_authorized)
+    def merge_permitted(*,independent_review,human_merge_required,human_merge_authorized):
+        return independent_review==GateState.PASS and human_merge_required is True and human_merge_authorized is True
 @dataclass
 class ExecutionMetrics:
     candidate_sha_count:int=0;full_ci_run_count:int=0;targeted_test_run_count:int=0;repair_loop_count:int=0;manual_intervention_count:int=0;superseded_run_count:int=0;avoidable_ci_count:int=0;manifest_loop_count:int=0;closure_gate_count:int=0
