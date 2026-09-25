@@ -1,6 +1,6 @@
 # Stage 14 — UNIVERSUM Acceptance
 
-Status: PRE-FINAL / REPOSITORY CI AND INDEPENDENT REVIEW PENDING
+Status: INDEPENDENT REVIEW FAILED / P1-P2 REPAIR APPLIED / FRESH EXACT-SHA CI PENDING
 
 ## Contract matrix
 
@@ -14,9 +14,9 @@ Status: PRE-FINAL / REPOSITORY CI AND INDEPENDENT REVIEW PENDING
 | CIBudget | yes | third full run requires reason |
 | ClosureBundlePlanner | yes | missing closure element blocks |
 | SupersessionAnalyzer | yes | superseded/nonblocking and protected evidence |
-| EvidenceReusePolicy | yes | exact identity only |
+| EvidenceReusePolicy | yes | exact identity plus planner-enforced current SHA/tree binding |
 | NextActionResolver | yes | same deterministic planner |
-| HumanGateResolver | yes | independent PASS + HUMAN auth |
+| HumanGateResolver | yes | mandatory non-configurable HUMAN authorization |
 | ClosureState | yes | full closure state vocabulary |
 
 Synthetic scenarios include focused failure, full regression failure, stale manifest,
@@ -46,13 +46,16 @@ and occurs before candidate freeze.
 ## Current gates
 
 Builder focused smoke: PASS
-Repository targeted verification: PENDING AFTER GOLDEN REPAIR
-Repository full regression: PENDING
-Canonical manifest: PENDING
+Independent review on f449be00b98797bbf2729d1ea296f40b5302e4c1: FAIL (2x P1, 1x P2)
+Repair SHA 4068d8144d4da5214fce331507d2d725d8bb035c focused Stage 14 regression: PASS
+Repair SHA 4068d8144d4da5214fce331507d2d725d8bb035c full regression: FAIL only on expected Stage 11 validation-derived golden drift
+Bounded golden provenance refresh: APPLIED IN CURRENT REPAIR
+Repository full regression after refresh: PENDING
+Canonical manifest: PENDING WORKFLOW-DERIVED SYNCHRONIZATION
 Candidate freeze: PENDING
 Final exact-SHA CI: PENDING
-Independent exact-SHA review: PENDING
-HUMAN merge gate: REQUIRED
+Independent exact-SHA re-review: REQUIRED
+HUMAN merge gate: REQUIRED / NOT AUTHORIZED
 Landing: NOT PERFORMED
 Post-landing verification: NOT PERFORMED
 Closure Receipt: NOT ELIGIBLE

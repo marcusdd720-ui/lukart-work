@@ -1,6 +1,6 @@
 {
   "stage": "10 Validation Engine",
-  "tests": 491,
+  "tests": 496,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -32,7 +32,7 @@
     "lukart_work/drafting/contracts.py": "7008e62e65edfa5f7b0abf7c16a1de29c4e0695e875c1d92a14089d3f045b853",
     "lukart_work/drafting/service.py": "2f48806ca697c27c235a387e57c399c4afa6c4ceb14f0812dffa395f76dc2ca3",
     "lukart_work/factory/__init__.py": "b94b8c33e400d5dd313d82a2903fcc5637dff561eed005f4627d4c2d61e8bb26",
-    "lukart_work/factory/universum.py": "a41440f15270f478e0e3e1a41a6a54d4c4e7ecb178aca0d00f1a4318f6950009",
+    "lukart_work/factory/universum.py": "82ce544be5af87ffc034cdcf52db803e40b7ab0681992290c2c6a94c84ec96f9",
     "lukart_work/facts/__init__.py": "781d05bc570c5b702902caf0b47d152b7d311b62680e669a66b9a0fbdcca987a",
     "lukart_work/facts/contracts.py": "bde0111b031cc47ef309ffc5eed7aa7c76229a6eaf427f91c4242bed38b04a51",
     "lukart_work/facts/service.py": "685c06df834f1b8f68f727fd79152e234edd71e5d10741e29a4e1eb44b942f88",
@@ -124,6 +124,6 @@
     "tests/test_stage12.py": "71dc88c94431f6772300d0608d39756316fb8541fc78b15c06573de938247633",
     "tests/test_stage12_delivery_control.py": "f1693b4b59a36b82144001086996d5ad38d2edccaefaf64201df41e594078589",
     "tests/test_stage13.py": "495e01039a69aa362b11e468e08c8be6ffa98de3a77c42afcaf0f76b022fa9cc",
-    "tests/test_stage14.py": "c520c9df9d76b23496b6c2dd059432111ab07bb75599f79011ede3f02955bd01"
+    "tests/test_stage14.py": "becfd5fa430d6c06f8423a7baf16e0af20d86eaf1a4a5b637c71a0b07ee17fd0"
   }
 }
