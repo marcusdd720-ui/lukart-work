@@ -1,0 +1,2803 @@
+{
+  "contract": "urn:lukart:work:ProductBaselineAcceptance:1.0.0",
+  "scope": "LW-PB-01",
+  "repository": "marcusdd720-ui/lukart-work",
+  "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+  "status": {
+    "contract": "IMPLEMENTED_BUILDER_CANDIDATE",
+    "product": "PLANNED",
+    "independent_review": "NOT_VERIFIED",
+    "certification": "NOT_VERIFIED"
+  },
+  "jurisdiction": {
+    "country": "PL",
+    "language": "pl-PL",
+    "currency": "PLN",
+    "domain": "Krajowe pisma przedprocesowe dotyczące umowy; pełnoletnie osoby lub podmioty, bez transgraniczności i sektorów regulowanych.",
+    "legal_authority": "Każda podstawa i ocena zastosowania wymagają zweryfikowanego źródła, wersji, dat obowiązywania i HUMAN; kontrakt nie stwierdza treści obowiązującego prawa."
+  },
+  "catalogue": [
+    {
+      "id": "PL-PRE-PAYMENT-1",
+      "name": "Wezwanie do zapłaty",
+      "required": [
+        "claim_basis",
+        "principal_amount_decimal",
+        "currency_PLN",
+        "performance_due_date",
+        "payment_history",
+        "requested_payment_date_human",
+        "payment_destination"
+      ],
+      "limits": [
+        "Bez automatycznych odsetek, przedawnienia i ustawowych terminów."
+      ],
+      "current_support": "NOT SUPPORTED / FUTURE",
+      "baseline_intent": "PLANNED",
+      "recipient": "Prywatna strona umowy lub nadawca wezwania; żaden organ publiczny.",
+      "roles": [
+        "wierzyciel/nadawca",
+        "dłużnik/adresat"
+      ],
+      "formal_requirements": [
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.document_type_id",
+          "field": "document_type_id",
+          "goal": "Planowany id z katalogu; pin wersji i treści wymagany przed wsparciem typu.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Type pin/schema absent",
+          "verifier": "V-CATALOGUE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.recipient_organ",
+          "field": "recipient_organ",
+          "goal": "Zweryfikowana prywatna strona umowy/wezwania, adres doręczeń; organ publiczny poza zakresem.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Party refs exist; formal recipient/address type contract absent",
+          "verifier": "V-INPUTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.parties_roles",
+          "field": "parties_roles",
+          "goal": "Nadawca, adresat, role względem umowy/roszczenia i podpisująca strona, exact Party revisions.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Generic Party/SemanticDocument; per-type role binding absent",
+          "verifier": "V-FACTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.place_date",
+          "field": "place_date",
+          "goal": "Miejscowość pisma, data ISO, evaluation date/timezone; jawne źródło/deklaracja HUMAN.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "No dedicated complete formal semantic envelope",
+          "verifier": "V-INPUTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.case_reference_signature",
+          "field": "case_reference_signature",
+          "goal": "Wewnętrzny case_id obowiązkowy; numer umowy/korespondencji z exact source, jeśli istnieje; brak zewnętrznej sygnatury jawny, bez wymyślania.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Generic Case/Filing; per-type reference presentation absent",
+          "verifier": "V-INPUTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.title",
+          "field": "title",
+          "goal": "Deterministyczny tytuł właściwego typu, bez dopisywania nowej kwalifikacji prawnej.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "SemanticDocument.header generic; type heading profile absent",
+          "verifier": "V-CATALOGUE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.requests_demands",
+          "field": "requests_demands",
+          "goal": "HUMAN-approved żądania/stanowisko, powiązane z Request refs i dowodami; zakres kwot/daty jawny.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Request/plan exist; full strategy/request product enforcement partial",
+          "verifier": "V-POSITION",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.reasoning",
+          "field": "reasoning",
+          "goal": "Uzasadnienie z zaakceptowanych facts/arguments/rules; żadnych nowych twierdzeń modelu.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Sections/drafting guards exist; per-type profile absent",
+          "verifier": "V-DRAFTING",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.facts",
+          "field": "facts",
+          "goal": "Exact CONFIRMED SOURCE_BACKED Facts i bieżące akceptacje; timeline tylko source-bound daty, brak automatycznej prawdziwości.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Fact lifecycle implemented; type-specific required facts absent",
+          "verifier": "V-FACTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.evidence",
+          "field": "evidence",
+          "goal": "ACCEPTED Evidence, extraction completeness i dostępne oryginalne bytes/locators.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Component implemented; full type path not accepted",
+          "verifier": "V-INGESTION",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.legal_authorities",
+          "field": "legal_authorities",
+          "goal": "Verified PL sources, wersje/okres/datowanie/applicability i exact aktywne reguły/citations; ocena HUMAN, bez nieprzypiętych przepisów.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Synthetic authority enforcement; real supported type rules/content not certified",
+          "verifier": "V-LEGAL-HUMAN",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.attachments",
+          "field": "attachments",
+          "goal": "Jawny spis z numerami, opisem i exact source/artifact identities; bytes dostępne w scoped storage; pusty spis tylko jawnie zatwierdzony.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Renderer list exists; public attachment/package binding incomplete",
+          "verifier": "V-PACKAGE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.signature_requirements",
+          "field": "signature_requirements",
+          "goal": "Zweryfikowana podpisująca strona/imienne miejsce na podpis; podpis ręczny poza generatorem. Bez automatycznej grafiki podpisu i deklaracji e-signature.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "SemanticDocument.signature_party only; full type attestation absent",
+          "verifier": "V-FINAL-APPROVAL",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.representation_power",
+          "field": "representation_power",
+          "goal": "Jeśli reprezentant: explicit scope, accepted power evidence, exact principal/representative refs; jeśli nie: jawnie personal action.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Representation controls not demonstrated per type",
+          "verifier": "V-LEGAL-HUMAN",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.render_requirements",
+          "field": "render_requirements",
+          "goal": "OFFICIAL_PL_V1 DOCX/PDF, polskie znaki, zgodność semantyki/paginacji/załączników, bez watermark; actual durable bytes/receipt/hashes.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Pure Stage11 renderer implemented; authoritative persisted route missing",
+          "verifier": "V-RENDER-STORAGE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-PAYMENT-1.final_approval_requirements",
+          "field": "final_approval_requirements",
+          "goal": "Current HUMAN DOCUMENT_APPROVAL, exact draft/snapshot/DOCX+PDF and validation binding, durable receipt/audit; bez tego nie FINAL.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Public Core GATE_DENIED",
+          "verifier": "V-FINAL-APPROVAL",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        }
+      ]
+    },
+    {
+      "id": "PL-PRE-COMPLAINT-1",
+      "name": "Reklamacja wykonania umowy",
+      "required": [
+        "contract_subject",
+        "performance_date",
+        "documented_defect",
+        "prior_correspondence",
+        "requested_remedy",
+        "requested_response_date_human"
+      ],
+      "limits": [
+        "Bez szczególnych reżimów konsumenckich, regulowanych i automatycznej kwalifikacji środka prawnego."
+      ],
+      "current_support": "NOT SUPPORTED / FUTURE",
+      "baseline_intent": "PLANNED",
+      "recipient": "Prywatna strona umowy lub nadawca wezwania; żaden organ publiczny.",
+      "roles": [
+        "strona składająca reklamację",
+        "druga strona umowy"
+      ],
+      "formal_requirements": [
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.document_type_id",
+          "field": "document_type_id",
+          "goal": "Planowany id z katalogu; pin wersji i treści wymagany przed wsparciem typu.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Type pin/schema absent",
+          "verifier": "V-CATALOGUE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.recipient_organ",
+          "field": "recipient_organ",
+          "goal": "Zweryfikowana prywatna strona umowy/wezwania, adres doręczeń; organ publiczny poza zakresem.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Party refs exist; formal recipient/address type contract absent",
+          "verifier": "V-INPUTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.parties_roles",
+          "field": "parties_roles",
+          "goal": "Nadawca, adresat, role względem umowy/roszczenia i podpisująca strona, exact Party revisions.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Generic Party/SemanticDocument; per-type role binding absent",
+          "verifier": "V-FACTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.place_date",
+          "field": "place_date",
+          "goal": "Miejscowość pisma, data ISO, evaluation date/timezone; jawne źródło/deklaracja HUMAN.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "No dedicated complete formal semantic envelope",
+          "verifier": "V-INPUTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.case_reference_signature",
+          "field": "case_reference_signature",
+          "goal": "Wewnętrzny case_id obowiązkowy; numer umowy/korespondencji z exact source, jeśli istnieje; brak zewnętrznej sygnatury jawny, bez wymyślania.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Generic Case/Filing; per-type reference presentation absent",
+          "verifier": "V-INPUTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.title",
+          "field": "title",
+          "goal": "Deterministyczny tytuł właściwego typu, bez dopisywania nowej kwalifikacji prawnej.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "SemanticDocument.header generic; type heading profile absent",
+          "verifier": "V-CATALOGUE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.requests_demands",
+          "field": "requests_demands",
+          "goal": "HUMAN-approved żądania/stanowisko, powiązane z Request refs i dowodami; zakres kwot/daty jawny.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Request/plan exist; full strategy/request product enforcement partial",
+          "verifier": "V-POSITION",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.reasoning",
+          "field": "reasoning",
+          "goal": "Uzasadnienie z zaakceptowanych facts/arguments/rules; żadnych nowych twierdzeń modelu.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Sections/drafting guards exist; per-type profile absent",
+          "verifier": "V-DRAFTING",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.facts",
+          "field": "facts",
+          "goal": "Exact CONFIRMED SOURCE_BACKED Facts i bieżące akceptacje; timeline tylko source-bound daty, brak automatycznej prawdziwości.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Fact lifecycle implemented; type-specific required facts absent",
+          "verifier": "V-FACTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.evidence",
+          "field": "evidence",
+          "goal": "ACCEPTED Evidence, extraction completeness i dostępne oryginalne bytes/locators.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Component implemented; full type path not accepted",
+          "verifier": "V-INGESTION",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.legal_authorities",
+          "field": "legal_authorities",
+          "goal": "Verified PL sources, wersje/okres/datowanie/applicability i exact aktywne reguły/citations; ocena HUMAN, bez nieprzypiętych przepisów.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Synthetic authority enforcement; real supported type rules/content not certified",
+          "verifier": "V-LEGAL-HUMAN",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.attachments",
+          "field": "attachments",
+          "goal": "Jawny spis z numerami, opisem i exact source/artifact identities; bytes dostępne w scoped storage; pusty spis tylko jawnie zatwierdzony.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Renderer list exists; public attachment/package binding incomplete",
+          "verifier": "V-PACKAGE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.signature_requirements",
+          "field": "signature_requirements",
+          "goal": "Zweryfikowana podpisująca strona/imienne miejsce na podpis; podpis ręczny poza generatorem. Bez automatycznej grafiki podpisu i deklaracji e-signature.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "SemanticDocument.signature_party only; full type attestation absent",
+          "verifier": "V-FINAL-APPROVAL",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.representation_power",
+          "field": "representation_power",
+          "goal": "Jeśli reprezentant: explicit scope, accepted power evidence, exact principal/representative refs; jeśli nie: jawnie personal action.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Representation controls not demonstrated per type",
+          "verifier": "V-LEGAL-HUMAN",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.render_requirements",
+          "field": "render_requirements",
+          "goal": "OFFICIAL_PL_V1 DOCX/PDF, polskie znaki, zgodność semantyki/paginacji/załączników, bez watermark; actual durable bytes/receipt/hashes.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Pure Stage11 renderer implemented; authoritative persisted route missing",
+          "verifier": "V-RENDER-STORAGE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-COMPLAINT-1.final_approval_requirements",
+          "field": "final_approval_requirements",
+          "goal": "Current HUMAN DOCUMENT_APPROVAL, exact draft/snapshot/DOCX+PDF and validation binding, durable receipt/audit; bez tego nie FINAL.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Public Core GATE_DENIED",
+          "verifier": "V-FINAL-APPROVAL",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        }
+      ]
+    },
+    {
+      "id": "PL-PRE-REPLY-1",
+      "name": "Odpowiedź na wezwanie do zapłaty",
+      "required": [
+        "incoming_demand_source",
+        "incoming_demand_date",
+        "asserted_amount_decimal",
+        "admitted_and_disputed_items",
+        "response_position_human",
+        "supporting_evidence"
+      ],
+      "limits": [
+        "Bez automatycznego uznania długu, ugody ani zrzeczenia praw."
+      ],
+      "current_support": "NOT SUPPORTED / FUTURE",
+      "baseline_intent": "PLANNED",
+      "recipient": "Prywatna strona umowy lub nadawca wezwania; żaden organ publiczny.",
+      "roles": [
+        "adresat pierwotnego wezwania/nadawca odpowiedzi",
+        "nadawca pierwotnego wezwania/adresat odpowiedzi"
+      ],
+      "formal_requirements": [
+        {
+          "requirement_id": "PL-PRE-REPLY-1.document_type_id",
+          "field": "document_type_id",
+          "goal": "Planowany id z katalogu; pin wersji i treści wymagany przed wsparciem typu.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Type pin/schema absent",
+          "verifier": "V-CATALOGUE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.recipient_organ",
+          "field": "recipient_organ",
+          "goal": "Zweryfikowana prywatna strona umowy/wezwania, adres doręczeń; organ publiczny poza zakresem.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Party refs exist; formal recipient/address type contract absent",
+          "verifier": "V-INPUTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.parties_roles",
+          "field": "parties_roles",
+          "goal": "Nadawca, adresat, role względem umowy/roszczenia i podpisująca strona, exact Party revisions.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Generic Party/SemanticDocument; per-type role binding absent",
+          "verifier": "V-FACTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.place_date",
+          "field": "place_date",
+          "goal": "Miejscowość pisma, data ISO, evaluation date/timezone; jawne źródło/deklaracja HUMAN.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "No dedicated complete formal semantic envelope",
+          "verifier": "V-INPUTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.case_reference_signature",
+          "field": "case_reference_signature",
+          "goal": "Wewnętrzny case_id obowiązkowy; numer umowy/korespondencji z exact source, jeśli istnieje; brak zewnętrznej sygnatury jawny, bez wymyślania.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Generic Case/Filing; per-type reference presentation absent",
+          "verifier": "V-INPUTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.title",
+          "field": "title",
+          "goal": "Deterministyczny tytuł właściwego typu, bez dopisywania nowej kwalifikacji prawnej.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "SemanticDocument.header generic; type heading profile absent",
+          "verifier": "V-CATALOGUE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.requests_demands",
+          "field": "requests_demands",
+          "goal": "HUMAN-approved żądania/stanowisko, powiązane z Request refs i dowodami; zakres kwot/daty jawny.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Request/plan exist; full strategy/request product enforcement partial",
+          "verifier": "V-POSITION",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.reasoning",
+          "field": "reasoning",
+          "goal": "Uzasadnienie z zaakceptowanych facts/arguments/rules; żadnych nowych twierdzeń modelu.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Sections/drafting guards exist; per-type profile absent",
+          "verifier": "V-DRAFTING",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.facts",
+          "field": "facts",
+          "goal": "Exact CONFIRMED SOURCE_BACKED Facts i bieżące akceptacje; timeline tylko source-bound daty, brak automatycznej prawdziwości.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Fact lifecycle implemented; type-specific required facts absent",
+          "verifier": "V-FACTS",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.evidence",
+          "field": "evidence",
+          "goal": "ACCEPTED Evidence, extraction completeness i dostępne oryginalne bytes/locators.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Component implemented; full type path not accepted",
+          "verifier": "V-INGESTION",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.legal_authorities",
+          "field": "legal_authorities",
+          "goal": "Verified PL sources, wersje/okres/datowanie/applicability i exact aktywne reguły/citations; ocena HUMAN, bez nieprzypiętych przepisów.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Synthetic authority enforcement; real supported type rules/content not certified",
+          "verifier": "V-LEGAL-HUMAN",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.attachments",
+          "field": "attachments",
+          "goal": "Jawny spis z numerami, opisem i exact source/artifact identities; bytes dostępne w scoped storage; pusty spis tylko jawnie zatwierdzony.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Renderer list exists; public attachment/package binding incomplete",
+          "verifier": "V-PACKAGE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.signature_requirements",
+          "field": "signature_requirements",
+          "goal": "Zweryfikowana podpisująca strona/imienne miejsce na podpis; podpis ręczny poza generatorem. Bez automatycznej grafiki podpisu i deklaracji e-signature.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "SemanticDocument.signature_party only; full type attestation absent",
+          "verifier": "V-FINAL-APPROVAL",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.representation_power",
+          "field": "representation_power",
+          "goal": "Jeśli reprezentant: explicit scope, accepted power evidence, exact principal/representative refs; jeśli nie: jawnie personal action.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Representation controls not demonstrated per type",
+          "verifier": "V-LEGAL-HUMAN",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.render_requirements",
+          "field": "render_requirements",
+          "goal": "OFFICIAL_PL_V1 DOCX/PDF, polskie znaki, zgodność semantyki/paginacji/załączników, bez watermark; actual durable bytes/receipt/hashes.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Pure Stage11 renderer implemented; authoritative persisted route missing",
+          "verifier": "V-RENDER-STORAGE",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        },
+        {
+          "requirement_id": "PL-PRE-REPLY-1.final_approval_requirements",
+          "field": "final_approval_requirements",
+          "goal": "Current HUMAN DOCUMENT_APPROVAL, exact draft/snapshot/DOCX+PDF and validation binding, durable receipt/audit; bez tego nie FINAL.",
+          "source": "Explicit LW-PB-01 §4; docs/00-baseline.md §1/22/26/39/44/46/49; exact base domain/models.py and contracts/messages.py",
+          "support": "NOT SUPPORTED / FUTURE",
+          "implementation_mapping": "Public Core GATE_DENIED",
+          "verifier": "V-FINAL-APPROVAL",
+          "acceptance_test": [
+            "T01",
+            "T03"
+          ],
+          "definition_of_done": "Pole/warunek sprawdzone w odrębnym type fixture przez publiczną ścieżkę; brak danych/umocowania/approval blokuje; jawne optional nie staje się invented default. Wymaga independent legal/type review."
+        }
+      ]
+    }
+  ],
+  "common_inputs": [
+    "tenant_id",
+    "case_id",
+    "HUMAN_identity_and_scoped_capabilities",
+    "retention_policy_pin",
+    "document_type_pin",
+    "PL_jurisdiction_confirmation",
+    "evaluation_date_and_timezone",
+    "verified_sender_recipient_identity_and_addresses",
+    "representative_authority_if_used",
+    "document_place_and_date",
+    "source_bytes_hashes_and_retention",
+    "accepted_extraction_and_evidence",
+    "confirmed_facts_with_acceptance",
+    "issues_claims_requests_arguments_and_position",
+    "legal_sources_rules_citations_and_applicability",
+    "explicit_procedural_coverage_even_for_pre_litigation",
+    "accepted_snapshot_id_hash",
+    "approved_plan_ref_hash",
+    "prompt_model_provider_generator_parameter_pins",
+    "validation_policy_pin",
+    "render_profile_pin",
+    "attachment_inventory_and_signature_party"
+  ],
+  "exclusions": [
+    "Court pleadings, appeals, enforcement and administrative/office letters",
+    "ZUS/UFG/banking/insurance and special consumer regimes",
+    "Foreign/cross-border jurisdiction or currencies other than PLN",
+    "OCR and quotations from non-TXT without a verified locator adapter",
+    "Automatic statutory deadlines, interest or limitation periods",
+    "External filing, e-signature or delivery effectiveness",
+    "HTML/TXT export, QUICK/FORENSIC additional modes",
+    "Autonomous legal/adversarial truth certification",
+    "Stage 14 dependency or ROS integration"
+  ],
+  "human_gates": [
+    {
+      "id": "HG-01",
+      "name": "Tożsamość, umocowanie i zakres sprawy",
+      "binding": "Exact Party revisions, source evidence and scope; current IDENTITY decisions."
+    },
+    {
+      "id": "HG-02",
+      "name": "Materiał, fakty i dowody",
+      "binding": "Accepted extraction/evidence; current FACT_ACCEPTANCE on exact Fact revisions; disputed facts cannot become confirmed silently."
+    },
+    {
+      "id": "HG-03",
+      "name": "Prawo, procedura i interpretacja",
+      "binding": "Verified sources and ACTIVE exact rules; HUMAN INTERPRETATION where required; jurisdiction/date/applicability/coverage explicit."
+    },
+    {
+      "id": "HG-04",
+      "name": "Strategia, stanowisko i żądania",
+      "binding": "Explicit HUMAN STRATEGY/REQUEST_APPROVAL or equivalent versioned approval covering exact position, Request and Argument refs; NOT presently demonstrated as a complete enforced product gate."
+    },
+    {
+      "id": "HG-05",
+      "name": "Snapshot acceptance",
+      "binding": "Current SNAPSHOT_ACCEPTANCE of exact snapshot id/hash."
+    },
+    {
+      "id": "HG-06",
+      "name": "Plan approval",
+      "binding": "Current PLAN_APPROVAL on exact reviewed plan; live snapshot approval."
+    },
+    {
+      "id": "HG-07",
+      "name": "Semantic review",
+      "binding": "RecordValidationReview with all seven assessments, rationale, exact draft/snapshot/policy/date; AI proposal cannot replace HUMAN."
+    },
+    {
+      "id": "HG-08",
+      "name": "Rozstrzygnięcie findings",
+      "binding": "Conditional live FINDING_RESOLUTION; fresh validation after resolution; cannot rewrite a historical FAIL into PASS."
+    },
+    {
+      "id": "HG-09",
+      "name": "Final document approval",
+      "binding": "Current DOCUMENT_APPROVAL of exact draft hash, snapshot, DOCX and PDF hashes and associated authoritative validation evidence; public write is currently GATE_DENIED."
+    },
+    {
+      "id": "HG-10",
+      "name": "Product admission",
+      "binding": "Independent verifier binds review to candidate SHA and contract digest; distinct authorized promoter decides integration/release. No CERTIFICATION command fabrication."
+    }
+  ],
+  "required_checks": [
+    "schema",
+    "facts",
+    "evidence",
+    "legal_basis",
+    "procedure",
+    "contradictions",
+    "citations",
+    "requests",
+    "language",
+    "document",
+    "adversarial",
+    "render"
+  ],
+  "final_package": [
+    {
+      "name": "final.docx",
+      "meaning": "Validated editable bytes, exact render receipt and HUMAN approval."
+    },
+    {
+      "name": "final.pdf",
+      "meaning": "Validated PDF bytes, same semantic content, exact render receipt and HUMAN approval."
+    },
+    {
+      "name": "document.json",
+      "meaning": "Exact SemanticDocument, case/snapshot/draft/plan refs and hashes, type/version and reproduction pins."
+    },
+    {
+      "name": "validation.json",
+      "meaning": "Full pre/post-render checks, runs/manifests/reviews/findings, freshness and policy pins; no caller-supplied PASS."
+    },
+    {
+      "name": "sources.json",
+      "meaning": "Source identities, hashes, locators, verified legal versions/dates/applicability; original bytes accessible under scoped retention, not automatically exported."
+    },
+    {
+      "name": "evidence-map.json",
+      "meaning": "Output statements -> Fact -> accepted Evidence -> extraction -> immutable Source refs/locators."
+    },
+    {
+      "name": "argument-map.json",
+      "meaning": "Requests/position -> Arguments/Claims -> Facts/Evidence/LegalRules/Citations, with explicit human approvals."
+    },
+    {
+      "name": "audit.json",
+      "meaning": "Verified Stage 12 AuditPackage plus references to render/approval/release/package operations."
+    },
+    {
+      "name": "release.json",
+      "meaning": "Durable repository-issued FINAL ReleaseResult/ReleaseReceipt binding approval, run pins, hashes, policy and case sequence."
+    },
+    {
+      "name": "manifest.json",
+      "meaning": "Versioned package manifest: SHA-256/length of the other nine members, media types, scope, release id, code SHA and contract digest. Does not hash itself; manifest digest stored separately in authoritative package receipt to avoid cycles."
+    }
+  ],
+  "separation": {
+    "builder": "Prepares code/contract and synthetic evidence; cannot certify own work.",
+    "verifier": "Different identity, clean exact-SHA checkout, independently executes acceptance and inspects source/diff.",
+    "promoter": "Different identity from builder and verifier; explicit HUMAN authorization for integration/release."
+  },
+  "requirements": [
+    {
+      "id": "PB-001",
+      "goal": "Zakres typów i jurysdykcji",
+      "source": "docs/00-baseline.md §1, §49; explicit LW-PB-01 mandate",
+      "source_paths": [
+        "docs/00-baseline.md"
+      ],
+      "stages": [
+        "03",
+        "06",
+        "07"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PLANNED",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-CATALOGUE",
+      "acceptance_ids": [
+        "T01",
+        "T03"
+      ],
+      "definition_of_done": "Wszystkie trzy typy mają versioned pins i schematy; nieobsługiwane typy/jurysdykcje odrzucone przed generacją.",
+      "support": "NOT SUPPORTED / FUTURE",
+      "implementation_mapping": [],
+      "acceptance_test": [
+        "T01",
+        "T03"
+      ]
+    },
+    {
+      "id": "PB-002",
+      "goal": "Kompletność wejść i danych formalnych",
+      "source": "docs/00-baseline.md §22, §39",
+      "source_paths": [
+        "docs/00-baseline.md",
+        "lukart_work/contracts/messages.py"
+      ],
+      "stages": [
+        "06",
+        "08",
+        "11"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-INPUTS",
+      "acceptance_ids": [
+        "T01",
+        "T03"
+      ],
+      "definition_of_done": "Brak dowolnego pola wspólnego/typowego blokuje; daty, kwoty, adresy, umocowanie i załączniki są source-bound lub jawnie HUMAN-attested.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/contracts/messages.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T03"
+      ]
+    },
+    {
+      "id": "PB-003",
+      "goal": "Izolacja i autoryzacja",
+      "source": "AGENTS.md §11; Core execution",
+      "source_paths": [
+        "AGENTS.md",
+        "lukart_work/core/security.py",
+        "lukart_work/core/service.py",
+        "lukart_work/core/postgres.py"
+      ],
+      "stages": [
+        "03",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10",
+        "12"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "IMPLEMENTED_COMPONENT",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-AUTH-RLS",
+      "acceptance_ids": [
+        "T02"
+      ],
+      "definition_of_done": "Nieautoryzowany, AI i cross-case write/read odrzucone; brak zmiany ledger/bytes.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/core/security.py",
+        "lukart_work/core/service.py",
+        "lukart_work/core/postgres.py"
+      ],
+      "acceptance_test": [
+        "T02"
+      ]
+    },
+    {
+      "id": "PB-004",
+      "goal": "Trwałe źródła i retencja",
+      "source": "Stage03 implementation",
+      "source_paths": [
+        "docs/14-stage03-implementation.md",
+        "lukart_work/storage/objects.py"
+      ],
+      "stages": [
+        "03"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "IMPLEMENTED_COMPONENT",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-STORAGE",
+      "acceptance_ids": [
+        "T01",
+        "T10"
+      ],
+      "definition_of_done": "Exact source bytes/hash/length dostępne; retention/hold/backup/restore i scoped export działają na supported deployment.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/storage/objects.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T10"
+      ]
+    },
+    {
+      "id": "PB-005",
+      "goal": "Ekstrakcja z jawnością niepewności",
+      "source": "Stage04 implementation",
+      "source_paths": [
+        "docs/19-stage04-implementation.md",
+        "lukart_work/ingestion/extract.py"
+      ],
+      "stages": [
+        "04"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "IMPLEMENTED_COMPONENT",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-INGESTION",
+      "acceptance_ids": [
+        "T01",
+        "T03"
+      ],
+      "definition_of_done": "TXT UTF-8 supported quotation route; DOCX/email/text PDF tylko przy potwierdzeniu extraction completeness; scan NEEDS_OCR blokuje.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/ingestion/extract.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T03"
+      ]
+    },
+    {
+      "id": "PB-006",
+      "goal": "HUMAN tożsamość/fakty/dowody",
+      "source": "docs/00 §26; Stage05",
+      "source_paths": [
+        "docs/24-stage05-implementation.md",
+        "lukart_work/facts/service.py",
+        "lukart_work/core/service.py"
+      ],
+      "stages": [
+        "05"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "IMPLEMENTED_COMPONENT",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-FACTS",
+      "acceptance_ids": [
+        "T01",
+        "T04"
+      ],
+      "definition_of_done": "HG-01/02 current; żadne allegation/inference/niezaakceptowane evidence nie zaspokaja fact requirement.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/facts/service.py",
+        "lukart_work/core/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T04"
+      ]
+    },
+    {
+      "id": "PB-007",
+      "goal": "Rejestr i tożsamość pisma",
+      "source": "Stage06 implementation",
+      "source_paths": [
+        "docs/27-stage06-implementation.md",
+        "lukart_work/registry/service.py"
+      ],
+      "stages": [
+        "06"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-REGISTRY",
+      "acceptance_ids": [
+        "T01",
+        "T11"
+      ],
+      "definition_of_done": "Filing/source identities i versioned type preserved; FINAL nie oznacza SUBMITTED/ACKNOWLEDGED.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/registry/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T11"
+      ]
+    },
+    {
+      "id": "PB-008",
+      "goal": "Wersjonowane prawo i applicability",
+      "source": "Constitution §18, §57; Stage07/09/10",
+      "source_paths": [
+        "docs/ENTERPRISE_EXECUTION_CONSTITUTION.md",
+        "lukart_work/procedural/service.py",
+        "lukart_work/drafting/service.py"
+      ],
+      "stages": [
+        "07",
+        "09",
+        "10"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-LEGAL-HUMAN",
+      "acceptance_ids": [
+        "T01",
+        "T05"
+      ],
+      "definition_of_done": "HG-03; źródła mają jurisdiction/version/effective interval/retrieval/supersession; błędna jurysdykcja/data/interpretacja blokuje. Real PL content requires independent legal review.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/procedural/service.py",
+        "lukart_work/drafting/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T05"
+      ]
+    },
+    {
+      "id": "PB-009",
+      "goal": "Jawna procedura i terminy",
+      "source": "Stage07/10 implementation",
+      "source_paths": [
+        "docs/29-stage07-implementation.md",
+        "docs/38-stage10-implementation.md",
+        "lukart_work/procedural/service.py"
+      ],
+      "stages": [
+        "07",
+        "10"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-PROCEDURE",
+      "acceptance_ids": [
+        "T01",
+        "T05"
+      ],
+      "definition_of_done": "Completeness/application nawet dla pisma przedprocesowego; missing rules = UNKNOWN; brak business calendar lub trigger blokuje; ręczna data nie jest automatycznym ustawowym terminem.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/procedural/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T05"
+      ]
+    },
+    {
+      "id": "PB-010",
+      "goal": "Stanowisko, żądania i argumenty",
+      "source": "docs/00 §26, §46",
+      "source_paths": [
+        "docs/00-baseline.md",
+        "lukart_work/domain/models.py",
+        "lukart_work/planner/service.py"
+      ],
+      "stages": [
+        "08",
+        "09",
+        "10"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-POSITION",
+      "acceptance_ids": [
+        "T01",
+        "T04"
+      ],
+      "definition_of_done": "HG-04 current; każda pozycja/Request/Argument mapped i HUMAN-approved; zmiana unieważnia dalsze decyzje.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/domain/models.py",
+        "lukart_work/planner/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T04"
+      ]
+    },
+    {
+      "id": "PB-011",
+      "goal": "Accepted snapshot",
+      "source": "Stage08 implementation",
+      "source_paths": [
+        "docs/32-stage08-implementation.md",
+        "lukart_work/core/service.py",
+        "lukart_work/planner/service.py"
+      ],
+      "stages": [
+        "08"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "IMPLEMENTED_COMPONENT",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-SNAPSHOT",
+      "acceptance_ids": [
+        "T01",
+        "T06"
+      ],
+      "definition_of_done": "HG-05 exact id/hash and current refs; changed inputs/revocation/supersession block.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/core/service.py",
+        "lukart_work/planner/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T06"
+      ]
+    },
+    {
+      "id": "PB-012",
+      "goal": "Approved plan i safe sections",
+      "source": "Stage08 implementation",
+      "source_paths": [
+        "lukart_work/planner/contracts.py",
+        "lukart_work/planner/service.py"
+      ],
+      "stages": [
+        "08"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "IMPLEMENTED_COMPONENT",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-PLAN",
+      "acceptance_ids": [
+        "T01",
+        "T06"
+      ],
+      "definition_of_done": "HG-06 exact reviewed plan; Section allowlist, required inputs, no new facts/rules; public Stage08 operations only.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/planner/contracts.py",
+        "lukart_work/planner/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T06"
+      ]
+    },
+    {
+      "id": "PB-013",
+      "goal": "Controlled drafting i reproduction",
+      "source": "Stage09 implementation",
+      "source_paths": [
+        "docs/35-stage09-implementation.md",
+        "lukart_work/drafting/service.py",
+        "lukart_work/drafting/contracts.py"
+      ],
+      "stages": [
+        "09"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "IMPLEMENTED_COMPONENT",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-DRAFTING",
+      "acceptance_ids": [
+        "T01",
+        "T04"
+      ],
+      "definition_of_done": "Provider untrusted, all statements traceable; prompt/model/generator/parameters/raw output pinned; rejected output cannot persist a trusted draft.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/drafting/service.py",
+        "lukart_work/drafting/contracts.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T04"
+      ]
+    },
+    {
+      "id": "PB-014",
+      "goal": "Pinned runtime and privacy",
+      "source": "Stage13 implementation",
+      "source_paths": [
+        "docs/47-stage13-implementation.md",
+        "lukart_work/model_runtime/ollama.py"
+      ],
+      "stages": [
+        "13"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-RUNTIME",
+      "acceptance_ids": [
+        "T12"
+      ],
+      "definition_of_done": "Conformance fixture separately from real pinned local model; mismatch/timeout/malformed/offline fail closed; exact model-byte-use ceiling explicit; no privacy leak.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/model_runtime/ollama.py"
+      ],
+      "acceptance_test": [
+        "T12"
+      ]
+    },
+    {
+      "id": "PB-015",
+      "goal": "HUMAN semantic/adversarial review",
+      "source": "Stage10 implementation",
+      "source_paths": [
+        "docs/38-stage10-implementation.md",
+        "lukart_work/validation/contracts.py",
+        "lukart_work/validation/service.py"
+      ],
+      "stages": [
+        "10"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "IMPLEMENTED_COMPONENT",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-REVIEW",
+      "acceptance_ids": [
+        "T01",
+        "T04"
+      ],
+      "definition_of_done": "HG-07 all seven assessments exact draft/hash/snapshot/policy/date; semantic truth not asserted by machine.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/validation/contracts.py",
+        "lukart_work/validation/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T04"
+      ]
+    },
+    {
+      "id": "PB-016",
+      "goal": "Findings and all checks",
+      "source": "Stage10 + REQUIRED_CHECKS",
+      "source_paths": [
+        "lukart_work/validation/contracts.py",
+        "lukart_work/validation/service.py",
+        "lukart_work/contracts/messages.py"
+      ],
+      "stages": [
+        "10",
+        "11"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-VALIDATION",
+      "acceptance_ids": [
+        "T01",
+        "T07"
+      ],
+      "definition_of_done": "HG-08 if used; complete twelve PASS, no ERROR/BLOCKER/CRITICAL; UNKNOWN/NOT_RUN/FAIL blocks; fresh runs after remediation.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/validation/contracts.py",
+        "lukart_work/validation/service.py",
+        "lukart_work/contracts/messages.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T07"
+      ]
+    },
+    {
+      "id": "PB-017",
+      "goal": "Authoritative semantic/render boundary",
+      "source": "Stage11 implementation and code",
+      "source_paths": [
+        "docs/41-stage11-implementation.md",
+        "lukart_work/rendering/service.py",
+        "lukart_work/rendering/contracts.py"
+      ],
+      "stages": [
+        "10",
+        "11"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PLANNED_PRODUCT_BOUNDARY",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-TRUSTED-RENDER",
+      "acceptance_ids": [
+        "T01",
+        "T08"
+      ],
+      "definition_of_done": "Public authorized host loads current trusted records/validation, derives SemanticDocument/RenderRequest, prevents caller PASS/authority injection.",
+      "support": "NOT SUPPORTED / FUTURE",
+      "implementation_mapping": [
+        "lukart_work/rendering/service.py",
+        "lukart_work/rendering/contracts.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T08"
+      ]
+    },
+    {
+      "id": "PB-018",
+      "goal": "Persistent DOCX/PDF and post-render evidence",
+      "source": "Stage03 + Stage11",
+      "source_paths": [
+        "lukart_work/rendering/service.py",
+        "lukart_work/storage/objects.py",
+        "lukart_work/contracts/messages.py"
+      ],
+      "stages": [
+        "03",
+        "11"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-RENDER-STORAGE",
+      "acceptance_ids": [
+        "T01",
+        "T08",
+        "T10"
+      ],
+      "definition_of_done": "Actual exact bytes + receipt + metadata stored atomically/recoverably; validated formats, polish glyphs, contents and attachment list; render PASS repository-derived; no watermark.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/rendering/service.py",
+        "lukart_work/storage/objects.py",
+        "lukart_work/contracts/messages.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T08",
+        "T10"
+      ]
+    },
+    {
+      "id": "PB-019",
+      "goal": "Final HUMAN document approval",
+      "source": "RenderTarget; public Core deny",
+      "source_paths": [
+        "lukart_work/domain/models.py",
+        "lukart_work/core/service.py"
+      ],
+      "stages": [
+        "10",
+        "11"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PLANNED_PUBLIC_WRITE",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-FINAL-APPROVAL",
+      "acceptance_ids": [
+        "T01",
+        "T08",
+        "T09"
+      ],
+      "definition_of_done": "HG-09 current HUMAN approval targets exact draft/snapshot/DOCX/PDF and bound run; revocation/tamper drift blocks; public endpoint audited, CAS/replay safe.",
+      "support": "NOT SUPPORTED / FUTURE",
+      "implementation_mapping": [
+        "lukart_work/domain/models.py",
+        "lukart_work/core/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T08",
+        "T09"
+      ]
+    },
+    {
+      "id": "PB-020",
+      "goal": "Public release and durable FINAL receipt",
+      "source": "evaluate_release and ReleaseReceipt",
+      "source_paths": [
+        "lukart_work/validation/rules.py",
+        "lukart_work/contracts/messages.py",
+        "lukart_work/core/service.py"
+      ],
+      "stages": [
+        "10",
+        "11",
+        "12"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PLANNED_PUBLIC_WRITE",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-RELEASE",
+      "acceptance_ids": [
+        "T01",
+        "T09",
+        "T10"
+      ],
+      "definition_of_done": "Authorized repository-loaded release produces immutable receipt only after all gates; FINAL eligibility distinct from Draft.status and Filing.status; legacy bypass remains denied.",
+      "support": "NOT SUPPORTED / FUTURE",
+      "implementation_mapping": [
+        "lukart_work/validation/rules.py",
+        "lukart_work/contracts/messages.py",
+        "lukart_work/core/service.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T09",
+        "T10"
+      ]
+    },
+    {
+      "id": "PB-021",
+      "goal": "Complete final package",
+      "source": "docs/00 §44, §46; Stage12",
+      "source_paths": [
+        "docs/00-baseline.md",
+        "lukart_work/audit/service.py",
+        "lukart_work/audit/contracts.py"
+      ],
+      "stages": [
+        "03",
+        "11",
+        "12"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PLANNED_PRODUCT_BUNDLE",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-PACKAGE",
+      "acceptance_ids": [
+        "T01",
+        "T08",
+        "T10",
+        "T11"
+      ],
+      "definition_of_done": "All ten members schema/version/hash/length bound; maps resolve; read after restart; package not FINAL on missing/corrupt member. Pełny assembler końcowo łączy także późniejszy zakres katalogu/UX; PB02 nie ma budować całego dalszego programu.",
+      "support": "NOT SUPPORTED / FUTURE",
+      "implementation_mapping": [
+        "lukart_work/audit/service.py",
+        "lukart_work/audit/contracts.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T08",
+        "T10",
+        "T11"
+      ]
+    },
+    {
+      "id": "PB-022",
+      "goal": "Audit/provenance and recoverability",
+      "source": "Stage12 implementation; Constitution §17",
+      "source_paths": [
+        "docs/44-stage12-implementation.md",
+        "lukart_work/audit/service.py",
+        "lukart_work/core/postgres.py"
+      ],
+      "stages": [
+        "03",
+        "12"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-AUDIT",
+      "acceptance_ids": [
+        "T01",
+        "T10",
+        "T11"
+      ],
+      "definition_of_done": "Audit hash chain + domain/object/command pins cover accepted inputs through package; privacy-preserving; verified read-only audit not mistaken for a full bundle.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/audit/service.py",
+        "lukart_work/core/postgres.py"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T10",
+        "T11"
+      ]
+    },
+    {
+      "id": "PB-023",
+      "goal": "Replay, CAS and failure atomicity",
+      "source": "Core/Postgres; Constitution §13/14",
+      "source_paths": [
+        "lukart_work/core/postgres.py",
+        "lukart_work/core/service.py"
+      ],
+      "stages": [
+        "03",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10",
+        "12"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-TRANSACTIONS",
+      "acceptance_ids": [
+        "T09",
+        "T10"
+      ],
+      "definition_of_done": "Public render/approval/release/package and existing stages have actor-bound replay, exact CAS, conflict/no partial FINAL, concurrent stale/race/restart coverage on real PG.",
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/core/postgres.py",
+        "lukart_work/core/service.py"
+      ],
+      "acceptance_test": [
+        "T09",
+        "T10"
+      ]
+    },
+    {
+      "id": "PB-024",
+      "goal": "Independent product admission",
+      "source": "AGENTS §20/21; Constitution §7/28/42",
+      "source_paths": [
+        "AGENTS.md",
+        "docs/ENTERPRISE_EXECUTION_CONSTITUTION.md"
+      ],
+      "stages": [
+        "03",
+        "04",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PLANNED",
+        "validated": "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED",
+        "certified": false
+      },
+      "verifier": "V-INDEPENDENT",
+      "acceptance_ids": [
+        "T13"
+      ],
+      "definition_of_done": "HG-10 distinct builder/verifier/promoter; clean exact candidate SHA CI zero skip and independent technical + legal/type review; promoter approval recorded; no Stage14/ROS dependency.",
+      "support": "NOT SUPPORTED / FUTURE",
+      "implementation_mapping": [],
+      "acceptance_test": [
+        "T13"
+      ]
+    },
+    {
+      "id": "PB-025",
+      "goal": "Chronologia faktów i dokumentów",
+      "source": "docs/00-baseline.md §22/49; Fact.event_date / Filing dates",
+      "source_paths": [
+        "docs/00-baseline.md",
+        "lukart_work/domain/models.py",
+        "lukart_work/facts/contracts.py"
+      ],
+      "stages": [
+        "05",
+        "06",
+        "07",
+        "08"
+      ],
+      "support": "PARTIAL",
+      "implementation_mapping": [
+        "lukart_work/domain/models.py",
+        "lukart_work/facts/service.py",
+        "lukart_work/registry/service.py"
+      ],
+      "status": {
+        "planned": true,
+        "implementation": "PARTIAL",
+        "validated": "NOT_VERIFIED_AS_PRODUCT_TIMELINE",
+        "certified": false
+      },
+      "verifier": "V-TIMELINE",
+      "acceptance_ids": [
+        "T01",
+        "T04",
+        "T05"
+      ],
+      "acceptance_test": [
+        "T01",
+        "T04",
+        "T05"
+      ],
+      "definition_of_done": "HUMAN akceptuje chronologię source-bound dates i rozbieżności dla każdego typu; daty zdarzeń nie zastępowane received_at/recorded_at. Dedykowany automatyczny Timeline engine nie jest obietnicą tego baseline."
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "T01",
+      "goal": "CreateCase → complete final package for each of the 3 supported types",
+      "procedure": "All common/type inputs, scoped HUMAN, approved facts/evidence/legal coverage; use public Stage03–13 boundaries; reach snapshot/plan/draft/review/validation, trusted render, final approval, RequestRelease, audit+package read.",
+      "expected": "FINAL + ten durable members; twelve PASS; HG01–09 current; no fabrication; restart read identical hashes.",
+      "current_state": "BLOCKED",
+      "blockers": [
+        "PB-017",
+        "PB-019",
+        "PB-020",
+        "PB-021"
+      ],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T02",
+      "goal": "Unauthorized / AI / cross-tenant or case",
+      "procedure": "Replace principal/token/scope at every public step.",
+      "expected": "FORBIDDEN/CROSS_CASE or equivalent safe typed denial; no state/bytes leak or write.",
+      "current_state": "PARTIAL_COMPONENT",
+      "blockers": [],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T03",
+      "goal": "Unsupported type/jurisdiction; missing formal input; scan/partial extraction",
+      "procedure": "Each excluded case; remove each required input; include NEEDS_OCR and incomplete extraction.",
+      "expected": "Blocked before dependent generation/release; precise missing dependency; never fabricated default.",
+      "current_state": "PLANNED",
+      "blockers": [],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T04",
+      "goal": "Unaccepted fact/evidence; unsupported prose; position drift; no semantic HUMAN review",
+      "procedure": "Change/revoke exact input approvals, provider assertion, strategy/request or any of seven reviews.",
+      "expected": "Reject or GENERATED with blocking findings; never validated/FINAL.",
+      "current_state": "PARTIAL_COMPONENT",
+      "blockers": [],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T05",
+      "goal": "Wrong/expired authority; missing procedure coverage; unknown deadlines",
+      "procedure": "Change jurisdiction/effective period/interpretation/calendar/trigger; no actual applicable rules.",
+      "expected": "UNKNOWN/ABSTAIN/FAIL blocks; human PASS cannot manufacture quotation/coverage.",
+      "current_state": "PARTIAL_COMPONENT",
+      "blockers": [],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T06",
+      "goal": "Snapshot/plan/source/policy drift",
+      "procedure": "Revoke acceptance/plan approval or change source/current revisions/profile/policy before and during next step.",
+      "expected": "STALE/GATE_DENIED/CONFLICT; rebuild dependent evidence; historical bytes unchanged.",
+      "current_state": "PARTIAL_COMPONENT",
+      "blockers": [],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T07",
+      "goal": "Finding resolution or omitted render/check coverage",
+      "procedure": "Every outcome FAIL/UNKNOWN/NOT_RUN; missing/duplicate checks; critical findings; resolve without fresh run.",
+      "expected": "No FINAL; resolution not historical PASS; render NOT_RUN after Stage10 explicitly reported.",
+      "current_state": "PARTIAL_COMPONENT",
+      "blockers": [],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T08",
+      "goal": "Forged render authority; DOCX/PDF/receipt tamper; missing package member",
+      "procedure": "Supply caller records/projection/PASS/hash; swap bytes/approval/one member after render.",
+      "expected": "Reject; trusted state only; no FINAL or partial downloadable FINAL.",
+      "current_state": "BLOCKED",
+      "blockers": [
+        "PB-017",
+        "PB-018",
+        "PB-021"
+      ],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T09",
+      "goal": "DOCUMENT_APPROVAL / RequestRelease current denial; future revocation/race/replay",
+      "procedure": "At current base valid open case + authorized HUMAN; call real Core execute. Future: exact validated/rendered persistent case, concurrent approval/release, idempotency actor conflict.",
+      "expected": "CURRENT: GATE_DENIED with unchanged ledger (real PG verifier required). FUTURE: authorized FINAL or safe refusal; no fake receipt.",
+      "current_state": "CURRENT_DENIAL_LOCAL_ONLY",
+      "blockers": [
+        "PB-019",
+        "PB-020"
+      ],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T10",
+      "goal": "Rollback, restart, retention, backup/restore and corrupted storage",
+      "procedure": "Failure at render/persist/approval/release/package commit; restart/revoke; read deleted/corrupt bytes.",
+      "expected": "No partial FINAL; recover safely; byte/hash identity exact; denial without inconsistent audit/outbox.",
+      "current_state": "BLOCKED",
+      "blockers": [
+        "PB-018",
+        "PB-020",
+        "PB-021",
+        "PB-023"
+      ],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T11",
+      "goal": "Provenance and registry/export semantics",
+      "procedure": "Resolve every map and audit pin; wrong permissions; FINAL vs SUBMITTED.",
+      "expected": "Complete scope-bound provenance; no original-source export without capability; no fictional submission or signature.",
+      "current_state": "BLOCKED",
+      "blockers": [
+        "PB-021",
+        "PB-022"
+      ],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T12",
+      "goal": "Model runtime acceptance",
+      "procedure": "Deterministic conformance separately; then real local pinned Ollama/prompt for each type; mismatch/outage/invalid output/network attempt.",
+      "expected": "Never transfer fixture PASS to real model; receipt version/pins valid; legal semantic content HUMAN-approved.",
+      "current_state": "NOT_VERIFIED",
+      "blockers": [
+        "PB-014"
+      ],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    },
+    {
+      "id": "T13",
+      "goal": "Independent verification and promotion",
+      "procedure": "Different verifier checks exact candidate SHA, source diff, actual PG integration/E2E logs and package bytes; distinct promoter.",
+      "expected": "Technical + per-type legal review recorded; no skipped gate; explicit promotion authorization; certification then only within frozen scope.",
+      "current_state": "NOT_VERIFIED",
+      "blockers": [
+        "PB-024"
+      ],
+      "verifier": "Independent verifier; PostgreSQL integration for stateful steps; HUMAN legal/domain reviewer for supported types.",
+      "definition_of_done": "Expected result established by direct execution with exact SHA and fixture/input/policy/artifact hashes; no missing/skipped evidence."
+    }
+  ],
+  "product_e2e": {
+    "state": "BLOCKED",
+    "reason": "No trusted public persisted render -> approval -> release -> complete package path at pinned base.",
+    "public_only": true,
+    "forbidden_shortcuts": [
+      "Direct SQL or UnitOfWork append to make a product transition",
+      "model_copy of statuses or forged ValidationProjection/RenderRequest/Decision",
+      "Calling pure evaluate_release as a public authorization endpoint",
+      "Synthetic provider output treated as proof of a live model",
+      "SKIP/UNKNOWN/NOT_RUN converted to PASS"
+    ],
+    "coverage": "Run each positive fixture for all three catalogue ids; each negative scenario per affected type. Synthetic fixtures and legal rules are not legal applicability certification."
+  },
+  "source_index": {
+    "AGENTS.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "0d5d381d07000ff66c39d868b597f6b38d6681ea"
+    },
+    "docs/00-baseline.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "410389db390a6d402c26937e9b5e90f8997a04a4"
+    },
+    "docs/14-stage03-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "1461b60fb54d353868c796fcb3bfdc1e166a4b81"
+    },
+    "docs/19-stage04-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "8fca6225585d00bc7b05e8c065cec56538fae88f"
+    },
+    "docs/24-stage05-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "ed7671cd48406a7e4eb8dac33e508465c3b99f95"
+    },
+    "docs/27-stage06-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "52d702714a7580ee343044c0498609941b21d690"
+    },
+    "docs/29-stage07-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "1ed132263b293fe8419828a8caf401d9e9d85199"
+    },
+    "docs/32-stage08-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "49a144ec6a933f4d181d9ad6a5dc6987f574ce95"
+    },
+    "docs/35-stage09-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "bd62c86c316fb9fcf9d4ea2e1a7f4c44e811a76f"
+    },
+    "docs/38-stage10-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "dd9fc627526b57b6ed428bc76d7fcd861de5222c"
+    },
+    "docs/41-stage11-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "2b68e06b8c088555b64a2818635401b658cfaaaa"
+    },
+    "docs/44-stage12-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "78c7575cbe1aeee1ca49ed9d0ff5e36f71c07e82"
+    },
+    "docs/47-stage13-implementation.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "01d0add6711a70cbdfe3f4055628baa24ba0603b"
+    },
+    "docs/ENTERPRISE_EXECUTION_CONSTITUTION.md": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "c3118cdcb73ec22c6043383ec0204d7031e1cef7"
+    },
+    "lukart_work/audit/contracts.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "b3a04431fe886d3d61e0ac6fda8038974eeeed15"
+    },
+    "lukart_work/audit/service.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "62726c3a38db3709778caff9ba2a3a409fbf7a21"
+    },
+    "lukart_work/contracts/messages.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "d05737cff7c8f705ab4f2ef20721b7876b326667"
+    },
+    "lukart_work/core/postgres.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "02cc48c6519ab13a319ebffe8f2fa4593826fb0a"
+    },
+    "lukart_work/core/security.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "34e59f35160056826de2a9ee7cc8e61b8e0742ab"
+    },
+    "lukart_work/core/service.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "0f1c5dc805c5a06d6963de7eab7bb3dee9accc6f"
+    },
+    "lukart_work/domain/models.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "55940e7dd8ceb18017f715382517c093c346a2e1"
+    },
+    "lukart_work/drafting/contracts.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "b3b2204ffc9b16b475cf249009e5def79560f74c"
+    },
+    "lukart_work/drafting/service.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "ef0c3c589f059c11d3078314a653e6dca5966e5d"
+    },
+    "lukart_work/facts/contracts.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "2138a641dbc7dfc9a4b6e6868a012739116d5ee2"
+    },
+    "lukart_work/facts/service.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "c3d5301d2a103b2c9ff2a781591eba5a2642a29d"
+    },
+    "lukart_work/ingestion/extract.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "7f595b9ba72142014464e20ff0a3cc16bf706775"
+    },
+    "lukart_work/model_runtime/ollama.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "01844d13c95e542b81a64c83b1d94feefb5cc7bd"
+    },
+    "lukart_work/planner/contracts.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "c437d9177d1bd780611c32704d2dfbcbbe64f16b"
+    },
+    "lukart_work/planner/service.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "ff075b0759d2e3b4251bf2dd6907098796024e35"
+    },
+    "lukart_work/procedural/service.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "89714e3fbee2d7be658f3e3a19eba5b9ce14cd56"
+    },
+    "lukart_work/registry/service.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "8685b821fe5c8bcba73cac5834ef4172ec68f496"
+    },
+    "lukart_work/rendering/contracts.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "38c0bc50b0ae5391a0666d9aa392303a0e2bee90"
+    },
+    "lukart_work/rendering/service.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "5015827bb6764c7db57c56df3a172a94e83f5aaa"
+    },
+    "lukart_work/storage/objects.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "8627f84fe971f1fdeda9c1f36f56072b0eb6d44e"
+    },
+    "lukart_work/validation/contracts.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "2df1188f91b5c72eae5032954fc690b4be79ddd6"
+    },
+    "lukart_work/validation/rules.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "cd0ab4f9efc8961401e643819cfa8a399e1ee4f0"
+    },
+    "lukart_work/validation/service.py": {
+      "base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+      "git_blob_sha": "0c308b1e87149bf5890e31d45a0ceb5273e93548"
+    }
+  },
+  "production_tree_pins": {
+    ".github": "e83fc8530459ca7996b690a455620f85fa9b51f3",
+    "lukart_work": "73b7e998c6c2b6572a335a89f54da639e3ed5910",
+    "pyproject.toml": "b1fa5a547a47bd108b8051db33806e314cadea47",
+    "schemas": "0854abf6cb0d4c677a118f16e072d7dae088aef9"
+  },
+  "component_mapping": [
+    {
+      "component": "Case Core",
+      "mapping": "lukart_work/core/service.py",
+      "state": "IMPLEMENTED",
+      "validation": "Existing main CI component evidence; new candidate pending",
+      "limit": "Public FINAL operations denied"
+    },
+    {
+      "component": "Storage Stage03",
+      "mapping": "lukart_work/storage/objects.py",
+      "state": "IMPLEMENTED",
+      "validation": "Existing scoped storage tests",
+      "limit": "Trusted persistence of render/package missing"
+    },
+    {
+      "component": "Ingestion Stage04",
+      "mapping": "lukart_work/ingestion/service.py",
+      "state": "IMPLEMENTED",
+      "validation": "Synthetic adapter tests",
+      "limit": "Scans NOT IN BASELINE; DOCX/email/PDF extraction partial"
+    },
+    {
+      "component": "Facts/Evidence Stage05",
+      "mapping": "lukart_work/facts/service.py",
+      "state": "IMPLEMENTED",
+      "validation": "Existing human lifecycle tests",
+      "limit": "No legal truth certification"
+    },
+    {
+      "component": "Timeline",
+      "mapping": "lukart_work/domain/models.py Fact.event_date",
+      "state": "PARTIAL",
+      "validation": "Source-bound field/lifecycle evidence",
+      "limit": "No dedicated complete Timeline service; advanced automation NOT IN BASELINE"
+    },
+    {
+      "component": "Registry Stage06",
+      "mapping": "lukart_work/registry/service.py",
+      "state": "IMPLEMENTED",
+      "validation": "Existing identity/submission receipt tests",
+      "limit": "Type catalogue/product controls partial; external filing NOT IN BASELINE"
+    },
+    {
+      "component": "Procedure Stage07",
+      "mapping": "lukart_work/procedural/service.py",
+      "state": "PARTIAL",
+      "validation": "Implemented engine validated on synthetic rules",
+      "limit": "Real PL rule catalogue/coverage MISSING; business calendar NOT IN BASELINE"
+    },
+    {
+      "component": "Planner Stage08",
+      "mapping": "lukart_work/planner/service.py",
+      "state": "IMPLEMENTED",
+      "validation": "Existing snapshot/safe section/current approval tests",
+      "limit": "Supported-type profiles MISSING"
+    },
+    {
+      "component": "Drafting Stage09",
+      "mapping": "lukart_work/drafting/service.py",
+      "state": "IMPLEMENTED",
+      "validation": "Synthetic provider/replay/authority guard tests",
+      "limit": "Real per-type legal output NOT VERIFIED"
+    },
+    {
+      "component": "Model/provider/prompt Stage09/13",
+      "mapping": "lukart_work/model_runtime/ollama.py",
+      "state": "PARTIAL",
+      "validation": "Adapter conformance/failure tests",
+      "limit": "Type prompts/live runtime acceptance MISSING; atomic model-byte-use attestation incomplete"
+    },
+    {
+      "component": "Validation Stage10",
+      "mapping": "lukart_work/validation/service.py",
+      "state": "IMPLEMENTED",
+      "validation": "Existing structured + HUMAN semantic review tests",
+      "limit": "Pre-render only; post-render persistence/binding MISSING"
+    },
+    {
+      "component": "Rendering Stage11",
+      "mapping": "lukart_work/rendering/service.py",
+      "state": "PARTIAL",
+      "validation": "Pure DOCX/PDF renderer tests",
+      "limit": "Trusted public semantic assembly and persisted render MISSING"
+    },
+    {
+      "component": "Audit Stage12",
+      "mapping": "lukart_work/audit/service.py",
+      "state": "IMPLEMENTED",
+      "validation": "Read-only ledger projection/trace tests",
+      "limit": "Full final-package assembly MISSING"
+    },
+    {
+      "component": "Release/finalization",
+      "mapping": "lukart_work/validation/rules.py evaluate_release",
+      "state": "MISSING",
+      "validation": "Pure evaluator guards only; dynamic public denials",
+      "limit": "No authorized public durable FINAL endpoint"
+    },
+    {
+      "component": "Advanced knowledge/autonomous adversarial",
+      "mapping": "docs/00-baseline.md roadmap",
+      "state": "NOT IN BASELINE",
+      "validation": "NOT VERIFIED",
+      "limit": "HUMAN semantic/adversarial/legal controls mandatory instead"
+    }
+  ],
+  "full_path_steps": [
+    {
+      "id": "S01",
+      "name": "CreateCase",
+      "input": [
+        "scope ids",
+        "jurisdiction PL",
+        "title",
+        "retention pin"
+      ],
+      "preconditions": [
+        "authenticated HUMAN capability",
+        "expected sequence 0"
+      ],
+      "authority": "Core.execute(CreateCase), HUMAN",
+      "state_transition": "none → OPEN Case / sequence+1",
+      "output": [
+        "CommandResult",
+        "Case ref",
+        "audit/outbox"
+      ],
+      "evidence": [
+        "case revision hash",
+        "event/command IDs"
+      ],
+      "negative_cases": [
+        "invalid token",
+        "AI",
+        "duplicate different payload",
+        "cross-case"
+      ],
+      "current_state": "IMPLEMENTED",
+      "requirements": [
+        "PB-003",
+        "PB-004"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S02",
+      "name": "Intake and supported-type inputs",
+      "input": [
+        "catalogue id",
+        "all common/type/formal inputs",
+        "incoming refs"
+      ],
+      "preconditions": [
+        "supported scope",
+        "identity/power evidence available"
+      ],
+      "authority": "HUMAN HG01/04; planned product intake boundary",
+      "state_transition": "unknown input → explicitly complete supported envelope",
+      "output": [
+        "type/role/formal input envelope"
+      ],
+      "evidence": [
+        "type schema/profile pins",
+        "HUMAN attestations"
+      ],
+      "negative_cases": [
+        "unknown type",
+        "foreign scope",
+        "missing address/date/power",
+        "unsupported defaults"
+      ],
+      "current_state": "MISSING_PRODUCT_BOUNDARY",
+      "requirements": [
+        "PB-001",
+        "PB-002",
+        "PB-010",
+        "PB-025"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S03",
+      "name": "Documents and ingestion",
+      "input": [
+        "original bytes",
+        "media type",
+        "retention pin",
+        "run id"
+      ],
+      "preconditions": [
+        "storage=True",
+        "scoped RegisterSource/IngestSource/ReadIngestion"
+      ],
+      "authority": "Core.RegisterSource; IngestionService.ingest/read",
+      "state_transition": "source registered → immutable extraction/candidates",
+      "output": [
+        "SourceDocument",
+        "IngestionResult",
+        "stored originals/raw output"
+      ],
+      "evidence": [
+        "source hash/length",
+        "extractor pin",
+        "locators/result hash"
+      ],
+      "negative_cases": [
+        "tampered bytes",
+        "NEEDS_OCR",
+        "PARTIAL ignored",
+        "run/source mismatch"
+      ],
+      "current_state": "IMPLEMENTED_COMPONENT",
+      "requirements": [
+        "PB-004",
+        "PB-005"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S04",
+      "name": "Facts/evidence and timeline review",
+      "input": [
+        "candidate refs",
+        "result hashes",
+        "HUMAN statements",
+        "accepted evidence",
+        "event dates"
+      ],
+      "preconditions": [
+        "HG01",
+        "complete extraction or explicit valid evidence route"
+      ],
+      "authority": "FactEvidenceService + Core.RecordDecision; HUMAN HG02",
+      "state_transition": "candidate → REVIEWED/CONFIRMED Fact; ACCEPTED Evidence",
+      "output": [
+        "canonical refs",
+        "fact/evidence matrix",
+        "review receipts"
+      ],
+      "evidence": [
+        "acceptance decisions",
+        "source→extraction→evidence→fact binding"
+      ],
+      "negative_cases": [
+        "unsupported inference",
+        "revoked acceptance",
+        "disputed evidence",
+        "recorded_at as event date"
+      ],
+      "current_state": "IMPLEMENTED_COMPONENT_TIMELINE_PARTIAL",
+      "requirements": [
+        "PB-006",
+        "PB-025"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S05",
+      "name": "Legal/procedural scope and position",
+      "input": [
+        "verified PL source versions/dates",
+        "rules/citations",
+        "Issue/Claim/Request/Argument",
+        "position"
+      ],
+      "preconditions": [
+        "source applicability verified",
+        "complete rule coverage",
+        "HG03/04"
+      ],
+      "authority": "ProceduralEngineService + authorized domain writes; HUMAN",
+      "state_transition": "source/rule PROPOSED→VERIFIED/ACTIVE; approved position",
+      "output": [
+        "AssessProcedure",
+        "exact rule/argument/request refs"
+      ],
+      "evidence": [
+        "INTERPRETATION/strategy approvals",
+        "coverage and source pins"
+      ],
+      "negative_cases": [
+        "expired/wrong jurisdiction",
+        "missing rules",
+        "unknown trigger",
+        "no legal authority",
+        "unsupported domain write"
+      ],
+      "current_state": "PARTIAL_REAL_CATALOGUE_AND_WRITES_MISSING",
+      "requirements": [
+        "PB-008",
+        "PB-009",
+        "PB-010"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S06",
+      "name": "Snapshot acceptance and planning",
+      "input": [
+        "case heads",
+        "Filing/type",
+        "objectives/arguments",
+        "safe section blueprints"
+      ],
+      "preconditions": [
+        "current HG01–04",
+        "all semantic refs canonical"
+      ],
+      "authority": "Core.CreateSnapshot/AcceptSnapshot; Planner Stage08; HUMAN HG05/06",
+      "state_transition": "snapshot frozen/accepted; plan PROPOSED→REVIEWED→APPROVED",
+      "output": [
+        "snapshot id/hash",
+        "plan/sections refs"
+      ],
+      "evidence": [
+        "SNAPSHOT_ACCEPTANCE",
+        "PLAN_APPROVAL",
+        "dependencies"
+      ],
+      "negative_cases": [
+        "post-snapshot ref injection",
+        "revocation/supersession",
+        "unsafe sections",
+        "stale heads"
+      ],
+      "current_state": "IMPLEMENTED_COMPONENT",
+      "requirements": [
+        "PB-011",
+        "PB-012"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S07",
+      "name": "Controlled drafting",
+      "input": [
+        "approved exact plan/snapshot",
+        "pinned provider/model/prompt/generator/parameters"
+      ],
+      "preconditions": [
+        "HG05/06 current",
+        "provider receipt matches",
+        "no unsupported input"
+      ],
+      "authority": "ControlledDraftingService.generate; HUMAN authorized invocation; AI proposal only",
+      "state_transition": "approved plan → GENERATED Draft",
+      "output": [
+        "draft sections/statements",
+        "reproduction manifest",
+        "raw output trace"
+      ],
+      "evidence": [
+        "actual invocation/result hashes",
+        "Statement refs/citations"
+      ],
+      "negative_cases": [
+        "new facts/rules",
+        "malformed output",
+        "provider pin mismatch",
+        "timeout",
+        "unsupported assertions"
+      ],
+      "current_state": "IMPLEMENTED_COMPONENT_PROFILES_PARTIAL",
+      "requirements": [
+        "PB-013",
+        "PB-014"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S08",
+      "name": "Pre-render validation",
+      "input": [
+        "current GENERATED Draft/hash",
+        "snapshot hash",
+        "policy pin",
+        "HG07 review/context"
+      ],
+      "preconditions": [
+        "current input/plan/snapshot/legal authority",
+        "all seven HUMAN assessments"
+      ],
+      "authority": "ValidationEngineService; HUMAN HG07/08",
+      "state_transition": "GENERATED → VALIDATED only if pre-render PASS; render remains NOT_RUN",
+      "output": [
+        "ValidationProjection",
+        "run/manifest/findings",
+        "derived draft revision"
+      ],
+      "evidence": [
+        "twelve-check universe with explicit render NOT_RUN",
+        "review/run dependency hashes"
+      ],
+      "negative_cases": [
+        "missing HUMAN review",
+        "FAIL/UNKNOWN/NOT_RUN",
+        "unresolved blockers",
+        "stale quotation/source",
+        "finding waiver"
+      ],
+      "current_state": "IMPLEMENTED_PRE_RENDER_ONLY",
+      "requirements": [
+        "PB-015",
+        "PB-016"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S09",
+      "name": "Render",
+      "input": [
+        "server-loaded exact current records/ValidationProjection",
+        "semantic/profile binding"
+      ],
+      "preconditions": [
+        "eligible_for_approval CURRENT",
+        "no caller supplied PASS/authority"
+      ],
+      "authority": "Planned authenticated trusted boundary → existing pure RenderingEngine",
+      "state_transition": "VALIDATED input → validated in-memory DOCX/PDF bundle; domain lifecycle unresolved",
+      "output": [
+        "DOCX/PDF bytes",
+        "RenderReceipt/meta/layout"
+      ],
+      "evidence": [
+        "artifact hashes",
+        "renderer/font/profile/validation bindings"
+      ],
+      "negative_cases": [
+        "forged projection",
+        "semantic drift",
+        "stale policy",
+        "unsupported visual content",
+        "bad glyph/format"
+      ],
+      "current_state": "MISSING_PUBLIC_BOUNDARY_PURE_RENDERER_EXISTS",
+      "requirements": [
+        "PB-017",
+        "PB-018"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S10",
+      "name": "Artifact persistence and post-render validation",
+      "input": [
+        "actual bundle bytes",
+        "receipt/meta",
+        "validation evidence"
+      ],
+      "preconditions": [
+        "atomic/recoverable authorized storage",
+        "scoped identity",
+        "valid hashes/lengths"
+      ],
+      "authority": "Planned trusted application service; repository runtime role",
+      "state_transition": "in-memory artifacts → durable render; explicit versioned lifecycle/run rebind required",
+      "output": [
+        "durable artifact IDs",
+        "post-render PASS evidence",
+        "exact rendered draft identity"
+      ],
+      "evidence": [
+        "stored bytes reread hashes",
+        "transaction/audit/outbox",
+        "fresh runs"
+      ],
+      "negative_cases": [
+        "partial save",
+        "tamper/missing bytes",
+        "wrong case",
+        "caller PASS",
+        "restart"
+      ],
+      "current_state": "MISSING",
+      "requirements": [
+        "PB-018",
+        "PB-023"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S11",
+      "name": "HUMAN final approval",
+      "input": [
+        "exact stored DOCX/PDF",
+        "draft/snapshot hashes",
+        "current validation bindings"
+      ],
+      "preconditions": [
+        "all required checks PASS",
+        "no blockers",
+        "HG01–08 current"
+      ],
+      "authority": "HUMAN HG09; planned public approval endpoint; current Core denies",
+      "state_transition": "no final approval → current recorded exact approval (FUTURE)",
+      "output": [
+        "Decision/ref/hash",
+        "bound RenderTarget"
+      ],
+      "evidence": [
+        "actor/time",
+        "exact byte/run bindings",
+        "audit event"
+      ],
+      "negative_cases": [
+        "AI approval",
+        "wrong/stale hashes",
+        "revocation",
+        "source drift",
+        "not rendered"
+      ],
+      "current_state": "GATE_DENIED_CURRENT",
+      "requirements": [
+        "PB-019"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S12",
+      "name": "RequestRelease",
+      "input": [
+        "release intent",
+        "scope/CAS/idempotency",
+        "exact authoritative approval/render/run ids"
+      ],
+      "preconditions": [
+        "twelve PASS",
+        "CURRENT inputs/approval",
+        "no ERROR/BLOCKER/CRITICAL",
+        "durable bytes"
+      ],
+      "authority": "Planned authenticated repository-loaded release boundary; current Core denies",
+      "state_transition": "DRAFT eligibility → FINAL only after trusted successful persistence (FUTURE)",
+      "output": [
+        "ReleaseResult",
+        "durable release receipt identity"
+      ],
+      "evidence": [
+        "exact approval/run/policy/sequence/artifact hashes"
+      ],
+      "negative_cases": [
+        "caller fabricated PASS/receipt",
+        "race",
+        "stale approvals",
+        "cross-case",
+        "missing check/artifact"
+      ],
+      "current_state": "GATE_DENIED_CURRENT",
+      "requirements": [
+        "PB-020",
+        "PB-023"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S13",
+      "name": "Final release receipt and recovery read",
+      "input": [
+        "repository-issued release identity",
+        "scope/read capability"
+      ],
+      "preconditions": [
+        "successfully committed release",
+        "no partial package/FINAL"
+      ],
+      "authority": "Planned scoped read; distinct promoter only for product integration",
+      "state_transition": "committed release → stable read/replay; not SUBMITTED",
+      "output": [
+        "same immutable receipt and artifact identities"
+      ],
+      "evidence": [
+        "restart/replay equality",
+        "failure/rollback evidence"
+      ],
+      "negative_cases": [
+        "lost receipt",
+        "different actor replay",
+        "corrupted byte",
+        "revoked token",
+        "ambiguous commit"
+      ],
+      "current_state": "MISSING",
+      "requirements": [
+        "PB-020",
+        "PB-023"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    },
+    {
+      "id": "S14",
+      "name": "Audit and full final package",
+      "input": [
+        "release id",
+        "all canonical outputs/source/argument maps",
+        "Stage12 audit"
+      ],
+      "preconditions": [
+        "all ten members exist",
+        "hash/schema/scope valid",
+        "source export permission explicit"
+      ],
+      "authority": "AuditService.package/trace plus planned scoped final assembler/read",
+      "state_transition": "FINAL receipt → complete package; admission HG10 separately",
+      "output": [
+        "ten members",
+        "manifest",
+        "package identity/digest"
+      ],
+      "evidence": [
+        "map resolution",
+        "audit/event/command/object pins",
+        "package hashes/version/code SHA/contract digest"
+      ],
+      "negative_cases": [
+        "missing member",
+        "hash mismatch",
+        "untraceable argument",
+        "data leak",
+        "false submission/e-signature"
+      ],
+      "current_state": "AUDIT_IMPLEMENTED_FULL_PACKAGE_MISSING",
+      "requirements": [
+        "PB-021",
+        "PB-022",
+        "PB-024"
+      ],
+      "verifier": "Independent exact-SHA technical verifier; actual PostgreSQL for stateful steps; HUMAN legal/type verifier.",
+      "acceptance_test": "T01 plus affected T02–T13",
+      "definition_of_done": "All specified input/preconditions/authority/transitions/outputs/evidence observed through authorized public boundaries; applicable negatives fail closed; no synthetic terminal authority shortcut."
+    }
+  ],
+  "boundary_pb02": {
+    "included": [
+      "Trusted semantic/render boundary loading authoritative records and current Stage10 projection",
+      "Persist actual DOCX/PDF/RenderReceipt/meta and server-derived post-render evidence",
+      "Versioned explicit lifecycle/run binding compatibility",
+      "Current HUMAN DOCUMENT_APPROVAL exact artifact/draft/snapshot/validation binding",
+      "Authenticated RequestRelease with durable immutable release receipt",
+      "Scoped artifact/release reads; reuse Stage12 audit binding",
+      "Real PG rollback/replay/CAS/race/tamper/stale/restart tests"
+    ],
+    "excluded": [
+      "Full final-package assembler of all source/evidence/argument maps (later program integration)",
+      "Real PL document-type/rule/prompt catalogue (LW-PB-03)",
+      "UI/login/deployment/privacy rollout",
+      "OCR/e-filing/ROS/Stage14"
+    ]
+  }
+}
