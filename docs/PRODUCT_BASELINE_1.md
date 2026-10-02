@@ -170,6 +170,8 @@ python -B -X utf8 scripts/verify_product_baseline.py --product-e2e --output buil
 
 Portable exit 0 oznacza tylko PASS_LIMITED. Default bez PostgreSQL testów z oboma isolated DSNs zwraca BLOCKED/exit 1; SKIP nie jest PASS. Product-e2e na obecnym base zawsze zwraca BLOCKED/exit 1, ponieważ adapterów finalizacji nie implementujemy w PB01. To jawny brak implementacji pełnego test drivera, nie wykonany pełny happy path. Matrix/spec i current-denial probes są gotowe do dalszego wykonania; driver publicznego happy path powstanie dopiero wraz z brakującymi granicami w późniejszych pakietach.
 
+Exact Git blob SHA weryfikowany jest z HEAD. Treść checkoutu porównuje się według istniejącego profilu source identity CRLF→LF; canonical source/contract hashes i dodatkowe raw file hashes są zapisane oddzielnie. Normalizacja dotyczy wyłącznie tekstowych plików źródłowych kontraktu/testów, nigdy rzeczywistych bytes DOCX/PDF/source artifacts.
+
 Przy configured disposable PostgreSQL (runtime NOSUPERUSER/NOBYPASSRLS, nie właściciel tabel), uruchomić existing scripts/prepare_ci_database.py oraz testy PostgreSQLGateTests. Nigdy nie podawać realnej produkcyjnej bazy. Istniejące verify_stage13.py uruchamia także nowy moduł przez unittest discover i wymaga zero skip. CI evidence musi dotyczyć exact candidate SHA; PASS starego main nie przenosi się na nowy branch.
 
 ## 9. Dokładny handoff do przyszłego LW-PB-02

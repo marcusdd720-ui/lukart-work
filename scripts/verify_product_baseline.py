@@ -20,6 +20,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 
+def source_text_bytes(data):
+    """Repository source identity profile only; never apply to document artifact bytes."""
+    return data.replace(b'\r\n', b'\n')
+
+
 def run(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--portable', action='store_true')
@@ -27,7 +32,8 @@ def run(argv=None):
     parser.add_argument('--output', type=Path, default=ROOT / 'build/pb01')
     args = parser.parse_args(argv)
     from tests import test_product_baseline as tests
-    contract_bytes = tests.CONTRACT.read_bytes()
+    contract_raw = tests.CONTRACT.read_bytes()
+    contract_bytes = source_text_bytes(contract_raw)
     contract = json.loads(contract_bytes)
     tests.validate_contract(contract)
     head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
@@ -42,7 +48,10 @@ def run(argv=None):
         'head_sha': head, 'branch': subprocess.check_output(['git', 'branch', '--show-current'], cwd=ROOT, text=True).strip(),
         'timestamp_utc': datetime.now(timezone.utc).isoformat(), 'python': platform.python_version(),
         'contract_sha256': sha256(contract_bytes).hexdigest(),
-        'source_sha256': {name: sha256((ROOT / name).read_bytes()).hexdigest() for name in source_names},
+        'hash_profile': 'Source UTF-8 bytes, CRLF normalized to LF; Git blobs separately verified',
+        'contract_raw_sha256': sha256(contract_raw).hexdigest(),
+        'source_sha256': {name: sha256(source_text_bytes((ROOT / name).read_bytes())).hexdigest() for name in source_names},
+        'source_raw_sha256': {name: sha256((ROOT / name).read_bytes()).hexdigest() for name in source_names},
         'working_tree_dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT)),
         'independent_review': 'NOT_VERIFIED', 'certification': 'NOT_VERIFIED',
         'product_e2e': 'BLOCKED', 'blocked_requirements': ['PB-017', 'PB-018', 'PB-019', 'PB-020', 'PB-021'],

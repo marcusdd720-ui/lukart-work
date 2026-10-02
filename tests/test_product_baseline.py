@@ -131,16 +131,22 @@ class ContractTests(unittest.TestCase):
     def test_sources_are_exact_base_blobs_and_production_unchanged(self):
         base = self.contract['base_sha']
         for path, pin in self.contract['source_index'].items():
-            saved = (ROOT / path).read_bytes()
+            saved = subprocess.check_output(['git', 'show', f'HEAD:{path}'], cwd=ROOT)
             actual = sha1(b'blob ' + str(len(saved)).encode() + b'\0' + saved).hexdigest()
             self.assertEqual(actual, pin['git_blob_sha'], path)
             self.assertEqual(pin['base_sha'], base)
+            self.assertEqual((ROOT / path).read_bytes().replace(b'\r\n', b'\n'), saved, path)
         # Works in shallow exact-candidate CI: source pins came from verified base tree.
         for path, expected in self.contract['production_tree_pins'].items():
             current = subprocess.check_output(['git', 'ls-tree', 'HEAD', '--', path], cwd=ROOT, text=True)
             self.assertEqual(current.split()[2], expected, path)
         diff = subprocess.check_output(['git', 'diff', 'HEAD', '--', 'lukart_work', 'schemas', '.github', 'pyproject.toml'], cwd=ROOT)
         self.assertEqual(diff, b'')
+
+    def test_source_hash_profile_preserves_semantic_changes(self):
+        from scripts.verify_product_baseline import source_text_bytes
+        self.assertEqual(source_text_bytes(b'one\r\ntwo\r\n'), b'one\ntwo\n')
+        self.assertNotEqual(source_text_bytes(b'one\r\nchanged\r\n'), b'one\ntwo\n')
 
     def test_pure_final_evaluator_has_no_production_call_site(self):
         calls = []
