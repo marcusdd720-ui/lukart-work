@@ -140,8 +140,8 @@ def validate_contract(value: object) -> None:
         for item in gaps for key in gap_keys
     ):
         raise ValueError("GAP_VALUE")
-    if gaps[0]["severity"] != "P0" or gaps[0]["state"] != "BLOCKING":
-        raise ValueError("PB02_BLOCKER")
+    if gaps[0]["severity"] != "P0" or not gaps[0]["state"].startswith("BLOCKING_"):
+        raise ValueError("PB03_ACCEPTANCE_BLOCKER")
     for key in ("invariants", "non_goals", "acceptance"):
         items = value[key]
         if not items or len(items) != len(set(items)) or not all(
@@ -210,6 +210,7 @@ class RosWorkIntegrationContractTests(unittest.TestCase):
             lambda value: value["mapping"].update(authority=""),
             lambda value: value["operations"][1]["required_gates"].pop(),
             lambda value: value["gaps"][0].update(dependency=""),
+            lambda value: value["gaps"][0].update(state="RESOLVED"),
             lambda value: value["acceptance"].append(value["acceptance"][0]),
         )
         for mutation in mutations:

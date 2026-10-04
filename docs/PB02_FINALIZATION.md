@@ -71,11 +71,12 @@ exact-SHA review and certification are **NOT VERIFIED** in the dirty builder wor
 
 ## Explicit exclusions and next dependency
 
-PB02 does not provide the ten-member final package from PB-021, a real PL type/input/rule/prompt
-catalogue, independent legal review, UI/login, deployment, OCR, electronic filing, signature,
-delivery or publication. The next product dependency is a scoped immutable package assembler and
-read route over the PB02 release plus Stage 12 audit/provenance data. Type admission remains a
-separate HUMAN/legal boundary.
+PB02 itself does not provide the ten-member final package from PB-021, a real PL
+type/input/rule/prompt catalogue, independent legal review, UI/login, deployment, OCR, electronic
+filing, signature, delivery or publication. The later PB03 builder continuation implements the
+scoped immutable package assembler and read route over the PB02 release plus Stage 12
+audit/provenance data; see `docs/PB03_FINAL_PACKAGE.md`. Type admission remains a separate
+HUMAN/legal boundary.
 
 The ROS↔WORK Integration Contract v1 remains planning-only. WORK owns all generator state and
 HUMAN gates; ROS must not duplicate storage, rendering, release, or package authority.

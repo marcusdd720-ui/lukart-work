@@ -6,6 +6,8 @@ from uuid import UUID, uuid5
 
 from pydantic import ValidationError
 
+from lukart_work.audit.contracts import AuditPackage
+from lukart_work.audit.service import AuditService, verify_audit_package
 from lukart_work.contracts import messages as wire
 from lukart_work.core.postgres import canonical
 from lukart_work.core.service import CommandService, entity_from, safe_error
@@ -28,9 +30,22 @@ from lukart_work.validation.rules import (
     ref,
     resolve,
     strict_json,
+    walk,
 )
 
 from .contracts import (
+    FINAL_PACKAGE_MEMBER_NAMES,
+    FinalArgumentMap,
+    FinalDocumentRecord,
+    FinalEvidenceMap,
+    FinalPackageManifest,
+    FinalPackageMember,
+    FinalPackageProfile,
+    FinalPackageRecord,
+    FinalSourcesRecord,
+    FinalStatementTrace,
+    FinalTraceNode,
+    FinalValidationRecord,
     FinalizationApproval,
     FinalizationProfile,
     FinalizationProjection,
@@ -48,12 +63,26 @@ RENDER_CATEGORY = "finalization_render"
 APPROVAL_CATEGORY = "finalization_approval"
 POST_RENDER_RUN_CATEGORY = "finalization_validation_run"
 RELEASE_CATEGORY = "finalization_release"
+PACKAGE_CATEGORY = "finalization_package"
+
+PACKAGE_MEDIA_TYPES = {
+    "final.docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "final.pdf": "application/pdf",
+    "document.json": "application/json",
+    "validation.json": "application/json",
+    "sources.json": "application/json",
+    "evidence-map.json": "application/json",
+    "argument-map.json": "application/json",
+    "audit.json": "application/json",
+    "release.json": "application/json",
+    "manifest.json": "application/json",
+}
 
 
 class FinalizationService(CommandService):
     """A trusted host boundary; no caller supplies semantic text, PASS or a receipt."""
 
-    def __init__(self, repository, authority, profiles, clock=None):
+    def __init__(self, repository, authority, profiles, clock=None, package_profile=None):
         super().__init__(repository, authority, clock)
         checked = tuple(
             item if isinstance(item, FinalizationProfile) else FinalizationProfile.model_validate(item)
@@ -62,6 +91,13 @@ class FinalizationService(CommandService):
         self.profiles = {canonical(item.document_type): item for item in checked}
         if len(self.profiles) != len(checked):
             raise ValueError("DUPLICATE_PROFILE")
+        self.package_profile = (
+            None
+            if package_profile is None
+            else package_profile
+            if isinstance(package_profile, FinalPackageProfile)
+            else FinalPackageProfile.model_validate(package_profile)
+        )
         self.renderer = RenderingEngine()
 
     def _parse_request(self, raw):
@@ -456,6 +492,280 @@ class FinalizationService(CommandService):
         tx.put_object(RELEASE_CATEGORY, render.id, release)
         return (ref(draft),), "ReleaseGranted", release
 
+    @staticmethod
+    def _trace_nodes(records, roots, principal):
+        pending = list(roots)
+        visited = {}
+        while pending:
+            target = pending.pop()
+            if target in visited:
+                continue
+            entity = resolve(target, records, principal.tenant_id, principal.case_id)
+            links = tuple(sorted(set(walk(entity, m.Ref)), key=lambda item: (item.kind, str(item.id), item.revision)))
+            anchors = tuple(sorted(set(walk(entity, m.SourceAnchor)), key=lambda item: item.model_dump_json()))
+            visited[target] = FinalTraceNode(
+                ref=target,
+                content_hash=digest(entity),
+                links=links,
+                anchors=anchors,
+            )
+            pending.extend(links)
+        return tuple(
+            visited[target]
+            for target in sorted(visited, key=lambda item: (item.kind, str(item.id), item.revision))
+        )
+
+    @classmethod
+    def _package_maps(cls, records, render, principal):
+        plan = resolve(render.document.draft, records, principal.tenant_id, principal.case_id).plan
+        plan = resolve(plan, records, principal.tenant_id, principal.case_id)
+        statements = tuple(
+            FinalStatementTrace(
+                statement_id=statement.id,
+                section=section.section,
+                statement_type=statement.statement_type,
+                refs=statement.refs,
+                citations=statement.citations,
+            )
+            for section in render.document.sections
+            for statement in section.statements
+        )
+        evidence_roots = tuple(
+            sorted(
+                {
+                    *plan.evidence,
+                    *(target for statement in statements for target in statement.refs),
+                    *(target for statement in statements for target in statement.citations),
+                },
+                key=lambda item: (item.kind, str(item.id), item.revision),
+            )
+        )
+        evidence = FinalEvidenceMap(
+            contract="urn:lukart:work:FinalEvidenceMap:1.0.0",
+            statements=statements,
+            nodes=cls._trace_nodes(records, evidence_roots, principal),
+        )
+        arguments = FinalArgumentMap(
+            contract="urn:lukart:work:FinalArgumentMap:1.0.0",
+            objectives=plan.objectives,
+            arguments=plan.argument_order,
+            nodes=cls._trace_nodes(
+                records,
+                tuple(dict.fromkeys((*plan.objectives, *plan.argument_order))),
+                principal,
+            ),
+        )
+        return evidence, arguments
+
+    @staticmethod
+    def _sources(tx, records, render, evidence, arguments, principal):
+        anchors = {
+            *render.document.attachments,
+            *(anchor for node in evidence.nodes for anchor in node.anchors),
+            *(anchor for node in arguments.nodes for anchor in node.anchors),
+        }
+        checked_anchors = tuple(sorted(anchors, key=lambda item: item.model_dump_json()))
+        sources = []
+        for source_id in sorted({item.document_id for item in checked_anchors}, key=str):
+            source = tx.object("source", source_id, wire.SourceDocument)
+            if (
+                (source.tenant_id, source.case_id) != (principal.tenant_id, principal.case_id)
+                or any(
+                    anchor.document_hash != source.content_hash
+                    for anchor in checked_anchors
+                    if anchor.document_id == source_id
+                )
+            ):
+                raise Violation("INVALID_HASH")
+            tx.source_bytes(source_id)
+            sources.append(source)
+        return FinalSourcesRecord(
+            contract="urn:lukart:work:FinalSourcesRecord:1.0.0",
+            sources=tuple(sources),
+            anchors=checked_anchors,
+        )
+
+    @staticmethod
+    def _json_bytes(value):
+        return canonical(value).encode("utf-8")
+
+    @staticmethod
+    def _put_package_member(store, package_id, name, data, case, principal, now, policies):
+        target = artifact_id(store.scope, "package", f"final-package/{package_id}/{name}", "1")
+        item = store.put(
+            target,
+            "package",
+            f"final-package/{package_id}/{name}",
+            "1",
+            data,
+            case.retention_policy,
+            principal.actor.id,
+            now,
+            policies,
+        )
+        return FinalPackageMember(
+            name=name,
+            artifact_id=item.artifact_id,
+            media_type=PACKAGE_MEDIA_TYPES[name],
+            content_hash=item.content_hash,
+            byte_length=item.byte_length,
+        )
+
+    def _assemble_package(self, request, principal, tx, records, heads, now):
+        if not getattr(self.repository, "storage", False) or self.package_profile is None:
+            raise Violation("GATE_DENIED")
+        draft = self._target(request, records, heads, "Draft")
+        if (
+            draft.status != "RENDERED"
+            or digest(draft) != request.draft_hash
+            or draft.snapshot_hash != request.snapshot_hash
+        ):
+            raise Violation("INVALID_HASH")
+        render, bundle = self._load_render(tx, records, principal, request.render_id)
+        approval = tx.object(APPROVAL_CATEGORY, render.id, FinalizationApproval)
+        release = tx.object(RELEASE_CATEGORY, render.id, FinalizationRelease)
+        if (
+            release.committed_sequence != request.meta.expected_case_sequence
+            or release.render_id != render.id
+            or release.result.draft != ref(draft)
+            or release.result.snapshot_hash != draft.snapshot_hash
+            or release.approval != approval.approval
+            or release.approval_hash != approval.approval_hash
+            or release.result.receipt is None
+        ):
+            raise Violation("STALE")
+        live_approval = self._live_decision(approval.approval, records, heads, principal)
+        if digest(live_approval) != approval.approval_hash:
+            raise Violation("INVALID_HASH")
+
+        plan = resolve(draft.plan, records, principal.tenant_id, principal.case_id)
+        filing = resolve(plan.filing, records, principal.tenant_id, principal.case_id)
+        evidence, arguments = self._package_maps(records, render, principal)
+        sources = self._sources(tx, records, render, evidence, arguments, principal)
+        audit = AuditService._package(
+            tx, principal, case_sequence=request.meta.expected_case_sequence
+        )
+        audit_hash = verify_audit_package(audit, expected_implementation=audit.implementation)
+
+        document = FinalDocumentRecord(
+            contract="urn:lukart:work:FinalDocumentRecord:1.0.0",
+            profile=self.package_profile,
+            document_type=filing.document_type,
+            draft=draft,
+            render=render,
+        )
+        validation = FinalValidationRecord(
+            contract="urn:lukart:work:FinalValidationRecord:1.0.0",
+            pre_render=render.validation,
+            approval=approval,
+        )
+        payloads = (
+            ("final.docx", bundle.docx),
+            ("final.pdf", bundle.pdf),
+            ("document.json", self._json_bytes(document)),
+            ("validation.json", self._json_bytes(validation)),
+            ("sources.json", self._json_bytes(sources)),
+            ("evidence-map.json", self._json_bytes(evidence)),
+            ("argument-map.json", self._json_bytes(arguments)),
+            ("audit.json", self._json_bytes(audit)),
+            ("release.json", self._json_bytes(release)),
+        )
+        package_id = uuid5(render.id, "final-package")
+        case = heads[("Case", principal.case_id)]
+        policies = self.repository.retention_policies or RetentionPolicies()
+        store = ObjectStore(tx)
+        members = tuple(
+            self._put_package_member(
+                store, package_id, name, data, case, principal, now, policies
+            )
+            for name, data in payloads
+        )
+        manifest = FinalPackageManifest(
+            contract="urn:lukart:work:FinalPackageManifest:1.0.0",
+            package_id=package_id,
+            tenant_id=principal.tenant_id,
+            case_id=principal.case_id,
+            render_id=render.id,
+            release_id=release.id,
+            case_sequence=request.meta.expected_case_sequence,
+            profile=self.package_profile,
+            document_type=filing.document_type,
+            release_hash=digest(release),
+            audit_package_hash=audit_hash,
+            members=members,
+        )
+        manifest_member = self._put_package_member(
+            store,
+            package_id,
+            "manifest.json",
+            self._json_bytes(manifest),
+            case,
+            principal,
+            now,
+            policies,
+        )
+        package = FinalPackageRecord(
+            id=package_id,
+            tenant_id=principal.tenant_id,
+            case_id=principal.case_id,
+            render_id=render.id,
+            release_id=release.id,
+            manifest=manifest,
+            manifest_hash=digest(manifest),
+            members=members + (manifest_member,),
+            actor=principal.actor,
+            recorded_at=now,
+            committed_sequence=request.meta.expected_case_sequence + 1,
+        )
+        tx.put_object(PACKAGE_CATEGORY, render.id, package)
+        return (ref(draft),), "FinalPackageAssembled", package
+
+    @staticmethod
+    def _parse_canonical_member(data, cls):
+        value = cls.model_validate_json(data)
+        if canonical(value).encode("utf-8") != data:
+            raise Violation("INVALID_HASH")
+        return value
+
+    def _load_package(self, tx, records, principal, render_id):
+        package = tx.object(PACKAGE_CATEGORY, render_id, FinalPackageRecord)
+        if (package.tenant_id, package.case_id) != (principal.tenant_id, principal.case_id):
+            raise Violation("CROSS_CASE")
+        render, bundle = self._load_render(tx, records, principal, render_id)
+        release = tx.object(RELEASE_CATEGORY, render.id, FinalizationRelease)
+        if package.release_id != release.id or package.manifest.release_hash != digest(release):
+            raise Violation("INVALID_HASH")
+        data = {item.name: ObjectStore(tx).read(item.artifact_id) for item in package.members}
+        for item in package.members:
+            if len(data[item.name]) != item.byte_length:
+                raise Violation("INVALID_HASH")
+        if data["final.docx"] != bundle.docx or data["final.pdf"] != bundle.pdf:
+            raise Violation("INVALID_HASH")
+        parsers = {
+            "document.json": FinalDocumentRecord,
+            "validation.json": FinalValidationRecord,
+            "sources.json": FinalSourcesRecord,
+            "evidence-map.json": FinalEvidenceMap,
+            "argument-map.json": FinalArgumentMap,
+            "audit.json": AuditPackage,
+            "release.json": FinalizationRelease,
+            "manifest.json": FinalPackageManifest,
+        }
+        parsed = {
+            name: self._parse_canonical_member(data[name], cls)
+            for name, cls in parsers.items()
+        }
+        if (
+            parsed["manifest.json"] != package.manifest
+            or parsed["release.json"] != release
+            or digest(parsed["audit.json"]) != package.manifest.audit_package_hash
+        ):
+            raise Violation("INVALID_HASH")
+        verify_audit_package(
+            parsed["audit.json"], expected_implementation=parsed["audit.json"].implementation
+        )
+        return package, data
+
     def _apply(self, request, principal, tx, records, heads, now):
         if request.operation == "RenderDraft":
             return self._render(request, principal, tx, records, heads, now)
@@ -463,6 +773,8 @@ class FinalizationService(CommandService):
             return self._approve(request, principal, tx, records, heads, now)
         if request.operation == "RequestFinalRelease":
             return self._release(request, principal, tx, records, heads, now)
+        if request.operation == "AssembleFinalPackage":
+            return self._assemble_package(request, principal, tx, records, heads, now)
         raise Violation("FORBIDDEN")
 
     @staticmethod
@@ -483,6 +795,8 @@ class FinalizationService(CommandService):
                 "GetFinalization": "GetFinalization",
                 "GetFinalRelease": "GetFinalRelease",
                 "ReadFinalArtifact": "ReadFinalArtifact",
+                "GetFinalPackage": "GetFinalPackage",
+                "ReadFinalPackageMember": "ReadFinalPackageMember",
             }[query.operation]
             with self.authority.session(token) as principal:
                 principal.require(query.tenant_id, query.case_id, action)
@@ -490,6 +804,17 @@ class FinalizationService(CommandService):
                     raise Violation("FORBIDDEN")
                 with self.repository.transaction(query.tenant_id, query.case_id) as tx:
                     records = tx.records()
+                    if query.operation in ("GetFinalPackage", "ReadFinalPackageMember"):
+                        package, package_data = self._load_package(
+                            tx, records, principal, query.render_id
+                        )
+                        result = (
+                            package_data[query.member]
+                            if query.operation == "ReadFinalPackageMember"
+                            else package
+                        )
+                        principal.require(query.tenant_id, query.case_id, action)
+                        return result
                     render, _bundle = self._load_render(tx, records, principal, query.render_id)
                     approval = self._optional(
                         tx, APPROVAL_CATEGORY, render.id, FinalizationApproval

@@ -10,7 +10,9 @@
       "enum": [
         "GetFinalization",
         "GetFinalRelease",
-        "ReadFinalArtifact"
+        "ReadFinalArtifact",
+        "GetFinalPackage",
+        "ReadFinalPackageMember"
       ],
       "title": "Operation",
       "type": "string"
@@ -45,6 +47,30 @@
       ],
       "default": null,
       "title": "Format"
+    },
+    "member": {
+      "anyOf": [
+        {
+          "enum": [
+            "final.docx",
+            "final.pdf",
+            "document.json",
+            "validation.json",
+            "sources.json",
+            "evidence-map.json",
+            "argument-map.json",
+            "audit.json",
+            "release.json",
+            "manifest.json"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Member"
     }
   },
   "required": [

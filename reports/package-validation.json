@@ -400,6 +400,50 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:FinalPackageProfile",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalDocumentRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalValidationRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalSourcesRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalTraceNode",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalStatementTrace",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalEvidenceMap",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalArgumentMap",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageMember",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageManifest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageRecord",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -420,6 +464,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 103,
+  "json_files_parsed": 114,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }

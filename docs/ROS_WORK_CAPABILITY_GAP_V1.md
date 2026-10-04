@@ -7,9 +7,10 @@ The machine-readable contract is
 
 ## Evidence boundary
 
-- WORK was inspected at checked-out HEAD
-  `07ccc0a51e6297e9ab1ca9f287b4edea5d0df3da` on
-  `uaos/generator-pism-p0`.
+- WORK PB03 execution began from checked-out HEAD
+  `7b8f0352da4840ce57abddbee19ac6c7774fd965` on
+  `uaos/generator-pism-p0`. The PB03 candidate SHA remains **NOT VERIFIED** until the external
+  supervisor checkpoints the dirty worktree.
 - ROS was inspected read-only at the locally observed `refs/remotes/origin/main`
   `75ab7ebc45421cb49374ebb169449f3367b8be73`.
 - The supervisor owns fetch/checkout, so ROS remote freshness is **NOT VERIFIED** in this run.
@@ -39,12 +40,14 @@ capability or cross a trust boundary.
 | CIRP strategy/filing contracts | ROS | Implemented contracts | Optional future input artifacts only after explicit Ref/revision/legal/HUMAN mapping. |
 | Reasoning presentation renderer | ROS | JSON/Markdown/evidence-list presentation | Do not use for WORK final DOCX/PDF. |
 | Stages 03-13 generator components | WORK | Components implemented | WORK remains the Generator Pism authority. |
-| Trusted render -> persist -> approval -> release -> package | WORK | Missing | Close PB-017 through PB-021 in WORK; ROS cannot supply this authority. |
+| Trusted render -> persist -> approval -> release -> package | WORK | PB02/PB03 builder candidate implemented; independent exact-SHA review and CI pending | WORK remains authoritative; ROS cannot supply this authority. |
 | Neutral result/evidence/provenance | Existing convergence v1 | Implemented | Reuse without a second cross-repo vocabulary. |
 
 ## Blocking gaps and order
 
-1. `RW-GAP-01` / P0: implement the trusted persisted finalization route in WORK (LW-PB-02).
+1. `RW-GAP-01` / P0: PB02/PB03 builder code now covers the trusted persisted finalization and
+   package route. Checkpoint, full regression, CI and independent exact-SHA review remain open;
+   this is not product certification.
 2. `RW-GAP-02` / P1: implement the ROS-operation-to-WORK adapter only after the WORK public
    boundary exists. It must bind exact scope, native capability, ROS request digest,
    idempotency, and WORK case sequence/CAS.
@@ -59,11 +62,13 @@ capability or cross a trust boundary.
 
 - `ros.work.generator.assess.v1` is a planned read-only readiness projection. It may report
   blockers; it may not mutate case state.
-- `ros.work.generator.execute.v1` is blocked until PB02 and a supported type are admitted. ROS
+- `ros.work.generator.execute.v1` is blocked until PB02/PB03 are independently accepted and a
+  supported type is admitted. ROS
   authority is never sufficient by itself; the trusted host must resolve it to a native scoped
   WORK HUMAN capability.
-- `ros.work.generator.read-package.v1` is blocked until an immutable scoped package route exists.
-  Package read and source-byte export remain different capabilities.
+- `ros.work.generator.read-package.v1` now has a WORK-side PB03 builder route, but remains blocked
+  on checkpoint/review and the unimplemented ROS adapter. Package read and source-byte export
+  remain different capabilities.
 
 No positive execute/package conformance fixture is permitted while the corresponding gap is
 open. Negative contract tests are evidence of fail-closed planning only, not evidence that the

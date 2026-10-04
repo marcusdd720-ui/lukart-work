@@ -8,7 +8,7 @@
     {
       "repository": "marcusdd720-ui/lukart-work",
       "ref": "uaos/generator-pism-p0",
-      "commit": "07ccc0a51e6297e9ab1ca9f287b4edea5d0df3da",
+      "commit": "7b8f0352da4840ce57abddbee19ac6c7774fd965",
       "freshness": "OBSERVED_CHECKED_OUT_HEAD"
     },
     {
@@ -74,10 +74,10 @@
     {
       "id": "CAP-WORK-DOCX-PDF",
       "owner": "lukart-work",
-      "state": "PURE_RENDERER_IMPLEMENTED_TRUSTED_PERSISTED_ROUTE_MISSING",
-      "decision": "EXTEND_IN_WORK_PB02",
-      "source": "lukart_work/rendering/service.py",
-      "source_blob": "5015827bb6764c7db57c56df3a172a94e83f5aaa"
+      "state": "PB02_TRUSTED_PERSISTED_ROUTE_BUILDER_CANDIDATE_AT_OBSERVED_BASELINE",
+      "decision": "KEEP_FINALIZATION_AUTHORITY_IN_WORK_AND_REQUIRE_INDEPENDENT_EXACT_SHA_ACCEPTANCE",
+      "source": "lukart_work/finalization/service.py",
+      "source_blob": "f53f033d5cc9cba8ae69a8d7e87d38af0fae46ed"
     },
     {
       "id": "CAP-CROSS-REPO-EVIDENCE",
@@ -100,7 +100,7 @@
     {
       "id": "ros.work.generator.execute.v1",
       "effect": "CASE_STATE_AND_ARTIFACT_WRITE",
-      "state": "BLOCKED_BY_PB02_AND_SUPPORTED_TYPE_ADMISSION",
+      "state": "BLOCKED_BY_INDEPENDENT_ACCEPTANCE_AND_SUPPORTED_TYPE_ADMISSION",
       "required_authority": "scoped HUMAN WORK command capability; ROS authority_ref is never sufficient alone",
       "required_gates": ["HG-01", "HG-02", "HG-03", "HG-04", "HG-05", "HG-06", "HG-07", "HG-08", "HG-09"],
       "output": "WORK repository-issued result, evidence refs and release/package refs"
@@ -108,7 +108,7 @@
     {
       "id": "ros.work.generator.read-package.v1",
       "effect": "SCOPED_ARTIFACT_READ",
-      "state": "BLOCKED_BY_PB02_PACKAGE_ROUTE",
+      "state": "BLOCKED_BY_PB03_CHECKPOINT_REVIEW_AND_ADAPTER",
       "required_authority": "separate scoped WORK package-read capability",
       "required_gates": ["HG-09"],
       "output": "immutable package identity and authorized bytes; never an implicit source export"
@@ -127,10 +127,10 @@
     {
       "id": "RW-GAP-01",
       "severity": "P0",
-      "state": "BLOCKING",
-      "description": "WORK has no trusted public persisted render to final approval, release and package route.",
+      "state": "BLOCKING_INDEPENDENT_ACCEPTANCE",
+      "description": "PB02 is a builder candidate at the pinned WORK baseline and PB03 is the current builder candidate; candidate-SHA binding, CI and independent exact-SHA review remain required.",
       "owner": "lukart-work",
-      "dependency": "LW-PB-02 / PB-017 through PB-021"
+      "dependency": "PB03 candidate-SHA binding, CI and independent exact-SHA review"
     },
     {
       "id": "RW-GAP-02",

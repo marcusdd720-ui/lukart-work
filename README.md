@@ -1,5 +1,11 @@
 # LUKART WORK — controlled drafting and validation
 
+PB03 builder candidate adds an authenticated, immutable ten-member final-package assembler and
+scoped read route after the PB02 repository-issued FINAL release. Package creation revalidates
+render bytes, typed JSON, source provenance, trace maps and the Stage 12 audit chain in one atomic
+transaction. It does not admit a real letter type or implement ROS integration. See
+[the PB03 package boundary](docs/PB03_FINAL_PACKAGE.md).
+
 PB02 builder candidate adds an authenticated, PostgreSQL-backed finalization boundary for
 synthetic or separately admitted document types. It derives the semantic document from trusted
 records, persists exact DOCX/PDF bytes, records the HUMAN document approval and post-render

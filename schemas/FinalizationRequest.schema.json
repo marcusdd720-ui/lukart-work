@@ -197,7 +197,8 @@
       "enum": [
         "RenderDraft",
         "ApproveFinalDocument",
-        "RequestFinalRelease"
+        "RequestFinalRelease",
+        "AssembleFinalPackage"
       ],
       "title": "Operation",
       "type": "string"
