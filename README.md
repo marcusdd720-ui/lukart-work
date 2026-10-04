@@ -1,5 +1,15 @@
 # LUKART WORK — controlled drafting and validation
 
+PB02 builder candidate adds an authenticated, PostgreSQL-backed finalization boundary for
+synthetic or separately admitted document types. It derives the semantic document from trusted
+records, persists exact DOCX/PDF bytes, records the HUMAN document approval and post-render
+validation evidence, and issues a durable FINAL eligibility receipt. It does not admit any real
+PL letter type, assemble the later ten-member final package, submit a filing, or certify the
+product. See [the PB02 boundary and verification contract](docs/PB02_FINALIZATION.md).
+Focused verification: `python -B -X utf8 -m unittest -v tests.test_finalization`; schema/package
+verification: `python -B -X utf8 verify_package.py`. PostgreSQL tests must execute with zero
+skips against the isolated runtime/admin DSNs.
+
 Stage 10 (pakiet 0.10.0): walidacja pomiędzy GENERATED a późniejszym renderingiem.
 `lukart_work.validation.service.ValidationEngineService` udostępnia `execute` dla jawnych
 poleceń walidacji, oceny człowieka i rozstrzygnięcia findings oraz `query` dla bieżącej kwalifikacji.

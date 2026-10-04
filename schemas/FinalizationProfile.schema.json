@@ -1,0 +1,71 @@
+{
+  "$defs": {
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "profile_id": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "document_type": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "header": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Header",
+      "type": "string"
+    },
+    "render_profile": {
+      "$ref": "#/$defs/VersionPin"
+    }
+  },
+  "required": [
+    "profile_id",
+    "version",
+    "document_type",
+    "header",
+    "render_profile"
+  ],
+  "title": "FinalizationProfile",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:FinalizationProfile:1.0.0"
+}

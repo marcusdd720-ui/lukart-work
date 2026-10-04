@@ -484,7 +484,7 @@ class ProceduralEngineTests(unittest.TestCase):
             hidden = connection.execute("SELECT count(*) FROM lw_core.objects WHERE category='procedural_rule_binding'").fetchone()[0]
         self.assertGreater(own, 0)
         self.assertEqual(hidden, 0)
-        with psycopg.connect(core.ADMIN, autocommit=True) as connection:
+        with psycopg.connect(core.ADMIN_RUNTIME, autocommit=True) as connection:
             with self.assertRaises(psycopg.errors.IntegrityConstraintViolation):
                 connection.execute(
                     "UPDATE lw_core.objects SET payload=payload WHERE tenant_id=%s AND case_id=%s AND category='procedural_rule_binding'",
@@ -506,7 +506,7 @@ class ProceduralEngineTests(unittest.TestCase):
             recorded_at=last.recorded_at,
             implementation=last.implementation,
         )
-        with psycopg.connect(core.ADMIN, autocommit=True) as connection:
+        with psycopg.connect(core.ADMIN_RUNTIME, autocommit=True) as connection:
             connection.execute(
                 "INSERT INTO lw_core.objects VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
                 (self.tenant, self.case_id, CATEGORY, forged.id,

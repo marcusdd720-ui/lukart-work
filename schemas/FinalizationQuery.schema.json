@@ -1,0 +1,61 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:FinalizationQuery:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "GetFinalization",
+        "GetFinalRelease",
+        "ReadFinalArtifact"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "render_id": {
+      "format": "uuid",
+      "title": "Render Id",
+      "type": "string"
+    },
+    "format": {
+      "anyOf": [
+        {
+          "enum": [
+            "DOCX",
+            "PDF"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Format"
+    }
+  },
+  "required": [
+    "contract",
+    "operation",
+    "tenant_id",
+    "case_id",
+    "render_id"
+  ],
+  "title": "FinalizationQuery",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:FinalizationQuery:1.0.0"
+}

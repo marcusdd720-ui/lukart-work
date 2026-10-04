@@ -114,7 +114,7 @@ class DocumentRegistryTests(unittest.TestCase):
 
     def test_illegal_transition_and_artifact_rows_are_database_immutable(self):
         filing,artifact,_,_=self.register(); self.assertEqual(self.rexecute(self.rrequest('MarkFilingReady',target=filing)).code,'INVALID_TRANSITION')
-        with psycopg.connect(core.ADMIN,autocommit=True) as c:
+        with psycopg.connect(core.ADMIN_RUNTIME,autocommit=True) as c:
             with self.assertRaises(psycopg.errors.IntegrityConstraintViolation): c.execute("UPDATE lw_core.objects SET original_bytes=%s WHERE tenant_id=%s AND case_id=%s AND category='source' AND object_id=%s",(b'TAMPERED',self.tenant,self.case_id,artifact))
         prepared=self.rapply('PrepareFiling',target=filing).refs[0]; self.assertEqual(self.projection(filing_id=filing.id).filings[0].filing,prepared)
 
@@ -148,7 +148,7 @@ class DocumentRegistryTests(unittest.TestCase):
 
     def test_receipt_rows_are_immutable_and_forged_chain_is_detected(self):
         filing,_,_,_=self.register(); original=self.projection(filing_id=filing.id).history[0]
-        with psycopg.connect(core.ADMIN,autocommit=True) as c:
+        with psycopg.connect(core.ADMIN_RUNTIME,autocommit=True) as c:
             row=c.execute("SELECT object_id,payload FROM lw_core.objects WHERE tenant_id=%s AND case_id=%s AND category='filing_registry_receipt'",(self.tenant,self.case_id)).fetchone()
             with self.assertRaises(psycopg.errors.IntegrityConstraintViolation): c.execute("UPDATE lw_core.objects SET payload=%s WHERE tenant_id=%s AND case_id=%s AND category='filing_registry_receipt' AND object_id=%s",(row[1],self.tenant,self.case_id,row[0]))
             forged_id=uuid4(); d=original.model_dump(mode='json'); d.update(id=str(forged_id),sequence=2,previous_hash='0'*64,event='PREPARED',operation='PrepareFiling'); raw=json.dumps(d,sort_keys=True,separators=(',',':'),ensure_ascii=False)

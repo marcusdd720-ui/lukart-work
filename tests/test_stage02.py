@@ -11,6 +11,8 @@ import unittest
 from typing import get_args
 from uuid import uuid4, uuid5
 
+from psycopg.conninfo import conninfo_to_dict, make_conninfo
+
 from lukart_work.core.postgres import PostgresRepository
 from lukart_work.core.requests import Operation
 from lukart_work.core.security import Principal, TokenAuthority
@@ -24,6 +26,10 @@ LOCAL = ROOT / '.local-stage02/connection.json'
 CONFIG = json.loads(LOCAL.read_text(encoding='utf-8-sig')) if LOCAL.exists() else {}
 DSN = os.environ.get('LUKART_TEST_DSN') or CONFIG.get('runtime_dsn')
 ADMIN = os.environ.get('LUKART_TEST_ADMIN_DSN') or CONFIG.get('admin_dsn')
+ADMIN_RUNTIME = (
+    make_conninfo(ADMIN, dbname=conninfo_to_dict(DSN)['dbname'])
+    if ADMIN and DSN else None
+)
 PIN = {'id': 'synthetic', 'version': '1.0.0', 'content_hash': 'a' * 64}
 READS = {'GetRevision', 'GetCaseHead', 'GetSnapshot', 'GetProvenance', 'GetAffectedDrafts', 'GetSource'}
 ACTIONS = frozenset(get_args(Operation)) | READS
@@ -157,9 +163,10 @@ class Stage02Tests(unittest.TestCase):
         create_command, dispute_command = uuid4(), uuid4()
         tenant = uuid4()
         seen = set()
+        actions = self.principal.actions
         for scope_tenant in (tenant, tenant, uuid4()):
             self.tenant, self.case_id = scope_tenant, uuid4()
-            self.principal = Principal(self.actor, self.tenant, self.case_id, ACTIONS)
+            self.principal = Principal(self.actor, self.tenant, self.case_id, actions)
             self.token = self.authority.provision(self.principal)
             self.sequence = 0
             request = self.request('CreateCase', {'title': 'Scoped events', 'jurisdiction': 'PL', 'retention_policy': PIN})

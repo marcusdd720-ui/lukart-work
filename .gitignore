@@ -6,3 +6,4 @@ venv/
 .local-stage02/
 build/
 dist/
+*.egg-info/
