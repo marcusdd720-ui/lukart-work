@@ -162,17 +162,37 @@ class RosWorkIntegrationContractTests(unittest.TestCase):
             item for item in self.contract["baselines"]
             if item["repository"] == "marcusdd720-ui/lukart-work"
         )
-        baseline_is_ancestor = subprocess.run(
-            ["git", "merge-base", "--is-ancestor", work["commit"], "HEAD"],
+        baseline_object = subprocess.run(
+            ["git", "cat-file", "-e", f"{work['commit']}^{{commit}}"],
             cwd=ROOT,
             check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
-        self.assertEqual(baseline_is_ancestor.returncode, 0)
+        shallow = subprocess.check_output(
+            ["git", "rev-parse", "--is-shallow-repository"],
+            cwd=ROOT,
+            text=True,
+        ).strip() == "true"
+        if baseline_object.returncode == 0:
+            baseline_is_ancestor = subprocess.run(
+                ["git", "merge-base", "--is-ancestor", work["commit"], "HEAD"],
+                cwd=ROOT,
+                check=False,
+            )
+            self.assertEqual(baseline_is_ancestor.returncode, 0)
+            source_ref = work["commit"]
+        else:
+            # GitHub Actions may intentionally check out only the exact candidate
+            # commit.  Missing history is acceptable only in a shallow repository;
+            # the pinned capability blob identities must still match HEAD exactly.
+            self.assertTrue(shallow, "BASELINE_COMMIT_MISSING_IN_FULL_REPOSITORY")
+            source_ref = "HEAD"
         for item in self.contract["capabilities"]:
             if item["owner"] == "lukart-ros":
                 continue
             actual = subprocess.check_output(
-                ["git", "rev-parse", f"{work['commit']}:{item['source']}"],
+                ["git", "rev-parse", f"{source_ref}:{item['source']}"],
                 cwd=ROOT,
                 text=True,
             ).strip()
