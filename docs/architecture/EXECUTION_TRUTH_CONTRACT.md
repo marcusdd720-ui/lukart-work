@@ -410,3 +410,67 @@ Required:
 This contract is the P0 prerequisite for LSAF provider routing and higher-order autonomy.
 
 Control-plane status must never become authority without matching execution evidence.
+
+
+## 22. Immutable Candidate Identity and Promotion Truth
+
+A branch name, pull-request number, tag label, dashboard status or human phrase such as "frozen candidate" is not a promotion identity.
+
+Every promotion candidate MUST have an immutable CandidateIdentity bound to exact inputs.
+
+Recommended fields:
+
+- repository stable identity;
+- base commit SHA;
+- candidate commit SHA;
+- candidate tree SHA;
+- TaskSpec / acceptance-contract digest;
+- product/domain contract digest set;
+- policy/gate version digest;
+- workflow-definition digest set;
+- dependency/lockfile digest where relevant;
+- toolchain/runtime image digest where relevant;
+- generated-schema/evidence manifest digest;
+- build/provenance metadata.
+
+`candidate_id = H(canonical(CandidateIdentity))`
+
+Rules:
+
+- every commit after a freeze creates a new `candidate_id`;
+- evidence from candidate A MUST NOT certify candidate B;
+- a PR may contain many candidates over time, but only one exact candidate may be under promotion review;
+- branch refs and PR heads are discovery pointers only, never assurance authority;
+- CI/review/validation receipts MUST bind the exact `candidate_id` and exact candidate SHA/tree;
+- a clean generated-evidence reproduction check is mandatory before promotion;
+- if a required generated artifact changes during CI, promotion fails until that deterministic change is committed into a new candidate;
+- rebases, dependency changes, workflow changes, policy changes and generated-schema changes invalidate the previous promotion evidence unless an explicit equivalence rule is proven by contract.
+
+A UI may show "current candidate", but it MUST also show the exact immutable identity.
+
+## 23. Evidence Quorum / Truth Mesh for P0 Transitions
+
+For high-risk transitions, one subsystem must not be able to create truth by itself.
+
+LUKART SHOULD support a policy-defined evidence quorum assembled from independent observer classes, for example:
+
+- durable-execution observer;
+- host/process observer;
+- repository observer;
+- deterministic validator;
+- CI system;
+- security/policy engine;
+- independent reviewer.
+
+A transition such as `WORKING`, `VALIDATED` or `DONE` is derived only when the required observer classes have produced compatible receipts for the same task/run/attempt/candidate identity.
+
+This is not majority voting between language models. It is cross-plane corroboration between different sources of operational truth.
+
+Risk tiers may require different quorums:
+
+- low-risk synthetic research: durable runtime + progress observer;
+- code mutation: runtime + repository + tests;
+- P0 promotion: repository + deterministic validation + CI + independent review + policy gate;
+- legal/client release: product-specific HUMAN/legal authority remains mandatory and cannot be replaced by machine quorum.
+
+The quorum policy itself is versioned and evidence-bound.
