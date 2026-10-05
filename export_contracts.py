@@ -33,7 +33,11 @@ EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEviden
                  DraftingRejectionTrace,DraftingTerminalResult,ModelExecutionReceipt)
 
 def write(path,obj):
-    (ROOT/path).write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n')
+    (ROOT/path).write_text(
+        json.dumps(obj,ensure_ascii=False,indent=2)+'\n',
+        encoding='utf-8',
+        newline='\n',
+    )
 for cls in ENTITIES+CONTRACTS+EXTRA_CONTRACTS+STAGE10_CONTRACTS+FINALIZATION_CONTRACTS:
     schema=cls.model_json_schema();schema['$schema']='https://json-schema.org/draft/2020-12/schema';schema['$id']='urn:lukart:work:'+cls.__name__+':'+contract_version(cls.__name__)
     write('schemas/'+cls.__name__+'.schema.json',schema)
@@ -53,4 +57,8 @@ for cls in ENTITIES:
         clean={k:v for k,v in prop.items() if k not in ('title','default')}
         lines.append('| '+name+' | `'+json.dumps(clean,ensure_ascii=False).replace('|','\\|')+'` | '+('tak' if name in schema.get('required',[]) else 'nie')+' |')
     lines += ['', 'Stan początkowy: `'+INITIAL[cls.__name__]+'`. Dozwolone przejścia:', '', '; '.join('`'+a+' → '+b+'`' for a,b in TRANSITIONS[cls.__name__])+'.', '', 'Inne przejścia są zabronione. Same-state revision wymaga zachowania ograniczeń immutable content i pełnej walidacji.']
-(ROOT/'docs/02-entity-catalog.md').write_text('\n'.join(lines)+'\n')
+(ROOT/'docs/02-entity-catalog.md').write_text(
+    '\n'.join(lines)+'\n',
+    encoding='utf-8',
+    newline='\n',
+)

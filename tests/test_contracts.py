@@ -1,5 +1,6 @@
 import json
 import unittest
+from pathlib import Path
 from pydantic import ValidationError
 from tests.fixtures import *
 from lukart_work.validation.rules import *
@@ -14,6 +15,20 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(set(TRANSITIONS),{e.__name__ for e in ENTITIES})
         for e in ENTITIES:
             self.assertEqual(set(e.model_fields['status'].annotation.__args__),{s for pair in TRANSITIONS[e.__name__] for s in pair})
+    def test_generated_artifacts_use_canonical_lf(self):
+        root=Path(__file__).resolve().parents[1]
+        paths=(
+            list((root/'schemas').glob('*.json'))
+            +list((root/'examples').glob('*.json'))
+            +[
+                root/'docs/02-entity-catalog.md',
+                root/'reports/package-validation.json',
+                root/'tests/golden_cases/source_to_fact.json',
+            ]
+        )
+        for path in paths:
+            with self.subTest(path=path.relative_to(root)):
+                self.assertNotIn(b'\r\n',path.read_bytes())
     def test_roundtrip(self):self.assertEqual(parse_entity(case().model_dump_json()),case())
     def test_extra_field_rejected(self):
         d=json.loads(case().model_dump_json());d['ui_state']='FINAL'
