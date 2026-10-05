@@ -174,42 +174,37 @@ class RosWorkIntegrationContractTests(unittest.TestCase):
             cwd=ROOT,
             text=True,
         ).strip() == "true"
-        if shallow:
-            # A shallow checkout may contain the baseline commit object while
-            # intentionally omitting intermediate ancestry. Never infer a
-            # negative ancestry result from an incomplete graph. Instead bind
-            # both the available baseline (when present) and the exact tested
-            # HEAD to the pinned capability blobs.
-            source_refs = ["HEAD"]
-            if baseline_object.returncode == 0:
-                source_refs.insert(0, work["commit"])
-        else:
-            self.assertEqual(
-                baseline_object.returncode,
-                0,
-                "BASELINE_COMMIT_MISSING_IN_FULL_REPOSITORY",
-            )
+        # The contract pins source blobs at work["commit"], not at HEAD.
+        # In a shallow checkout the baseline commit object may be present while
+        # intermediate ancestry is intentionally omitted, so ancestry cannot be
+        # proven from that incomplete graph. Fail closed unless the baseline
+        # commit object itself is available, then verify its exact pinned blobs.
+        self.assertEqual(
+            baseline_object.returncode,
+            0,
+            "BASELINE_COMMIT_OBJECT_REQUIRED_FOR_EXACT_BLOB_VERIFICATION",
+        )
+        if not shallow:
             baseline_is_ancestor = subprocess.run(
                 ["git", "merge-base", "--is-ancestor", work["commit"], "HEAD"],
                 cwd=ROOT,
                 check=False,
             )
             self.assertEqual(baseline_is_ancestor.returncode, 0)
-            source_refs = [work["commit"]]
+        source_ref = work["commit"]
         for item in self.contract["capabilities"]:
             if item["owner"] == "lukart-ros":
                 continue
-            for source_ref in source_refs:
-                actual = subprocess.check_output(
-                    ["git", "rev-parse", f"{source_ref}:{item['source']}"],
-                    cwd=ROOT,
-                    text=True,
-                ).strip()
-                self.assertEqual(
-                    actual,
-                    item["source_blob"],
-                    f"{item['id']}@{source_ref}",
-                )
+            actual = subprocess.check_output(
+                ["git", "rev-parse", f"{source_ref}:{item['source']}"],
+                cwd=ROOT,
+                text=True,
+            ).strip()
+            self.assertEqual(
+                actual,
+                item["source_blob"],
+                f"{item['id']}@{source_ref}",
+            )
 
     def test_existing_convergence_contract_is_composed_not_duplicated(self):
         self.assertIn("urn:lukart:cross-repo:convergence:1.0.0", self.contract["composes"])
