@@ -265,3 +265,33 @@ The active closeout objective is not "zero observed failures"; it is:
 - Status: **OPEN**
 - Required resolution: prove each type through the authoritative public E2E path and independent legal/type review, then change admission state only from evidence; if a missing adapter/dispatch/profile is discovered, build only that verified delta.
 - Elimination DoD: T01-style E2E PASS independently for each of PL-PRE-PAYMENT-1, PL-PRE-COMPLAINT-1 and PL-PRE-REPLY-1; admission pins/status and acceptance contract updated from exact evidence; no HUMAN/legal gate bypass.
+
+
+### GP-F018 — Acceptance contract drifted behind implemented finalization/audit transaction capabilities
+- Severity: P0 closure-truth integrity
+- First observed: 2026-10-06 read-only closure-gap audit of candidate `ce1096d6232cc89f6f3457f334da62f5f4e9948b`.
+- Symptom: `acceptance/product-baseline-v1.json` still marks PB-017..PB-023 as planned/partial/component-only, while the candidate contains substantial authoritative implementations and tests for trusted render, persistent exact bytes, HUMAN final approval, release, ten-member final package, audit/provenance, replay/CAS/race/rollback/restart/tamper handling.
+- Evidence examples:
+  - `FinalizationService` owns RenderDraft → ApproveFinalDocument → RequestFinalRelease → AssembleFinalPackage with HUMAN-only guard and repository-derived authority;
+  - `tests/test_finalization.py` covers caller injection rejection, exact bytes, rollback, race/CAS, revocation, restart, ten-member package, tamper and capability separation;
+  - `tests/test_stage12.py` covers deterministic audit chain, trace-to-source, tamper, scope and privacy;
+  - Stage09/10 tests cover actor-bound replay, CAS, provider/receipt mismatch, stale/revoked authority and transaction rollback.
+- Root cause: acceptance SSOT was frozen before successor PB02/PB03 implementation and has not yet been reconciled through independent review.
+- Status: **OPEN / EVIDENCE RECONCILIATION REQUIRED**
+- Important: do not mark PB-017..PB-023 PASS solely from builder tests; independently map each Definition of Done to exact code/test evidence first.
+- Permanent fix: machine-readable acceptance status must be regenerated/reconciled from exact candidate evidence and independent verification, not manually lag implementation.
+- Elimination DoD: PB-017..PB-023 each have exact evidence mapping and independent verdict; contract status is updated accordingly on the final candidate without inheriting stale evidence.
+
+### GP-F019 — Type-pack-to-public-pipeline adapter/admission delta is the remaining product path
+- Severity: P0 product-completion
+- First observed: 2026-10-06 closure-gap audit.
+- Symptom: three real type packs define bounded validated inputs and fixtures but are not wired as admitted profiles through the full public CreateCase → ... → FinalizationService → FinalPackage path.
+- Evidence:
+  - all type packs remain `NOT_ADMITTED`;
+  - `FinalizationProfile` explicitly says it does not admit a legal document type; trusted host must supply an independently admitted profile;
+  - current type-pack tests validate schema/negative cases but not authoritative public E2E;
+  - existing PB02/PB03 finalization path is generic and already implemented.
+- Root cause: missing narrow product integration/admission layer, not missing generic finalization infrastructure.
+- Status: **OPEN**
+- Build policy: implement only the missing adapter/profile/fixture/evidence delta; do not rebuild planner, drafting, validation, rendering, storage, release or package engines.
+- Elimination DoD: each of PL-PRE-PAYMENT-1, PL-PRE-COMPLAINT-1 and PL-PRE-REPLY-1 executes through authoritative public E2E to the ten-member final package with exact evidence and independent legal/type admission.
