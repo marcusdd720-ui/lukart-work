@@ -3,121 +3,466 @@
   "pydantic": "2.13.5",
   "baseline_sha256": "3c980207dd77cb2b0139a710d4446c76408c90ceff0f1d124eba853afdaebe83",
   "checks": [
-    {"check":"schema-export:Case","result":"PASS"},
-    {"check":"schema-export:Party","result":"PASS"},
-    {"check":"schema-export:Institution","result":"PASS"},
-    {"check":"schema-export:Proceeding","result":"PASS"},
-    {"check":"schema-export:Filing","result":"PASS"},
-    {"check":"schema-export:Fact","result":"PASS"},
-    {"check":"schema-export:Evidence","result":"PASS"},
-    {"check":"schema-export:Issue","result":"PASS"},
-    {"check":"schema-export:LegalSource","result":"PASS"},
-    {"check":"schema-export:LegalRule","result":"PASS"},
-    {"check":"schema-export:Claim","result":"PASS"},
-    {"check":"schema-export:Defence","result":"PASS"},
-    {"check":"schema-export:Argument","result":"PASS"},
-    {"check":"schema-export:CounterArgument","result":"PASS"},
-    {"check":"schema-export:Request","result":"PASS"},
-    {"check":"schema-export:Deadline","result":"PASS"},
-    {"check":"schema-export:Risk","result":"PASS"},
-    {"check":"schema-export:Citation","result":"PASS"},
-    {"check":"schema-export:DocumentPlan","result":"PASS"},
-    {"check":"schema-export:Section","result":"PASS"},
-    {"check":"schema-export:Draft","result":"PASS"},
-    {"check":"schema-export:ValidationFinding","result":"PASS"},
-    {"check":"schema-export:Decision","result":"PASS"},
-    {"check":"schema-export:SourceDocument","result":"PASS"},
-    {"check":"schema-export:Snapshot","result":"PASS"},
-    {"check":"schema-export:KnowledgeEdge","result":"PASS"},
-    {"check":"schema-export:DependencyEdge","result":"PASS"},
-    {"check":"schema-export:FreshnessAssessment","result":"PASS"},
-    {"check":"schema-export:CreateCase","result":"PASS"},
-    {"check":"schema-export:AppendRevision","result":"PASS"},
-    {"check":"schema-export:AcceptSnapshot","result":"PASS"},
-    {"check":"schema-export:GenerateDocument","result":"PASS"},
-    {"check":"schema-export:ValidateDraft","result":"PASS"},
-    {"check":"schema-export:RequestRelease","result":"PASS"},
-    {"check":"schema-export:Query","result":"PASS"},
-    {"check":"schema-export:DomainError","result":"PASS"},
-    {"check":"schema-export:CommandResult","result":"PASS"},
-    {"check":"schema-export:AuditEvent","result":"PASS"},
-    {"check":"schema-export:DomainEvent","result":"PASS"},
-    {"check":"schema-export:AIRequest","result":"PASS"},
-    {"check":"schema-export:AIResult","result":"PASS"},
-    {"check":"schema-export:ValidationRun","result":"PASS"},
-    {"check":"schema-export:ReleaseResult","result":"PASS"},
-    {"check":"schema-export:SemanticDocument","result":"PASS"},
-    {"check":"schema-export:RenderRequest","result":"PASS"},
-    {"check":"schema-export:CaseHeadResult","result":"PASS"},
-    {"check":"schema-export:RevisionResult","result":"PASS"},
-    {"check":"schema-export:SnapshotResult","result":"PASS"},
-    {"check":"schema-export:ProvenanceResult","result":"PASS"},
-    {"check":"schema-export:AffectedDraftsResult","result":"PASS"},
-    {"check":"schema-export:SnapshotTarget","result":"PASS"},
-    {"check":"schema-export:RenderTarget","result":"PASS"},
-    {"check":"schema-export:ValidationRunPin","result":"PASS"},
-    {"check":"schema-export:ReleaseReceipt","result":"PASS"},
-    {"check":"schema-export:CoreRequest","result":"PASS"},
-    {"check":"schema-export:CoreQuery","result":"PASS"},
-    {"check":"schema-export:ArtifactRecord","result":"PASS"},
-    {"check":"schema-export:IngestionResult","result":"PASS"},
-    {"check":"schema-export:FactEvidenceRequest","result":"PASS"},
-    {"check":"schema-export:CandidateReviewRecord","result":"PASS"},
-    {"check":"schema-export:FactEvidenceQuery","result":"PASS"},
-    {"check":"schema-export:FactEvidenceMatrix","result":"PASS"},
-    {"check":"schema-export:RegistryRequest","result":"PASS"},
-    {"check":"schema-export:RegistryReceipt","result":"PASS"},
-    {"check":"schema-export:RegistryQuery","result":"PASS"},
-    {"check":"schema-export:FilingRegistryEntry","result":"PASS"},
-    {"check":"schema-export:RegistryProjection","result":"PASS"},
-    {"check":"schema-export:ProceduralRequest","result":"PASS"},
-    {"check":"schema-export:ProceduralRuleBinding","result":"PASS"},
-    {"check":"schema-export:ProceduralQuery","result":"PASS"},
-    {"check":"schema-export:ProceduralFinding","result":"PASS"},
-    {"check":"schema-export:ProceduralAssessment","result":"PASS"},
-    {"check":"schema-export:PlannerRequest","result":"PASS"},
-    {"check":"schema-export:PlannerQuery","result":"PASS"},
-    {"check":"schema-export:DocumentPlanProjection","result":"PASS"},
-    {"check":"schema-export:DraftingProfile","result":"PASS"},
-    {"check":"schema-export:DraftingInvocation","result":"PASS"},
-    {"check":"schema-export:DraftingTrace","result":"PASS"},
-    {"check":"schema-export:DraftingRejectionTrace","result":"PASS"},
-    {"check":"schema-export:DraftingTerminalResult","result":"PASS"},
-    {"check":"schema-export:ModelExecutionReceipt","result":"PASS"},
-    {"check":"schema-export:ValidationReviewInput","result":"PASS"},
-    {"check":"schema-export:ValidationReviewProposal","result":"PASS"},
-    {"check":"schema-export:ValidationRequest","result":"PASS"},
-    {"check":"schema-export:ValidationReview","result":"PASS"},
-    {"check":"schema-export:ValidationReviewRevocation","result":"PASS"},
-    {"check":"schema-export:ValidationExecution","result":"PASS"},
-    {"check":"schema-export:ValidationQuery","result":"PASS"},
-    {"check":"schema-export:ValidationProjection","result":"PASS"},
-    {"check":"schema-export:ValidationManifest","result":"PASS"},
-    {"check":"schema-export:FinalizationProfile","result":"PASS"},
-    {"check":"schema-export:FinalizationRequest","result":"PASS"},
-    {"check":"schema-export:FinalizationQuery","result":"PASS"},
-    {"check":"schema-export:PersistedRenderArtifact","result":"PASS"},
-    {"check":"schema-export:PersistedRender","result":"PASS"},
-    {"check":"schema-export:PostRenderManifest","result":"PASS"},
-    {"check":"schema-export:FinalizationApproval","result":"PASS"},
-    {"check":"schema-export:FinalizationRelease","result":"PASS"},
-    {"check":"schema-export:FinalizationProjection","result":"PASS"},
-    {"check":"schema-export:FinalPackageProfile","result":"PASS"},
-    {"check":"schema-export:FinalDocumentRecord","result":"PASS"},
-    {"check":"schema-export:FinalValidationRecord","result":"PASS"},
-    {"check":"schema-export:FinalSourcesRecord","result":"PASS"},
-    {"check":"schema-export:FinalTraceNode","result":"PASS"},
-    {"check":"schema-export:FinalStatementTrace","result":"PASS"},
-    {"check":"schema-export:FinalEvidenceMap","result":"PASS"},
-    {"check":"schema-export:FinalArgumentMap","result":"PASS"},
-    {"check":"schema-export:FinalPackageMember","result":"PASS"},
-    {"check":"schema-export:FinalPackageManifest","result":"PASS"},
-    {"check":"schema-export:FinalPackageRecord","result":"PASS"},
-    {"check":"schema-export:Entity","result":"PASS"},
-    {"check":"schema-export:Command","result":"PASS"},
-    {"check":"invalid-confirmed-fact.json","result":"REJECTED_AS_EXPECTED"},
-    {"check":"invalid-extra-property.json","result":"REJECTED_AS_EXPECTED"},
-    {"check":"domain-import-boundaries","result":"PASS"}
+    {
+      "check": "schema-export:Case",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Party",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Institution",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Proceeding",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Filing",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Fact",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Evidence",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Issue",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:LegalSource",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:LegalRule",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Claim",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Defence",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Argument",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:CounterArgument",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Request",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Deadline",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Risk",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Citation",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DocumentPlan",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Section",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Draft",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationFinding",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Decision",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:SourceDocument",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Snapshot",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:KnowledgeEdge",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DependencyEdge",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FreshnessAssessment",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:CreateCase",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:AppendRevision",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:AcceptSnapshot",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:GenerateDocument",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidateDraft",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:RequestRelease",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Query",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DomainError",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:CommandResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:AuditEvent",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DomainEvent",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:AIRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:AIResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationRun",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ReleaseResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:SemanticDocument",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:RenderRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:CaseHeadResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:RevisionResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:SnapshotResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProvenanceResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:AffectedDraftsResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:SnapshotTarget",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:RenderTarget",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationRunPin",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ReleaseReceipt",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:CoreRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:CoreQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ArtifactRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:IngestionResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FactEvidenceRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:CandidateReviewRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FactEvidenceQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FactEvidenceMatrix",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:RegistryRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:RegistryReceipt",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:RegistryQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FilingRegistryEntry",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:RegistryProjection",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProceduralRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProceduralRuleBinding",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProceduralQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProceduralFinding",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ProceduralAssessment",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:PlannerRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:PlannerQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DocumentPlanProjection",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DraftingProfile",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DraftingInvocation",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DraftingTrace",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DraftingRejectionTrace",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:DraftingTerminalResult",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ModelExecutionReceipt",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationReviewInput",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationReviewProposal",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationReview",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationReviewRevocation",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationExecution",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationProjection",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:ValidationManifest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationProfile",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:PersistedRenderArtifact",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:PersistedRender",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:PostRenderManifest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationApproval",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationRelease",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationProjection",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageProfile",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalDocumentRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalValidationRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalSourcesRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalTraceNode",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalStatementTrace",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalEvidenceMap",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalArgumentMap",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageMember",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageManifest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Entity",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:Command",
+      "result": "PASS"
+    },
+    {
+      "check": "invalid-confirmed-fact.json",
+      "result": "REJECTED_AS_EXPECTED"
+    },
+    {
+      "check": "invalid-extra-property.json",
+      "result": "REJECTED_AS_EXPECTED"
+    },
+    {
+      "check": "domain-import-boundaries",
+      "result": "PASS"
+    }
   ],
   "json_files_parsed": 114,
   "independent_json_schema_engine": "NOT_EXECUTED"
