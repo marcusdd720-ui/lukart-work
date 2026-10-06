@@ -222,3 +222,15 @@ The active closeout objective is not "zero observed failures"; it is:
 - Status: **OPEN**
 - Permanent fix: Mission Control must have at least one independent zero-cost execution/control lane that does not depend on Desktop Commander quota.
 - Elimination DoD: loss/exhaustion of Desktop Commander cannot prevent independent review, stale-run recovery, or provider dispatch.
+
+
+### GP-F015 — PowerShell → WSL multiline command quoting corrupted reviewer bootstrap
+- Severity: P1 reviewer bootstrap
+- First observed: 2026-10-06 18:18 Europe/Warsaw
+- Symptom: local reviewer bootstrap reached `wsl.exe bash -lc $Bash`, then Bash failed with `syntax error: unexpected end of file`.
+- Evidence: user-visible PowerShell output showed Bash parse failure before PR-Agent/Docker review execution.
+- Root cause: nested PowerShell + WSL + Bash multiline quoting/here-doc transport was not robust; the Bash program was truncated/misparsed before execution.
+- Immediate recovery: replace inline `bash -lc` transport with a temporary script file and execute `wsl.exe bash <script>`.
+- Status: **OPEN**
+- Permanent fix: Mission Control bootstrap must avoid nested shell quoting for nontrivial scripts; use generated script files or a structured process API with explicit argv/env.
+- Elimination DoD: reviewer bootstrap executes twice successfully with no quoting/parsing drift and secrets remain undisclosed.
