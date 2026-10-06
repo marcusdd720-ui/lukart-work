@@ -236,14 +236,17 @@ The active closeout objective is not "zero observed failures"; it is:
 - Elimination DoD: reviewer bootstrap executes twice successfully with no quoting/parsing drift and secrets remain undisclosed.
 
 
-### GP-F016 — PR-Agent local review exited with code 1
+### GP-F016 — PR-Agent review exceeded Groq Free TPM budget
 - Severity: P1 independent-review blocker
 - First observed: 2026-10-06 18:xx Europe/Warsaw
 - Candidate under review: `ce1096d6232cc89f6f3457f334da62f5f4e9948b`
-- Symptom: local PR-Agent bootstrap completed far enough to launch the review path, but the reviewer process exited with code `1`.
+- Symptom: PR-Agent reached LiteLLM/Groq successfully, then exited with code `1`.
+- Evidence: Groq returned `rate_limit_exceeded`: TPM limit `8000`, request `29317` tokens for `openai/gpt-oss-120b`.
 - Log location: `C:\Users\LukaszA\AppData\Local\Temp\lukart-pr57-review\pr57-review.log`
-- Root cause: **PENDING LOG EVIDENCE** — do not guess.
-- Immediate recovery: inspect the tail of the review log without exposing secrets; classify exact failure before retrying.
-- Status: **OPEN**
+- Root cause: PR-Agent default `config.max_model_tokens=32000` allowed a packed review prompt far above the user's free-tier 8k TPM limit; large-PR chunking cannot help unless the model-token budget itself is lowered enough to force smaller chunks.
+- Immediate recovery: keep the same reviewer/provider but cap each call to a free-tier-safe token budget and enable large-PR chunking; no paid upgrade.
+- Planned retry settings: `CONFIG__MAX_MODEL_TOKENS=5500`, bounded output tokens, chunking enabled, no duplicate same-model fallback.
+- Status: **MITIGATED / RETRY REQUIRED**
 - Owner: Independent Review lane
-- Elimination DoD: exact root cause identified, permanent or bounded fix applied, and PR-Agent completes review against exact SHA with review artifact published or preserved.
+- Permanent fix: provider capability registry must include live TPM/RPM/context constraints and automatically derive per-call token budget before dispatch.
+- Elimination DoD: exact-SHA review completes under 0 PLN without rate-limit failure, with explicit coverage reporting for any omitted files.
