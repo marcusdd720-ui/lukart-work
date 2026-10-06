@@ -250,3 +250,18 @@ The active closeout objective is not "zero observed failures"; it is:
 - Owner: Independent Review lane
 - Permanent fix: provider capability registry must include live TPM/RPM/context constraints and automatically derive per-call token budget before dispatch.
 - Elimination DoD: exact-SHA review completes under 0 PLN without rate-limit failure, with explicit coverage reporting for any omitted files.
+
+
+### GP-F017 — Baseline type packs exist but remain NOT_ADMITTED / product E2E not proven
+- Severity: P0 product-completion blocker
+- First observed: 2026-10-06 independent read-only preflight of candidate `ce1096d6232cc89f6f3457f334da62f5f4e9948b`.
+- Evidence:
+  - `lukart_work/type_packs/common.py` sets global `ADMISSION_STATUS = "NOT_ADMITTED"`;
+  - all three pins encode literal `admission_status: NOT_ADMITTED`;
+  - `tests/test_baseline_type_packs.py` explicitly asserts all three remain `NOT_ADMITTED`;
+  - `scripts/verify_product_baseline.py --product-e2e` is intentionally specified to exit 1 and reports product E2E BLOCKED / independent review NOT_VERIFIED / certification NOT_VERIFIED.
+- Important distinction: PB02/PB03 finalization/package code is materially implemented and tested; this finding concerns the missing proof/admission of the three real product types through the full public product path.
+- Root cause: builder-candidate implementation and product-admission contract/evidence are not yet converged.
+- Status: **OPEN**
+- Required resolution: prove each type through the authoritative public E2E path and independent legal/type review, then change admission state only from evidence; if a missing adapter/dispatch/profile is discovered, build only that verified delta.
+- Elimination DoD: T01-style E2E PASS independently for each of PL-PRE-PAYMENT-1, PL-PRE-COMPLAINT-1 and PL-PRE-REPLY-1; admission pins/status and acceptance contract updated from exact evidence; no HUMAN/legal gate bypass.
