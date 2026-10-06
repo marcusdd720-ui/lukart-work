@@ -1,0 +1,104 @@
+name: Independent PR57 Review (Groq)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review-pr57:
+    if: github.head_ref == 'ops/pr57-independent-review-groq'
+    runs-on: [self-hosted, Linux, X64, lukart-stage11]
+    timeout-minutes: 30
+    env:
+      TARGET_PR_URL: https://github.com/marcusdd720-ui/lukart-work/pull/57
+      EXPECTED_SHA: ce1096d6232cc89f6f3457f334da62f5f4e9948b
+      PR_AGENT_IMAGE: pragent/pr-agent:0.46.0
+
+    steps:
+      - name: Verify Groq secret is available
+        shell: bash
+        env:
+          GROQ_KEY: ${{ secrets.GROQ_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "${GROQ_KEY}" || { echo "GROQ_KEY is missing"; exit 2; }
+          echo "GROQ_KEY present (value not printed)."
+
+      - name: Verify exact PR57 head before review
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          current="$(
+            python - <<'PY'
+import json, os, urllib.request
+url = "https://api.github.com/repos/marcusdd720-ui/lukart-work/pulls/57"
+req = urllib.request.Request(
+    url,
+    headers={
+        "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "lukart-independent-review"
+    },
+)
+with urllib.request.urlopen(req, timeout=30) as r:
+    print(json.load(r)["head"]["sha"])
+PY
+          )"
+          echo "PR57_HEAD=${current}"
+          test "${current}" = "${EXPECTED_SHA}" || {
+            echo "FAIL_CLOSED: PR #57 head drifted; expected ${EXPECTED_SHA}, got ${current}"
+            exit 3
+          }
+
+      - name: Pull immutable PR-Agent release image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull "${PR_AGENT_IMAGE}"
+          docker image inspect "${PR_AGENT_IMAGE}" --format 'PR_AGENT_IMAGE_ID={{.Id}}'
+
+      - name: Run independent technical review on exact PR57
+        shell: bash
+        env:
+          GROQ_KEY: ${{ secrets.GROQ_KEY }}
+          REVIEW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          docker run --rm             -e "GROQ__KEY=${GROQ_KEY}"             -e "GROQ_API_KEY=${GROQ_KEY}"             -e "GITHUB__USER_TOKEN=${REVIEW_GITHUB_TOKEN}"             -e "CONFIG__MODEL=groq/openai/gpt-oss-120b"             -e 'CONFIG__FALLBACK_MODELS=["groq/openai/gpt-oss-120b"]'             -e "CONFIG__REASONING_EFFORT=high"             -e "CONFIG__PROPAGATE_TOOL_ERRORS=true"             -e "CONFIG__PUBLISH_OUTPUT=true"             -e "PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING=true"             -e "PR_REVIEWER__MAX_NUMBER_OF_CALLS=3"             -e "PR_REVIEWER__NUM_MAX_FINDINGS=10"             -e "PR_REVIEWER__ENABLE_REVIEW_COVERAGE_FOOTER=true"             -e "PR_REVIEWER__EXTRA_INSTRUCTIONS=Review as an independent technical verifier for Generator Pism v1.0. Bind findings to exact candidate ce1096d6232cc89f6f3457f334da62f5f4e9948b. Focus on correctness, fail-closed behavior, security/privacy, authority boundaries, idempotency/replay, evidence/provenance integrity, deterministic generated evidence, persistence/restart behavior, unsafe bypasses, and acceptance-contract gaps. Do not certify Polish legal content or HUMAN/type admission. Distinguish technical defects from planned product gaps. Report only actionable findings with file/line evidence where possible."             "${PR_AGENT_IMAGE}"             --pr_url "${TARGET_PR_URL}" review
+
+      - name: Verify exact PR57 head after review
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          current="$(
+            python - <<'PY'
+import json, os, urllib.request
+url = "https://api.github.com/repos/marcusdd720-ui/lukart-work/pulls/57"
+req = urllib.request.Request(
+    url,
+    headers={
+        "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "lukart-independent-review"
+    },
+)
+with urllib.request.urlopen(req, timeout=30) as r:
+    print(json.load(r)["head"]["sha"])
+PY
+          )"
+          test "${current}" = "${EXPECTED_SHA}" || {
+            echo "FAIL_CLOSED: PR #57 changed during review"
+            exit 4
+          }
+          echo "Independent technical review completed against exact SHA ${EXPECTED_SHA}."
