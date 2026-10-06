@@ -234,3 +234,16 @@ The active closeout objective is not "zero observed failures"; it is:
 - Status: **OPEN**
 - Permanent fix: Mission Control bootstrap must avoid nested shell quoting for nontrivial scripts; use generated script files or a structured process API with explicit argv/env.
 - Elimination DoD: reviewer bootstrap executes twice successfully with no quoting/parsing drift and secrets remain undisclosed.
+
+
+### GP-F016 — PR-Agent local review exited with code 1
+- Severity: P1 independent-review blocker
+- First observed: 2026-10-06 18:xx Europe/Warsaw
+- Candidate under review: `ce1096d6232cc89f6f3457f334da62f5f4e9948b`
+- Symptom: local PR-Agent bootstrap completed far enough to launch the review path, but the reviewer process exited with code `1`.
+- Log location: `C:\Users\LukaszA\AppData\Local\Temp\lukart-pr57-review\pr57-review.log`
+- Root cause: **PENDING LOG EVIDENCE** — do not guess.
+- Immediate recovery: inspect the tail of the review log without exposing secrets; classify exact failure before retrying.
+- Status: **OPEN**
+- Owner: Independent Review lane
+- Elimination DoD: exact root cause identified, permanent or bounded fix applied, and PR-Agent completes review against exact SHA with review artifact published or preserved.
