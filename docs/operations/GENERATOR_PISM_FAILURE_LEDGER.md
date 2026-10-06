@@ -201,3 +201,24 @@ Every new Generator Pism failure must be appended to this ledger before closure 
 The active closeout objective is not "zero observed failures"; it is:
 
 **zero unresolved P0/P1 failure mechanisms capable of causing false-green completion, silent stall, stale authority, lost work, or unowned next steps.**
+
+
+### GP-F013 — Reviewer workflow bootstrap requires trusted/default-branch presence
+- Severity: P1 reviewer bootstrap
+- First observed: 2026-10-06
+- Symptom: isolated PR #62 added a new PR-Agent workflow, but no review workflow run was created; only workflows already trusted/present in the repository baseline were scheduled.
+- Root cause: GitHub Actions trust/trigger semantics prevent using a brand-new unmerged workflow as an immediate privileged reviewer lane with repository secrets.
+- Immediate recovery: do not merge reviewer infrastructure into main merely to unblock PR #57; use an existing trusted dispatch lane or local isolated reviewer execution.
+- Status: **OPEN**
+- Permanent fix: pre-provision a reviewed, least-privilege independent-review workflow/control-plane lane before a product reaches the review gate.
+- Elimination DoD: a future candidate reaches CI PASS and an already-trusted reviewer workflow starts automatically without changing the candidate or main baseline.
+
+### GP-F014 — Local recovery/reviewer lane depends on Desktop Commander quota
+- Severity: P1 control-plane availability
+- First observed: 2026-10-06
+- Symptom: local Groq key exists encrypted with Windows DPAPI, but remote execution/read through Desktop Commander is paused because the monthly remote-call allowance is exhausted.
+- Root cause: critical recovery/bootstrap capability depends on a quota-limited human-desktop control channel.
+- Immediate recovery: HUMAN executes one bounded local PowerShell bootstrap command when required.
+- Status: **OPEN**
+- Permanent fix: Mission Control must have at least one independent zero-cost execution/control lane that does not depend on Desktop Commander quota.
+- Elimination DoD: loss/exhaustion of Desktop Commander cannot prevent independent review, stale-run recovery, or provider dispatch.
