@@ -1,4 +1,4 @@
-name: Cancel stale Stage13
+name: Force cancel stale Stage13
 on:
   push:
     branches:
@@ -6,10 +6,10 @@ on:
 permissions:
   actions: write
 jobs:
-  cancel-stale:
+  force-cancel:
     runs-on: ubuntu-latest
     steps:
-      - name: Cancel stale run
+      - name: Force cancel stale run
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh run cancel 37701407947 --repo ${{ github.repository }}
+        run: gh api --method POST repos/${{ github.repository }}/actions/runs/37701407947/force-cancel
