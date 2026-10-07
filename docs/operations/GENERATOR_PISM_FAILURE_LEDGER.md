@@ -295,3 +295,22 @@ The active closeout objective is not "zero observed failures"; it is:
 - Status: **OPEN**
 - Build policy: implement only the missing adapter/profile/fixture/evidence delta; do not rebuild planner, drafting, validation, rendering, storage, release or package engines.
 - Elimination DoD: each of PL-PRE-PAYMENT-1, PL-PRE-COMPLAINT-1 and PL-PRE-REPLY-1 executes through authoritative public E2E to the ten-member final package with exact evidence and independent legal/type admission.
+
+
+### GP-F020 — Scheduler carried agent intelligence instead of launching canonical agent contracts
+- Severity: P0/P1 execution-architecture integrity
+- First observed: 2026-10-07
+- Symptom: worker behavior, recovery logic and project instructions were embedded directly in automation task prompts. Scheduler and agent responsibility were conflated, making behavior hard to version, reuse, review and recover consistently.
+- Root cause: execution cadence mechanism was incorrectly used as the agent definition.
+- Immediate recovery: create canonical versioned agent contracts in `marcusdd720-ui/lukart-ros` and reduce automations to thin launchers.
+- Canonical candidate: LUKART ROS Draft PR #345, exact ref `18845cd4b40254b9ba1e0eba3037d57b09b0be99`.
+- New contracts:
+  - `LUKART_AGENT_RUNTIME_CONTRACT_v1.md`
+  - `A1_GENERATOR_PISM_BUILDER_v1.md`
+  - `A2_GENERATOR_PISM_VERIFIER_v1.md`
+  - `A3_LATAM_CV_BUILDER_v1.md`
+  - `A4_PROVIDER_ROUTER_v1.md`
+  - `A5_RECOVERY_SPECIALIST_v1.md`
+- Status: **VERIFYING**
+- Permanent fix: scheduler owns only cadence/launch; agent contract owns identity, mission, queue, error-state machine, retry budget, recovery, handoff, no-idle behavior, cost/security boundaries and DoD.
+- Elimination DoD: all active workers load pinned canonical contracts successfully for multiple cycles, and a synthetic/repeated failure follows DETECT -> CAPTURE -> CLASSIFY -> RECOVER -> VERIFY -> CONTINUE/ESCALATE without scheduler-specific business logic.
