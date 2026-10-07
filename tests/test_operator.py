@@ -24,16 +24,20 @@ class ManualProviderTests(unittest.TestCase):
             model_parameters_hash=sha256(b"params").hexdigest(),
         )
         request_id = uuid4()
+        tenant_id, case_id, snapshot_id = uuid4(), uuid4(), uuid4()
         snapshot_hash = sha256(b"snapshot").hexdigest()
         request = AIRequest(
             request_id=request_id,
+            tenant_id=tenant_id,
+            case_id=case_id,
             task="DRAFTING",
+            snapshot_id=snapshot_id,
             snapshot_hash=snapshot_hash,
-            allowed_refs=(),
-            allowed_sources=(),
+            input_refs=(),
             section_contract=None,
-            prompt="bounded",
-            profile="QUICK",
+            prompt=pin("prompt"),
+            output_contract=pin("output"),
+            data_policy=pin("policy"),
         )
         invocation = DraftingInvocation(
             contract="urn:lukart:work:DraftingInvocation:1.0.0",
