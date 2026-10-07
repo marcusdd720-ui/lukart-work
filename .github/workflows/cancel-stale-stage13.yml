@@ -1,4 +1,4 @@
-name: Force cancel stale Stage13
+name: Clear stale runner queue
 on:
   push:
     branches:
@@ -6,10 +6,32 @@ on:
 permissions:
   actions: write
 jobs:
-  force-cancel:
+  clear-stale:
     runs-on: ubuntu-latest
     steps:
-      - name: Force cancel stale run
+      - name: Cancel stale and duplicate self-hosted runs
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api --method POST repos/${{ github.repository }}/actions/runs/37701407947/force-cancel
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="${{ github.repository }}"
+          keep="37703622345 37703622435 37703622386 37703628215"
+          gh run list --repo "$repo" --limit 100 --json databaseId,status,name,headSha,headBranch,event             --jq '.[] | select((.status=="queued" or .status=="in_progress")) | [.databaseId,.status,.name,.headSha,.headBranch,.event] | @tsv' |
+          while IFS=$'\t' read -r id status name sha branch event; do
+            [[ -n "$id" ]] || continue
+            if grep -qw "$id" <<< "$keep"; then
+              echo "KEEP $id $status $name $sha"
+              continue
+            fi
+            case "$name" in
+              stage11-*|stage12-*|stage13-*|"Stage 11"*|"Stage 12"*|"Stage 13"*|"Generator Pism"*|"Hermes PR64 Probe")
+                echo "CANCEL $id $status $name $sha"
+                if [[ "$status" == "in_progress" ]]; then
+                  gh api --method POST "repos/$repo/actions/runs/$id/force-cancel" || true
+                else
+                  gh run cancel "$id" --repo "$repo" || true
+                fi
+                ;;
+            esac
+          done
