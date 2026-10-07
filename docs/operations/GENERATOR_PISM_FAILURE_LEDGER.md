@@ -327,3 +327,15 @@ The active closeout objective is not "zero observed failures"; it is:
 - Owner: A1 Generator Pism Builder.
 - Status: **MITIGATED / FRESH SHA VERIFICATION REQUIRED**
 - Elimination DoD: fresh exact-SHA full regression executes all three type-pack E2E cases with Stage10 citation verification PASS; no source-role conflation remains.
+
+
+### GP-F022 — Restart/read E2E called FinalizationService.query with the wrong wire type
+- Severity: P1 closure-test wiring defect
+- First observed: 2026-10-07 read-only preflight of closure candidate `04c35f40fd511552bacff344234d5ebe31dbd54d`.
+- Symptom: the new restart/read loop passed a Python mapping directly to `FinalizationService.query`, while the public service contract accepts canonical JSON text and runs `strict_json(raw)`.
+- Root cause: the new closure test bypassed the same JSON wire encoding used by the existing public query helpers.
+- Immediate recovery: serialize the `FinalizationQuery` mapping with `json.dumps(...)` before calling the restarted service.
+- Product impact: none observed in FinalizationService; defect is isolated to the new E2E test.
+- Owner: A1 Generator Pism Builder.
+- Status: **MITIGATED / FRESH SHA VERIFICATION REQUIRED**
+- Elimination DoD: fresh exact-SHA regression executes restart/read for every member of all three type packages without wire-contract error.
