@@ -339,3 +339,16 @@ The active closeout objective is not "zero observed failures"; it is:
 - Owner: A1 Generator Pism Builder.
 - Status: **MITIGATED / FRESH SHA VERIFICATION REQUIRED**
 - Elimination DoD: fresh exact-SHA regression executes restart/read for every member of all three type packages without wire-contract error.
+
+
+### GP-F023 — Operational Failure Ledger updates trigger full product assurance and starve the sole runner
+- Severity: P0 execution-throughput / closure blocker
+- First observed: 2026-10-07 during Generator Pism v1.0 closure.
+- Symptom: updating the dedicated Failure Ledger branch triggers expensive Stage11/12/13 workflows on both push and pull_request paths. With one self-hosted runner, operational documentation runs execute ahead of the latest product candidate and multiply stale queued work.
+- Live evidence: after the closure candidate advanced to `7e6e81222c3e743224eb49813899258d0d014fe8`, the queue contained 43 superseded active/queued runs across the closure and Failure Ledger branches; a stale run for `1b4ec1e7ee4a12731581e2220756929bd4091f83` still held the only runner.
+- Root cause: workflow trigger scope/concurrency does not distinguish product-code assurance from ops-only ledger changes, and duplicate push + PR triggers remain active without latest-candidate cancellation.
+- Immediate recovery: cancel superseded runs and preserve only exact current product-candidate runs; pause non-P1 mutations until current candidate is validated.
+- Permanent fix: path-aware workflow gating plus cross-event latest-candidate concurrency/cancel-in-progress; ops-only documentation branches must not consume full product assurance unless their changes affect executable evidence.
+- Owner: Execution Infrastructure / post-P1 issue #60 lane.
+- Status: **OPEN — immediate queue cleanup required**
+- Elimination DoD: two consecutive candidate updates cancel/reject superseded runs automatically, ops-only ledger updates do not occupy the product runner, and only latest candidate exact-SHA assurance remains executable.
