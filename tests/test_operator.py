@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from datetime import date
 from hashlib import sha256
 import unittest
 from uuid import uuid4
 
 from lukart_work.contracts.messages import AIRequest, AIResult
-from lukart_work.domain.models import VersionPin
+from lukart_work.domain.models import Ref, VersionPin
 from lukart_work.drafting.contracts import DraftingInvocation
 from lukart_work.drafting.manual_provider import ManualAttestedDraftingProvider
 from lukart_work.type_packs.runtime import RUNTIME_PROFILES
@@ -41,8 +42,8 @@ class ManualProviderTests(unittest.TestCase):
         )
         invocation = DraftingInvocation(
             contract="urn:lukart:work:DraftingInvocation:1.0.0",
-            section={"kind": "Section", "id": str(uuid4()), "revision": 1},
-            evaluation_date="2026-10-07",
+            section=Ref(kind="Section", id=uuid4(), revision=1),
+            evaluation_date=date(2026, 10, 7),
             request=request,
         )
         result = AIResult(
