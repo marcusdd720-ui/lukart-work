@@ -79,8 +79,12 @@ class GeneratorPismTypeE2ETests(unittest.TestCase):
             },
         )[0].refs[0]
 
+        # Product-input provenance and legal-authority provenance are distinct.
+        # Keep the validated type-pack payload as immutable evidence, while the
+        # existing Stage09/10 legal citation fixture receives its own exact
+        # text/plain source so literal quotation verification remains truthful.
         content = fixture.model_dump_json().encode("utf-8")
-        result, request = harness.apply(
+        _result, request = harness.apply(
             "RegisterSource",
             {
                 "content_base64": base64.b64encode(content).decode("ascii"),
@@ -125,7 +129,21 @@ class GeneratorPismTypeE2ETests(unittest.TestCase):
             },
             anchors=[anchor],
         )[0].refs[0]
-        return fact, party, evidence, source_id
+
+        legal_bytes = b"Synthetic payment receipt."
+        _legal_result, legal_request = harness.apply(
+            "RegisterSource",
+            {
+                "content_base64": base64.b64encode(legal_bytes).decode("ascii"),
+                "media_type": "text/plain",
+                "retention_policy": core.PIN,
+            },
+        )
+        legal_source_id = uuid5(
+            UUID(legal_request["meta"]["command_id"]),
+            "source",
+        )
+        return fact, party, evidence, legal_source_id
 
     def test_each_baseline_type_reaches_verified_ten_member_package(self):
         for type_id, fixture_factory in FIXTURES.items():
