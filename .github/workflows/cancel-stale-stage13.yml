@@ -1,0 +1,15 @@
+name: Cancel stale Stage13
+on:
+  push:
+    branches:
+      - ops/cancel-stale-stage13-2026-10-08
+permissions:
+  actions: write
+jobs:
+  cancel-stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel stale run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run cancel 37701407947 --repo ${{ github.repository }}
