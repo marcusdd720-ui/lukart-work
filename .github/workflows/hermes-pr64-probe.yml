@@ -1,0 +1,19 @@
+name: Hermes PR64 Probe
+on:
+  push:
+    branches:
+      - ops/hermes-pr64-remediation-2026-10-08
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: [self-hosted, Linux, X64, lukart-stage11]
+    timeout-minutes: 10
+    steps:
+      - name: Probe Hermes
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v hermes
+          hermes --version
+          hermes auth status || true
