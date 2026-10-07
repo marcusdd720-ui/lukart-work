@@ -352,3 +352,27 @@ The active closeout objective is not "zero observed failures"; it is:
 - Owner: Execution Infrastructure / post-P1 issue #60 lane.
 - Status: **OPEN — immediate queue cleanup required**
 - Elimination DoD: two consecutive candidate updates cancel/reject superseded runs automatically, ops-only ledger updates do not occupy the product runner, and only latest candidate exact-SHA assurance remains executable.
+
+
+### GP-F024 — Queue-cleanup PowerShell used invalid logical syntax
+- Severity: P1 execution-recovery defect
+- First observed: 2026-10-07 after manual stale-run cleanup attempt.
+- Symptom: the recovery command used `NOT (...)` instead of PowerShell's `-not (...)` operator inside `Where-Object`, so the intended stale-run filter did not execute correctly and old queued runs remained.
+- Root cause: assistant-authored cross-shell syntax defect in the human recovery command.
+- Impact: cleanup did not converge to latest-candidate-only execution; stale closure/ledger runs remained queued.
+- Immediate recovery: replace the predicate with valid PowerShell `-not (...)`, verify postcondition from GitHub after execution, and never treat human acknowledgement alone as proof of cleanup.
+- Owner: Execution Recovery / assistant-authored runbook.
+- Status: **OPEN / REPAIR COMMAND REQUIRED**
+- Elimination DoD: stale queued/in-progress runs are removed, only the exact current PR candidate run set remains, and the corrected command is verified against live GitHub state.
+
+### GP-F025 — Self-hosted Stage11 runner became unavailable after prior job
+- Severity: P0 execution-throughput blocker
+- First observed: 2026-10-07 10:21+02:00 live closure check.
+- Candidate: `f2f50106faa31847b0e35554d0b8f34a3492f628`.
+- Symptom: all four current PR jobs remain queued with `runner_id=0` and empty `runner_name`.
+- Evidence: prior Stage13 run `37587783697` executed on runner id `21`, name `lukart-stage11-wsl`, labels `self-hosted, Linux, X64, lukart-stage11`; current Stage13 run `37594331633` has the same required labels but no assigned runner.
+- Root cause: **runner process/service unavailable or offline; exact local service state requires host-side verification**.
+- Immediate recovery: restart/check the existing WSL GitHub Actions runner service in `~/actions-runner`, then verify GitHub assigns runner id/name to the exact current jobs.
+- Owner: Execution Infrastructure.
+- Status: **OPEN / HUMAN HOST ACTION REQUIRED**
+- Elimination DoD: `lukart-stage11-wsl` returns online, exact candidate jobs receive a real runner id/name, all four exact-SHA workflows execute, and the runner remains available after completion.
