@@ -7,6 +7,8 @@ import unittest
 from unittest.mock import patch
 from uuid import UUID, uuid5
 
+from lukart_work.contracts.messages import CommandResult
+from lukart_work.facts.service import FactEvidenceService
 from lukart_work.finalization.service import FinalizationService
 from lukart_work.type_packs.pl_pre_complaint_1 import positive_fixture as complaint_fixture
 from lukart_work.type_packs.pl_pre_payment_1 import positive_fixture as payment_fixture
@@ -116,6 +118,33 @@ class GeneratorPismTypeE2ETests(unittest.TestCase):
                 "authenticity": "UNKNOWN",
             },
         )[0].refs[0]
+
+        # Stage 10 accepts only the current HUMAN-reviewed Evidence revision.
+        # The typed E2E must use the same public FactEvidence lifecycle as the
+        # production validation boundary; a REGISTERED evidence object is not
+        # authoritative enough for a VALIDATED draft.
+        fact_service = FactEvidenceService(harness.repo, harness.authority)
+        for operation in ("ReviewEvidence", "AcceptEvidence"):
+            evidence_request = harness.request(operation, target=evidence)
+            evidence_request.update(
+                contract="urn:lukart:work:FactEvidenceRequest:1.0.0",
+                rationale=(
+                    "Generator Pism E2E HUMAN evidence admission for "
+                    + fixture.type_pin.document_type_id
+                ),
+            )
+            evidence_result = fact_service.execute(
+                json.dumps(evidence_request),
+                harness.token,
+            )
+            harness.assertIsInstance(
+                evidence_result,
+                CommandResult,
+                evidence_result,
+            )
+            harness.sequence = evidence_result.case_sequence
+            evidence = evidence_result.refs[0]
+
         fact = harness.apply(
             "AddFact",
             {
