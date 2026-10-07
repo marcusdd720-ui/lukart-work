@@ -314,3 +314,16 @@ The active closeout objective is not "zero observed failures"; it is:
 - Status: **VERIFYING**
 - Permanent fix: scheduler owns only cadence/launch; agent contract owns identity, mission, queue, error-state machine, retry budget, recovery, handoff, no-idle behavior, cost/security boundaries and DoD.
 - Elimination DoD: all active workers load pinned canonical contracts successfully for multiple cycles, and a synthetic/repeated failure follows DETECT -> CAPTURE -> CLASSIFY -> RECOVER -> VERIFY -> CONTINUE/ESCALATE without scheduler-specific business logic.
+
+
+### GP-F021 — Type-pack E2E fixture conflated product evidence source with legal-quotation source
+- Severity: P1 closure-test wiring defect
+- First observed: 2026-10-07 preflight of closure candidate `1b4ec1e7ee4a12731581e2220756929bd4091f83`.
+- Symptom: new type-pack E2E helper returned the JSON type-pack evidence source as the source consumed by the existing Stage09/10 legal-authority fixture.
+- Evidence: Stage10 citation validation accepts literal quotation extraction only from `text/plain`; for `RECORD:1` it binds `fragment_hash` to SHA-256 of the complete source bytes. The existing legal fixture expects exact bytes `Synthetic payment receipt.`, while the new helper supplied `application/json` fixture bytes.
+- Root cause: two semantically distinct provenance roles were incorrectly collapsed into one source id during test integration.
+- Immediate recovery: keep type-pack JSON as its own accepted evidence source and register a separate immutable `text/plain` legal-authority source with the exact bytes expected by the existing public citation lifecycle.
+- Product impact: none observed in generic engine; defect is in the new closure E2E fixture wiring.
+- Owner: A1 Generator Pism Builder.
+- Status: **MITIGATED / FRESH SHA VERIFICATION REQUIRED**
+- Elimination DoD: fresh exact-SHA full regression executes all three type-pack E2E cases with Stage10 citation verification PASS; no source-role conflation remains.
