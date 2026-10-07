@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 from hashlib import sha256
 import unittest
 from unittest.mock import patch
@@ -213,14 +214,16 @@ class GeneratorPismTypeE2ETests(unittest.TestCase):
                     )
                     for member in package.members:
                         body = restarted.query(
-                            {
-                                "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
-                                "operation": "ReadFinalPackageMember",
-                                "tenant_id": str(harness.tenant),
-                                "case_id": str(harness.case_id),
-                                "render_id": str(render_id),
-                                "member": member.name,
-                            },
+                            json.dumps(
+                                {
+                                    "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                                    "operation": "ReadFinalPackageMember",
+                                    "tenant_id": str(harness.tenant),
+                                    "case_id": str(harness.case_id),
+                                    "render_id": str(render_id),
+                                    "member": member.name,
+                                }
+                            ),
                             harness.token,
                         )
                         self.assertIsInstance(body, bytes)
