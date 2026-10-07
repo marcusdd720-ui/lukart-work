@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import get_args
 from uuid import UUID, uuid5
 
+import psycopg
+
 from lukart_work.contracts.messages import AIResult, CommandResult, DomainError
 from lukart_work.core.postgres import PostgresRepository
 from lukart_work.core.requests import Operation
@@ -22,6 +24,7 @@ from lukart_work.operator import GeneratorPismOperator
 from lukart_work.planner.contracts import PlannerOperation
 from lukart_work.procedural.contracts import ProceduralOperation
 from lukart_work.rendering.profiles import OFFICIAL_PL_V1, profile_pin
+from lukart_work.storage.migrations import grant_runtime, migrate
 from lukart_work.storage.objects import RetentionPolicies
 from lukart_work.type_packs.pl_pre_payment_1.fixture import positive_fixture
 from lukart_work.type_packs.runtime import runtime_profile
@@ -47,8 +50,15 @@ def current_sha() -> str:
 class OperatorE2E:
     def __init__(self, tested_sha: str, output: Path):
         dsn = os.environ.get("LUKART_TEST_DSN")
-        if not dsn:
-            raise SystemExit("LUKART_TEST_DSN is required; use an isolated synthetic PostgreSQL database")
+        admin_dsn = os.environ.get("LUKART_TEST_ADMIN_DSN")
+        if not dsn or not admin_dsn:
+            raise SystemExit(
+                "LUKART_TEST_DSN and LUKART_TEST_ADMIN_DSN are required; "
+                "use an isolated synthetic PostgreSQL database"
+            )
+        with psycopg.connect(admin_dsn) as connection:
+            migrate(connection)
+            grant_runtime(connection, "lw_core_runtime")
         self.tested_sha = tested_sha
         self.output = output
         self.fixture = positive_fixture()
