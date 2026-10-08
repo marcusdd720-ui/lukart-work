@@ -283,7 +283,7 @@ class ZeroCostChatDraftingProvider:
             if not isinstance(parsed, dict):
                 raise ProviderProtocolError()
             try:
-                result = AIResult.model_validate(parsed)
+                result = AIResult.model_validate_json(raw)
             except ValidationError as exc:
                 raise ProviderProtocolError() from exc
             if (

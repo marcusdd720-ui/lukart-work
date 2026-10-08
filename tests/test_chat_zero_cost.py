@@ -189,6 +189,23 @@ class ZeroCostChatProviderTests(unittest.TestCase):
         with self.assertRaises(ProviderProtocolError):
             p.propose(item)
 
+    def test_valid_shape_with_duplicate_json_key_fails_closed(self):
+        item = invoke()
+        envelope = response(item)
+        raw = envelope["choices"][0]["message"]["content"]
+        self.assertIn('"snapshot_hash":', raw)
+        envelope["choices"][0]["message"]["content"] = raw.replace(
+            '"snapshot_hash":',
+            '"request_id":"%s","snapshot_hash":' % item.request.request_id,
+            1,
+        )
+        p, transport = adapter(item, envelope=envelope)
+        with self.assertRaises(ProviderProtocolError):
+            p.propose(item)
+        self.assertEqual(len(transport.calls), 1)
+        with self.assertRaises(ProviderProtocolError):
+            p.execution_receipt(item.request.request_id)
+
     def test_incomplete_or_unbounded_generation_refused(self):
         item = invoke()
         for patch in (
