@@ -1,0 +1,25 @@
+name: Dispatch final Generator Pism e1e assurance
+on:
+  push:
+    branches:
+      - ops/generator-pism-final-e1e-dispatch-2026-10-08
+permissions:
+  actions: write
+  contents: read
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET_SHA: "e1e435f5a18897cdf1b1fff17911d45cc46ba5c6"
+      TARGET_REF: "feature/generator-pism-operator-v1-2026-10-07"
+    steps:
+      - name: Dispatch exact-SHA gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run stage11-assurance.yml --repo "${GITHUB_REPOSITORY}" --ref "$TARGET_REF"             -f candidate_sha="$TARGET_SHA" -f dispatch_token="generator-pism-e1e-final-stage11"
+          gh workflow run stage12-procedure-assurance.yml --repo "${GITHUB_REPOSITORY}" --ref "$TARGET_REF"             -f candidate_sha="$TARGET_SHA" -f dispatch_token="generator-pism-e1e-final-stage12"
+          gh workflow run stage13.yml --repo "${GITHUB_REPOSITORY}" --ref "$TARGET_REF"             -f candidate_sha="$TARGET_SHA" -f dispatch_token="generator-pism-e1e-final-stage13"
+          gh workflow run generator-pism-go-live.yml --repo "${GITHUB_REPOSITORY}" --ref "$TARGET_REF"             -f candidate_sha="$TARGET_SHA"
+          echo "DISPATCHED_FINAL_EXACT_SHA=$TARGET_SHA"
