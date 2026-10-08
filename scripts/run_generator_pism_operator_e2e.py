@@ -297,14 +297,21 @@ class OperatorE2E:
                      "statement_type":"LEGAL","support":"SOURCE_BACKED","refs":[legal_rule.model_dump(mode="json")],
                      "citations":[citation.model_dump(mode="json")],"inference_label":None},
                 ]
+            def _typed_ref(value):
+                return Ref(
+                    kind=value["kind"],
+                    id=UUID(value["id"]),
+                    revision=value["revision"],
+                )
+
             typed_statements = tuple(
                 Statement(
                     id=UUID(item["id"]),
                     text=item["text"],
                     statement_type=item["statement_type"],
                     support=item["support"],
-                    refs=tuple(Ref.model_validate(ref) for ref in item["refs"]),
-                    citations=tuple(Ref.model_validate(ref) for ref in item["citations"]),
+                    refs=tuple(_typed_ref(ref) for ref in item["refs"]),
+                    citations=tuple(_typed_ref(ref) for ref in item["citations"]),
                     inference_label=item["inference_label"],
                 )
                 for item in statements
