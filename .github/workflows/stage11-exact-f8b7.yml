@@ -1,0 +1,20 @@
+name: Stage11 exact f8b7
+on:
+  push:
+    branches: [ops/stage11-exact-f8b7-2026-10-08]
+permissions:
+  contents: read
+jobs:
+  stage11:
+    runs-on: ubuntu-latest
+    env:
+      SUBJECT_SHA: f8b701c2f7aa5a6627131280fbc9cb06a2889d96
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+      - run: test "$(git rev-parse HEAD)" = "$SUBJECT_SHA"
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.14'}
+      - run: python -m pip install -e .
+      - run: python -B -X utf8 -m unittest -v tests.test_stage11
