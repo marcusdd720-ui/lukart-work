@@ -16,15 +16,20 @@ jobs:
         run: |
           set -euo pipefail
           repo="${{ github.repository }}"
-          keep="37738944692"
+          keep=""
+          final_sha="0b057046579417435e58963c56976d7ffc7ba85e"
           for pass in $(seq 1 18); do
             echo "SWEEP_PASS=$pass"
             gh run list --repo "$repo" --limit 100 --json databaseId,status,name,headSha,headBranch,event \
               --jq '.[] | select((.status=="queued" or .status=="in_progress")) | [.databaseId,.status,.name,.headSha,.headBranch,.event] | @tsv' |
             while IFS=$'\t' read -r id status name sha branch event; do
               [[ -n "$id" ]] || continue
-              if grep -qw "$id" <<< "$keep"; then
+              if [[ -n "$keep" ]] && grep -qw "$id" <<< "$keep"; then
                 echo "KEEP $id $status $name $sha"
+                continue
+              fi
+              if [[ "$sha" == "$final_sha" ]]; then
+                echo "KEEP_FINAL_SHA $id $status $name $sha"
                 continue
               fi
               case "$name" in
@@ -38,9 +43,9 @@ jobs:
                   ;;
               esac
             done
-            state="$(gh run view 37738944692 --repo "$repo" --json status,conclusion --jq '.status')"
-            echo "TARGET_STATE=$state"
-            [[ "$state" == "in_progress" || "$state" == "completed" ]] && exit 0
+            final_count="$(gh run list --repo "$repo" --limit 100 --json status,headSha --jq '[.[] | select(.headSha=="'"$final_sha"'" and (.status=="queued" or .status=="in_progress"))] | length')"
+            echo "FINAL_ACTIVE_COUNT=$final_count"
+            [[ "$final_count" -gt 0 ]] && exit 0
             sleep 5
           done
           echo "TARGET_DID_NOT_START_WITHIN_SWEEP_WINDOW"
