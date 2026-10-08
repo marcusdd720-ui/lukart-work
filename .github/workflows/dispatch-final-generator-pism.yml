@@ -1,0 +1,25 @@
+name: Dispatch Final Generator Pism Assurance
+on:
+  push:
+    branches:
+      - ops/cancel-stale-stage13-2026-10-08
+permissions:
+  actions: write
+  contents: read
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch exact candidate gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: 0b057046579417435e58963c56976d7ffc7ba85e
+          REF: feature/generator-pism-operator-v1-2026-10-07
+        shell: bash
+        run: |
+          set -euo pipefail
+          token="generator-pism-final-${SHA:0:12}"
+          gh workflow run stage11-assurance.yml --repo "$GITHUB_REPOSITORY" --ref "$REF" -f candidate_sha="$SHA" -f dispatch_token="$token-stage11"
+          gh workflow run stage12-procedure-assurance.yml --repo "$GITHUB_REPOSITORY" --ref "$REF" -f candidate_sha="$SHA" -f dispatch_token="$token-stage12"
+          gh workflow run stage13.yml --repo "$GITHUB_REPOSITORY" --ref "$REF" -f candidate_sha="$SHA" -f dispatch_token="$token-stage13"
+          echo "DISPATCHED=$SHA"
