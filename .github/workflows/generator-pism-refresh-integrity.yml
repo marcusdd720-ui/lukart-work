@@ -1,0 +1,42 @@
+name: Generator Pism refresh integrity
+on:
+  push:
+    branches:
+      - ops/generator-pism-refresh-integrity-2026-10-08
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/generator-pism-operator-v1-2026-10-07
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Assert expected head
+        run: test "$(git rev-parse HEAD)" = "f96ce10fce17fc04ff68acb49dac96091164d4f2"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python -m pip install -e .
+      - name: Refresh canonical integrity manifest
+        run: python -B -X utf8 scripts/refresh_manifest.py
+      - name: Validate narrow diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          changed="$(git diff --name-only)"
+          echo "$changed"
+          test "$changed" = "reports/manifest.sha256.json"
+      - name: Commit and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "generator-pism-integrity[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/manifest.sha256.json
+          git commit -m "chore: refresh integrity manifest for Generator Pism closure"
+          git push origin HEAD:feature/generator-pism-operator-v1-2026-10-07
+          echo "NEW_SHA=$(git rev-parse HEAD)"
