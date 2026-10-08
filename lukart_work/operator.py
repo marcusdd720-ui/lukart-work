@@ -114,7 +114,7 @@ class GeneratorPismOperator:
 
     def execute_draft(self, request, token):
         self._require_type_pin(request)
-        return self.drafting.execute(self._raw(request), token)
+        return self.drafting.generate(self._raw(request), token)
 
     def execute_validation(self, request, token):
         return self.validation.execute(self._raw(request), token)
