@@ -17,7 +17,7 @@ jobs:
           set -euo pipefail
           repo="${{ github.repository }}"
           keep=""
-          final_sha="f96ce10fce17fc04ff68acb49dac96091164d4f2"
+          final_sha="e1e435f5a18897cdf1b1fff17911d45cc46ba5c6"
           for pass in $(seq 1 18); do
             echo "SWEEP_PASS=$pass"
             gh run list --repo "$repo" --limit 100 --json databaseId,status,name,headSha,headBranch,event \
