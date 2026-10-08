@@ -16,7 +16,7 @@ from lukart_work.contracts.messages import AIResult, CommandResult, DomainError
 from lukart_work.core.postgres import PostgresRepository
 from lukart_work.core.requests import Operation
 from lukart_work.core.security import Principal, TokenAuthority
-from lukart_work.domain.models import Actor, Ref, VersionPin
+from lukart_work.domain.models import Actor, Ref, SectionText, Statement, VersionPin
 from lukart_work.drafting.manual_provider import ManualAttestedDraftingProvider
 from lukart_work.facts.contracts import FactOperation
 from lukart_work.finalization.contracts import FINAL_PACKAGE_MEMBER_NAMES, FinalPackageProfile, FinalPackageRecord, FinalizationRelease, semantic_profile_pin
@@ -297,10 +297,29 @@ class OperatorE2E:
                      "statement_type":"LEGAL","support":"SOURCE_BACKED","refs":[legal_rule.model_dump(mode="json")],
                      "citations":[citation.model_dump(mode="json")],"inference_label":None},
                 ]
-            self.provider.supply(AIResult.model_validate({"request_id":str(uuid5(draft_cmd,f"drafting-request:{idx}")),
-                "snapshot_hash":digest(snap),"disposition":"PROPOSE","proposals":[],
-                "section":{"section":sref.model_dump(mode="json"),"statements":statements},
-                "missing_information":[],"reason":None}))
+            typed_statements = tuple(
+                Statement(
+                    id=UUID(item["id"]),
+                    text=item["text"],
+                    statement_type=item["statement_type"],
+                    support=item["support"],
+                    refs=tuple(Ref.model_validate(ref) for ref in item["refs"]),
+                    citations=tuple(Ref.model_validate(ref) for ref in item["citations"]),
+                    inference_label=item["inference_label"],
+                )
+                for item in statements
+            )
+            self.provider.supply(
+                AIResult(
+                    request_id=uuid5(draft_cmd, f"drafting-request:{idx}"),
+                    snapshot_hash=digest(snap),
+                    disposition="PROPOSE",
+                    proposals=(),
+                    section=SectionText(section=sref, statements=typed_statements),
+                    missing_information=(),
+                    reason=None,
+                )
+            )
         draft_res=self._assert_command(self.operator.execute_draft(draft_req,self.token),"GenerateDocument"); self.sequence=draft_res.case_sequence
         draft=self.get(draft_res.refs[0]); assert draft.status=="GENERATED"
 
