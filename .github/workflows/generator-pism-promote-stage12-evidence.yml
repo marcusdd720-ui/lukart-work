@@ -1,0 +1,60 @@
+name: Generator Pism promote Stage12 evidence
+on:
+  push:
+    branches:
+      - ops/generator-pism-promote-stage12-artifact-2026-10-08
+permissions:
+  contents: write
+  actions: read
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: "37741944268"
+      SOURCE_ARTIFACT: "stage12-procedure-generated"
+      EXPECTED_SHA: "f96ce10fce17fc04ff68acb49dac96091164d4f2"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/generator-pism-operator-v1-2026-10-07
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Assert expected target head
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Bind source artifact to exact SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          json="$(gh api repos/${GITHUB_REPOSITORY}/actions/runs/$SOURCE_RUN)"
+          test "$(jq -r .head_sha <<<"$json")" = "$EXPECTED_SHA"
+          test "$(jq -r .status <<<"$json")" = "completed"
+          mkdir -p /tmp/stage12-evidence
+          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" -n "$SOURCE_ARTIFACT" -D /tmp/stage12-evidence
+          test -s /tmp/stage12-evidence/stage10-status.json
+          test -s /tmp/stage12-evidence/manifest.sha256.json
+      - name: Promote canonical generated evidence
+        run: |
+          cp /tmp/stage12-evidence/stage10-status.json reports/stage10-status.json
+          cp /tmp/stage12-evidence/manifest.sha256.json reports/manifest.sha256.json
+      - name: Verify narrow deterministic diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          mapfile -t files < <(git diff --name-only | sort)
+          printf '%s\n' "${files[@]}"
+          test "${#files[@]}" -eq 2
+          test "${files[0]}" = "reports/manifest.sha256.json"
+          test "${files[1]}" = "reports/stage10-status.json"
+          python -B -X utf8 scripts/check_stage10_integrity.py
+      - name: Commit evidence and push candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "generator-pism-evidence[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/manifest.sha256.json reports/stage10-status.json
+          git commit -m "test: bind Stage10 evidence to Generator Pism closure candidate"
+          git push origin HEAD:feature/generator-pism-operator-v1-2026-10-07
+          echo "NEW_SHA=$(git rev-parse HEAD)"
