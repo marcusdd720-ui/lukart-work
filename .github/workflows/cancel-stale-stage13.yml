@@ -5,48 +5,44 @@ on:
       - ops/cancel-stale-stage13-2026-10-08
 permissions:
   actions: write
+  pull-requests: read
 jobs:
   clear-stale:
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
-      - name: Sweep stale self-hosted runs until current candidate starts
+      - name: Cancel only explicitly whitelisted obsolete PR64 Stage11/12/13 runs
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           repo="${{ github.repository }}"
-          keep=""
-          final_sha="491659d3d786270a61ac6b16b3077871f0ac4070"
-          for pass in $(seq 1 2); do
-            echo "SWEEP_PASS=$pass"
-            gh run list --repo "$repo" --limit 100 --json databaseId,status,name,headSha,headBranch,event \
-              --jq '.[] | select((.status=="queued" or .status=="in_progress")) | [.databaseId,.status,.name,.headSha,.headBranch,.event] | @tsv' |
-            while IFS=$'\t' read -r id status name sha branch event; do
-              [[ -n "$id" ]] || continue
-              if [[ -n "$keep" ]] && grep -qw "$id" <<< "$keep"; then
-                echo "KEEP $id $status $name $sha"
-                continue
-              fi
-              if [[ "$sha" == "$final_sha" ]]; then
-                echo "KEEP_FINAL_SHA $id $status $name $sha"
-                continue
-              fi
-              case "$name" in
-                stage11-*|stage12-*|stage13-*|"Stage 11"*|"Stage 12"*|"Stage 13"*|"Generator Pism"*|"Hermes PR64 Probe")
-                  echo "CANCEL $id $status $name $sha"
-                  if [[ "$status" == "in_progress" ]]; then
-                    gh api --method POST "repos/$repo/actions/runs/$id/force-cancel" || true
-                  else
-                    gh run cancel "$id" --repo "$repo" || true
-                  fi
-                  ;;
-              esac
-            done
-            final_count="$(gh run list --repo "$repo" --limit 100 --json status,headSha --jq '[.[] | select(.headSha=="'"$final_sha"'" and (.status=="queued" or .status=="in_progress"))] | length')"
-            echo "FINAL_ACTIVE_COUNT=$final_count"
-            [[ "$final_count" -gt 0 ]] && exit 0
-            sleep 5
+          current="efbb9006afbddfcbf7e181888845735aa912e44c"
+          obsolete="491659d3d786270a61ac6b16b3077871f0ac4070"
+          live="$(gh api "repos/$repo/pulls/64" --jq .head.sha)"
+          [[ "$live" == "$current" ]] || { echo "ABORT_HEAD_MOVED=$live"; exit 1; }
+          echo "PROTECT_EXACT_SHA=$current"
+          for id in 37751547265 37752281450 37752278323 37752274895 37751555836 37751555852; do
+            record="$(gh api "repos/$repo/actions/runs/$id" --jq '[.head_sha,.status] | @tsv')"
+            IFS=$'\t' read -r sha status <<< "$record"
+            [[ "$sha" == "$obsolete" ]] || { echo "ABORT_RUN_ID_SHA_MISMATCH=$id $sha"; exit 1; }
+            case "$status" in
+              queued|waiting|pending)
+                echo "CANCEL_OBSOLETE_QUEUED=$id"
+                gh run cancel "$id" --repo "$repo"
+                ;;
+              in_progress)
+                echo "FORCE_CANCEL_OBSOLETE_ACTIVE=$id"
+                gh api -X POST "repos/$repo/actions/runs/$id/force-cancel"
+                ;;
+              completed)
+                echo "SKIP_ALREADY_COMPLETED=$id"
+                ;;
+              *)
+                echo "UNEXPECTED_STATUS=$id $status"; exit 1;;
+            esac
           done
-          echo "TARGET_DID_NOT_START_WITHIN_SWEEP_WINDOW"
-          exit 1
+          live="$(gh api "repos/$repo/pulls/64" --jq .head.sha)"
+          [[ "$live" == "$current" ]] || { echo "HEAD_MOVED_DURING_CLEANUP=$live"; exit 1; }
+          echo "CLEANUP_REQUESTS_COMPLETE_EXACT_SHA_PROTECTED=$current"
