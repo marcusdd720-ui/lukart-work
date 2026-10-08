@@ -13,7 +13,7 @@ jobs:
       - name: Dispatch exact candidate gates
         env:
           GH_TOKEN: ${{ github.token }}
-          SHA: 0b057046579417435e58963c56976d7ffc7ba85e
+          SHA: f96ce10fce17fc04ff68acb49dac96091164d4f2
           REF: feature/generator-pism-operator-v1-2026-10-07
         shell: bash
         run: |
@@ -22,4 +22,5 @@ jobs:
           gh workflow run stage11-assurance.yml --repo "$GITHUB_REPOSITORY" --ref "$REF" -f candidate_sha="$SHA" -f dispatch_token="$token-stage11"
           gh workflow run stage12-procedure-assurance.yml --repo "$GITHUB_REPOSITORY" --ref "$REF" -f candidate_sha="$SHA" -f dispatch_token="$token-stage12"
           gh workflow run stage13.yml --repo "$GITHUB_REPOSITORY" --ref "$REF" -f candidate_sha="$SHA" -f dispatch_token="$token-stage13"
+          gh workflow run generator-pism-go-live.yml --repo "$GITHUB_REPOSITORY" --ref "$REF" -f candidate_sha="$SHA"
           echo "DISPATCHED=$SHA"
