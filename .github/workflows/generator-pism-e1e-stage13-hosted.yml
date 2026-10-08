@@ -1,0 +1,73 @@
+name: Generator Pism e1e Stage13 Hosted Assurance
+on:
+  push:
+    branches:
+      - ops/generator-pism-e1e-stage13-hosted-2026-10-08
+permissions:
+  contents: read
+jobs:
+  assurance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: disposable-ci-password
+          POSTGRES_DB: lukart_stage02_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TESTED_SHA: "e1e435f5a18897cdf1b1fff17911d45cc46ba5c6"
+      LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
+      LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
+      LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_core_runtime password=disposable-runtime-password
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "e1e435f5a18897cdf1b1fff17911d45cc46ba5c6"
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python -m pip install '.[postgres,ingestion]' 'jsonschema==4.26.0'
+      - run: python -B -X utf8 export_contracts.py
+      - run: python -B -X utf8 scripts/prepare_ci_database.py
+      - name: Focused Stage13 provider assurance
+        run: python -B -X utf8 -m unittest -v tests.test_stage13
+      - name: Full repository regression
+        run: python -B -X utf8 scripts/verify_stage13.py
+      - name: Independent JSON Schema validation
+        run: python -B -X utf8 scripts/validate_stage10_schemas.py
+      - name: Package verification
+        run: python -B -X utf8 verify_package.py
+      - name: Post-implementation benchmark
+        run: python -B -X utf8 scripts/stage13_benchmark.py --mode POST_IMPLEMENTATION --output build/stage13/performance.json
+      - name: Validate performance evidence
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=json.loads(Path("build/stage13/performance.json").read_text())
+          assert p["tested_sha"] == os.environ["TESTED_SHA"]
+          assert p["network_io"] == "NOT_USED"
+          assert p["case_data"] == "SYNTHETIC_ONLY"
+          for row in p["results"]:
+              assert row["iterations"] >= 5
+              assert row["min"] <= row["p50"] <= row["p95"] <= row["p99"] <= row["max"]
+          print("STAGE13_PERFORMANCE_EVIDENCE: PASS")
+          PY
+      - name: Reproducibility
+        run: |
+          python -B -X utf8 scripts/refresh_manifest.py
+          git diff --check
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: generator-pism-e1e-stage13-hosted
+          path: build/stage13/
