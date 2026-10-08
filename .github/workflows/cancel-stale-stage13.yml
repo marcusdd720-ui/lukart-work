@@ -9,30 +9,39 @@ jobs:
   clear-stale:
     runs-on: ubuntu-latest
     steps:
-      - name: Cancel stale and duplicate self-hosted runs
+      - name: Sweep stale self-hosted runs until current candidate starts
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           repo="${{ github.repository }}"
-          gh api --method POST "repos/$repo/actions/runs/37738659896/force-cancel" || true
           keep="37738944692"
-          gh run list --repo "$repo" --limit 100 --json databaseId,status,name,headSha,headBranch,event             --jq '.[] | select((.status=="queued" or .status=="in_progress")) | [.databaseId,.status,.name,.headSha,.headBranch,.event] | @tsv' |
-          while IFS=$'\t' read -r id status name sha branch event; do
-            [[ -n "$id" ]] || continue
-            if grep -qw "$id" <<< "$keep"; then
-              echo "KEEP $id $status $name $sha"
-              continue
-            fi
-            case "$name" in
-              stage11-*|stage12-*|stage13-*|"Stage 11"*|"Stage 12"*|"Stage 13"*|"Generator Pism"*|"Hermes PR64 Probe")
-                echo "CANCEL $id $status $name $sha"
-                if [[ "$status" == "in_progress" ]]; then
-                  gh api --method POST "repos/$repo/actions/runs/$id/force-cancel" || true
-                else
-                  gh run cancel "$id" --repo "$repo" || true
-                fi
-                ;;
-            esac
+          for pass in $(seq 1 18); do
+            echo "SWEEP_PASS=$pass"
+            gh run list --repo "$repo" --limit 100 --json databaseId,status,name,headSha,headBranch,event \
+              --jq '.[] | select((.status=="queued" or .status=="in_progress")) | [.databaseId,.status,.name,.headSha,.headBranch,.event] | @tsv' |
+            while IFS=$'\t' read -r id status name sha branch event; do
+              [[ -n "$id" ]] || continue
+              if grep -qw "$id" <<< "$keep"; then
+                echo "KEEP $id $status $name $sha"
+                continue
+              fi
+              case "$name" in
+                stage11-*|stage12-*|stage13-*|"Stage 11"*|"Stage 12"*|"Stage 13"*|"Generator Pism"*|"Hermes PR64 Probe")
+                  echo "CANCEL $id $status $name $sha"
+                  if [[ "$status" == "in_progress" ]]; then
+                    gh api --method POST "repos/$repo/actions/runs/$id/force-cancel" || true
+                  else
+                    gh run cancel "$id" --repo "$repo" || true
+                  fi
+                  ;;
+              esac
+            done
+            state="$(gh run view 37738944692 --repo "$repo" --json status,conclusion --jq '.status')"
+            echo "TARGET_STATE=$state"
+            [[ "$state" == "in_progress" || "$state" == "completed" ]] && exit 0
+            sleep 5
           done
+          echo "TARGET_DID_NOT_START_WITHIN_SWEEP_WINDOW"
+          exit 1
