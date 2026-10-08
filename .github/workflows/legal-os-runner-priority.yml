@@ -1,0 +1,88 @@
+name: LUKART LEGAL OS runner priority - exact SHA
+on:
+  push:
+    branches:
+      - ops/legal-os-runner-priority-2026-10-08
+permissions:
+  contents: read
+  actions: write
+  pull-requests: read
+jobs:
+  free-existing-runner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Preserve passed gates and one exact candidate E2E, cancel redundant queue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="${GITHUB_REPOSITORY}"
+          candidate="efbb9006afbddfcbf7e181888845735aa912e44c"
+          helper_sha="afa2e80efe74f30471464f206fffbbe8c2611cff"
+          helper_branch="ops/cancel-stale-stage13-2026-10-08"
+          rescue_branch="ops/legal-os-runner-priority-2026-10-08"
+          e2e="37761628509"
+          actual="$(gh api "repos/$repo/pulls/64" --jq '.head.sha')"
+          [[ "$actual" == "$candidate" ]] || { echo "ABORT_PR64_HEAD_CHANGED=$actual"; exit 1; }
+          for gate in 37759018933 37759018884 37759018809; do
+            status="$(gh api "repos/$repo/actions/runs/$gate" --jq '[.head_sha,.status,.conclusion] | @tsv')"
+            [[ "$status" == "$(printf '%s\tcompleted\tsuccess' "$candidate")" ]] || { echo "ABORT_REQUIRED_GATE_NOT_GREEN=$gate $status"; exit 1; }
+            echo "PRESERVE_GREEN_GATE=$gate"
+          done
+          e2e_state="$(gh api "repos/$repo/actions/runs/$e2e" --jq '[.head_sha,.status] | @tsv')"
+          [[ "$e2e_state" == "$candidate"$'\t'* ]] || { echo "ABORT_PROTECTED_E2E_MISMATCH=$e2e_state"; exit 1; }
+          echo "PROTECTED_E2E=$e2e $e2e_state"
+
+          cancel_one() {
+            local id="$1" expected_sha="$2" expected_branch="$3"
+            local data sha branch status
+            data="$(gh api "repos/$repo/actions/runs/$id" --jq '[.head_sha,.head_branch,.status] | @tsv')"
+            IFS=$'\t' read -r sha branch status <<< "$data"
+            [[ "$sha" == "$expected_sha" && "$branch" == "$expected_branch" ]] || {
+              echo "ABORT_UNEXPECTED_IDENTITY=$id $data"
+              exit 1
+            }
+            case "$status" in
+              queued|waiting|pending)
+                echo "CANCEL_REDUNDANT_QUEUED=$id $sha"
+                gh run cancel "$id" --repo "$repo"
+                ;;
+              in_progress)
+                echo "FORCE_CANCEL_REDUNDANT_ACTIVE=$id $sha"
+                gh api -X POST "repos/$repo/actions/runs/$id/force-cancel"
+                ;;
+              completed)
+                echo "ALREADY_TERMINAL=$id"
+                ;;
+              *)
+                echo "ABORT_UNEXPECTED_STATUS=$id $status"
+                exit 1
+                ;;
+            esac
+          }
+
+          for id in 37761608493 37761608709; do
+            cancel_one "$id" "$helper_sha" "$helper_branch"
+          done
+          for id in 37761618420 37761621809 37761625150 37759018924 37759012098; do
+            cancel_one "$id" "$candidate" "feature/generator-pism-operator-v1-2026-10-07"
+          done
+
+          rescue_sha="$GITHUB_SHA"
+          mapfile -t rescue_checks < <(
+            gh run list --repo "$repo" --branch "$rescue_branch" --limit 100 \
+              --json databaseId,name,status,headSha \
+              --jq '.[] | select(.status == "queued" or .status == "in_progress") | select(.name | startswith("stage11-") or startswith("stage13-")) | .databaseId'
+          )
+          for id in "${rescue_checks[@]}"; do
+            [[ -n "$id" ]] || continue
+            cancel_one "$id" "$rescue_sha" "$rescue_branch"
+          done
+
+          actual="$(gh api "repos/$repo/pulls/64" --jq '.head.sha')"
+          [[ "$actual" == "$candidate" ]] || { echo "ABORT_PR64_HEAD_CHANGED_DURING_CLEANUP=$actual"; exit 1; }
+          e2e_state="$(gh api "repos/$repo/actions/runs/$e2e" --jq '[.head_sha,.status] | @tsv')"
+          [[ "$e2e_state" == "$candidate"$'\t'* ]] || { echo "ABORT_PROTECTED_E2E_CHANGED=$e2e_state"; exit 1; }
+          echo "RUNNER_QUEUE_PRIORITIZED_PROTECTED_E2E=$e2e $e2e_state"
