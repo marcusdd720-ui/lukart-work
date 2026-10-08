@@ -16,7 +16,7 @@ jobs:
         run: |
           set -euo pipefail
           repo="${{ github.repository }}"
-          gh api --method POST "repos/$repo/actions/runs/37738337264/force-cancel" || true
+          gh api --method POST "repos/$repo/actions/runs/37738659896/force-cancel" || true
           keep="37738944692"
           gh run list --repo "$repo" --limit 100 --json databaseId,status,name,headSha,headBranch,event             --jq '.[] | select((.status=="queued" or .status=="in_progress")) | [.databaseId,.status,.name,.headSha,.headBranch,.event] | @tsv' |
           while IFS=$'\t' read -r id status name sha branch event; do
