@@ -1,0 +1,71 @@
+name: Generator Pism f96 Stage12 Independent Closure
+on:
+  push:
+    branches:
+      - ops/generator-pism-f96-stage12-closure-2026-10-08
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: disposable-ci-password
+          POSTGRES_DB: lukart_stage02_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TESTED_SHA: f96ce10fce17fc04ff68acb49dac96091164d4f2
+      LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
+      LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
+      LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_core_runtime password=disposable-runtime-password
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: f96ce10fce17fc04ff68acb49dac96091164d4f2
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Assert exact tested SHA
+        run: test "$(git rev-parse HEAD)" = "$TESTED_SHA"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python -m pip install '.[postgres,ingestion]' 'jsonschema==4.26.0'
+      - run: python -B -X utf8 scripts/prepare_ci_database.py
+      - name: Stage12 trusted-procedure regression
+        run: python -B -X utf8 -m unittest -v tests.test_stage12_delivery_control
+      - name: Stage10 validation regression
+        run: python -B -X utf8 -m unittest -v tests.test_stage10
+      - name: Stage11 rendering regression
+        run: python -B -X utf8 -m unittest -v tests.test_stage11
+      - name: Independent JSON Schema validation
+        run: python -B -X utf8 scripts/validate_stage10_schemas.py
+      - name: Package verification
+        run: python -B -X utf8 verify_package.py
+      - name: Refresh integrity manifest
+        run: python -B -X utf8 scripts/refresh_manifest.py
+      - name: Integrity check
+        run: python -B -X utf8 scripts/check_stage10_integrity.py
+      - name: Reproducible generated evidence
+        run: |
+          git diff --check
+          git diff --exit-code
+          test -z "$(git ls-files --others --exclude-standard -- schemas reports examples tests/golden_cases docs/02-entity-catalog.md)"
+      - name: Bind exact-SHA full regression evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          json="$(gh api repos/${GITHUB_REPOSITORY}/actions/runs/37741946409)"
+          test "$(jq -r .head_sha <<<"$json")" = "$TESTED_SHA"
+          test "$(jq -r .status <<<"$json")" = "completed"
+          test "$(jq -r .conclusion <<<"$json")" = "success"
+          echo "EXACT_SHA_STAGE13_FULL_REGRESSION_BOUND: PASS"
