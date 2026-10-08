@@ -16,7 +16,7 @@ jobs:
         run: |
           set -euo pipefail
           repo="${{ github.repository }}"
-          keep="37705038287"
+          keep="37737512152"
           gh run list --repo "$repo" --limit 100 --json databaseId,status,name,headSha,headBranch,event             --jq '.[] | select((.status=="queued" or .status=="in_progress")) | [.databaseId,.status,.name,.headSha,.headBranch,.event] | @tsv' |
           while IFS=$'\t' read -r id status name sha branch event; do
             [[ -n "$id" ]] || continue
