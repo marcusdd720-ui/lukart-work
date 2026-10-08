@@ -17,6 +17,7 @@ jobs:
           set -euo pipefail
           repo="$GITHUB_REPOSITORY"
           gh api --method POST "repos/$repo/actions/runs/37742050082/force-cancel" || true
+          gh api --method POST "repos/$repo/actions/runs/37743027925/force-cancel" || true
           gh run list --repo "$repo" --branch "ops/cancel-duplicate-f96-stage13-2026-10-08" --limit 20             --json databaseId,status,name             --jq '.[] | select((.status=="queued" or .status=="in_progress") and (.name|test("^stage11-|^stage13-"))) | .databaseId' |
           while read -r id; do
             [[ -n "$id" ]] && gh run cancel "$id" --repo "$repo" || true
