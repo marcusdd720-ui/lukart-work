@@ -3,6 +3,7 @@ run-name: stage11-dispatch-${{ inputs.dispatch_token || github.sha }}
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -15,12 +16,19 @@ on:
         required: true
         type: string
 
+concurrency:
+  # Only supersede older PR candidates. Preserve main push and exact-SHA dispatch evidence.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('{0}:{1}', github.event.pull_request.head.repo.full_name, github.event.pull_request.head.ref) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
 jobs:
   validation:
     name: validation
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 60
     runs-on: [self-hosted, Linux, X64, lukart-stage11]
     services:
       postgres:
