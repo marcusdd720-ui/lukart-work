@@ -5,6 +5,8 @@ import importlib.metadata
 import json
 from pathlib import Path
 import platform
+import sys
+import tomllib
 from pydantic import TypeAdapter, ValidationError
 from lukart_work.domain.models import ENTITIES,EntityPayload
 from lukart_work.contracts.messages import CONTRACTS,Command
@@ -33,6 +35,12 @@ EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEviden
                  DocumentPlanProjection,DraftingProfile,DraftingInvocation,DraftingTrace,
                  DraftingRejectionTrace,DraftingTerminalResult,ModelExecutionReceipt)
 checks=[]
+
+pyproject_data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+requires_python = pyproject_data.get("project", {}).get("requires-python", ">=3.11")
+
+assert sys.version_info >= (3, 11), f"Python >=3.11 required by project, got {platform.python_version()}"
+
 for cls in ENTITIES+CONTRACTS+EXTRA_CONTRACTS+STAGE10_CONTRACTS+FINALIZATION_CONTRACTS:
     schema=json.loads((ROOT/'schemas'/f'{cls.__name__}.schema.json').read_text())
     expected=cls.model_json_schema()
@@ -56,10 +64,10 @@ for p in (ROOT/'lukart_work/domain').glob('*.py'):
     for node in ast.walk(tree):
         if isinstance(node,ast.ImportFrom):assert not any(x in (node.module or '').split('.') for x in ('ui','rendering','openai','anthropic','lukart_ros'))
 checks.append({'check':'domain-import-boundaries','result':'PASS'})
-result={'python':platform.python_version(),'pydantic':importlib.metadata.version('pydantic'),'baseline_sha256':hashlib.sha256((ROOT/'docs/00-baseline.md').read_bytes().replace(b'\r\n', b'\n')).hexdigest(),'checks':checks,'json_files_parsed':len(list((ROOT/'schemas').glob('*.json'))),'independent_json_schema_engine':'NOT_EXECUTED'}
+result={'python':requires_python,'pydantic':importlib.metadata.version('pydantic'),'baseline_sha256':hashlib.sha256((ROOT/'docs/00-baseline.md').read_bytes().replace(b'\r\n', b'\n')).hexdigest(),'checks':checks,'json_files_parsed':len(list((ROOT/'schemas').glob('*.json'))),'independent_json_schema_engine':'NOT_EXECUTED'}
 (ROOT/'reports/package-validation.json').write_text(
     json.dumps(result,indent=2)+'\n',
     encoding='utf-8',
     newline='\n',
 )
-print(json.dumps({'checks':len(checks),'json_files_parsed':result['json_files_parsed'],'result':'PASS'}))
+print(json.dumps({'checks':len(checks),'json_files_parsed':result['json_files_parsed'],'result':'PASS','runtime_python_version':platform.python_version()}))

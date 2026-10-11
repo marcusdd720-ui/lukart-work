@@ -7,6 +7,13 @@ from lukart_work.validation.rules import *
 from lukart_work.domain.lifecycle import INITIAL,TRANSITIONS
 
 class ContractTests(unittest.TestCase):
+    def test_python_version_spec_matches_canonical_pyproject_requirements(self):
+        import tomllib
+        root = Path(__file__).resolve().parents[1]
+        pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+        expected_python = pyproject.get("project", {}).get("requires-python", ">=3.11")
+        package_report = json.loads((root / "reports/package-validation.json").read_text(encoding="utf-8"))
+        self.assertEqual(package_report["python"], expected_python)
     def code(self,code,fn,*args):
         with self.assertRaises(Violation) as c:fn(*args)
         self.assertEqual(c.exception.code,code)

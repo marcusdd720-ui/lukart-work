@@ -170,7 +170,7 @@
   "lukart_work/validation/rules.py": "47579a6e00576da2b75d2dcc11b0396beec14f992340e4ce8fbaafbd69648d60",
   "lukart_work/validation/service.py": "e30733e319357f3ac44c00c8bd53a2210187f040efcf60e8c46c286b7e3f62e2",
   "pyproject.toml": "f146d0656079fbad57137e31f5fa9d8181ecb14ef799a50a8d1add5270d54a90",
-  "reports/package-validation.json": "20804a5aa7e31a0ee77554cd39b7c038e784dcb1f63cb5113bd88d79a1d81951",
+  "reports/package-validation.json": "4ed2115040a58026fb0ea2f48c139d9c7268c3cd37cabd4190d2e4b2dd9e914c",
   "reports/stage02-postmerge-unittest.txt": "46c95bd4bc3525970d6cc2fdd61536d16147684e9ca725dd1d1d45fcd459a7c5",
   "reports/stage02-status.json": "b5a8ed7ffd592c36710458a8ed9a3ed81b3c8177eec1c382d7e81fbd5615559d",
   "reports/stage02-unittest.txt": "2a5d6dc7f2c578f1f6f12970a8da48e4d550b76ec84f373cdedb9f2fc6d13a8d",
@@ -359,7 +359,7 @@
   "tests/test_baseline_type_packs.py": "1f2d40e085d7500737048daecd5df1b99a854046b7f051028ab27cb8fb3f8231",
   "tests/test_boundaries.py": "a94da4c12d5f051fae2dcae7a548ed884714e19a96ce114c478bcfceee75c15f",
   "tests/test_chat_zero_cost.py": "37564a2021ff26c32a36443b3e4d427bb87da4acbe88caba0371cf59ccb0e87f",
-  "tests/test_contracts.py": "7a5cd2f23580c8fbda7f69381056c94801c7103f2cd6771ef7e26d4af88a53a4",
+  "tests/test_contracts.py": "d4ced3badeb823ceb479f90280ad7b2b3ff9f83188c8dcf9e8ed88f54d9cc9a1",
   "tests/test_cross_repo_conformance.py": "f116328c9ceb35cf6f9b797c057cc94708958a4cc7f4151fd8e1327cbd9e7b0e",
   "tests/test_finalization.py": "989eda35f63be615ee0feda723e97e259cde3e5ad03a23fa34713d72e3698ca4",
   "tests/test_generator_pism_type_e2e.py": "20d261b9b2c9977c46121d6cb0b24b30466cb8edc475bd3d8a8f0fa8abbe85e4",
@@ -383,5 +383,5 @@
   "tests/test_stage12.py": "c336869453438b19b0a9764fa22d40ba5fe57d10f09daed5f897cae8626860c9",
   "tests/test_stage12_delivery_control.py": "f1693b4b59a36b82144001086996d5ad38d2edccaefaf64201df41e594078589",
   "tests/test_stage13.py": "495e01039a69aa362b11e468e08c8be6ffa98de3a77c42afcaf0f76b022fa9cc",
-  "verify_package.py": "bdfe41cc20f79bc63b335304ff2fbf3360ae6327854db804cc6dcc2531af738f"
+  "verify_package.py": "8b0f4911a832e9f3ec41a2e5f843beafc6f27d3cbc5e5c65e6a5782693e457ac"
 }
