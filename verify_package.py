@@ -5,7 +5,6 @@ import importlib.metadata
 import json
 from pathlib import Path
 import platform
-import sys
 import tomllib
 from pydantic import TypeAdapter, ValidationError
 from lukart_work.domain.models import ENTITIES,EntityPayload
@@ -27,6 +26,7 @@ from lukart_work.contracts.versions import contract_version
 from lukart_work.validation.contracts import STAGE10_CONTRACTS
 from lukart_work.finalization.contracts import FINALIZATION_CONTRACTS
 from lukart_work.validation.rules import parse_entity
+from lukart_work.validation.python_requirements import validated_python_requirement
 ROOT=Path(__file__).parent
 EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEvidenceRequest,CandidateReviewRecord,
                  FactEvidenceQuery,FactEvidenceMatrix,RegistryRequest,RegistryReceipt,RegistryQuery,
@@ -37,9 +37,7 @@ EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEviden
 checks=[]
 
 pyproject_data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-requires_python = pyproject_data.get("project", {}).get("requires-python", ">=3.11")
-
-assert sys.version_info >= (3, 11), f"Python >=3.11 required by project, got {platform.python_version()}"
+requires_python = validated_python_requirement(pyproject_data, platform.python_version())
 
 for cls in ENTITIES+CONTRACTS+EXTRA_CONTRACTS+STAGE10_CONTRACTS+FINALIZATION_CONTRACTS:
     schema=json.loads((ROOT/'schemas'/f'{cls.__name__}.schema.json').read_text())
