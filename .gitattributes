@@ -1,0 +1,5 @@
+/schemas/*.json text eol=lf
+/examples/*.json text eol=lf
+/tests/golden_cases/source_to_fact.json text eol=lf
+/docs/02-entity-catalog.md text eol=lf
+/reports/package-validation.json text eol=lf

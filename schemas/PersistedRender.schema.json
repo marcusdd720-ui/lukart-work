@@ -1,0 +1,1438 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "CheckResult": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "schema",
+            "facts",
+            "evidence",
+            "legal_basis",
+            "procedure",
+            "contradictions",
+            "citations",
+            "requests",
+            "language",
+            "document",
+            "adversarial",
+            "render"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN",
+            "NOT_RUN"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "validator": {
+          "$ref": "#/$defs/VersionPin"
+        }
+      },
+      "required": [
+        "check",
+        "outcome",
+        "validator"
+      ],
+      "title": "CheckResult",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "LayoutBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "enum": [
+            "DOCUMENT_HEADER",
+            "PARTY_BLOCK",
+            "REQUEST_HEADING",
+            "REQUEST_ITEM",
+            "SECTION_HEADING",
+            "BODY",
+            "LEGAL_BASIS",
+            "QUOTE",
+            "SIGNATURE",
+            "ATTACHMENT_HEADING",
+            "ATTACHMENT_ITEM"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "style_token": {
+          "enum": [
+            "document.heading.primary",
+            "document.heading.secondary",
+            "document.party_block",
+            "document.request",
+            "document.body",
+            "document.legal_basis",
+            "document.quote",
+            "document.signature",
+            "document.attachment"
+          ],
+          "title": "Style Token",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Refs",
+          "type": "array"
+        },
+        "ordinal": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ordinal"
+        }
+      },
+      "required": [
+        "role",
+        "style_token",
+        "text"
+      ],
+      "title": "LayoutBlock",
+      "type": "object"
+    },
+    "LayoutTree": {
+      "additionalProperties": false,
+      "properties": {
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "authority": {
+          "$ref": "#/$defs/RenderAuthority"
+        },
+        "profile": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "blocks": {
+          "items": {
+            "$ref": "#/$defs/LayoutBlock"
+          },
+          "maxItems": 5000,
+          "minItems": 1,
+          "title": "Blocks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "case_id",
+        "draft",
+        "snapshot_hash",
+        "authority",
+        "profile",
+        "blocks"
+      ],
+      "title": "LayoutTree",
+      "type": "object"
+    },
+    "Locator": {
+      "additionalProperties": false,
+      "description": "A source location must be nonempty and address immutable source bytes.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "PAGE",
+            "PARAGRAPH",
+            "ARTICLE",
+            "BYTE_RANGE",
+            "RECORD"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "fragment_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fragment Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "value",
+        "fragment_hash"
+      ],
+      "title": "Locator",
+      "type": "object"
+    },
+    "PersistedRenderArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact": {
+          "$ref": "#/$defs/RenderArtifact"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "artifact"
+      ],
+      "title": "PersistedRenderArtifact",
+      "type": "object"
+    },
+    "ProceduralDatum": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Key",
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "FACT",
+            "CLAIM",
+            "HYPOTHESIS",
+            "INTERPRETATION",
+            "UNKNOWN",
+            "UNRESOLVED"
+          ],
+          "title": "Classification",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Facts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "classification"
+      ],
+      "title": "ProceduralDatum",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "RenderArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "enum": [
+            "DOCX",
+            "PDF"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/pdf"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "byte_length": {
+          "minimum": 1,
+          "title": "Byte Length",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "format",
+        "media_type",
+        "content_hash",
+        "byte_length"
+      ],
+      "title": "RenderArtifact",
+      "type": "object"
+    },
+    "RenderAuthority": {
+      "additionalProperties": false,
+      "description": "Exact trusted pre-render provenance retained in every rendered artifact receipt.",
+      "properties": {
+        "semantic_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Semantic Digest",
+          "type": "string"
+        },
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "draft_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Draft Hash",
+          "type": "string"
+        },
+        "plan": {
+          "$ref": "#/$defs/Ref"
+        },
+        "plan_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Plan Hash",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "format": "uuid",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "validation_run": {
+          "$ref": "#/$defs/ValidationRunPin"
+        },
+        "validation_execution_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Validation Execution Hash",
+          "type": "string"
+        },
+        "validation_projection_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Validation Projection Hash",
+          "type": "string"
+        },
+        "case_sequence": {
+          "minimum": 1,
+          "title": "Case Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "semantic_digest",
+        "draft",
+        "draft_hash",
+        "plan",
+        "plan_hash",
+        "snapshot_id",
+        "snapshot_hash",
+        "validation_run",
+        "validation_execution_hash",
+        "validation_projection_hash",
+        "case_sequence"
+      ],
+      "title": "RenderAuthority",
+      "type": "object"
+    },
+    "RenderBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "enum": [
+            "DOCUMENT_HEADER",
+            "PARTY_BLOCK",
+            "REQUEST_HEADING",
+            "REQUEST_ITEM",
+            "SECTION_HEADING",
+            "BODY",
+            "LEGAL_BASIS",
+            "QUOTE",
+            "SIGNATURE",
+            "ATTACHMENT_HEADING",
+            "ATTACHMENT_ITEM"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Refs",
+          "type": "array"
+        },
+        "ordinal": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ordinal"
+        }
+      },
+      "required": [
+        "role",
+        "text"
+      ],
+      "title": "RenderBlock",
+      "type": "object"
+    },
+    "RenderBundleMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "$ref": "#/$defs/RenderModel"
+        },
+        "layout": {
+          "$ref": "#/$defs/LayoutTree"
+        },
+        "receipt": {
+          "$ref": "#/$defs/RenderReceipt"
+        }
+      },
+      "required": [
+        "model",
+        "layout",
+        "receipt"
+      ],
+      "title": "RenderBundleMeta",
+      "type": "object"
+    },
+    "RenderModel": {
+      "additionalProperties": false,
+      "properties": {
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "authority": {
+          "$ref": "#/$defs/RenderAuthority"
+        },
+        "blocks": {
+          "items": {
+            "$ref": "#/$defs/RenderBlock"
+          },
+          "maxItems": 5000,
+          "minItems": 1,
+          "title": "Blocks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "case_id",
+        "draft",
+        "snapshot_hash",
+        "authority",
+        "blocks"
+      ],
+      "title": "RenderModel",
+      "type": "object"
+    },
+    "RenderReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "authority": {
+          "$ref": "#/$defs/RenderAuthority"
+        },
+        "authorization_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Authorization Hash",
+          "type": "string"
+        },
+        "semantic_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Semantic Digest",
+          "type": "string"
+        },
+        "render_model_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Render Model Digest",
+          "type": "string"
+        },
+        "layout_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Layout Digest",
+          "type": "string"
+        },
+        "render_profile": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "renderer": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/RenderArtifact"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Artifacts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "draft",
+        "snapshot_hash",
+        "authority",
+        "authorization_hash",
+        "semantic_digest",
+        "render_model_digest",
+        "layout_digest",
+        "render_profile",
+        "renderer",
+        "artifacts"
+      ],
+      "title": "RenderReceipt",
+      "type": "object"
+    },
+    "ReviewAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "facts",
+            "evidence",
+            "legal_basis",
+            "procedure",
+            "contradictions",
+            "language",
+            "adversarial"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN",
+            "NOT_RUN"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check",
+        "outcome",
+        "rationale"
+      ],
+      "title": "ReviewAssessment",
+      "type": "object"
+    },
+    "ReviewIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "enum": [
+            "facts",
+            "evidence",
+            "legal_basis",
+            "procedure",
+            "contradictions",
+            "language",
+            "adversarial"
+          ],
+          "title": "Check",
+          "type": "string"
+        },
+        "code": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "BLOCKER",
+            "CRITICAL"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check",
+        "code",
+        "severity",
+        "path",
+        "message"
+      ],
+      "title": "ReviewIssue",
+      "type": "object"
+    },
+    "SectionText": {
+      "additionalProperties": false,
+      "properties": {
+        "section": {
+          "$ref": "#/$defs/Ref"
+        },
+        "statements": {
+          "items": {
+            "$ref": "#/$defs/Statement"
+          },
+          "minItems": 1,
+          "title": "Statements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "section",
+        "statements"
+      ],
+      "title": "SectionText",
+      "type": "object"
+    },
+    "SemanticDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "header": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Header",
+          "type": "string"
+        },
+        "parties": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Parties",
+          "type": "array"
+        },
+        "requests": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Requests",
+          "type": "array"
+        },
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/SectionText"
+          },
+          "title": "Sections",
+          "type": "array"
+        },
+        "attachments": {
+          "items": {
+            "$ref": "#/$defs/SourceAnchor"
+          },
+          "title": "Attachments",
+          "type": "array"
+        },
+        "signature_party": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Ref"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "tenant_id",
+        "case_id",
+        "draft",
+        "snapshot_hash",
+        "header",
+        "parties",
+        "requests",
+        "sections",
+        "attachments",
+        "signature_party"
+      ],
+      "title": "SemanticDocument",
+      "type": "object"
+    },
+    "SourceAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "format": "uuid",
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Hash",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/Locator"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_hash",
+        "locator"
+      ],
+      "title": "SourceAnchor",
+      "type": "object"
+    },
+    "Statement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "statement_type": {
+          "enum": [
+            "FACTUAL",
+            "LEGAL",
+            "REQUEST",
+            "INFERENCE",
+            "STRUCTURAL"
+          ],
+          "title": "Statement Type",
+          "type": "string"
+        },
+        "support": {
+          "enum": [
+            "SOURCE_BACKED",
+            "INFERRED",
+            "UNSUPPORTED"
+          ],
+          "title": "Support",
+          "type": "string"
+        },
+        "refs": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Refs",
+          "type": "array"
+        },
+        "citations": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "inference_label": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inference Label"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "statement_type",
+        "support",
+        "refs",
+        "citations"
+      ],
+      "title": "Statement",
+      "type": "object"
+    },
+    "ValidationExecution": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "run": {
+          "$ref": "#/$defs/ValidationRun"
+        },
+        "output_draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "output_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Output Hash",
+          "type": "string"
+        },
+        "evaluation_date": {
+          "format": "date",
+          "title": "Evaluation Date",
+          "type": "string"
+        },
+        "input_sequence": {
+          "minimum": 1,
+          "title": "Input Sequence",
+          "type": "integer"
+        },
+        "committed_sequence": {
+          "minimum": 1,
+          "title": "Committed Sequence",
+          "type": "integer"
+        },
+        "review": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ValidationReview"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dependencies": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Dependencies",
+          "type": "array"
+        },
+        "validator": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "manifest": {
+          "$ref": "#/$defs/ValidationManifest"
+        }
+      },
+      "required": [
+        "id",
+        "run",
+        "output_draft",
+        "output_hash",
+        "evaluation_date",
+        "input_sequence",
+        "committed_sequence",
+        "review",
+        "dependencies",
+        "validator",
+        "manifest"
+      ],
+      "title": "ValidationExecution",
+      "type": "object"
+    },
+    "ValidationManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "draft_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Draft Hash",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "dependency_hashes": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "$ref": "#/$defs/Ref"
+              },
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Dependency Hashes",
+          "type": "array"
+        },
+        "review_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Review Hash"
+        },
+        "evaluation_date": {
+          "format": "date",
+          "title": "Evaluation Date",
+          "type": "string"
+        },
+        "procedural_context": {
+          "items": {
+            "$ref": "#/$defs/ProceduralDatum"
+          },
+          "title": "Procedural Context",
+          "type": "array"
+        }
+      },
+      "required": [
+        "policy",
+        "draft_hash",
+        "snapshot_hash",
+        "dependency_hashes",
+        "review_hash",
+        "evaluation_date",
+        "procedural_context"
+      ],
+      "title": "ValidationManifest",
+      "type": "object"
+    },
+    "ValidationProjection": {
+      "additionalProperties": false,
+      "properties": {
+        "execution": {
+          "$ref": "#/$defs/ValidationExecution"
+        },
+        "freshness": {
+          "enum": [
+            "CURRENT",
+            "STALE",
+            "UNKNOWN"
+          ],
+          "title": "Freshness",
+          "type": "string"
+        },
+        "eligible_for_approval": {
+          "title": "Eligible For Approval",
+          "type": "boolean"
+        },
+        "reasons": {
+          "items": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        }
+      },
+      "required": [
+        "execution",
+        "freshness",
+        "eligible_for_approval",
+        "reasons"
+      ],
+      "title": "ValidationProjection",
+      "type": "object"
+    },
+    "ValidationReview": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "draft_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Draft Hash",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "policy": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "evaluation_date": {
+          "format": "date",
+          "title": "Evaluation Date",
+          "type": "string"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "assessments": {
+          "items": {
+            "$ref": "#/$defs/ReviewAssessment"
+          },
+          "title": "Assessments",
+          "type": "array"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/$defs/ReviewIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "rationale": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "tenant_id",
+        "case_id",
+        "draft",
+        "draft_hash",
+        "snapshot_hash",
+        "policy",
+        "evaluation_date",
+        "actor",
+        "recorded_at",
+        "assessments",
+        "issues",
+        "rationale"
+      ],
+      "title": "ValidationReview",
+      "type": "object"
+    },
+    "ValidationRun": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "draft_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Draft Hash",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "policy": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "completed_at": {
+          "format": "date-time",
+          "title": "Completed At",
+          "type": "string"
+        },
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/CheckResult"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/Ref"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "render_hashes": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Render Hashes",
+          "type": "array"
+        },
+        "execution_manifest_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Execution Manifest Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "tenant_id",
+        "case_id",
+        "draft",
+        "draft_hash",
+        "snapshot_hash",
+        "policy",
+        "completed_at",
+        "checks",
+        "findings",
+        "render_hashes",
+        "execution_manifest_hash"
+      ],
+      "title": "ValidationRun",
+      "type": "object"
+    },
+    "ValidationRunPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "content_hash"
+      ],
+      "title": "ValidationRunPin",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "validated_draft": {
+      "$ref": "#/$defs/Ref"
+    },
+    "validated_draft_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Validated Draft Hash",
+      "type": "string"
+    },
+    "snapshot_id": {
+      "format": "uuid",
+      "title": "Snapshot Id",
+      "type": "string"
+    },
+    "snapshot_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Snapshot Hash",
+      "type": "string"
+    },
+    "semantic_profile": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "document": {
+      "$ref": "#/$defs/SemanticDocument"
+    },
+    "validation": {
+      "$ref": "#/$defs/ValidationProjection"
+    },
+    "meta": {
+      "$ref": "#/$defs/RenderBundleMeta"
+    },
+    "artifacts": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/PersistedRenderArtifact"
+        },
+        {
+          "$ref": "#/$defs/PersistedRenderArtifact"
+        }
+      ],
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "actor": {
+      "$ref": "#/$defs/Actor"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "committed_sequence": {
+      "title": "Committed Sequence",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "case_id",
+    "validated_draft",
+    "validated_draft_hash",
+    "snapshot_id",
+    "snapshot_hash",
+    "semantic_profile",
+    "document",
+    "validation",
+    "meta",
+    "artifacts",
+    "actor",
+    "recorded_at",
+    "committed_sequence"
+  ],
+  "title": "PersistedRender",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:PersistedRender:1.0.0"
+}

@@ -1,0 +1,102 @@
+{
+  "$defs": {
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "statement_id": {
+      "format": "uuid",
+      "title": "Statement Id",
+      "type": "string"
+    },
+    "section": {
+      "$ref": "#/$defs/Ref"
+    },
+    "statement_type": {
+      "enum": [
+        "FACTUAL",
+        "LEGAL",
+        "REQUEST",
+        "INFERENCE",
+        "STRUCTURAL"
+      ],
+      "title": "Statement Type",
+      "type": "string"
+    },
+    "refs": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Refs",
+      "type": "array"
+    },
+    "citations": {
+      "items": {
+        "$ref": "#/$defs/Ref"
+      },
+      "title": "Citations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "statement_id",
+    "section",
+    "statement_type",
+    "refs",
+    "citations"
+  ],
+  "title": "FinalStatementTrace",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:FinalStatementTrace:1.0.0"
+}

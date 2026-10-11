@@ -1,0 +1,208 @@
+{
+  "$defs": {
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "RenderArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "enum": [
+            "DOCX",
+            "PDF"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/pdf"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "byte_length": {
+          "minimum": 1,
+          "title": "Byte Length",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "format",
+        "media_type",
+        "content_hash",
+        "byte_length"
+      ],
+      "title": "RenderArtifact",
+      "type": "object"
+    },
+    "ValidationRunPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "content_hash"
+      ],
+      "title": "ValidationRunPin",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "input_validation": {
+      "$ref": "#/$defs/ValidationRunPin"
+    },
+    "input_validation_projection_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Input Validation Projection Hash",
+      "type": "string"
+    },
+    "render_receipt_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Render Receipt Hash",
+      "type": "string"
+    },
+    "rendered_draft": {
+      "$ref": "#/$defs/Ref"
+    },
+    "rendered_draft_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Rendered Draft Hash",
+      "type": "string"
+    },
+    "approval": {
+      "$ref": "#/$defs/Ref"
+    },
+    "approval_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Approval Hash",
+      "type": "string"
+    },
+    "artifacts": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/RenderArtifact"
+        },
+        {
+          "$ref": "#/$defs/RenderArtifact"
+        }
+      ],
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "policy": {
+      "$ref": "#/$defs/VersionPin"
+    }
+  },
+  "required": [
+    "input_validation",
+    "input_validation_projection_hash",
+    "render_receipt_hash",
+    "rendered_draft",
+    "rendered_draft_hash",
+    "approval",
+    "approval_hash",
+    "artifacts",
+    "policy"
+  ],
+  "title": "PostRenderManifest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:PostRenderManifest:1.0.0"
+}

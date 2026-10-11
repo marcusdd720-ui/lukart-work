@@ -1,0 +1,62 @@
+{
+  "$defs": {
+    "RenderArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "enum": [
+            "DOCX",
+            "PDF"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "media_type": {
+          "enum": [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/pdf"
+          ],
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "byte_length": {
+          "minimum": 1,
+          "title": "Byte Length",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "format",
+        "media_type",
+        "content_hash",
+        "byte_length"
+      ],
+      "title": "RenderArtifact",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "format": "uuid",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "artifact": {
+      "$ref": "#/$defs/RenderArtifact"
+    }
+  },
+  "required": [
+    "artifact_id",
+    "artifact"
+  ],
+  "title": "PersistedRenderArtifact",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:PersistedRenderArtifact:1.0.0"
+}

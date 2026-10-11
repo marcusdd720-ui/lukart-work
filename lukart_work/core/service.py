@@ -21,7 +21,8 @@ ADD = {
     'CreateCase': m.Case, 'AddParty': m.Party, 'AddInstitution': m.Institution,
     'AddProceeding': m.Proceeding, 'AddFiling': m.Filing, 'AddEvidence': m.Evidence,
     'AddFact': m.Fact, 'AddIssue': m.Issue, 'AddClaim': m.Claim,
-    'AddRequest': m.Request, 'AddSection': m.Section, 'AddPlan': m.DocumentPlan,
+    'AddRequest': m.Request, 'AddCitation': m.Citation,
+    'AddSection': m.Section, 'AddPlan': m.DocumentPlan,
 }
 EDIT = {'EditCase': m.Case, 'EditParty': m.Party, 'EditFact': m.Fact}
 CHANGE = {
@@ -32,6 +33,7 @@ CHANGE = {
     'DisputeFact': ('Fact', 'DISPUTED'), 'PrepareSection': ('Section', 'READY'),
     'ReviewPlan': ('DocumentPlan', 'REVIEWED'), 'ApprovePlan': ('DocumentPlan', 'APPROVED'),
     'SupersedePlan': ('DocumentPlan', 'SUPERSEDED'),
+    'BindCitation': ('Citation', 'BOUND'), 'VerifyCitation': ('Citation', 'VERIFIED'),
     'RevokeDecision': ('Decision', 'REVOKED'),
 }
 APPROVAL = {'VerifyParty': 'verification_decision', 'ConfirmFact': 'acceptance', 'ApprovePlan': 'approval'}
@@ -142,7 +144,10 @@ class CommandService:
             raise Violation('GATE_DENIED')
         elif case.status == 'CLOSED' and request.operation not in ('ReopenCase', 'ArchiveCase'):
             raise Violation('GATE_DENIED')
-        if request.operation in ('ReopenCase', 'ArchiveCase', 'RevokeDecision', 'SupersedePlan') and principal.actor.kind != 'HUMAN':
+        if request.operation in (
+            'ReopenCase', 'ArchiveCase', 'RevokeDecision', 'SupersedePlan',
+            'AddCitation', 'BindCitation', 'VerifyCitation',
+        ) and principal.actor.kind != 'HUMAN':
             raise Violation('FORBIDDEN')
 
     def _metadata(self, request, principal, now, kind, old=None):

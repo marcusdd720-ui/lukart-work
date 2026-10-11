@@ -108,7 +108,7 @@ class Stage12Tests(unittest.TestCase):
         import psycopg
 
         self.assertTrue(core.ADMIN)
-        with psycopg.connect(core.ADMIN) as connection:
+        with psycopg.connect(core.ADMIN_RUNTIME) as connection:
             connection.execute('ALTER TABLE lw_core.commands DISABLE TRIGGER immutable_record')
             try:
                 connection.execute(

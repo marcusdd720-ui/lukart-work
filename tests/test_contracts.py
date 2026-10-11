@@ -1,11 +1,19 @@
 import json
 import unittest
+from pathlib import Path
 from pydantic import ValidationError
 from tests.fixtures import *
 from lukart_work.validation.rules import *
 from lukart_work.domain.lifecycle import INITIAL,TRANSITIONS
 
 class ContractTests(unittest.TestCase):
+    def test_python_version_spec_matches_canonical_pyproject_requirements(self):
+        import tomllib
+        root = Path(__file__).resolve().parents[1]
+        pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+        expected_python = pyproject.get("project", {}).get("requires-python", ">=3.11")
+        package_report = json.loads((root / "reports/package-validation.json").read_text(encoding="utf-8"))
+        self.assertEqual(package_report["python"], expected_python)
     def code(self,code,fn,*args):
         with self.assertRaises(Violation) as c:fn(*args)
         self.assertEqual(c.exception.code,code)
@@ -14,6 +22,20 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(set(TRANSITIONS),{e.__name__ for e in ENTITIES})
         for e in ENTITIES:
             self.assertEqual(set(e.model_fields['status'].annotation.__args__),{s for pair in TRANSITIONS[e.__name__] for s in pair})
+    def test_generated_artifacts_use_canonical_lf(self):
+        root=Path(__file__).resolve().parents[1]
+        paths=(
+            list((root/'schemas').glob('*.json'))
+            +list((root/'examples').glob('*.json'))
+            +[
+                root/'docs/02-entity-catalog.md',
+                root/'reports/package-validation.json',
+                root/'tests/golden_cases/source_to_fact.json',
+            ]
+        )
+        for path in paths:
+            with self.subTest(path=path.relative_to(root)):
+                self.assertNotIn(b'\r\n',path.read_bytes())
     def test_roundtrip(self):self.assertEqual(parse_entity(case().model_dump_json()),case())
     def test_extra_field_rejected(self):
         d=json.loads(case().model_dump_json());d['ui_state']='FINAL'

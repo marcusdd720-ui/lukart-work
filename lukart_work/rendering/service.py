@@ -231,11 +231,21 @@ def derive_render_authority(
     approval = _record(records, plan.approval, scope)
     if not isinstance(approval, Decision):
         raise Violation("REFERENCE_TYPE")
+    approved_target = entity_ref(plan) in approval.targets
+    if not approved_target and plan.revision > 1:
+        predecessor = Ref(
+            kind="DocumentPlan",
+            id=plan.id,
+            revision=plan.revision - 1,
+        )
+        if predecessor in approval.targets:
+            previous = _record(records, predecessor, scope)
+            approved_target = plan.previous_hash == digest(previous)
     if (
         approval.status != "RECORDED"
         or approval.decision_type != "PLAN_APPROVAL"
         or approval.outcome != "ACCEPT"
-        or entity_ref(plan) not in approval.targets
+        or not approved_target
     ):
         raise Violation("GATE_DENIED")
 

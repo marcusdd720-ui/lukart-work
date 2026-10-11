@@ -21,7 +21,8 @@ permissions:
 jobs:
   assurance:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, lukart-stage11]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
     services:
       postgres:
         image: postgres:18
@@ -79,6 +80,7 @@ jobs:
         with:
           ref: ${{ steps.source.outputs.sha }}
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Assert exact tested source
         shell: bash
@@ -91,6 +93,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
+
+      - name: PostgreSQL 18 backup tools
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+          echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
 
       - run: python -m pip install '.[postgres,ingestion]' 'jsonschema==4.26.0'
 

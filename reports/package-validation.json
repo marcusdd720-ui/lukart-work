@@ -1,5 +1,5 @@
 {
-  "python": "3.14.7",
+  "python": ">=3.11",
   "pydantic": "2.13.5",
   "baseline_sha256": "3c980207dd77cb2b0139a710d4446c76408c90ceff0f1d124eba853afdaebe83",
   "checks": [
@@ -364,6 +364,86 @@
       "result": "PASS"
     },
     {
+      "check": "schema-export:FinalizationProfile",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationRequest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationQuery",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:PersistedRenderArtifact",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:PersistedRender",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:PostRenderManifest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationApproval",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationRelease",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalizationProjection",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageProfile",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalDocumentRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalValidationRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalSourcesRecord",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalTraceNode",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalStatementTrace",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalEvidenceMap",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalArgumentMap",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageMember",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageManifest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema-export:FinalPackageRecord",
+      "result": "PASS"
+    },
+    {
       "check": "schema-export:Entity",
       "result": "PASS"
     },
@@ -384,6 +464,6 @@
       "result": "PASS"
     }
   ],
-  "json_files_parsed": 94,
+  "json_files_parsed": 114,
   "independent_json_schema_engine": "NOT_EXECUTED"
 }

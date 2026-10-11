@@ -905,8 +905,13 @@ class ControlledDraftingService(CommandService):
                         attempted = invocations[:index + 1]
                         try:
                             raw_value = self.model_provider.propose(invocation)
+                            serializable = (
+                                raw_value.model_dump(mode='json')
+                                if hasattr(raw_value, 'model_dump')
+                                else raw_value
+                            )
                             raw_json = json.dumps(
-                                raw_value, sort_keys=True, separators=(',', ':'),
+                                serializable, sort_keys=True, separators=(',', ':'),
                                 ensure_ascii=False, allow_nan=False,
                             )
                             if len(raw_json.encode('utf-8')) > 2_000_000:
