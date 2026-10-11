@@ -21,7 +21,8 @@ permissions:
 jobs:
   validation:
     name: validation
-    runs-on: [self-hosted, Linux, X64, lukart-stage11]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
     services:
       postgres:
         image: postgres:18
@@ -79,6 +80,7 @@ jobs:
         with:
           ref: ${{ steps.source.outputs.sha }}
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Assert exact tested source
         shell: bash
