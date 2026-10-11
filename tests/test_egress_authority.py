@@ -166,15 +166,17 @@ class DurableEgressTests(unittest.TestCase):
             self._issue(token=ai)
 
     def test_expired_or_false_pricing_proof_does_not_register(self):
-        # A distinct account is used because the first budget is immutable.
-        for paid in (True, False):
-            with self.assertRaises(ProviderPolicyError):
-                self.host.register_budget(self.token, tenant_id=self.tenant,
-                    case_id=self.case, provider_id=self.config.provider.id,
-                    account_hash="d" * 64, maximum_free_calls=2,
-                    free_evidence_hash=PRICING,
+        for override in (
+            {"free_price_verified": False},
+            {"paid_fallback_disabled": False},
+            {"verified_until": NOW - timedelta(minutes=1)},
+        ):
+            with self.subTest(override=override):
+                args = dict(tenant_id=self.tenant, case_id=self.case,
+                    provider_id=self.config.provider.id, account_hash="d" * 64,
+                    maximum_free_calls=2, free_evidence_hash=PRICING,
                     verified_until=NOW + timedelta(minutes=5),
-                    free_price_verified=True,
-                    paid_fallback_disabled=paid)
-            if not paid:
-                break
+                    free_price_verified=True, paid_fallback_disabled=True)
+                args.update(override)
+                with self.assertRaises(ProviderPolicyError):
+                    self.host.register_budget(self.token, **args)
