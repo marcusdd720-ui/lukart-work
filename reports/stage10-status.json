@@ -129,7 +129,7 @@
     "tests/test_baseline_type_packs.py": "1f2d40e085d7500737048daecd5df1b99a854046b7f051028ab27cb8fb3f8231",
     "tests/test_boundaries.py": "a94da4c12d5f051fae2dcae7a548ed884714e19a96ce114c478bcfceee75c15f",
     "tests/test_chat_zero_cost.py": "37564a2021ff26c32a36443b3e4d427bb87da4acbe88caba0371cf59ccb0e87f",
-    "tests/test_contracts.py": "d4ced3badeb823ceb479f90280ad7b2b3ff9f83188c8dcf9e8ed88f54d9cc9a1",
+    "tests/test_contracts.py": "0ad9e340e9a0c6ea468a01dbb979b42ab112cc45e819f0139a2ed57674c0e011",
     "tests/test_cross_repo_conformance.py": "f116328c9ceb35cf6f9b797c057cc94708958a4cc7f4151fd8e1327cbd9e7b0e",
     "tests/test_finalization.py": "989eda35f63be615ee0feda723e97e259cde3e5ad03a23fa34713d72e3698ca4",
     "tests/test_generator_pism_type_e2e.py": "20d261b9b2c9977c46121d6cb0b24b30466cb8edc475bd3d8a8f0fa8abbe85e4",
