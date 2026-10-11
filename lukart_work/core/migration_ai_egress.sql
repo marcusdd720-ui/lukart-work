@@ -45,7 +45,7 @@ CREATE TABLE lw_core.ai_egress_grants (
 -- Runtime can only perform monotonic, one-way state transitions. The
 -- original consent/pricing identities and issuance remain immutable.
 CREATE FUNCTION lw_core.ai_egress_immutable_identity()
-RETURNS trigger LANGUAGE plpgsql AS $
+RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF TG_TABLE_NAME = 'ai_egress_budgets' THEN
         IF ROW(NEW.tenant_id,NEW.provider_id,NEW.account_hash,
@@ -113,7 +113,7 @@ BEGIN
         END IF;
     END IF;
     RETURN NEW;
-END $;
+END $$;
 CREATE TRIGGER ai_egress_monotonic_budget
     BEFORE UPDATE ON lw_core.ai_egress_budgets FOR EACH ROW
     EXECUTE FUNCTION lw_core.ai_egress_immutable_identity();
