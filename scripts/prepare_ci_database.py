@@ -13,6 +13,7 @@ with psycopg.connect(os.environ['LUKART_TEST_ADMIN_DSN']) as connection:
     connection.execute('GRANT USAGE ON SCHEMA lw_core TO lw_core_runtime')
     connection.execute('GRANT SELECT,INSERT ON ALL TABLES IN SCHEMA lw_core TO lw_core_runtime')
     connection.execute('GRANT UPDATE ON lw_core.cases,lw_core.heads TO lw_core_runtime')
-    connection.execute('GRANT UPDATE ON lw_core.ai_egress_budgets,lw_core.ai_egress_grants TO lw_core_runtime')
+    connection.execute('GRANT UPDATE (used_calls,reserved_calls,revoked_at,revoked_by) ON lw_core.ai_egress_budgets TO lw_core_runtime')
+    connection.execute('GRANT UPDATE (consumed_at,consumed_by,revoked_at,revoked_by) ON lw_core.ai_egress_grants TO lw_core_runtime')
     connection.execute('GRANT USAGE ON ALL SEQUENCES IN SCHEMA lw_core TO lw_core_runtime')
 print('Disposable CI database prepared.')
