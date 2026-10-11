@@ -26,7 +26,7 @@ from lukart_work.contracts.versions import contract_version
 from lukart_work.validation.contracts import STAGE10_CONTRACTS
 from lukart_work.finalization.contracts import FINALIZATION_CONTRACTS
 from lukart_work.validation.rules import parse_entity
-from lukart_work.validation.python_requirements import validated_python_requirement
+from scripts.python_requirements import validated_python_requirement
 ROOT=Path(__file__).parent
 EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEvidenceRequest,CandidateReviewRecord,
                  FactEvidenceQuery,FactEvidenceMatrix,RegistryRequest,RegistryReceipt,RegistryQuery,

@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic import ValidationError
 from tests.fixtures import *
 from lukart_work.validation.rules import *
-from lukart_work.validation.python_requirements import validated_python_requirement
+from scripts.python_requirements import validated_python_requirement
 from lukart_work.domain.lifecycle import INITIAL,TRANSITIONS
 
 class ContractTests(unittest.TestCase):
