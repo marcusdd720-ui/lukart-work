@@ -8,7 +8,7 @@ record admissions. No network, model, or case content is stored here.
 from __future__ import annotations
 
 from dataclasses import fields
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 from typing import Callable
@@ -82,7 +82,7 @@ def _require_exact(grant, invocation, config, body, now):
         or grant.endpoint != config.endpoint
         or not isinstance(grant.expiry_utc, datetime)
         or grant.expiry_utc.tzinfo is None
-        or not now < grant.expiry_utc <= now.replace(year=now.year + 1)
+        or not now < grant.expiry_utc <= now + timedelta(hours=1)
         or not _hash(grant.wire_body_sha256)
         or sha256(body).hexdigest() != grant.wire_body_sha256
         or type(grant.reserved_wire_bytes) is not int
@@ -112,10 +112,6 @@ class PostgresEgressAuthority:
         self.repository = repository
         self.authority = authority
         self.clock = clock or (lambda: datetime.now(timezone.utc))
-
-    def _session(self, token, tenant, case, action):
-        # Session lock lives until context exit, across each DB transaction.
-        return self.authority.session(token)
 
     @staticmethod
     def _human(principal, tenant, case, action):
@@ -150,8 +146,8 @@ class PostgresEgressAuthority:
                     "INSERT INTO lw_core.ai_egress_budgets "
                     "(tenant_id,provider_id,account_hash,maximum_free_calls,"
                     "used_calls,reserved_calls,free_evidence_hash,verified_until,"
-                    "revoked_at,approved_by) "
-                    "VALUES (%s,%s,%s,%s,0,0,%s,%s,NULL,%s)",
+                    "revoked_at,revoked_by,approved_by) "
+                    "VALUES (%s,%s,%s,%s,0,0,%s,%s,NULL,NULL,%s)",
                     (tenant_id, provider_id, account_hash, maximum_free_calls,
                      free_evidence_hash, verified_until, principal.actor.id),
                 )
@@ -186,8 +182,8 @@ class PostgresEgressAuthority:
                     "INSERT INTO lw_core.ai_egress_grants "
                     "(tenant_id,case_id,request_id,reservation_id,provider_id,"
                     "account_hash,grant_json,grant_hash,consent_evidence_hash,"
-                    "free_evidence_hash,issued_by,issued_at,consumed_at,revoked_at) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NULL,NULL)",
+                    "free_evidence_hash,issued_by,issued_at,consumed_at,consumed_by,revoked_at,revoked_by) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NULL,NULL,NULL,NULL)",
                     (tenant, case, grant.request_id, grant.quota_reservation_id,
                      grant.provider_id, account_hash, _grant_json(grant),
                      sha256(_grant_json(grant).encode()).hexdigest(),
@@ -272,10 +268,10 @@ class PostgresEgressAuthority:
                         or budget[2] < 1 or budget[1] >= budget[0]):
                     raise ProviderPolicyError()
                 tx.connection.execute(
-                    "UPDATE lw_core.ai_egress_grants SET consumed_at=%s "
+                    "UPDATE lw_core.ai_egress_grants SET consumed_at=%s,consumed_by=%s "
                     "WHERE tenant_id=%s AND case_id=%s AND request_id=%s "
                     "AND consumed_at IS NULL AND revoked_at IS NULL",
-                    (now, request.tenant_id, request.case_id, request.request_id),
+                    (now, principal.actor.id, request.tenant_id, request.case_id, request.request_id),
                 )
                 tx.connection.execute(
                     "UPDATE lw_core.ai_egress_budgets "
@@ -304,9 +300,9 @@ class PostgresEgressAuthority:
                 if budget is None:
                     raise ProviderPolicyError()
                 tx.connection.execute(
-                    "UPDATE lw_core.ai_egress_grants SET revoked_at=%s "
+                    "UPDATE lw_core.ai_egress_grants SET revoked_at=%s,revoked_by=%s "
                     "WHERE tenant_id=%s AND case_id=%s AND request_id=%s",
-                    (now, tenant_id, case_id, request_id),
+                    (now, principal.actor.id, tenant_id, case_id, request_id),
                 )
                 if row[5] is None:
                     if budget[0] < 1:
@@ -324,10 +320,10 @@ class PostgresEgressAuthority:
             self._human(principal, tenant_id, case_id, "AI_EGRESS_REVOKE")
             with self.repository.transaction(tenant_id, case_id) as tx:
                 updated = tx.connection.execute(
-                    "UPDATE lw_core.ai_egress_budgets SET revoked_at=%s "
+                    "UPDATE lw_core.ai_egress_budgets SET revoked_at=%s,revoked_by=%s "
                     "WHERE tenant_id=%s AND provider_id=%s AND account_hash=%s "
                     "AND revoked_at IS NULL",
-                    (now, tenant_id, provider_id, account_hash),
+                    (now, principal.actor.id, tenant_id, provider_id, account_hash),
                 )
                 if updated.rowcount not in (0, 1):
                     raise ProviderPolicyError()
