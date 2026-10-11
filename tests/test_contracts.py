@@ -13,7 +13,10 @@ class ContractTests(unittest.TestCase):
         pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
         expected_python = pyproject.get("project", {}).get("requires-python", ">=3.11")
         package_report = json.loads((root / "reports/package-validation.json").read_text(encoding="utf-8"))
-        self.assertEqual(package_report["python"], expected_python)
+        self.assertEqual(package_report["report_schema_version"], 2)
+        self.assertEqual(package_report["requires_python"], expected_python)
+        self.assertEqual(package_report["python"], package_report["requires_python"])
+        self.assertNotIn("runtime_python_version", package_report)
     def code(self,code,fn,*args):
         with self.assertRaises(Violation) as c:fn(*args)
         self.assertEqual(c.exception.code,code)

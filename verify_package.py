@@ -64,7 +64,10 @@ for p in (ROOT/'lukart_work/domain').glob('*.py'):
     for node in ast.walk(tree):
         if isinstance(node,ast.ImportFrom):assert not any(x in (node.module or '').split('.') for x in ('ui','rendering','openai','anthropic','lukart_ros'))
 checks.append({'check':'domain-import-boundaries','result':'PASS'})
-result={'python':requires_python,'pydantic':importlib.metadata.version('pydantic'),'baseline_sha256':hashlib.sha256((ROOT/'docs/00-baseline.md').read_bytes().replace(b'\r\n', b'\n')).hexdigest(),'checks':checks,'json_files_parsed':len(list((ROOT/'schemas').glob('*.json'))),'independent_json_schema_engine':'NOT_EXECUTED'}
+# Report v2 keeps compatibility requirements deterministic across supported runtimes.
+# `python` is a deprecated alias for the PR #70 spec-shaped report, not runtime proof.
+# Historical runtime-shaped reports must be distinguished by report_schema_version.
+result={'report_schema_version':2,'requires_python':requires_python,'python':requires_python,'pydantic':importlib.metadata.version('pydantic'),'baseline_sha256':hashlib.sha256((ROOT/'docs/00-baseline.md').read_bytes().replace(b'\r\n', b'\n')).hexdigest(),'checks':checks,'json_files_parsed':len(list((ROOT/'schemas').glob('*.json'))),'independent_json_schema_engine':'NOT_EXECUTED'}
 (ROOT/'reports/package-validation.json').write_text(
     json.dumps(result,indent=2)+'\n',
     encoding='utf-8',

@@ -10,7 +10,7 @@
   ".github/workflows/stage13.yml": "37da2c94e8e88af788d0ded427ed9d5c065f2b6fc416a4fabca93ab076bc9def",
   ".gitignore": "a9cd56cdd6db5000caff251fbcf72cb1bfbafb6f7ab1446744cc285b0c02f569",
   "AGENTS.md": "3788ae8e301422eba5eca2f870abef337f753d54a5c125818d7b37c5cddb1803",
-  "README.md": "c3a7299a5f3e4756a06aa63a6b64fec99228f4168d0909e5144b65746118341d",
+  "README.md": "55070ef59b7926af0af21caee46dc06a92b0afb9098c4d07248e31fb7a5cc4e3",
   "acceptance/product-baseline-v1.json": "db9d7ccb9d9999a074fae3856d37c307cc76457e0f9e173d94925acddf4aa2ba",
   "contracts/cross_repo/v1/fixtures/ros-operation-success.json": "a4428a5b0f6eda069b17f28b5bd7710a8903dd8c5a41ee3d8df650bb2dbf5a18",
   "contracts/cross_repo/v1/fixtures/work-command-applied.json": "a865f21a6e7d7c2a5a0d599e04021341c59379a4b993ddad8ad1040ca47b635e",
@@ -170,7 +170,7 @@
   "lukart_work/validation/rules.py": "47579a6e00576da2b75d2dcc11b0396beec14f992340e4ce8fbaafbd69648d60",
   "lukart_work/validation/service.py": "e30733e319357f3ac44c00c8bd53a2210187f040efcf60e8c46c286b7e3f62e2",
   "pyproject.toml": "f146d0656079fbad57137e31f5fa9d8181ecb14ef799a50a8d1add5270d54a90",
-  "reports/package-validation.json": "4ed2115040a58026fb0ea2f48c139d9c7268c3cd37cabd4190d2e4b2dd9e914c",
+  "reports/package-validation.json": "72cb66be9947539e9f400bda3b7d77523741f10ef9cac7c75f421944cbbf2311",
   "reports/stage02-postmerge-unittest.txt": "46c95bd4bc3525970d6cc2fdd61536d16147684e9ca725dd1d1d45fcd459a7c5",
   "reports/stage02-status.json": "b5a8ed7ffd592c36710458a8ed9a3ed81b3c8177eec1c382d7e81fbd5615559d",
   "reports/stage02-unittest.txt": "2a5d6dc7f2c578f1f6f12970a8da48e4d550b76ec84f373cdedb9f2fc6d13a8d",
@@ -359,7 +359,7 @@
   "tests/test_baseline_type_packs.py": "1f2d40e085d7500737048daecd5df1b99a854046b7f051028ab27cb8fb3f8231",
   "tests/test_boundaries.py": "a94da4c12d5f051fae2dcae7a548ed884714e19a96ce114c478bcfceee75c15f",
   "tests/test_chat_zero_cost.py": "37564a2021ff26c32a36443b3e4d427bb87da4acbe88caba0371cf59ccb0e87f",
-  "tests/test_contracts.py": "d4ced3badeb823ceb479f90280ad7b2b3ff9f83188c8dcf9e8ed88f54d9cc9a1",
+  "tests/test_contracts.py": "0ad9e340e9a0c6ea468a01dbb979b42ab112cc45e819f0139a2ed57674c0e011",
   "tests/test_cross_repo_conformance.py": "f116328c9ceb35cf6f9b797c057cc94708958a4cc7f4151fd8e1327cbd9e7b0e",
   "tests/test_finalization.py": "989eda35f63be615ee0feda723e97e259cde3e5ad03a23fa34713d72e3698ca4",
   "tests/test_generator_pism_type_e2e.py": "20d261b9b2c9977c46121d6cb0b24b30466cb8edc475bd3d8a8f0fa8abbe85e4",
@@ -383,5 +383,5 @@
   "tests/test_stage12.py": "c336869453438b19b0a9764fa22d40ba5fe57d10f09daed5f897cae8626860c9",
   "tests/test_stage12_delivery_control.py": "f1693b4b59a36b82144001086996d5ad38d2edccaefaf64201df41e594078589",
   "tests/test_stage13.py": "495e01039a69aa362b11e468e08c8be6ffa98de3a77c42afcaf0f76b022fa9cc",
-  "verify_package.py": "8b0f4911a832e9f3ec41a2e5f843beafc6f27d3cbc5e5c65e6a5782693e457ac"
+  "verify_package.py": "c05479a32e6175aab44bdbd4da5f10c41212e6402608419717459a9b14fec34f"
 }
