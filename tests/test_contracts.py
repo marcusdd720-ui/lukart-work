@@ -4,9 +4,34 @@ from pathlib import Path
 from pydantic import ValidationError
 from tests.fixtures import *
 from lukart_work.validation.rules import *
+from scripts.python_requirements import validated_python_requirement
 from lukart_work.domain.lifecycle import INITIAL,TRANSITIONS
 
 class ContractTests(unittest.TestCase):
+    def test_python_version_spec_matches_canonical_pyproject_requirements(self):
+        import tomllib
+        root = Path(__file__).resolve().parents[1]
+        pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+        expected_python = pyproject["project"]["requires-python"]
+        package_report = json.loads((root / "reports/package-validation.json").read_text(encoding="utf-8"))
+        self.assertEqual(package_report["report_schema_version"], 2)
+        self.assertEqual(package_report["requires_python"], expected_python)
+        self.assertEqual(package_report["python"], package_report["requires_python"])
+        self.assertNotIn("runtime_python_version", package_report)
+
+    def test_python_metadata_invalid_fails_closed(self):
+        for data in ({}, {"project": {}}, {"project": {"requires-python": ""}},
+                     {"project": {"requires-python": "invalid"}}, {"project": {"requires-python": 311}}):
+            with self.subTest(data=data), self.assertRaises(ValueError):
+                validated_python_requirement(data, "3.14.8")
+
+    def test_python_runtime_bounds_are_enforced(self):
+        self.assertEqual(validated_python_requirement({"project": {"requires-python": ">=3.11"}}, "3.11.0"), ">=3.11")
+        for requirement, runtime in ((">=3.12", "3.11.9"), ("<3.14", "3.14.8")):
+            with self.subTest(requirement=requirement), self.assertRaises(RuntimeError):
+                validated_python_requirement({"project": {"requires-python": requirement}}, runtime)
+        with self.assertRaises(ValueError):
+            validated_python_requirement({"project": {"requires-python": ">=3.11"}}, "bad-runtime")
     def code(self,code,fn,*args):
         with self.assertRaises(Violation) as c:fn(*args)
         self.assertEqual(c.exception.code,code)
