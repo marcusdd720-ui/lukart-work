@@ -5,7 +5,7 @@ on:
 permissions:
   contents: read
 env:
-  EXPECTED_TESTED_SHA: '3700f3bc82ad05975f77ea5c4d6e01f1b029ba01'
+  EXPECTED_TESTED_SHA: 'ccc730dac7994725d9ac7e4d478fae5ec8d8ee6c'
 jobs:
   stage10-diagnostic:
     name: Stage10 exact-SHA diagnostic (GitHub hosted)
@@ -106,7 +106,7 @@ jobs:
       LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
       LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
       LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_core_runtime password=disposable-runtime-password
-      TESTED_SHA: '3700f3bc82ad05975f77ea5c4d6e01f1b029ba01'
+      TESTED_SHA: 'ccc730dac7994725d9ac7e4d478fae5ec8d8ee6c'
     steps:
       - name: Checkout exact PR70 candidate (not diagnostic branch)
         uses: actions/checkout@v4
