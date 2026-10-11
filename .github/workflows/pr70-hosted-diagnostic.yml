@@ -1,0 +1,166 @@
+name: P0 PR70 hosted evidence diagnostic (NOT admission)
+on:
+  push:
+    branches: [ci/pr70-hosted-evidence-20261011]
+permissions:
+  contents: read
+env:
+  EXPECTED_TESTED_SHA: '3700f3bc82ad05975f77ea5c4d6e01f1b029ba01'
+jobs:
+  stage10-diagnostic:
+    name: Stage10 exact-SHA diagnostic (GitHub hosted)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: disposable-ci-password
+          POSTGRES_DB: lukart_stage02_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
+      LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
+      LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_core_runtime password=disposable-runtime-password
+    steps:
+      - name: Checkout exact PR70 candidate (not diagnostic branch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXPECTED_TESTED_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Assert exact candidate SHA
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_TESTED_SHA"
+          git status --short
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Install PostgreSQL 18 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+          echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
+      - name: Install existing project dependencies
+        run: python -m pip install '.[postgres,ingestion]' 'jsonschema==4.26.0'
+      - name: Export existing contracts
+        run: python -B -X utf8 export_contracts.py
+      - name: Prepare disposable PostgreSQL 18 database
+        run: python -B -X utf8 scripts/prepare_ci_database.py
+      - name: Focused Stage09
+        run: python -B -X utf8 -m unittest -v tests.test_stage09
+      - name: Full Stage10 regression (do not skip)
+        run: python -B -X utf8 scripts/verify_stage10.py
+      - name: Independent Stage10 JSON Schema validation
+        if: ${{ success() || failure() }}
+        run: python -B -X utf8 scripts/validate_stage10_schemas.py
+      - name: Verify package
+        if: ${{ success() || failure() }}
+        run: python -B -X utf8 verify_package.py
+      - name: Refresh integrity manifest
+        if: ${{ success() || failure() }}
+        run: python -B -X utf8 scripts/refresh_manifest.py
+      - name: Check Stage10 evidence integrity
+        if: ${{ success() || failure() }}
+        run: python -B -X utf8 scripts/check_stage10_integrity.py
+      - name: Check exact-SHA generated evidence reproducibility (FAIL preserved)
+        if: ${{ success() || failure() }}
+        run: |
+          git diff --check
+          git diff --exit-code
+          test -z "$(git ls-files --others --exclude-standard -- schemas reports examples tests/golden_cases docs/02-entity-catalog.md)"
+      - name: Upload synthetic CI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr70-stage10-diagnostic
+          path: |
+            reports/
+            build/stage10/
+          if-no-files-found: warn
+  stage13-diagnostic:
+    name: Stage13 exact-SHA diagnostic (GitHub hosted)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: disposable-ci-password
+          POSTGRES_DB: lukart_stage02_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
+      LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
+      LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_core_runtime password=disposable-runtime-password
+      TESTED_SHA: '3700f3bc82ad05975f77ea5c4d6e01f1b029ba01'
+    steps:
+      - name: Checkout exact PR70 candidate (not diagnostic branch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXPECTED_TESTED_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Assert exact candidate SHA
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_TESTED_SHA"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Install PostgreSQL 18 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18
+          echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
+      - name: Install existing project dependencies
+        run: python -m pip install '.[postgres,ingestion]' 'jsonschema==4.26.0'
+      - name: Export existing contracts
+        run: python -B -X utf8 export_contracts.py
+      - name: Prepare disposable PostgreSQL 18 database
+        run: python -B -X utf8 scripts/prepare_ci_database.py
+      - name: Focused Stage13
+        run: python -B -X utf8 -m unittest -v tests.test_stage13
+      - name: Full Stage13 regression
+        run: python -B -X utf8 scripts/verify_stage13.py
+      - name: Verify existing independent schemas
+        if: ${{ success() || failure() }}
+        run: python -B -X utf8 scripts/validate_stage10_schemas.py
+      - name: Package verification
+        if: ${{ success() || failure() }}
+        run: python -B -X utf8 verify_package.py
+      - name: Run Stage13 benchmark against exact SHA
+        if: ${{ success() || failure() }}
+        run: python -B -X utf8 scripts/stage13_benchmark.py --mode POST_IMPLEMENTATION --output build/stage13/performance.json
+      - name: Refresh integrity manifest
+        if: ${{ success() || failure() }}
+        run: python -B -X utf8 scripts/refresh_manifest.py
+      - name: Check original tracked evidence reproduction
+        if: ${{ success() || failure() }}
+        run: |
+          git diff --check
+          git diff --exit-code
+          test -z "$(git ls-files --others --exclude-standard -- schemas reports examples tests/golden_cases docs/02-entity-catalog.md)"
+      - name: Upload Stage13 synthetic diagnostic artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr70-stage13-diagnostic
+          path: |
+            build/stage13/
+            reports/
+          if-no-files-found: warn
