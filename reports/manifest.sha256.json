@@ -355,7 +355,7 @@
   "tests/golden_cases/document_registry.json": "8f197a4ec40b290c0f046b9786e7694d07a5f5b5723b6a048c144047075089e5",
   "tests/golden_cases/procedural_engine.json": "a7793ea39ca890b01329a99a410ceca105e8a53c90823f6963b70f704eb8b22e",
   "tests/golden_cases/source_to_fact.json": "c4b5cc5d1ff8512da672c47a0e6ead3bbcd76201bee061378935a84896376340",
-  "tests/golden_cases/stage11_render_identity.json": "744ce863a7562427700a8a3a95a2a1e7dccfdc2a8bf751c4d3132b06cc80f3cb",
+  "tests/golden_cases/stage11_render_identity.json": "a998c110c74d484bb6d2015bf493a50ca585e0198973a8da68112d2543f5aca3",
   "tests/stage02_restart_probe.py": "a907973b993b77d5daec2d91d61eba065fb8e64678dcb2592967f09b2a9ef25b",
   "tests/stage11_render_fixture.py": "55f83ac51d99f443b227fd8cef0c2c15d025b13960dd8874fb521025d4a8f93f",
   "tests/stage11_subprocess_fixture.py": "84646bd5b0ab5c21295d16042e38763025ad8b64074a3e15ad11211918a58876",
