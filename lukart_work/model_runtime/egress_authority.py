@@ -242,7 +242,6 @@ class PostgresEgressAuthority:
 
     def commit(self, token, invocation, grant, body):
         """Atomic durable one-use SEND reservation; no retry on ambiguity."""
-        now = _now(self.clock)
         request = invocation.request
         with self.authority.session(token) as principal:
             self._human(principal, request.tenant_id, request.case_id, "AI_EGRESS_SEND")
@@ -266,6 +265,10 @@ class PostgresEgressAuthority:
                 if (budget is None or budget[5] is not None
                         or budget[3] != row[4] or budget[4] < grant.expiry_utc
                         or budget[2] < 1 or budget[1] >= budget[0]):
+                    raise ProviderPolicyError()
+                # Clock check must occur AFTER any case/account lock wait.
+                now = _now(self.clock)
+                if now >= grant.expiry_utc:
                     raise ProviderPolicyError()
                 tx.connection.execute(
                     "UPDATE lw_core.ai_egress_grants SET consumed_at=%s,consumed_by=%s "
