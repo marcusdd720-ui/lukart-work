@@ -179,9 +179,44 @@ class PostgresEgressAuthority:
                     "FOR UPDATE",
                     (tenant, grant.provider_id, account_hash),
                 ).fetchone()
-                if (row is None or row[3] != free_evidence_hash
-                        or row[5] is not None or row[4] < grant.expiry_utc
-                        or row[0] - row[1] - row[2] != grant.free_requests_remaining):
+                if row is None or row[3] != free_evidence_hash or row[5] is not None or row[4] < grant.expiry_utc:
+                    raise ProviderPolicyError()
+                # Reclaim expired reservations for this authorized case only.
+                # The existing case-level RLS must never be bypassed.
+                pending = tx.connection.execute(
+                    "SELECT request_id,grant_json,grant_hash "
+                    "FROM lw_core.ai_egress_grants "
+                    "WHERE tenant_id=%s AND case_id=%s AND provider_id=%s "
+                    "AND account_hash=%s AND consumed_at IS NULL AND revoked_at IS NULL "
+                    "FOR UPDATE",
+                    (tenant, case, grant.provider_id, account_hash),
+                ).fetchall()
+                expired = []
+                for request_id, raw, stored_hash in pending:
+                    if sha256(raw.encode()).hexdigest() != stored_hash:
+                        raise ProviderPolicyError()
+                    if _grant_from_json(raw).expiry_utc <= _now(self.clock):
+                        expired.append(request_id)
+                for request_id in expired:
+                    changed = tx.connection.execute(
+                        "UPDATE lw_core.ai_egress_grants SET revoked_at=%s,revoked_by=%s "
+                        "WHERE tenant_id=%s AND case_id=%s AND request_id=%s "
+                        "AND consumed_at IS NULL AND revoked_at IS NULL",
+                        (_now(self.clock), principal.actor.id, tenant, case, request_id),
+                    )
+                    if changed.rowcount != 1:
+                        raise ProviderPolicyError()
+                if expired:
+                    changed = tx.connection.execute(
+                        "UPDATE lw_core.ai_egress_budgets "
+                        "SET reserved_calls=reserved_calls-%s "
+                        "WHERE tenant_id=%s AND provider_id=%s AND account_hash=%s "
+                        "AND reserved_calls >= %s",
+                        (len(expired), tenant, grant.provider_id, account_hash, len(expired)),
+                    )
+                    if changed.rowcount != 1:
+                        raise ProviderPolicyError()
+                if row[0] - row[1] - row[2] + len(expired) != grant.free_requests_remaining:
                     raise ProviderPolicyError()
                 tx.connection.execute(
                     "INSERT INTO lw_core.ai_egress_grants "
@@ -335,5 +370,13 @@ class PostgresEgressAuthority:
                     "AND revoked_at IS NULL",
                     (now, principal.actor.id, tenant_id, provider_id, account_hash),
                 )
-                if updated.rowcount not in (0, 1):
+                if updated.rowcount == 0:
+                    existing = tx.connection.execute(
+                        "SELECT revoked_at FROM lw_core.ai_egress_budgets "
+                        "WHERE tenant_id=%s AND provider_id=%s AND account_hash=%s",
+                        (tenant_id, provider_id, account_hash),
+                    ).fetchone()
+                    if existing is None or existing[0] is None:
+                        raise ProviderPolicyError()
+                elif updated.rowcount != 1:
                     raise ProviderPolicyError()
