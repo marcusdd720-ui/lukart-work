@@ -45,8 +45,22 @@ def verify_legacy_schema(connection, script):
     # This empty schema is created and removed inside the migration transaction.
     # No user-provided names or existing objects are dropped.
     connection.execute(script.replace('lw_core',probe))
-    matches = (_legacy_core_fingerprint(schema_fingerprint(connection, 'lw_core'))
-               == schema_fingerprint(connection, probe))
+    # Fail closed on a partial extension; a complete installed extension
+    # must be compared, including grants, RLS, triggers and function bodies.
+    presence = (
+        connection.execute("SELECT to_regclass('lw_core.ai_egress_budgets')").fetchone()[0] is not None,
+        connection.execute("SELECT to_regclass('lw_core.ai_egress_grants')").fetchone()[0] is not None,
+        connection.execute("SELECT to_regprocedure('lw_core.ai_egress_immutable_identity()')").fetchone()[0] is not None,
+    )
+    if any(presence) and not all(presence):
+        raise Violation('UNKNOWN')
+    actual = schema_fingerprint(connection, 'lw_core')
+    if all(presence):
+        extension = (ROOT.parent / 'core/migration_ai_egress.sql').read_text(encoding='utf-8')
+        connection.execute(extension.replace('lw_core', probe))
+    else:
+        actual = _legacy_core_fingerprint(actual)
+    matches = actual == schema_fingerprint(connection, probe)
     connection.execute(sql.SQL('DROP SCHEMA {} CASCADE').format(sql.Identifier(probe)))
     if not matches:
         raise Violation('UNKNOWN')
