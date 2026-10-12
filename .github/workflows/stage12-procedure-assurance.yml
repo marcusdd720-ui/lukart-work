@@ -25,7 +25,8 @@ permissions:
 jobs:
   stage12-assurance:
     name: stage12-assurance
-    runs-on: [self-hosted, Linux, X64, lukart-stage11]
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     services:
       postgres:
@@ -169,7 +170,7 @@ jobs:
           git diff --exit-code
           test -z "$(git ls-files --others --exclude-standard -- schemas reports examples tests/golden_cases docs/02-entity-catalog.md)"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: stage12-procedure-generated
