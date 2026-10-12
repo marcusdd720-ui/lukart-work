@@ -98,9 +98,13 @@ def check_synthetic_output(docx_bytes, pdf_bytes, fixture, amount):
         *SECTION_TITLES_PL.values(),
         "PRÓBA TECHNICZNA",
     )
+    # PDF extractors may insert line breaks inside visually continuous text.
+    # Normalize whitespace only: every field and its exact characters remain mandatory.
+    flattened_pdf = " ".join(pdf_text.split())
     for needle in mandatory:
-        require(needle in docx_text, "DOCX_MISSING_REQUIRED_SAMPLE_FIELD")
-        require(needle in pdf_text, "PDF_MISSING_REQUIRED_SAMPLE_FIELD")
+        require(needle in docx_text, f"DOCX_MISSING_REQUIRED_SAMPLE_FIELD:{needle}")
+        require(" ".join(needle.split()) in flattened_pdf,
+                f"PDF_MISSING_REQUIRED_SAMPLE_FIELD:{needle}")
     for forbidden in FORBIDDEN_SAMPLE_MARKERS:
         require(forbidden not in docx_text and forbidden not in pdf_text,
                 "SYNTHETIC_ENGLISH_PLACEHOLDER_PRESENT")
