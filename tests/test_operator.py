@@ -96,6 +96,8 @@ class ManualProviderTests(unittest.TestCase):
         for profile in RUNTIME_PROFILES:
             self.assertEqual(profile.document_type.content_hash, profile.contract_pin)
             self.assertTrue(profile.plan_sections)
+        self.assertEqual(runtime_profile("PL-PRE-PAYMENT-1").header, "WEZWANIE DO ZAPŁATY")
+        self.assertEqual(runtime_profile("PL-PRE-REPLY-1").header, "ODPOWIEDŹ NA WEZWANIE")
 
 
 if __name__ == "__main__":
