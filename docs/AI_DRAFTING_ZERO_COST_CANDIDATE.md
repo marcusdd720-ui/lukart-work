@@ -115,6 +115,25 @@ no provider account credential, and no automatic real-case export.
 The authenticated host must provision *separate explicit capabilities*
 `AI_EGRESS_BUDGET`, `AI_EGRESS_APPROVE`, `AI_EGRESS_SEND`, and
 `AI_EGRESS_REVOKE` to the appropriate case-scoped HUMAN principals.
+
+**SQL trust boundary:** Only a separately authenticated trusted host may own the
+`lw_ai_egress_host` connection credential (use an independently protected DSN,
+not `LUKART_TEST_DSN` or any client/AI-worker environment). Construct
+`PostgresEgressAuthority(PostgresRepository(trusted_host_dsn), host_token_authority)`
+inside that isolated, authorized host. Its SQL operations reject any login other
+than `lw_ai_egress_host` and continue enforcing the HUMAN capability checks.
+`lw_core_runtime` must have SELECT-only access to the AI egress tables,
+**never INSERT, UPDATE or DELETE**. The owner must create a separate NOINHERIT,
+NOSUPERUSER, NOBYPASSRLS host role and apply
+`configure_egress_roles(owner_connection, "lw_core_runtime", "lw_ai_egress_host")`
+from `lukart_work.storage.migrations`. That role has only core-case SELECT
+and egress-specific INSERT plus narrowly scoped, monotonic UPDATE; it must not
+be delegated or inherited by ordinary runtime accounts. A direct SQL connection
+using the *trusted host credential itself* is privileged, so secret custody and
+process isolation are deployment gates, not properties proved by synthetic CI.
+A default or missing host role/DSN denies authorization; the code does not
+fall back to an administrative or general-runtime credential.
+The isolated CI passwords are synthetic and never establish production custody.
 `register_budget` requires separately inspected official free-tier/billing
 evidence identified by a SHA-256 reference and binds one provider/account,
 zero paid fallback and an expiry. It never replenishes an existing account
