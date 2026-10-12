@@ -165,6 +165,33 @@ class DurableEgressTests(unittest.TestCase):
         with self.assertRaises(ProviderPolicyError):
             self._issue(token=ai)
 
+
+    def test_database_role_cannot_mutate_immutable_grant_or_bypass_quota(self):
+        value = self._issue()
+        with self.assertRaises(Exception):
+            with self.repo.transaction(self.tenant, self.case) as tx:
+                tx.connection.execute(
+                    "UPDATE lw_core.ai_egress_grants SET grant_json='{}' "
+                    "WHERE tenant_id=%s AND case_id=%s AND request_id=%s",
+                    (self.tenant, self.case, self.item.request.request_id))
+        with self.assertRaises(Exception):
+            with self.repo.transaction(self.tenant, self.case) as tx:
+                tx.connection.execute(
+                    "UPDATE lw_core.ai_egress_budgets SET used_calls=used_calls+1 "
+                    "WHERE tenant_id=%s AND provider_id=%s AND account_hash=%s",
+                    (self.tenant, self.config.provider.id, ACCOUNT))
+        self.assertEqual(self.host.resolve(self.token, self.item), value)
+
+    def test_tenant_wide_revoke_requires_separate_budget_capability(self):
+        value = self._issue()
+        revoke_only = self.authority.provision(Principal(
+            self.actor, self.tenant, self.case, frozenset({"AI_EGRESS_REVOKE"})))
+        with self.assertRaises(ProviderPolicyError):
+            self.host.revoke_budget(revoke_only, tenant_id=self.tenant,
+                case_id=self.case, provider_id=self.config.provider.id,
+                account_hash=ACCOUNT)
+        self.assertEqual(self.host.resolve(self.token, self.item), value)
+
     def test_expired_or_false_pricing_proof_does_not_register(self):
         for override in (
             {"free_price_verified": False},
