@@ -65,7 +65,7 @@
     "lukart_work/storage/__init__.py": "834dc25215367ffa1b5154b3df409c7dfb1ef56cf2181843e88911ff14a79ed1",
     "lukart_work/storage/backup.py": "12442bdffa17a7758a9c17b7b0e00fc8a0e80d34e853098613220065b97ca8b5",
     "lukart_work/storage/migration.sql": "ff4633c2ed0da8578c5c0c1abd1806266388e1f5190ed472a754db656e603ad6",
-    "lukart_work/storage/migrations.py": "70f7cbbd066d9c35dbe764eda7442f545fe86d1e2aa16684d2358b063c1fc74b",
+    "lukart_work/storage/migrations.py": "3ae5f89b630327bb0d667a9f0bf69527c941a7bf8488b0d4269eb334eb626e3f",
     "lukart_work/storage/objects.py": "0e6bd98c47f97299efe7dc356e13d1836616e0bb4fc76b11aa3ca39a15aced9e",
     "lukart_work/storage/service.py": "f38b6e682ab7b53d4473526404608c0378febaa6373bf70459e3f549b0582cd2",
     "lukart_work/type_packs/__init__.py": "062c4f73efc5fbec99c9c0a71d3a7f853feb945a6e4735fb3af0eeae7cae8bec",
