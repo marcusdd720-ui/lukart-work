@@ -124,6 +124,18 @@ def configure_egress_roles(connection, runtime_role, host_role, *, schema='lw_co
     from psycopg import sql
     if runtime_role == host_role:
         raise Violation('FORBIDDEN')
+    for role in (runtime_role, host_role):
+        flags = connection.execute(
+            'SELECT rolcanlogin,rolsuper,rolbypassrls,rolcreaterole FROM pg_roles WHERE rolname=%s',
+            (role,),
+        ).fetchone()
+        if flags is None or not flags[0] or any(flags[1:]):
+            raise Violation('FORBIDDEN')
+    if connection.execute(
+        "SELECT pg_has_role(%s,%s,'member') OR pg_has_role(%s,%s,'member')",
+        (runtime_role, host_role, host_role, runtime_role),
+    ).fetchone()[0]:
+        raise Violation('FORBIDDEN')
     name = sql.Identifier(schema)
     normal = sql.Identifier(runtime_role)
     trusted = sql.Identifier(host_role)
