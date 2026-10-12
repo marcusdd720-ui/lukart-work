@@ -364,7 +364,7 @@
   "tests/test_chat_zero_cost.py": "37564a2021ff26c32a36443b3e4d427bb87da4acbe88caba0371cf59ccb0e87f",
   "tests/test_contracts.py": "a209b7216b84abe0a1e99943ca719bc873cceb5a44c44f7463a88d2e348ff393",
   "tests/test_cross_repo_conformance.py": "f116328c9ceb35cf6f9b797c057cc94708958a4cc7f4151fd8e1327cbd9e7b0e",
-  "tests/test_egress_authority.py": "7440e796a1fb433672f5d91a94093a8927159316fc3c279e62cc344955c595ec",
+  "tests/test_egress_authority.py": "e1479ae8718e437dd179df6a48d5245c416b7c57d4b026b94722564b9a549a48",
   "tests/test_finalization.py": "989eda35f63be615ee0feda723e97e259cde3e5ad03a23fa34713d72e3698ca4",
   "tests/test_generator_pism_type_e2e.py": "20d261b9b2c9977c46121d6cb0b24b30466cb8edc475bd3d8a8f0fa8abbe85e4",
   "tests/test_operator.py": "0f43a966ba1c25c589f1c775f0ea4de7f966b613f60c806b8ad33003cc3b446e",
