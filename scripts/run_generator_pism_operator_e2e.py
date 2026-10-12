@@ -6,11 +6,16 @@ import json
 import os
 import subprocess
 from hashlib import sha256
+from io import BytesIO
+from datetime import date
+from decimal import Decimal
 from pathlib import Path
 from typing import get_args
 from uuid import UUID, uuid5
 
 import psycopg
+from docx import Document
+from pypdf import PdfReader
 
 from lukart_work.contracts.messages import AIResult, CommandResult, DomainError
 from lukart_work.core.postgres import PostgresRepository
@@ -35,6 +40,70 @@ from lukart_work.validation.rules import digest
 ROOT = Path(__file__).resolve().parents[1]
 TYPE_ID = "PL-PRE-PAYMENT-1"
 NS = UUID("eeea4bd3-6fd0-4b6d-9635-26af6ae48a4e")
+SECTION_TITLES_PL = {
+    "HEADER_AND_PARTIES": "Oznaczenie sprawy i stron",
+    "PAYMENT_DEMAND": "Żądanie zapłaty",
+    "FACTUAL_BASIS": "Uzasadnienie faktyczne",
+    "EVIDENCE_AND_ATTACHMENTS": "Materiał dowodowy",
+    "SIGNATURE": "Oświadczenie końcowe",
+}
+FORBIDDEN_SAMPLE_MARKERS = (
+    "Header And Parties", "Payment Demand", "Factual Basis",
+    "Evidence And Attachments", "Synthetic source-backed payment fact",
+    "Synthetic requested payment outcome", "Synthetic legal proposition",
+)
+
+def synthetic_payment_body(fixture):
+    """Fikcyjne dane kontraktu: tylko test renderingu, bez oceny prawa."""
+    amount = f"{Decimal(fixture.principal_amount_decimal):.2f}".replace(".", ",") + " zł"
+    document_date = date.fromisoformat(fixture.document_date_iso).strftime("%d.%m.%Y")
+    due_date = date.fromisoformat(fixture.performance_due_date_iso).strftime("%d.%m.%Y")
+    request = (
+        f"Wzywam do zapłaty kwoty {amount} do dnia "
+        f"{fixture.requested_payment_date_human} na rachunek {fixture.payment_destination}."
+    )
+    sections = {
+        "HEADER_AND_PARTIES": (
+            f"{fixture.document_place}, {document_date}. Sygnatura: {fixture.case_reference}. "
+            f"Wierzyciel: {fixture.sender_name}, {fixture.sender_address}. "
+            f"Adresat: {fixture.recipient_name}, {fixture.recipient_address}."
+        ),
+        "PAYMENT_DEMAND": (
+            f"Należność główna: {amount}. Termin płatności wynikający z danych testowych: {due_date}. "
+            f"Rachunek do wpłaty: {fixture.payment_destination}."
+        ),
+        "FACTUAL_BASIS": (
+            f"Źródło roszczenia według fikcyjnej dokumentacji: {fixture.claim_basis} "
+            f"Historia wpłat według dokumentacji testowej: {fixture.payment_history}"
+        ),
+        "EVIDENCE_AND_ATTACHMENTS": (
+            f"Oznaczenie materiału testowego: {fixture.case_reference}. "
+            "Weryfikacja dokumentów źródłowych w rzeczywistej sprawie jest odrębną czynnością."
+        ),
+        "SIGNATURE": (
+            f"Osoba wskazana do podpisu: {fixture.signature_party}. "
+            "PRÓBA TECHNICZNA — dokument niezatwierdzony i nieprzeznaczony do wysyłki."
+        ),
+    }
+    return request, sections, amount
+
+def check_synthetic_output(docx_bytes, pdf_bytes, fixture, amount):
+    """Odmawiaj PASS, gdy artefakt gubi kluczowe dane lub polskie sekcje."""
+    docx = Document(BytesIO(docx_bytes))
+    docx_text = "\n".join(p.text for p in docx.paragraphs)
+    pdf_text = "\n".join((p.extract_text() or "") for p in PdfReader(BytesIO(pdf_bytes)).pages)
+    mandatory = (
+        fixture.case_reference, fixture.sender_name, fixture.recipient_name,
+        amount, fixture.payment_destination, fixture.requested_payment_date_human,
+        *SECTION_TITLES_PL.values(),
+        "PRÓBA TECHNICZNA",
+    )
+    for needle in mandatory:
+        require(needle in docx_text, "DOCX_MISSING_REQUIRED_SAMPLE_FIELD")
+        require(needle in pdf_text, "PDF_MISSING_REQUIRED_SAMPLE_FIELD")
+    for forbidden in FORBIDDEN_SAMPLE_MARKERS:
+        require(forbidden not in docx_text and forbidden not in pdf_text,
+                "SYNTHETIC_ENGLISH_PLACEHOLDER_PRESENT")
 
 def pin(name: str) -> VersionPin:
     return VersionPin(id=f"urn:lukart:operator-e2e:{name}", version="1.0.0", content_hash=sha256(name.encode()).hexdigest())
@@ -208,17 +277,17 @@ class OperatorE2E:
         recipient_dec=self.decision("IDENTITY",[recipient])
         recipient=self.core_apply("VerifyParty",{"decision":recipient_dec.model_dump(mode="json")},recipient)[0].refs[0]
 
-        source_bytes=b"Synthetic payment receipt."; source_hash=sha256(source_bytes).hexdigest()
+        source_bytes=self.fixture.model_dump_json().encode("utf-8"); source_hash=sha256(source_bytes).hexdigest()
         _,src_req=self.core_apply("RegisterSource",{"content_base64":base64.b64encode(source_bytes).decode("ascii"),
             "media_type":"text/plain","retention_policy":self.retention_pin.model_dump(mode="json")})
         source_id=uuid5(UUID(src_req["meta"]["command_id"]),"source")
         anchor={"document_id":str(source_id),"document_hash":source_hash,
                 "locator":{"unit":"RECORD","value":"1","fragment_hash":source_hash}}
-        evidence=self.core_apply("AddEvidence",{"evidence_type":"DOCUMENT","description":"Synthetic accepted payment evidence",
+        evidence=self.core_apply("AddEvidence",{"evidence_type":"DOCUMENT","description":"Fikcyjny materiał rozliczeniowy — test E2E",
             "source":anchor,"authenticity":"UNKNOWN"})[0].refs[0]
         evidence=self.fact_apply("ReviewEvidence",evidence).refs[0]
         evidence=self.fact_apply("AcceptEvidence",evidence).refs[0]
-        fact=self.core_apply("AddFact",{"statement":"Synthetic payment remained outstanding at the accepted due date.",
+        fact=self.core_apply("AddFact",{"statement":f"Według fikcyjnej dokumentacji należność za płatność z terminem {self.fixture.performance_due_date_iso} pozostaje nieuregulowana.",
             "support":"SOURCE_BACKED","evidence":[evidence.model_dump(mode="json")],
             "subjects":[recipient.model_dump(mode="json")],"event_date":"2026-09-30","key_fact":True},anchors=[anchor])[0].refs[0]
         fact=self.fact_apply("ReviewFact",fact).refs[0]
@@ -257,7 +326,7 @@ class OperatorE2E:
             "claimant":sender.model_dump(mode="json"),"issues":[issue.model_dump(mode="json")],
             "facts":[fact.model_dump(mode="json")],"rules":[legal_rule.model_dump(mode="json")],"support":"SOURCE_BACKED"})[0].refs[0]
         objective=self.core_apply("AddRequest",{"filing":filing.model_dump(mode="json"),"request_type":"PAYMENT_DEMAND",
-            "text":"Synthetic requested payment outcome.","claims":[claim.model_dump(mode="json")],
+            "text":synthetic_payment_body(self.fixture)[0],"claims":[claim.model_dump(mode="json")],
             "evidence":[evidence.model_dump(mode="json")]})[0].refs[0]
 
         snap=self.snapshot()
@@ -269,7 +338,7 @@ class OperatorE2E:
                  objective.model_dump(mode="json"),legal_rule.model_dump(mode="json"),citation.model_dump(mode="json")]
         sections=[]
         for idx,stype in enumerate(self.runtime.plan_sections):
-            sections.append({"section_type":stype,"title":stype.replace("_"," ").title(),"arguments":[],
+            sections.append({"section_type":stype,"title":SECTION_TITLES_PL[stype],"arguments":[],
                 "allowed_inputs":allowed,
                 "required_inputs":([fact.model_dump(mode="json"),evidence.model_dump(mode="json"),objective.model_dump(mode="json"),
                                     legal_rule.model_dump(mode="json"),citation.model_dump(mode="json")] if idx==0
@@ -291,16 +360,24 @@ class OperatorE2E:
                    "objective_ids":[str(objective.id)],"snapshot_id":str(snap.id),"snapshot_hash":digest(snap),
                    "plan":approved_plan.model_dump(mode="json"),"profile":"QUICK"}
         draft_cmd=UUID(draft_meta["command_id"])
+        request_text, sample_sections, sample_amount = synthetic_payment_body(self.fixture)
+        require(tuple(self.runtime.plan_sections) == tuple(SECTION_TITLES_PL), "SAMPLE_SECTIONS_MISMATCH")
         for idx,sref in enumerate(section_refs):
-            statements=[{"id":str(uuid5(draft_cmd,f"provided-fact:{idx}")),"text":"Synthetic source-backed payment fact.",
+            section_name = self.runtime.plan_sections[idx]
+            statements=[{"id":str(uuid5(draft_cmd,f"provided-fact:{idx}")),
+                         "text":sample_sections[section_name],
                          "statement_type":"FACTUAL","support":"SOURCE_BACKED",
-                         "refs":[fact.model_dump(mode="json"),evidence.model_dump(mode="json")],"citations":[],"inference_label":None}]
+                         "refs":[fact.model_dump(mode="json"),evidence.model_dump(mode="json")],
+                         "citations":[],"inference_label":None}]
             if idx==0:
                 statements += [
-                    {"id":str(uuid5(draft_cmd,"provided-request")),"text":"Synthetic requested payment outcome.","statement_type":"REQUEST",
-                     "support":"SOURCE_BACKED","refs":[objective.model_dump(mode="json")],"citations":[],"inference_label":None},
-                    {"id":str(uuid5(draft_cmd,"provided-legal")),"text":"Synthetic legal proposition supported by the verified source.",
-                     "statement_type":"LEGAL","support":"SOURCE_BACKED","refs":[legal_rule.model_dump(mode="json")],
+                    {"id":str(uuid5(draft_cmd,"provided-request")),"text":request_text,
+                     "statement_type":"REQUEST","support":"SOURCE_BACKED",
+                     "refs":[objective.model_dump(mode="json")],"citations":[],"inference_label":None},
+                    {"id":str(uuid5(draft_cmd,"provided-legal")),
+                     "text":"WYŁĄCZNIE TEST: reguła i cytowanie są fikcyjne; nie stanowią podstawy prawnej rzeczywistego wezwania.",
+                     "statement_type":"LEGAL","support":"SOURCE_BACKED",
+                     "refs":[legal_rule.model_dump(mode="json")],
                      "citations":[citation.model_dump(mode="json")],"inference_label":None},
                 ]
             def _typed_ref(value):
@@ -367,6 +444,7 @@ class OperatorE2E:
         docx=fq("ReadFinalArtifact",format="DOCX"); pdf=fq("ReadFinalArtifact",format="PDF")
         require(isinstance(docx,bytes) and docx.startswith(b"PK"), "DOCX_REQUIRED")
         require(isinstance(pdf,bytes) and pdf.startswith(b"%PDF"), "PDF_REQUIRED")
+        check_synthetic_output(docx, pdf, self.fixture, sample_amount)
         areq=self.final_request("ApproveFinalDocument",validated,render_id=str(render_id))
         ares=self._assert_command(self.operator.execute_finalization(areq,self.token),"ApproveFinalDocument"); self.sequence=ares.case_sequence
         rendered=self.get(ares.refs[0]); require(rendered.status=="RENDERED", "RENDER_NOT_APPROVED")
