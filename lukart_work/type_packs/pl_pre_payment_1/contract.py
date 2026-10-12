@@ -10,6 +10,7 @@ from ..common import (
     FORBIDDEN_AUTOMATIONS,
     REQUIRED_HUMAN_GATES,
     CommonPreLitigationEnvelope,
+    strict_iso_date,
     canonical_pin,
 )
 
@@ -57,6 +58,11 @@ class PLPrePayment1Input(CommonPreLitigationEnvelope):
         if not value:
             raise ValueError("required payment field must not be blank")
         return value
+
+    @field_validator("performance_due_date_iso")
+    @classmethod
+    def due_date_must_be_valid(cls, value: str) -> str:
+        return strict_iso_date(value)
 
     @field_validator("principal_amount_decimal", mode="before")
     @classmethod
