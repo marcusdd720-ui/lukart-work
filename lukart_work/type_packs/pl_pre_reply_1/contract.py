@@ -10,6 +10,7 @@ from ..common import (
     FORBIDDEN_AUTOMATIONS,
     REQUIRED_HUMAN_GATES,
     CommonPreLitigationEnvelope,
+    strict_iso_date,
     canonical_pin,
 )
 
@@ -86,6 +87,11 @@ class PLPreReply1Input(CommonPreLitigationEnvelope):
         if not value:
             raise ValueError("required reply field must not be blank")
         return value
+
+    @field_validator("incoming_demand_date_iso")
+    @classmethod
+    def demand_date_must_be_valid(cls, value: str) -> str:
+        return strict_iso_date(value)
 
     @field_validator("asserted_amount_decimal", mode="before")
     @classmethod
