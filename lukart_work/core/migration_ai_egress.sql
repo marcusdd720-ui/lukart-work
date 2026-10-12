@@ -136,6 +136,8 @@ CREATE POLICY ai_egress_grant_scope ON lw_core.ai_egress_grants
        AND case_id::text=current_setting('lw.case',true))
     WITH CHECK (tenant_id::text=current_setting('lw.tenant',true)
             AND case_id::text=current_setting('lw.case',true));
--- The existing migration runner grants SELECT/INSERT globally and
--- UPDATE only to the two narrow egress tables. Production requires the
--- same explicitly owner-applied grants before enabling this adapter.
+-- After applying this owner-only migration, use
+-- lukart_work.storage.migrations.configure_egress_roles(owner_connection,
+-- runtime_role, host_role). The ordinary runtime role gets SELECT only.
+-- Only the isolated NOINHERIT host receives INSERT and column-bounded
+-- UPDATE on the two egress tables; never grant egress writes to runtime.
