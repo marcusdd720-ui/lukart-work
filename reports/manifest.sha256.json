@@ -129,7 +129,7 @@
   "lukart_work/ingestion/worker.py": "277e94dcd0d4d38f30b9202df642ed7b4885682693a3cb7d3eec0ad9a6144a81",
   "lukart_work/model_runtime/__init__.py": "fffbc3cc2f9a4e34eec54742f4551fd9d3cbc4d4cbb445834bd6cf75a7c9958f",
   "lukart_work/model_runtime/chat_zero_cost.py": "977ca35a0eaa0997f91ef94d6f02682341d99671d179eb6951aa01a62b7e37ce",
-  "lukart_work/model_runtime/egress_authority.py": "54860c1830afaecd8c56b5c4649c711a49886f5a77a84b4168623115fc84bb8e",
+  "lukart_work/model_runtime/egress_authority.py": "3db37329ee4e17e52e8e8b45f30990e4ae37e310c8bf0467c9c6519e45c331ac",
   "lukart_work/model_runtime/ollama.py": "ec34a31e7af05046c0919e106ef0125138fee6abd348c8997c87361ceb0e8e86",
   "lukart_work/operator.py": "5518ed0158100b79b3abd09b49e645f68486584d881b47d292f4df9af9f3aa77",
   "lukart_work/planner/__init__.py": "f00d6a626bfedb60ac38606ea6d70e0d6b0dbe47e0b27616fb7c4bbdf518d370",
