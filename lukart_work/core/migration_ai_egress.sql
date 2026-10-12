@@ -68,6 +68,12 @@ BEGIN
             RAISE EXCEPTION 'immutable egress budget' USING ERRCODE='23000';
         END IF;
         IF OLD.revoked_at IS NOT NULL AND
+           (NEW.used_calls > OLD.used_calls OR NEW.reserved_calls > OLD.reserved_calls)
+        THEN
+            RAISE EXCEPTION 'revoked budget cannot reserve or consume'
+                USING ERRCODE='23000';
+        END IF;
+        IF OLD.revoked_at IS NOT NULL AND
            ROW(NEW.revoked_at,NEW.revoked_by)
            IS DISTINCT FROM ROW(OLD.revoked_at,OLD.revoked_by)
         THEN
@@ -96,6 +102,13 @@ BEGIN
            IS DISTINCT FROM ROW(OLD.consumed_at,OLD.consumed_by)
         THEN
             RAISE EXCEPTION 'consumption immutable' USING ERRCODE='23000';
+        END IF;
+        IF OLD.revoked_at IS NOT NULL AND
+           ROW(NEW.consumed_at,NEW.consumed_by)
+           IS DISTINCT FROM ROW(OLD.consumed_at,OLD.consumed_by)
+        THEN
+            RAISE EXCEPTION 'revoked grant cannot be consumed'
+                USING ERRCODE='23000';
         END IF;
         IF OLD.revoked_at IS NOT NULL AND
            ROW(NEW.revoked_at,NEW.revoked_by)
