@@ -215,7 +215,8 @@ class DurableEgressTests(unittest.TestCase):
 
     def test_database_role_cannot_mutate_immutable_grant_or_bypass_quota(self):
         value = self._issue()
-        with self.assertRaises(psycopg.IntegrityError):
+        # The runtime role cannot UPDATE grant_json at the SQL privilege gate.
+        with self.assertRaises(psycopg.errors.InsufficientPrivilege):
             with self.repo.transaction(self.tenant, self.case) as tx:
                 tx.connection.execute(
                     "UPDATE lw_core.ai_egress_grants SET grant_json='{}' "
