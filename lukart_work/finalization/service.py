@@ -286,24 +286,29 @@ class FinalizationService(CommandService):
         tx.put_object(RENDER_CATEGORY, record.id, record)
         return (ref(draft),), "RevisionAppended", record
 
-    def _load_render(self, tx, records, principal, render_id):
+    def _load_render(self, tx, records, principal, render_id, *, revalidate_for_mutation=False):
         record = tx.object(RENDER_CATEGORY, render_id, PersistedRender)
         if (record.tenant_id, record.case_id) != (principal.tenant_id, principal.case_id):
             raise Violation("CROSS_CASE")
+        # Read historical artifacts using their original receipt, never the live code pin.
+        if tuple(item.artifact for item in record.artifacts) != record.meta.receipt.artifacts:
+            raise Violation("INVALID_HASH")
         data = tuple(ObjectStore(tx).read(item.artifact_id) for item in record.artifacts)
         bundle = RenderedBundle(docx=data[0], pdf=data[1], meta=record.meta)
         self.renderer.validate(bundle)
-        render_request = wire.RenderRequest(
-            document=record.document,
-            profile=record.meta.receipt.render_profile,
-            authorization_hash=record.meta.receipt.authorization_hash,
-        )
-        render_records = self._validated_render_records(records, record.validation)
-        reproduced = self.renderer.render(
-            render_request, render_records, record.validation
-        )
-        if reproduced != bundle:
-            raise Violation("INVALID_HASH")
+        if revalidate_for_mutation:
+            # Retain the original fail-closed authority gate for approve/release/package writes.
+            render_request = wire.RenderRequest(
+                document=record.document,
+                profile=record.meta.receipt.render_profile,
+                authorization_hash=record.meta.receipt.authorization_hash,
+            )
+            render_records = self._validated_render_records(records, record.validation)
+            reproduced = self.renderer.render(
+                render_request, render_records, record.validation
+            )
+            if reproduced != bundle:
+                raise Violation("INVALID_HASH")
         return record, bundle
 
     def _transition_draft(self, request, principal, tx, records, heads, now, old, status):
@@ -325,7 +330,7 @@ class FinalizationService(CommandService):
             or draft.snapshot_hash != request.snapshot_hash
         ):
             raise Violation("INVALID_HASH")
-        render, _bundle = self._load_render(tx, records, principal, request.render_id)
+        render, _bundle = self._load_render(tx, records, principal, request.render_id, revalidate_for_mutation=True)
         if (
             render.validated_draft != ref(draft)
             or render.validated_draft_hash != digest(draft)
@@ -436,7 +441,7 @@ class FinalizationService(CommandService):
             or draft.snapshot_hash != request.snapshot_hash
         ):
             raise Violation("INVALID_HASH")
-        render, _bundle = self._load_render(tx, records, principal, request.render_id)
+        render, _bundle = self._load_render(tx, records, principal, request.render_id, revalidate_for_mutation=True)
         approval_record = tx.object(APPROVAL_CATEGORY, render.id, FinalizationApproval)
         if (
             approval_record.committed_sequence != request.meta.expected_case_sequence
@@ -621,7 +626,7 @@ class FinalizationService(CommandService):
             or draft.snapshot_hash != request.snapshot_hash
         ):
             raise Violation("INVALID_HASH")
-        render, bundle = self._load_render(tx, records, principal, request.render_id)
+        render, bundle = self._load_render(tx, records, principal, request.render_id, revalidate_for_mutation=True)
         approval = tx.object(APPROVAL_CATEGORY, render.id, FinalizationApproval)
         release = tx.object(RELEASE_CATEGORY, render.id, FinalizationRelease)
         if (

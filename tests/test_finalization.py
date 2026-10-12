@@ -507,6 +507,53 @@ class FinalizationTests(validation.ValidationTests):
             "SCHEMA_INVALID",
         )
 
+    def test_historical_package_reads_survive_validation_pin_change(self):
+        rendered, render_id = self.released()
+        self.final_apply(self.package_request(rendered, render_id))
+        expected = self.package_query("GetFinalPackage", render_id)
+        expected_docx = self.final_query("ReadFinalArtifact", render_id, format="DOCX")
+        expected_pdf = self.final_query("ReadFinalArtifact", render_id, format="PDF")
+        expected_manifest = self.package_query(
+            "ReadFinalPackageMember", render_id, member="manifest.json"
+        )
+        # A real deployment changes this content pin. Previously every read
+        # accidentally called the current rendering/authorization code and failed.
+        with patch("lukart_work.rendering.service.validation_pin", return_value=core.PIN):
+            with patch.object(
+                self.finalization.renderer, "render",
+                side_effect=AssertionError("historical reads must not re-render"),
+            ):
+                projection = self.final_query("GetFinalization", render_id)
+                self.assertIsInstance(projection, FinalizationProjection)
+                self.assertEqual(self.final_query("GetFinalRelease", render_id).render_id, render_id)
+                self.assertEqual(
+                    self.final_query("ReadFinalArtifact", render_id, format="DOCX"), expected_docx
+                )
+                self.assertEqual(
+                    self.final_query("ReadFinalArtifact", render_id, format="PDF"), expected_pdf
+                )
+                self.assertEqual(self.package_query("GetFinalPackage", render_id), expected)
+                self.assertEqual(
+                    self.package_query("ReadFinalPackageMember", render_id, member="manifest.json"),
+                    expected_manifest,
+                )
+
+    def test_source_pin_change_still_blocks_stale_approval_mutation(self):
+        validated, run_id = self.validated()
+        render_id, _, _ = self.render(validated, run_id)
+        request = self.final_request(
+            "ApproveFinalDocument", validated, render_id=str(render_id)
+        )
+        before = self.state()
+        with patch("lukart_work.rendering.service.validation_pin", return_value=core.PIN):
+            denied = self.finalization.execute(json.dumps(request), self.token)
+            self.assertIsInstance(denied, DomainError)
+            self.assertEqual(denied.code, "STALE")
+            self.assertIsInstance(
+                self.final_query("GetFinalization", render_id), FinalizationProjection
+            )
+        self.assertEqual(self.state(), before)
+
     def test_package_reads_require_distinct_capabilities_and_detect_tamper(self):
         rendered, render_id = self.released()
         self.final_apply(self.package_request(rendered, render_id))

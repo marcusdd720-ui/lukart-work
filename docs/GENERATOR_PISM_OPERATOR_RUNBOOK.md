@@ -16,6 +16,7 @@ It does not use customer data, does not make network model calls and does not by
 - Python 3.14;
 - isolated PostgreSQL prepared with `scripts/prepare_ci_database.py`;
 - `LUKART_TEST_ADMIN_DSN`, `LUKART_TEST_RUNTIME_PASSWORD`, `LUKART_TEST_DSN`;
+- `LUKART_TEST_EGRESS_HOST_PASSWORD`, `LUKART_TEST_EGRESS_DSN` for the isolated egress host role;
 - dependencies installed with `python -m pip install '.[postgres,ingestion]'`.
 
 Never point this E2E at a production/client database.
