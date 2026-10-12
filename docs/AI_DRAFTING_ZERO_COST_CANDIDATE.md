@@ -2,7 +2,7 @@
 
 **STATUS: DRAFT CODE / SYNTHETIC TEST ONLY / NO LIVE PROVIDER CERTIFICATION**.
 
-This branch adds only `lukart_work/model_runtime/chat_zero_cost.py`, a
+This branch includes the opt-in `lukart_work/model_runtime/chat_zero_cost.py`, a
 provider-neutral OpenAI-compatible remote chat completion adapter that
 implements existing `AttestedDraftingProvider` (Stage 09). It does not
 replace `ControlledDraftingService`, core case transactions, validation,
@@ -63,8 +63,9 @@ linearization point: committed authority must cover the bounded single network
 attempt; concurrent revocation and quota allocation must serialize with it.
 Returning the same stale object without performing that transaction violates the
 callback contract. The adapter cannot certify these external facts or make an
-arbitrary host callback atomic. No real durable issuer/committer is implemented
-or verified here; a missing committer denies before secret/connect. Synthetic
+arbitrary host callback atomic. The durable PostgreSQL issuer/committer is provided in the separate child
+candidate below; it is not enabled by default and does not verify real-world
+privacy or billing facts. A missing committer denies before secret/connect. Synthetic
 callbacks prove adapter behavior only, **not production authority**.
 
 The issuer must reserve the complete actual vendor input/output token budget,
@@ -80,7 +81,8 @@ bindings/revision above, the provider requires `reservation_committer`, and the
 transport accepts immutable serialized bytes instead of a mutable payload dict.
 Existing host integrations must implement the new contract; no legacy fallback
 is allowed. Repository consumers are updated tests; no persisted domain schema,
-core service, HUMAN boundary or database migration changes.
+core service or HUMAN decision boundary changes; the child candidate adds a
+separate explicitly applied authority database migration.
 
 `DirectTLSChatTransport` requires a callable send boundary and invokes it once,
 after verified TLS connection and just before POST. The provider also rejects
@@ -100,3 +102,70 @@ handshake or vendor behavior.
 
 No live provider access, no claim of legally authorized production use,
 no effect on ROS read-only draft PR #348. A2 independent reviewer required.
+
+## Trusted PostgreSQL one-use authority candidate (isolated PR68 child)
+
+`lukart_work/model_runtime/egress_authority.py` now implements the previously
+missing trusted-host callbacks on WORK's existing case-scoped PostgreSQL
+transactions. The owner-applied additive schema is
+`lukart_work/core/migration_ai_egress.sql`. This is an opt-in candidate:
+the public adapter still has no default admission, no real provider key,
+no provider account credential, and no automatic real-case export.
+
+The authenticated host must provision *separate explicit capabilities*
+`AI_EGRESS_BUDGET`, `AI_EGRESS_APPROVE`, `AI_EGRESS_SEND`, and
+`AI_EGRESS_REVOKE` to the appropriate case-scoped HUMAN principals.
+
+**SQL trust boundary:** Only a separately authenticated trusted host may own the
+`lw_ai_egress_host` connection credential (use an independently protected DSN,
+not `LUKART_TEST_DSN` or any client/AI-worker environment). Construct
+`PostgresEgressAuthority(PostgresRepository(trusted_host_dsn), host_token_authority)`
+inside that isolated, authorized host. Its SQL operations reject any login other
+than `lw_ai_egress_host` and continue enforcing the HUMAN capability checks.
+`lw_core_runtime` must have SELECT-only access to the AI egress tables,
+**never INSERT, UPDATE or DELETE**. The owner must create a separate NOINHERIT,
+NOSUPERUSER, NOBYPASSRLS host role and apply
+`configure_egress_roles(owner_connection, "lw_core_runtime", "lw_ai_egress_host")`
+from `lukart_work.storage.migrations`. That role has only core-case SELECT
+and egress-specific INSERT plus narrowly scoped, monotonic UPDATE; it must not
+be delegated or inherited by ordinary runtime accounts. A direct SQL connection
+using the *trusted host credential itself* is privileged, so secret custody and
+process isolation are deployment gates, not properties proved by synthetic CI.
+A default or missing host role/DSN denies authorization; the code does not
+fall back to an administrative or general-runtime credential.
+The isolated CI passwords are synthetic and never establish production custody.
+`register_budget` requires separately inspected official free-tier/billing
+evidence identified by a SHA-256 reference and binds one provider/account,
+zero paid fallback and an expiry. It never replenishes an existing account
+budget. `issue` records one particular consent-evidence digest and exact
+`ZeroCostScopeAdmission` bound to immutable invocation/body identities.
+Do not obtain these inputs from model text or an unauthenticated client.
+No assertion of actual consent or zero-billing is inferred from a digest:
+the authorized human issuer must verify the underlying private consent
+and official provider evidence *outside* this module. Missing independent
+proof means do not issue the budget or grant.
+
+Use `resolver, committer = host.bind(authorized_send_token)` and pass
+those callbacks to the existing `ZeroCostChatDraftingProvider`.
+`commit` atomically checks the still-live grant and shared account budget
+under PostgreSQL locks and consumes the reservation once immediately before
+POST. Revoke-before-commit prevents POST and releases unused allocation.
+Revoke-after-commit never refunds a potentially transmitted call.
+A crash/timeout after commit consumes the reservation permanently;
+the operator must reconcile usage out of band, never blindly retry.
+No secret, prompt, case body or client document is persisted in this ledger.
+
+Tests in `tests/test_egress_authority.py` exercise restart, same-request
+replay, concurrent commit with independent process-local authority instances,
+tenant/case segregation, budget contention and revocation against a disposable
+PostgreSQL service. Expired, unconsumed reservations can be reclaimed on a
+subsequent issue within the same HUMAN-authorized case only. The shared
+account's reservations in OTHER cases remain case-RLS-protected; the
+authorized HUMAN operator must invoke case-scoped `revoke` for abandoned
+reservations in those cases. Never broaden RLS to work around this restriction
+or claim automatic tenant-wide recovery of expired reservations. Synthetic evidence
+does not attest the origin of actual client consent, commercial free
+entitlement, lawful transfer terms, provider-side billing, or independence
+of a legal reviewer. Until the necessary real-world and legal gates pass:
+`REAL_CASE_EXPORT=DENIED`, `LEGAL_TYPE_ADMISSION=HUMAN_REQUIRED`,
+`GO_LIVE=BLOCKED`.
