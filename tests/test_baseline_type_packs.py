@@ -71,6 +71,23 @@ class BaselineTypePackTests(unittest.TestCase):
         self.assertIsInstance(complaint_positive_fixture(), PLPreComplaint1Input)
         self.assertIsInstance(reply_positive_fixture(), PLPreReply1Input)
 
+    def test_invalid_dates_and_unknown_timezone_fail_closed(self) -> None:
+        profiles = (
+            (PLPrePayment1Input, payment_positive_fixture, "performance_due_date_iso"),
+            (PLPreComplaint1Input, complaint_positive_fixture, "performance_date_iso"),
+            (PLPreReply1Input, reply_positive_fixture, "incoming_demand_date_iso"),
+        )
+        for model, positive, specific_date in profiles:
+            fixture = positive().model_dump(mode="json")
+            for field in ("evaluation_date_iso", "document_date_iso", specific_date):
+                for bad in ("2026-02-30", "2026-1-2", "tomorrow"):
+                    with self.subTest(model=model.__name__, field=field, bad=bad):
+                        with self.assertRaises(ValidationError):
+                            model.model_validate({**fixture, field: bad})
+            with self.subTest(model=model.__name__, field="evaluation_timezone"):
+                with self.assertRaises(ValidationError):
+                    model.model_validate({**fixture, "evaluation_timezone": "Not/A_Timezone"})
+
     def test_negative_fixtures_fail_closed(self) -> None:
         cases = (
             (PLPrePayment1Input, payment_negative_payloads()),
