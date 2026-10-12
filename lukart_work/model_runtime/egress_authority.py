@@ -206,13 +206,15 @@ class PostgresEgressAuthority:
                     )
                     if changed.rowcount != 1:
                         raise ProviderPolicyError()
-                if expired:
+                # Budget trigger only permits a one-step decrement per UPDATE.
+                # Keep the update sequence in this same database transaction.
+                for _ in expired:
                     changed = tx.connection.execute(
                         "UPDATE lw_core.ai_egress_budgets "
-                        "SET reserved_calls=reserved_calls-%s "
+                        "SET reserved_calls=reserved_calls-1 "
                         "WHERE tenant_id=%s AND provider_id=%s AND account_hash=%s "
-                        "AND reserved_calls >= %s",
-                        (len(expired), tenant, grant.provider_id, account_hash, len(expired)),
+                        "AND reserved_calls >= 1",
+                        (tenant, grant.provider_id, account_hash),
                     )
                     if changed.rowcount != 1:
                         raise ProviderPolicyError()
