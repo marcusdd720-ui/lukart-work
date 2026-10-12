@@ -143,7 +143,7 @@ class PostgresEgressAuthority:
         with self.authority.session(token) as principal:
             self._human(principal, tenant_id, case_id, "AI_EGRESS_BUDGET")
             with self.repository.transaction(tenant_id, case_id) as tx:
-                if not tx.sequence():
+                if not tx.sequence() or verified_until <= _now(self.clock):
                     raise ProviderPolicyError()
                 tx.connection.execute(
                     "INSERT INTO lw_core.ai_egress_budgets "
@@ -169,6 +169,8 @@ class PostgresEgressAuthority:
             with self.repository.transaction(tenant, case) as tx:
                 if not tx.sequence():
                     raise ProviderPolicyError()
+                # An issuer can wait on both locks: refresh expiry after admission.
+                _require_exact(grant, invocation, config, body, _now(self.clock))
                 row = tx.connection.execute(
                     "SELECT maximum_free_calls,used_calls,reserved_calls,"
                     "free_evidence_hash,verified_until,revoked_at "
@@ -324,6 +326,8 @@ class PostgresEgressAuthority:
         now = _now(self.clock)
         with self.authority.session(token) as principal:
             self._human(principal, tenant_id, case_id, "AI_EGRESS_REVOKE")
+            # Tenant-wide budget shutdown requires the budget administrator too.
+            self._human(principal, tenant_id, case_id, "AI_EGRESS_BUDGET")
             with self.repository.transaction(tenant_id, case_id) as tx:
                 updated = tx.connection.execute(
                     "UPDATE lw_core.ai_egress_budgets SET revoked_at=%s,revoked_by=%s "
