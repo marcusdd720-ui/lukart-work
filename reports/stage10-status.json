@@ -1,6 +1,6 @@
 {
   "stage": "10 Validation Engine",
-  "tests": 794,
+  "tests": 795,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -141,7 +141,7 @@
     "tests/test_operator_evidence_verifier.py": "f5b94079a230f6406b83bdbdfe5d70f8c0b202c4b8df8f3ff7e0b51bd0cffe4b",
     "tests/test_product_baseline.py": "1aefc711e0d121d0f86f1b09384f42d3008df5e0311cd123eb1102412288ac43",
     "tests/test_remediation.py": "cb4dad854cfb7a38d15be60d969eee483deabc3303c0bf41a35e6eed61c0d8d2",
-    "tests/test_ros_work_integration_contract.py": "642a5c3ef8a9cb03a9e7b6c766c4e1a121d4bd0095b216395575630f87473155",
+    "tests/test_ros_work_integration_contract.py": "00849c456efe884627629bf6009dcc0c17fc61280ae60696363df28ec8277db8",
     "tests/test_stage02.py": "87e8115d9a77ef49409289f57f5a4faa186d5366ed40c39658489fe57428172a",
     "tests/test_stage03.py": "4d8f67e424c76749dc4034666a37c354b7614a0e03d638a7bba593b2cc7b3e39",
     "tests/test_stage04.py": "6f24fd7e57de3e2bb03d89d4a4ba79ad7849dcbe2dabdc7f059198dc30bb2a47",
