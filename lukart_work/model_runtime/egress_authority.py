@@ -126,7 +126,10 @@ class PostgresEgressAuthority:
     def _sql_host(tx):
         # An application runtime DSN is never an egress authority credential.
         # This role has independent host-only authentication and no BYPASSRLS.
-        if tx.connection.execute("SELECT current_user").fetchone()[0] != "lw_ai_egress_host":
+        user, session = tx.connection.execute(
+            "SELECT current_user, session_user"
+        ).fetchone()
+        if user != "lw_ai_egress_host" or session != "lw_ai_egress_host":
             raise ProviderPolicyError()
 
     def register_budget(self, token, *, tenant_id, case_id, provider_id,
