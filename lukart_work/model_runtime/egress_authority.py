@@ -20,7 +20,7 @@ from lukart_work.model_runtime.chat_zero_cost import (
     ChatProviderConfig, ZeroCostScopeAdmission,
 )
 from lukart_work.model_runtime.ollama import ProviderPolicyError
-from lukart_work.validation.rules import digest
+from lukart_work.validation.rules import Violation, digest
 
 _MAX_BUDGET = 10_000
 
@@ -115,7 +115,10 @@ class PostgresEgressAuthority:
 
     @staticmethod
     def _human(principal, tenant, case, action):
-        principal.require(tenant, case, action)
+        try:
+            principal.require(tenant, case, action)
+        except Violation:
+            raise ProviderPolicyError() from None
         if principal.actor.kind != "HUMAN":
             raise ProviderPolicyError()
 
@@ -250,7 +253,7 @@ class PostgresEgressAuthority:
                 if row[5] is not None or row[6] is not None or stored != grant:
                     raise ProviderPolicyError()
                 # The adapter makes this callback immediately before its POST.
-                if (grant.expiry_utc <= now or grant.invocation_hash != digest(invocation)
+                if (grant.invocation_hash != digest(invocation)
                         or sha256(body).hexdigest() != grant.wire_body_sha256
                         or len(body) > grant.reserved_wire_bytes):
                     raise ProviderPolicyError()
