@@ -15,6 +15,10 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "ros_work" / "v1" / "integration-contract.json"
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 
+# Exact planned package-read exception: native WORK authority only, never generic case export.
+PACKAGE_READ_OUTPUT = "immutable package identity and only exact final-package member bytes (which may contain private case content) under a separate native WORK tenant/case-scoped package-read capability; never raw credentials or original source-byte export"
+PACKAGE_READ_INVARIANT = "raw credentials and original source bytes never cross the operation envelope; private case content crosses only as exact final-package member bytes returned by ros.work.generator.read-package.v1 after explicit native WORK tenant/case-scoped package-read authorization and HG-09; the operation remains blocked until its adapter and review gates are admitted"
+
 
 def validate_contract(value: object) -> None:
     if not isinstance(value, dict):
@@ -123,6 +127,12 @@ def validate_contract(value: object) -> None:
         raise ValueError("EXECUTE_GATES")
     if operations[2]["required_gates"] != ["HG-09"]:
         raise ValueError("PACKAGE_GATES")
+    if (
+        operations[2]["effect"] != "SCOPED_ARTIFACT_READ"
+        or operations[2]["required_authority"] != "separate scoped WORK package-read capability"
+        or operations[2]["output"] != PACKAGE_READ_OUTPUT
+    ):
+        raise ValueError("PACKAGE_READ_SCOPE")
 
     mapping_keys = {"request", "scope", "authority", "concurrency", "idempotency", "evidence", "result"}
     if set(value["mapping"]) != mapping_keys or not all(
@@ -142,6 +152,8 @@ def validate_contract(value: object) -> None:
         raise ValueError("GAP_VALUE")
     if gaps[0]["severity"] != "P0" or not gaps[0]["state"].startswith("BLOCKING_"):
         raise ValueError("PB03_ACCEPTANCE_BLOCKER")
+    if PACKAGE_READ_INVARIANT not in value["invariants"]:
+        raise ValueError("PACKAGE_READ_INVARIANT")
     for key in ("invariants", "non_goals", "acceptance"):
         items = value[key]
         if not items or len(items) != len(set(items)) or not all(
@@ -227,6 +239,22 @@ class RosWorkIntegrationContractTests(unittest.TestCase):
             bad["operations"][index]["state"] = "READY"
             with self.assertRaises(ValueError):
                 validate_contract(bad)
+
+    def test_package_read_exception_never_broadens_to_case_export(self):
+        # An explicitly planned final-package read does not authorize generic private case
+        # egress, raw source-byte export, or removal of the native WORK read capability.
+        changes = (
+            lambda value: value["operations"][2].update(output="private case content export"),
+            lambda value: value["operations"][2].update(required_authority="ROS authority_ref"),
+            lambda value: value["operations"][2].update(effect="UNRESTRICTED_READ"),
+            lambda value: value["invariants"].remove(PACKAGE_READ_INVARIANT),
+        )
+        for change in changes:
+            with self.subTest(change=change.__code__.co_firstlineno):
+                altered = deepcopy(self.contract)
+                change(altered)
+                with self.assertRaises(ValueError):
+                    validate_contract(altered)
 
     def test_unknown_operation_and_false_ros_freshness_are_rejected(self):
         mutations = (

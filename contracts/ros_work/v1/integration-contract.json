@@ -102,7 +102,17 @@
       "effect": "CASE_STATE_AND_ARTIFACT_WRITE",
       "state": "BLOCKED_BY_INDEPENDENT_ACCEPTANCE_AND_SUPPORTED_TYPE_ADMISSION",
       "required_authority": "scoped HUMAN WORK command capability; ROS authority_ref is never sufficient alone",
-      "required_gates": ["HG-01", "HG-02", "HG-03", "HG-04", "HG-05", "HG-06", "HG-07", "HG-08", "HG-09"],
+      "required_gates": [
+        "HG-01",
+        "HG-02",
+        "HG-03",
+        "HG-04",
+        "HG-05",
+        "HG-06",
+        "HG-07",
+        "HG-08",
+        "HG-09"
+      ],
       "output": "WORK repository-issued result, evidence refs and release/package refs"
     },
     {
@@ -110,8 +120,10 @@
       "effect": "SCOPED_ARTIFACT_READ",
       "state": "BLOCKED_BY_PB03_CHECKPOINT_REVIEW_AND_ADAPTER",
       "required_authority": "separate scoped WORK package-read capability",
-      "required_gates": ["HG-09"],
-      "output": "immutable package identity and authorized bytes; never an implicit source export"
+      "required_gates": [
+        "HG-09"
+      ],
+      "output": "immutable package identity and only exact final-package member bytes (which may contain private case content) under a separate native WORK tenant/case-scoped package-read capability; never raw credentials or original source-byte export"
     }
   ],
   "mapping": {
@@ -171,7 +183,7 @@
     "WORK never imports lukart_ros as a runtime package dependency",
     "ROS orchestration success cannot manufacture WORK validation, HUMAN approval or FINAL",
     "no caller-supplied PASS, legal applicability, render hash or release receipt becomes authoritative",
-    "raw credentials, source bytes and private case content do not cross the operation envelope",
+    "raw credentials and original source bytes never cross the operation envelope; private case content crosses only as exact final-package member bytes returned by ros.work.generator.read-package.v1 after explicit native WORK tenant/case-scoped package-read authorization and HG-09; the operation remains blocked until its adapter and review gates are admitted",
     "native records remain authoritative and neutral envelopes are derived views",
     "replay requires exact code, contract, policy, input and artifact identities",
     "unknown, NOT_RUN, skipped or missing evidence is never PASS"
