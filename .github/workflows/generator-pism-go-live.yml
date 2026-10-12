@@ -21,7 +21,7 @@ jobs:
   operator-e2e:
     # Nigdy nie uruchamiaj niezaufanego kodu z forków na prywatnym runnerze.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, Linux, X64, lukart-stage11]
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     services:
       postgres:
@@ -54,7 +54,10 @@ jobs:
           set -euo pipefail
           case "$EVENT" in
             pull_request) sha="$PR_SHA" ;;
-            workflow_dispatch) sha="$DISPATCH_SHA" ;;
+            workflow_dispatch)
+              sha="$DISPATCH_SHA"
+              [[ "$EVENT_SHA" == "$sha" ]] || { echo "dispatch ref does not match candidate"; exit 1; }
+              ;;
             push) sha="$EVENT_SHA" ;;
             *) exit 2 ;;
           esac
