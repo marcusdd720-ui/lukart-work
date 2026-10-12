@@ -16,7 +16,7 @@ from lukart_work.core.service import CommandService
 from lukart_work.domain.models import Actor
 from lukart_work.model_runtime.chat_zero_cost import chat_wire_body
 from lukart_work.model_runtime.egress_authority import PostgresEgressAuthority
-from lukart_work.model_runtime.ollama import ProviderPolicyError, ProviderProtocolError
+from lukart_work.model_runtime.ollama import ProviderPolicyError
 from tests.test_chat_zero_cost import NOW, POLICY, Prompt, cfg, grant, invoke
 from tests.test_stage02 import DSN
 
@@ -213,7 +213,7 @@ class DurableEgressTests(unittest.TestCase):
         # The database denies a fresh worker; the adapter also denies local replay.
         with self.assertRaises(ProviderPolicyError):
             self.host.resolve(self.token, self.item)
-        with self.assertRaises(ProviderProtocolError):
+        with self.assertRaises(ProviderPolicyError):
             adapter.propose(self.item)
         self.assertEqual(len(fake.calls), 1)
 
