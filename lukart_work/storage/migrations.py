@@ -22,13 +22,31 @@ def schema_fingerprint(connection, schema):
                        for row in connection.execute(query,(schema,)).fetchall()) for query in queries)
 
 
+
+def _legacy_core_fingerprint(fingerprint):
+    """Remove only the explicitly admitted AI extension from the Stage 02 comparison.
+
+    The original core objects, constraints, RLS, triggers and functions must
+    remain structurally identical. Unknown additions are NOT silently ignored.
+    The opt-in egress extension has its separate migration and tests.
+    """
+    extension_tables = frozenset(("ai_egress_budgets", "ai_egress_grants"))
+    extension_functions = frozenset(("ai_egress_immutable_identity",))
+    return tuple(
+        tuple(row for row in section
+              if row[0] not in (extension_functions if index == 5 else extension_tables))
+        for index, section in enumerate(fingerprint)
+    )
+
+
 def verify_legacy_schema(connection, script):
     from psycopg import sql
     probe = 'lw_stage03_probe_' + uuid4().hex
     # This empty schema is created and removed inside the migration transaction.
     # No user-provided names or existing objects are dropped.
     connection.execute(script.replace('lw_core',probe))
-    matches = schema_fingerprint(connection,'lw_core') == schema_fingerprint(connection,probe)
+    matches = (_legacy_core_fingerprint(schema_fingerprint(connection, 'lw_core'))
+               == schema_fingerprint(connection, probe))
     connection.execute(sql.SQL('DROP SCHEMA {} CASCADE').format(sql.Identifier(probe)))
     if not matches:
         raise Violation('UNKNOWN')
