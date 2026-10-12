@@ -246,19 +246,31 @@ class Stage03Tests(unittest.TestCase):
                 with self.assertRaises(Violation): migrate(c)
 
     def test_adoption_rejects_ai_egress_rls_drift(self):
-        from lukart_work.storage.migrations import verify_legacy_schema
+        from lukart_work.storage.migrations import verify_legacy_schema, configure_egress_roles
         admin, _ = fresh_database()
         original = (ROOT/'lukart_work/core/migration.sql').read_text()
         extension = (ROOT/'lukart_work/core/migration_ai_egress.sql').read_text()
         with psycopg.connect(admin) as c:
             c.execute(original)
             c.execute(extension)
+            configure_egress_roles(c, 'lw_core_runtime', 'lw_ai_egress_host')
         with psycopg.connect(admin) as c:
             verify_legacy_schema(c, original)
         with psycopg.connect(admin) as c:
             c.execute('ALTER TABLE lw_core.ai_egress_grants DISABLE ROW LEVEL SECURITY')
             with self.assertRaises(Violation):
                 verify_legacy_schema(c, original)
+            c.rollback()
+        for statement in (
+            'GRANT TRUNCATE ON lw_core.ai_egress_budgets TO lw_core_runtime',
+            'GRANT UPDATE ON lw_core.ai_egress_grants TO lw_core_runtime',
+            'GRANT UPDATE (grant_json) ON lw_core.ai_egress_grants TO lw_core_runtime',
+        ):
+            with self.subTest(statement=statement), psycopg.connect(admin) as c:
+                c.execute(statement)
+                with self.assertRaises(Violation):
+                    verify_legacy_schema(c, original)
+                c.rollback()
 
     def test_review_r1_adoption_rejects_weakened_legacy_schema(self):
         admin, _ = fresh_database()
