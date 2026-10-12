@@ -137,8 +137,14 @@ the operator must reconcile usage out of band, never blindly retry.
 No secret, prompt, case body or client document is persisted in this ledger.
 
 Tests in `tests/test_egress_authority.py` exercise restart, same-request
-replay, concurrent commit, tenant/case segregation, budget contention and
-revocation against a disposable PostgreSQL service. Synthetic evidence
+replay, concurrent commit with independent process-local authority instances,
+tenant/case segregation, budget contention and revocation against a disposable
+PostgreSQL service. Expired, unconsumed reservations can be reclaimed on a
+subsequent issue within the same HUMAN-authorized case only. The shared
+account's reservations in OTHER cases remain case-RLS-protected; the
+authorized HUMAN operator must invoke case-scoped `revoke` for abandoned
+reservations in those cases. Never broaden RLS to work around this restriction
+or claim automatic tenant-wide recovery of expired reservations. Synthetic evidence
 does not attest the origin of actual client consent, commercial free
 entitlement, lawful transfer terms, provider-side billing, or independence
 of a legal reviewer. Until the necessary real-world and legal gates pass:
