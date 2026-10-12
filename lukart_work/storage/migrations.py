@@ -156,3 +156,37 @@ def configure_egress_roles(connection, runtime_role, host_role, *, schema='lw_co
         'GRANT UPDATE (consumed_at,consumed_by,revoked_at,revoked_by) ON {schema}.ai_egress_grants TO {role}',
     ):
         query(stmt, trusted)
+    # Direct ACL inspection cannot detect inherited write privileges.
+    # Re-evaluate effective rights after all GRANT/REVOKE operations.
+    columns = {
+        'ai_egress_budgets': frozenset(
+            ('used_calls', 'reserved_calls', 'revoked_at', 'revoked_by')
+        ),
+        'ai_egress_grants': frozenset(
+            ('consumed_at', 'consumed_by', 'revoked_at', 'revoked_by')
+        ),
+    }
+    for table, allowed_columns in columns.items():
+        qualified = f'{schema}.{table}'
+        runtime_write = connection.execute(
+            "SELECT has_table_privilege(%s,%s,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') "
+            "OR has_any_column_privilege(%s,%s,'INSERT,UPDATE')",
+            (runtime_role, qualified, runtime_role, qualified),
+        ).fetchone()[0]
+        host_table_write = connection.execute(
+            "SELECT has_table_privilege(%s,%s,'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')",
+            (host_role, qualified),
+        ).fetchone()[0]
+        if runtime_write or host_table_write:
+            raise Violation('FORBIDDEN')
+        actual_columns = connection.execute(
+            "SELECT attname FROM pg_attribute "
+            "WHERE attrelid=to_regclass(%s) AND attnum>0 AND NOT attisdropped",
+            (qualified,),
+        ).fetchall()
+        for (column,) in actual_columns:
+            if column not in allowed_columns and connection.execute(
+                "SELECT has_column_privilege(%s,%s,%s,'UPDATE')",
+                (host_role, qualified, column),
+            ).fetchone()[0]:
+                raise Violation('FORBIDDEN')
