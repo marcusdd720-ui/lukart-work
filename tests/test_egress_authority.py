@@ -192,6 +192,28 @@ class DurableEgressTests(unittest.TestCase):
                 account_hash=ACCOUNT)
         self.assertEqual(self.host.resolve(self.token, self.item), value)
 
+
+    def test_existing_chat_adapter_consumes_durable_grant_at_send_boundary(self):
+        """Proof of existing fake transport + PostgreSQL authority, no network."""
+        from lukart_work.model_runtime.chat_zero_cost import ZeroCostChatDraftingProvider
+        from tests.test_chat_zero_cost import FakeTransport, response
+
+        self._issue()
+        resolver, committer = self.host.bind(self.token)
+        fake = FakeTransport(response(self.item))
+        adapter = ZeroCostChatDraftingProvider(
+            self.config, prompt_builder=Prompt(),
+            admission_resolver=resolver, reservation_committer=committer,
+            secret_supplier=lambda: "synthetic-secret-not-real",
+            transport=fake, clock=lambda: NOW,
+        )
+        result = adapter.propose(self.item)
+        self.assertEqual(result.request_id, self.item.request.request_id)
+        self.assertEqual(len(fake.calls), 1)
+        with self.assertRaises(ProviderPolicyError):
+            adapter.propose(self.item)
+        self.assertEqual(len(fake.calls), 1)
+
     def test_expired_or_false_pricing_proof_does_not_register(self):
         for override in (
             {"free_price_verified": False},
