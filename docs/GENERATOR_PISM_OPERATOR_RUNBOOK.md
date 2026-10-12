@@ -40,3 +40,16 @@ PASS requires exact type-pack intake, authenticated production-service calls thr
 ## Scope boundary
 
 This proves the technical Generator Pism v1.0 execution path. It does not by itself admit a real Polish legal document type, certify legal advice, sign a document, file it externally or authorize automatic submission. Those remain explicit HUMAN/domain gates.
+# Offline verifier repair scope
+
+The verifier validates canonical typed package records, exact member bytes and
+manifest lengths/hashes, cross-case/render/release/approval bindings, audit chain,
+and parsed DOCX/PDF structures with render-receipt hashes. Its checks remain
+enabled under `python -O`; duplicate JSON keys are rejected. Output destinations
+must be fresh, so a failed rerun cannot reuse a prior report as its result.
+
+`PASS` from this verifier means `OFFLINE_PACKAGE_INTEGRITY_ONLY`. Self-contained
+package metadata cannot independently authenticate the HUMAN decisions, database
+issuance or source originals. Those require separate evidence and existing gates.
+Synthetic native-contract positive fixtures prove verifier behavior only; they
+are not a production operator E2E, real HUMAN review or live AI execution.

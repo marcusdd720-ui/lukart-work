@@ -9,6 +9,7 @@ from ..common import (
     FORBIDDEN_AUTOMATIONS,
     REQUIRED_HUMAN_GATES,
     CommonPreLitigationEnvelope,
+    strict_iso_date,
     canonical_pin,
 )
 
@@ -56,6 +57,11 @@ class PLPreComplaint1Input(CommonPreLitigationEnvelope):
         if not value:
             raise ValueError("required complaint field must not be blank")
         return value
+
+    @field_validator("performance_date_iso")
+    @classmethod
+    def performance_date_must_be_valid(cls, value: str) -> str:
+        return strict_iso_date(value)
 
     @field_validator("prior_correspondence")
     @classmethod

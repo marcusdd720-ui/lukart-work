@@ -19,6 +19,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   operator-e2e:
+    # Nigdy nie uruchamiaj niezaufanego kodu z forków na prywatnym runnerze.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Linux, X64, lukart-stage11]
     timeout-minutes: 45
     services:
@@ -37,6 +39,8 @@ jobs:
       LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
       LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
       LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_core_runtime password=disposable-runtime-password
+      LUKART_TEST_EGRESS_HOST_PASSWORD: disposable-egress-host-password
+      LUKART_TEST_EGRESS_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_ai_egress_host password=disposable-egress-host-password
     steps:
       - name: Resolve exact source
         id: source
@@ -89,11 +93,14 @@ jobs:
           from pathlib import Path
           e=json.loads(Path("build/generator-pism/operator-e2e/evidence.json").read_text())
           v=json.loads(Path("build/generator-pism/operator-e2e/verifier.json").read_text())
-          assert e["tested_sha"] == os.environ["TESTED_SHA"]
-          assert v["tested_sha"] == os.environ["TESTED_SHA"]
-          assert e["result"] == v["result"] == "PASS"
-          assert e["release_eligibility"] == "FINAL"
-          assert e["package_member_count"] == 10
+          if not (e["tested_sha"] == v["tested_sha"] == os.environ["TESTED_SHA"]):
+              raise SystemExit("EXACT_SHA_MISMATCH")
+          if not (e["result"] == v["result"] == "PASS"):
+              raise SystemExit("EVIDENCE_VERIFICATION_FAIL")
+          if e["release_eligibility"] != "FINAL" or e["package_member_count"] != 10:
+              raise SystemExit("RELEASE_OR_PACKAGE_INVALID")
+          if v.get("scope") != "OFFLINE_PACKAGE_INTEGRITY_ONLY":
+              raise SystemExit("VERIFIER_SCOPE_INVALID")
           print("GENERATOR_PISM_GO_LIVE_E2E: PASS")
           PY
       - name: Whitespace check

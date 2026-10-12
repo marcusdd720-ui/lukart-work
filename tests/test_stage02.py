@@ -27,7 +27,7 @@ CONFIG = json.loads(LOCAL.read_text(encoding='utf-8-sig')) if LOCAL.exists() els
 DSN = os.environ.get('LUKART_TEST_DSN') or CONFIG.get('runtime_dsn')
 ADMIN = os.environ.get('LUKART_TEST_ADMIN_DSN') or CONFIG.get('admin_dsn')
 ADMIN_RUNTIME = (
-    make_conninfo(ADMIN, dbname=conninfo_to_dict(DSN)['dbname'])
+    make_conninfo(ADMIN, **({'dbname': db} if (db := conninfo_to_dict(DSN).get('dbname')) else {}))
     if ADMIN and DSN else None
 )
 PIN = {'id': 'synthetic', 'version': '1.0.0', 'content_hash': 'a' * 64}

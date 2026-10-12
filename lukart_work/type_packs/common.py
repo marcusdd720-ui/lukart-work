@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from datetime import date
 from hashlib import sha256
 from json import dumps
 from typing import Any, Literal
 from uuid import UUID
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
@@ -38,6 +40,15 @@ def canonical_pin(payload: dict[str, Any]) -> str:
         separators=(",", ":"),
     ).encode("utf-8")
     return sha256(encoded).hexdigest()
+
+
+def strict_iso_date(value: str) -> str:
+    try:
+        if date.fromisoformat(value).isoformat() != value:
+            raise ValueError("date must be YYYY-MM-DD")
+    except (ValueError, TypeError) as exc:
+        raise ValueError("invalid ISO calendar date") from exc
+    return value
 
 
 class CommonPreLitigationEnvelope(BaseModel):
@@ -118,6 +129,20 @@ class CommonPreLitigationEnvelope(BaseModel):
         value = value.strip()
         if not value:
             raise ValueError("required text value must not be blank")
+        return value
+
+    @field_validator("evaluation_date_iso", "document_date_iso")
+    @classmethod
+    def dates_must_be_valid(cls, value: str) -> str:
+        return strict_iso_date(value)
+
+    @field_validator("evaluation_timezone")
+    @classmethod
+    def timezone_must_exist(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError, TypeError) as exc:
+            raise ValueError("unknown evaluation time zone") from exc
         return value
 
     @field_validator(

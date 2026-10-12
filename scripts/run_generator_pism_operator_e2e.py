@@ -39,13 +39,19 @@ NS = UUID("eeea4bd3-6fd0-4b6d-9635-26af6ae48a4e")
 def pin(name: str) -> VersionPin:
     return VersionPin(id=f"urn:lukart:operator-e2e:{name}", version="1.0.0", content_hash=sha256(name.encode()).hexdigest())
 
+def require(condition, label):
+    if not condition:
+        raise SystemExit(label)
+
+
 def current_sha() -> str:
+    head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     value = (os.environ.get("TESTED_SHA") or "").strip()
-    if not value:
-        value = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-    if len(value) != 40 or any(ch not in "0123456789abcdef" for ch in value):
-        raise SystemExit(f"invalid tested SHA: {value!r}")
-    return value
+    require(len(head) == 40 and all(c in "0123456789abcdef" for c in head), "INVALID_CHECKOUT_SHA")
+    require(not value or value == head, "TESTED_SHA_MISMATCH")
+    dirty = subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True)
+    require(not dirty.strip(), "DIRTY_CHECKOUT")
+    return head
 
 class OperatorE2E:
     def __init__(self, tested_sha: str, output: Path):
@@ -116,7 +122,7 @@ class OperatorE2E:
             repository=self.repo, authority=self.authority, type_id=TYPE_ID,
             drafting_profiles={"QUICK":drafting_profile}, provider=self.provider, package_profile=package_profile,
         )
-        assert self.operator.validate_intake(self.fixture) == self.fixture
+        require(self.operator.validate_intake(self.fixture) == self.fixture, "INTAKE_REJECTED")
 
     def _ids(self, label):
         self.counter += 1
@@ -328,7 +334,7 @@ class OperatorE2E:
                 )
             )
         draft_res=self._assert_command(self.operator.execute_draft(draft_req,self.token),"GenerateDocument"); self.sequence=draft_res.case_sequence
-        draft=self.get(draft_res.refs[0]); assert draft.status=="GENERATED"
+        draft=self.get(draft_res.refs[0]); require(draft.status=="GENERATED", "DRAFT_NOT_GENERATED")
 
         review_meta=self.meta("validation:RecordValidationReview")
         review_req={"contract":"urn:lukart:work:ValidationRequest:1.0.0","operation":"RecordValidationReview","meta":review_meta,
@@ -346,7 +352,7 @@ class OperatorE2E:
             "review_id":str(review_id),"assessments":[],"issues":[],"decision":None,"resolution":None,
             "rationale":"Synthetic Generator Pism validation","inputs":[],"anchors":[],"procedural_context":[]}
         vr=self._assert_command(self.operator.execute_validation(val_req,self.token),"ValidateDraft"); self.sequence=vr.case_sequence
-        validated=self.get(vr.refs[0]); assert validated.status=="VALIDATED"
+        validated=self.get(vr.refs[0]); require(validated.status=="VALIDATED", "DRAFT_NOT_VALIDATED")
         run_id=uuid5(UUID(val_meta["command_id"]),"validation-run")
 
         render_req=self.final_request("RenderDraft",validated,validation_run_id=str(run_id),
@@ -359,30 +365,30 @@ class OperatorE2E:
                "format":None,"member":None}; q.update(extra)
             return self.operator.query_finalization(q,self.token)
         docx=fq("ReadFinalArtifact",format="DOCX"); pdf=fq("ReadFinalArtifact",format="PDF")
-        assert isinstance(docx,bytes) and docx.startswith(b"PK")
-        assert isinstance(pdf,bytes) and pdf.startswith(b"%PDF")
+        require(isinstance(docx,bytes) and docx.startswith(b"PK"), "DOCX_REQUIRED")
+        require(isinstance(pdf,bytes) and pdf.startswith(b"%PDF"), "PDF_REQUIRED")
         areq=self.final_request("ApproveFinalDocument",validated,render_id=str(render_id))
         ares=self._assert_command(self.operator.execute_finalization(areq,self.token),"ApproveFinalDocument"); self.sequence=ares.case_sequence
-        rendered=self.get(ares.refs[0]); assert rendered.status=="RENDERED"
+        rendered=self.get(ares.refs[0]); require(rendered.status=="RENDERED", "RENDER_NOT_APPROVED")
         rel_req=self.final_request("RequestFinalRelease",rendered,render_id=str(render_id))
         rel_res=self._assert_command(self.operator.execute_finalization(rel_req,self.token),"RequestFinalRelease"); self.sequence=rel_res.case_sequence
-        release=fq("GetFinalRelease"); assert isinstance(release,FinalizationRelease) and release.result.eligibility=="FINAL"
+        release=fq("GetFinalRelease"); require(isinstance(release,FinalizationRelease) and release.result.eligibility=="FINAL", "FINAL_RELEASE_REQUIRED")
         pkg_req=self.final_request("AssembleFinalPackage",rendered,render_id=str(render_id))
         pkg_res=self._assert_command(self.operator.execute_finalization(pkg_req,self.token),"AssembleFinalPackage"); self.sequence=pkg_res.case_sequence
-        package=fq("GetFinalPackage"); assert isinstance(package,FinalPackageRecord)
-        assert tuple(x.name for x in package.members)==FINAL_PACKAGE_MEMBER_NAMES
+        package=fq("GetFinalPackage"); require(isinstance(package,FinalPackageRecord), "PACKAGE_REQUIRED")
+        require(tuple(x.name for x in package.members)==FINAL_PACKAGE_MEMBER_NAMES, "PACKAGE_MEMBERS_INVALID")
 
         package_dir=self.output/"package"; package_dir.mkdir(parents=True,exist_ok=True); members=[]
         for member in package.members:
             body=fq("ReadFinalPackageMember",member=member.name)
-            assert isinstance(body,bytes)
-            assert sha256(body).hexdigest()==member.content_hash and len(body)==member.byte_length
+            require(isinstance(body,bytes), "PACKAGE_MEMBER_BYTES_REQUIRED")
+            require(sha256(body).hexdigest()==member.content_hash and len(body)==member.byte_length, "PACKAGE_MEMBER_HASH_OR_SIZE")
             (package_dir/member.name).write_bytes(body)
             members.append({"name":member.name,"content_hash":member.content_hash,"byte_length":member.byte_length})
-        assert members[0]["content_hash"]==sha256(docx).hexdigest()
-        assert members[1]["content_hash"]==sha256(pdf).hexdigest()
+        require(members[0]["content_hash"]==sha256(docx).hexdigest(), "DIRECT_DOCX_MISMATCH")
+        require(members[1]["content_hash"]==sha256(pdf).hexdigest(), "DIRECT_PDF_MISMATCH")
         with self.repo.transaction(self.tenant,self.case_id) as tx:
-            events=tx.events(); outbox=tx.outbox(); assert events==outbox; event_count=len(events)
+            events=tx.events(); outbox=tx.outbox(); require(events==outbox, "EVENT_OUTBOX_MISMATCH"); event_count=len(events)
         evidence={"contract":"urn:lukart:work:GeneratorPismOperatorE2EEvidence:1.0.0","result":"PASS",
             "tested_sha":self.tested_sha,"synthetic_only":True,"human_actor_kind":self.actor.kind,
             "type_id":TYPE_ID,"type_contract_pin":self.runtime.contract_pin,
