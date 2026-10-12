@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
-from lukart_work.core.service import CommandService
+from lukart_work.core.service import CommandService, safe_error
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.facts.service import FactEvidenceService
 from lukart_work.finalization.service import FinalizationService
@@ -77,17 +78,21 @@ class GeneratorPismOperator:
 
     def _require_type_pin(self, raw: str | dict[str, Any]) -> None:
         value = json.loads(raw) if isinstance(raw, str) else raw
-        pin = value.get("document_type") or value.get("type_pin")
-        if pin is None:
-            return
+        if not isinstance(value, dict):
+            raise ValueError("OPERATOR_REQUEST_OBJECT_REQUIRED")
         expected = self.binding.document_type
-        if isinstance(pin, dict):
+        wanted = (expected.id, expected.version, expected.content_hash)
+        for field in ("document_type", "type_pin"):
+            if field not in value:
+                continue
+            pin = value[field]
+            if not isinstance(pin, dict):
+                raise ValueError("OPERATOR_TYPE_PIN_INVALID")
             observed = (
                 pin.get("id") or pin.get("document_type_id"),
                 pin.get("version") or pin.get("schema_version"),
                 pin.get("content_hash") or pin.get("contract_pin"),
             )
-            wanted = (expected.id, expected.version, expected.content_hash)
             if observed != wanted:
                 raise ValueError("OPERATOR_TYPE_PIN_MISMATCH")
 
@@ -113,7 +118,10 @@ class GeneratorPismOperator:
         return self.planner.get_plan(self._raw(request), token)
 
     def execute_draft(self, request, token):
-        self._require_type_pin(request)
+        try:
+            self._require_type_pin(request)
+        except (ValueError, TypeError, KeyError, AttributeError):
+            return safe_error("SCHEMA_INVALID", UUID(int=0))
         return self.drafting.generate(self._raw(request), token)
 
     def execute_validation(self, request, token):
