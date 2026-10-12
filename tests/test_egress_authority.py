@@ -269,6 +269,39 @@ class DurableEgressTests(unittest.TestCase):
                     (self.tenant, self.config.provider.id, ACCOUNT))
         self.assertEqual(self.host.resolve(self.token, self.item), value)
 
+    def test_revoked_sql_grant_and_budget_refuse_late_consumption_or_reservation(self):
+        issued = self._issue()
+        self.host.revoke(self.token, tenant_id=self.tenant, case_id=self.case,
+                         request_id=self.item.request.request_id)
+        # This direct trusted-host SQL intentionally bypasses Python method checks.
+        # The database trigger must still reject the revoked grant transition.
+        with self.assertRaises(psycopg.errors.IntegrityConstraintViolation):
+            with self.egress_repo.transaction(self.tenant, self.case) as tx:
+                tx.connection.execute(
+                    "UPDATE lw_core.ai_egress_grants SET consumed_at=%s, consumed_by=%s "
+                    "WHERE tenant_id=%s AND case_id=%s AND request_id=%s",
+                    (NOW, self.actor.id, self.tenant, self.case,
+                     self.item.request.request_id),
+                )
+        self.host.revoke_budget(self.token, tenant_id=self.tenant, case_id=self.case,
+            provider_id=self.config.provider.id, account_hash=ACCOUNT)
+        with self.assertRaises(psycopg.errors.IntegrityConstraintViolation):
+            with self.egress_repo.transaction(self.tenant, self.case) as tx:
+                tx.connection.execute(
+                    "UPDATE lw_core.ai_egress_budgets SET reserved_calls=reserved_calls+1 "
+                    "WHERE tenant_id=%s AND provider_id=%s AND account_hash=%s",
+                    (self.tenant, self.config.provider.id, ACCOUNT),
+                )
+        with self.assertRaises(psycopg.errors.IntegrityConstraintViolation):
+            with self.egress_repo.transaction(self.tenant, self.case) as tx:
+                tx.connection.execute(
+                    "UPDATE lw_core.ai_egress_budgets SET used_calls=used_calls+1 "
+                    "WHERE tenant_id=%s AND provider_id=%s AND account_hash=%s",
+                    (self.tenant, self.config.provider.id, ACCOUNT),
+                )
+        with self.assertRaises(ProviderPolicyError):
+            self.host.commit(self.token, self.item, issued, self.body)
+
     def test_tenant_wide_revoke_requires_separate_budget_capability(self):
         value = self._issue()
         revoke_only = self.authority.provision(Principal(
