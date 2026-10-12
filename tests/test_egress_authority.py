@@ -22,6 +22,8 @@ from lukart_work.model_runtime.ollama import ProviderPolicyError
 from tests.test_chat_zero_cost import NOW, POLICY, Prompt, cfg, grant, invoke
 from tests.test_stage02 import DSN
 
+HOST_DSN = os.environ.get("LUKART_TEST_EGRESS_DSN")
+
 ADMIN_ACTIONS = frozenset({"CreateCase", "AI_EGRESS_BUDGET",
     "AI_EGRESS_APPROVE", "AI_EGRESS_SEND", "AI_EGRESS_REVOKE"})
 ACCOUNT = "a" * 64
@@ -29,16 +31,17 @@ CONSENT = "b" * 64
 PRICING = "c" * 64
 
 
-@unittest.skipUnless(DSN, "PostgreSQL egress proof requires isolated test DB")
+@unittest.skipUnless(DSN and HOST_DSN, "PostgreSQL egress proof requires separate runtime and host SQL identities")
 class DurableEgressTests(unittest.TestCase):
     def setUp(self):
         self.tenant, self.case = uuid4(), uuid4()
         self.authority = TokenAuthority()
         self.repo = PostgresRepository(DSN)
+        self.egress_repo = PostgresRepository(HOST_DSN)
         self.actor = Actor(id=uuid4(), kind="HUMAN")
         self.token = self.authority.provision(Principal(
             self.actor, self.tenant, self.case, ADMIN_ACTIONS))
-        self.host = PostgresEgressAuthority(self.repo, self.authority, clock=lambda: NOW)
+        self.host = PostgresEgressAuthority(self.egress_repo, self.authority, clock=lambda: NOW)
         self.item = self._item(self.case)
         self.config = cfg()
         self.body = chat_wire_body(self.config, Prompt()(self.item))
@@ -88,7 +91,7 @@ class DurableEgressTests(unittest.TestCase):
         resolver, committer = self.host.bind(self.token)
         self.assertEqual(resolver(self.item), value)
         self.assertEqual(committer(self.item, value, self.body), value)
-        restarted = PostgresEgressAuthority(self.repo, self.authority, clock=lambda: NOW)
+        restarted = PostgresEgressAuthority(self.egress_repo, self.authority, clock=lambda: NOW)
         with self.assertRaises(ProviderPolicyError):
             restarted.resolve(self.token, self.item)
         with self.assertRaises(ProviderPolicyError):
@@ -112,6 +115,42 @@ class DurableEgressTests(unittest.TestCase):
             provider_id=self.config.provider.id, account_hash=ACCOUNT)
         with self.assertRaises(ProviderPolicyError):
             self.host.commit(self.token, self.item, value, self.body)
+
+    def test_runtime_sql_cannot_mint_budget_or_grant_even_with_human_token(self):
+        ordinary = PostgresEgressAuthority(self.repo, self.authority, clock=lambda: NOW)
+        with self.assertRaises(ProviderPolicyError):
+            ordinary.register_budget(self.token, tenant_id=self.tenant,
+                case_id=self.case, provider_id=self.config.provider.id,
+                account_hash="f" * 64, maximum_free_calls=1,
+                free_evidence_hash=PRICING, verified_until=NOW + timedelta(minutes=5),
+                free_price_verified=True, paid_fallback_disabled=True)
+        with self.assertRaises(ProviderPolicyError):
+            ordinary.issue(self.token, self.item, self.config, self.body,
+                self._grant(), account_hash=ACCOUNT,
+                consent_evidence_hash=CONSENT, free_evidence_hash=PRICING)
+        with self.assertRaises(psycopg.errors.InsufficientPrivilege):
+            with self.repo.transaction(self.tenant, self.case) as tx:
+                tx.connection.execute(
+                    "INSERT INTO lw_core.ai_egress_budgets "
+                    "(tenant_id,provider_id,account_hash,maximum_free_calls,"
+                    "free_evidence_hash,verified_until,approved_by) "
+                    "VALUES (%s,%s,%s,1,%s,%s,%s)",
+                    (self.tenant, self.config.provider.id, "f" * 64, PRICING,
+                     NOW + timedelta(minutes=5), self.actor.id),
+                )
+        # A low-trust runtime cannot insert a grant by spoofing issued_by.
+        with self.assertRaises(psycopg.errors.InsufficientPrivilege):
+            with self.repo.transaction(self.tenant, self.case) as tx:
+                tx.connection.execute(
+                    "INSERT INTO lw_core.ai_egress_grants "
+                    "(tenant_id,case_id,request_id,reservation_id,provider_id,account_hash,"
+                    "grant_json,grant_hash,consent_evidence_hash,free_evidence_hash,"
+                    "issued_by,issued_at) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (self.tenant, self.case, self.item.request.request_id,
+                     uuid4(), self.config.provider.id, ACCOUNT,
+                     "{}", "0" * 64, CONSENT, PRICING, self.actor.id, NOW),
+                )
 
     def test_unknown_budget_revocation_fails_closed_and_repeat_is_idempotent(self):
         for bad in (
@@ -170,7 +209,7 @@ class DurableEgressTests(unittest.TestCase):
             local_authority = TokenAuthority()
             local_token = local_authority.provision(Principal(
                 self.actor, self.tenant, self.case, ADMIN_ACTIONS))
-            local_host = PostgresEgressAuthority(PostgresRepository(DSN),
+            local_host = PostgresEgressAuthority(PostgresRepository(HOST_DSN),
                 local_authority, clock=lambda: NOW)
             barrier.wait(timeout=30)
             try:
@@ -222,7 +261,7 @@ class DurableEgressTests(unittest.TestCase):
                     "UPDATE lw_core.ai_egress_grants SET grant_json='{}' "
                     "WHERE tenant_id=%s AND case_id=%s AND request_id=%s",
                     (self.tenant, self.case, self.item.request.request_id))
-        with self.assertRaises(psycopg.IntegrityError):
+        with self.assertRaises(psycopg.errors.InsufficientPrivilege):
             with self.repo.transaction(self.tenant, self.case) as tx:
                 tx.connection.execute(
                     "UPDATE lw_core.ai_egress_budgets SET used_calls=used_calls+1 "
