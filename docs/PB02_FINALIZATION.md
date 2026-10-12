@@ -38,7 +38,8 @@ or legally certified.
 - The Stage 10 run must be current, complete, policy-pinned, free of findings, PASS for every
   pre-render check, and explicitly NOT_RUN for render before rendering.
 - Render bytes, hashes, lengths, receipt, semantic document, validation projection and profile
-  are bound in one persisted record and are reproduced on every read/next transition.
+  are bound in one persisted record. Reads verify stored artifact bytes against the original
+  receipt; approval, release and package-assembly writes re-render against current authority.
 - Approval and release use exact draft/snapshot/artifact/run hashes. Replay is actor-bound and
   idempotent; distinct concurrent commands use the case CAS so only one can commit.
 - Artifact writes, domain revisions, objects, audit events, outbox rows, command result and case

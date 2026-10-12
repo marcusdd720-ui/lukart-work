@@ -52,8 +52,9 @@ inferences into legal truth.
 - All ten writes, the package record, case CAS, command receipt, audit event and outbox entry share
   one PostgreSQL transaction. An injected member-write failure rolls the unit back.
 - Reads require separate `GetFinalPackage` or `ReadFinalPackageMember` capabilities and native WORK
-  tenant/case scope. Every read revalidates stored bytes, render reproduction, typed JSON,
-  manifest/release bindings and the Stage 12 audit chain.
+  tenant/case scope. Every read validates stored bytes, typed JSON, manifest/release bindings
+  and the Stage 12 audit chain; render reproduction against current authority happens during
+  package-assembly writes, not package reads.
 - Citation creation/binding/verification now uses public HUMAN Core operations so package audit
   evidence has no synthetic sequence gaps.
 - Package profile provenance is injected by the trusted deployment. Runtime code never guesses a
