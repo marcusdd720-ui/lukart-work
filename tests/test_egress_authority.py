@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
+import psycopg
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import json
@@ -91,8 +93,8 @@ class DurableEgressTests(unittest.TestCase):
             restarted.resolve(self.token, self.item)
         with self.assertRaises(ProviderPolicyError):
             restarted.commit(self.token, self.item, value, self.body)
-        with self.assertRaises(Exception):
-            self._issue()
+        with self.assertRaises(psycopg.errors.UniqueViolation):
+            self._issue(free=2)
 
     def test_revoke_before_send_releases_budget_without_replaying_grant(self):
         old = self._issue()
@@ -111,6 +113,43 @@ class DurableEgressTests(unittest.TestCase):
         with self.assertRaises(ProviderPolicyError):
             self.host.commit(self.token, self.item, value, self.body)
 
+    def test_unknown_budget_revocation_fails_closed_and_repeat_is_idempotent(self):
+        for bad in (
+            {"provider_id": "unknown"},
+            {"account_hash": "d" * 64},
+        ):
+            with self.subTest(bad=bad), self.assertRaises(ProviderPolicyError):
+                kwargs = dict(tenant_id=self.tenant, case_id=self.case,
+                    provider_id=self.config.provider.id, account_hash=ACCOUNT)
+                kwargs.update(bad)
+                self.host.revoke_budget(self.token, **kwargs)
+        self.host.revoke_budget(self.token, tenant_id=self.tenant, case_id=self.case,
+            provider_id=self.config.provider.id, account_hash=ACCOUNT)
+        self.host.revoke_budget(self.token, tenant_id=self.tenant, case_id=self.case,
+            provider_id=self.config.provider.id, account_hash=ACCOUNT)
+
+    def test_expired_same_case_reservations_reclaim_exact_quota(self):
+        first = self._issue()
+        older = self.item.model_copy(update={"request": self.item.request.model_copy(
+            update={"request_id": uuid4()})})
+        self._issue(item=older, free=2)
+        self.host.clock = lambda: NOW + timedelta(minutes=3)
+        new_item = self.item.model_copy(update={"request": self.item.request.model_copy(
+            update={"request_id": uuid4()})})
+        fresh = replace(self._grant(new_item, free=3),
+            expiry_utc=NOW + timedelta(minutes=5))
+        self.host.issue(self.token, new_item, self.config,
+            chat_wire_body(self.config, Prompt()(new_item)), fresh,
+            account_hash=ACCOUNT, consent_evidence_hash=CONSENT,
+            free_evidence_hash=PRICING)
+        self.assertEqual(self.host.resolve(self.token, new_item), fresh)
+        for item, old in ((self.item, first), (older, None)):
+            with self.assertRaises(ProviderPolicyError):
+                if old is not None:
+                    self.host.commit(self.token, item, old, self.body)
+                else:
+                    self.host.resolve(self.token, item)
+
     def test_wrong_body_and_consent_hash_fail_closed(self):
         value = self._issue()
         with self.assertRaises(ProviderPolicyError):
@@ -125,9 +164,17 @@ class DurableEgressTests(unittest.TestCase):
 
     def test_two_simultaneous_commits_consume_once(self):
         value = self._issue()
+        barrier = Barrier(2)
         def execute(_):
+            # Independent locks and PostgreSQL connections exercise DB serialization.
+            local_authority = TokenAuthority()
+            local_token = local_authority.provision(Principal(
+                self.actor, self.tenant, self.case, ADMIN_ACTIONS))
+            local_host = PostgresEgressAuthority(PostgresRepository(DSN),
+                local_authority, clock=lambda: NOW)
+            barrier.wait(timeout=30)
             try:
-                self.host.commit(self.token, self.item, value, self.body)
+                local_host.commit(local_token, self.item, value, self.body)
                 return "PASS"
             except ProviderPolicyError:
                 return "DENIED"
@@ -158,7 +205,7 @@ class DurableEgressTests(unittest.TestCase):
     def test_no_client_or_ai_actor_can_issue_grants(self):
         guest = self.authority.provision(Principal(self.actor, self.tenant, self.case,
             frozenset({"AI_EGRESS_SEND"})))
-        with self.assertRaises(Exception):
+        with self.assertRaises(ProviderPolicyError):
             self._issue(token=guest)
         ai = self.authority.provision(Principal(
             Actor(id=uuid4(), kind="AI"), self.tenant, self.case, ADMIN_ACTIONS))
@@ -168,13 +215,13 @@ class DurableEgressTests(unittest.TestCase):
 
     def test_database_role_cannot_mutate_immutable_grant_or_bypass_quota(self):
         value = self._issue()
-        with self.assertRaises(Exception):
+        with self.assertRaises(psycopg.IntegrityError):
             with self.repo.transaction(self.tenant, self.case) as tx:
                 tx.connection.execute(
                     "UPDATE lw_core.ai_egress_grants SET grant_json='{}' "
                     "WHERE tenant_id=%s AND case_id=%s AND request_id=%s",
                     (self.tenant, self.case, self.item.request.request_id))
-        with self.assertRaises(Exception):
+        with self.assertRaises(psycopg.IntegrityError):
             with self.repo.transaction(self.tenant, self.case) as tx:
                 tx.connection.execute(
                     "UPDATE lw_core.ai_egress_budgets SET used_calls=used_calls+1 "
