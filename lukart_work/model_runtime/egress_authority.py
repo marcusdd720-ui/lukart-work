@@ -122,6 +122,13 @@ class PostgresEgressAuthority:
         if principal.actor.kind != "HUMAN":
             raise ProviderPolicyError()
 
+    @staticmethod
+    def _sql_host(tx):
+        # An application runtime DSN is never an egress authority credential.
+        # This role has independent host-only authentication and no BYPASSRLS.
+        if tx.connection.execute("SELECT current_user").fetchone()[0] != "lw_ai_egress_host":
+            raise ProviderPolicyError()
+
     def register_budget(self, token, *, tenant_id, case_id, provider_id,
                         account_hash, maximum_free_calls, free_evidence_hash,
                         verified_until, free_price_verified, paid_fallback_disabled):
@@ -143,6 +150,7 @@ class PostgresEgressAuthority:
         with self.authority.session(token) as principal:
             self._human(principal, tenant_id, case_id, "AI_EGRESS_BUDGET")
             with self.repository.transaction(tenant_id, case_id) as tx:
+                self._sql_host(tx)
                 if not tx.sequence() or verified_until <= _now(self.clock):
                     raise ProviderPolicyError()
                 tx.connection.execute(
@@ -167,6 +175,7 @@ class PostgresEgressAuthority:
         with self.authority.session(token) as principal:
             self._human(principal, tenant, case, "AI_EGRESS_APPROVE")
             with self.repository.transaction(tenant, case) as tx:
+                self._sql_host(tx)
                 if not tx.sequence():
                     raise ProviderPolicyError()
                 # An issuer can wait on both locks: refresh expiry after admission.
@@ -267,6 +276,7 @@ class PostgresEgressAuthority:
         with self.authority.session(token) as principal:
             self._human(principal, request.tenant_id, request.case_id, "AI_EGRESS_SEND")
             with self.repository.transaction(request.tenant_id, request.case_id) as tx:
+                self._sql_host(tx)
                 grant, row = self._load(tx, request)
                 if row[5] is not None or row[6] is not None or grant.expiry_utc <= _now(self.clock):
                     raise ProviderPolicyError()
@@ -288,6 +298,7 @@ class PostgresEgressAuthority:
         with self.authority.session(token) as principal:
             self._human(principal, request.tenant_id, request.case_id, "AI_EGRESS_SEND")
             with self.repository.transaction(request.tenant_id, request.case_id) as tx:
+                self._sql_host(tx)
                 stored, row = self._load(tx, request)
                 if row[5] is not None or row[6] is not None or stored != grant:
                     raise ProviderPolicyError()
@@ -332,6 +343,7 @@ class PostgresEgressAuthority:
         with self.authority.session(token) as principal:
             self._human(principal, tenant_id, case_id, "AI_EGRESS_REVOKE")
             with self.repository.transaction(tenant_id, case_id) as tx:
+                self._sql_host(tx)
                 request = type("_Scope", (), dict(tenant_id=tenant_id,
                     case_id=case_id, request_id=request_id))()
                 _, row = self._load(tx, request)
@@ -366,6 +378,7 @@ class PostgresEgressAuthority:
             # Tenant-wide budget shutdown requires the budget administrator too.
             self._human(principal, tenant_id, case_id, "AI_EGRESS_BUDGET")
             with self.repository.transaction(tenant_id, case_id) as tx:
+                self._sql_host(tx)
                 updated = tx.connection.execute(
                     "UPDATE lw_core.ai_egress_budgets SET revoked_at=%s,revoked_by=%s "
                     "WHERE tenant_id=%s AND provider_id=%s AND account_hash=%s "
