@@ -17,8 +17,8 @@ on:
         type: string
 
 concurrency:
-  # Only supersede older PR candidates. Preserve main push and exact-SHA dispatch evidence.
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('{0}:{1}', github.event.pull_request.head.repo.full_name, github.event.pull_request.head.ref) || github.run_id }}
+  # Supersede older runs of same PR by number. Preserve main push and workflow_dispatch with unique run_id.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr:{0}', github.event.pull_request.number) || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
