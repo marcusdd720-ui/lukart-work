@@ -315,6 +315,19 @@ class OperatorE2E:
         fact=self.fact_apply("ReviewFact",fact).refs[0]
         fact_dec=self.decision("FACT_ACCEPTANCE",[fact])
         fact=self.fact_apply("ConfirmFact",fact,{"decision":fact_dec.model_dump(mode="json")}).refs[0]
+        # The date/place is a separate, explicitly reviewed fact derived from the
+        # same synthetic source bytes; it is never admitted as AI STRUCTURAL output.
+        dateline_fact=self.core_apply("AddFact",{
+            "statement":synthetic_dateline(self.fixture),"support":"SOURCE_BACKED",
+            "evidence":[evidence.model_dump(mode="json")],
+            "subjects":[sender.model_dump(mode="json")],
+            "event_date":self.fixture.document_date_iso,"key_fact":False,
+        },anchors=[anchor])[0].refs[0]
+        dateline_fact=self.fact_apply("ReviewFact",dateline_fact).refs[0]
+        dateline_decision=self.decision("FACT_ACCEPTANCE",[dateline_fact])
+        dateline_fact=self.fact_apply("ConfirmFact",dateline_fact,{
+            "decision":dateline_decision.model_dump(mode="json")
+        }).refs[0]
 
         legal_source=self.proc_apply("RegisterProceduralSource",{"source_id":str(source_id),
             "registry_id":"urn:lukart:operator-e2e:legal-source","registry_version":"2026-10-08","jurisdiction":"PL",
@@ -356,7 +369,8 @@ class OperatorE2E:
             snapshot_target={"tenant_id":str(self.tenant),"case_id":str(self.case_id),"snapshot_id":str(snap.id),"snapshot_hash":digest(snap)})
         self.core_apply("AcceptSnapshot",{"snapshot_id":str(snap.id),"decision":snap_dec.model_dump(mode="json")})
 
-        allowed=[fact.model_dump(mode="json"),evidence.model_dump(mode="json"),claim.model_dump(mode="json"),
+        allowed=[fact.model_dump(mode="json"),dateline_fact.model_dump(mode="json"),
+                 evidence.model_dump(mode="json"),claim.model_dump(mode="json"),
                  objective.model_dump(mode="json"),legal_rule.model_dump(mode="json"),citation.model_dump(mode="json")]
         sections=[]
         for idx,stype in enumerate(self.runtime.plan_sections):
@@ -395,8 +409,8 @@ class OperatorE2E:
                 statements.append({
                     "id":str(uuid5(draft_cmd,"provided-dateline")),
                     "text":synthetic_dateline(self.fixture),
-                    "statement_type":"STRUCTURAL","support":"SOURCE_BACKED",
-                    "refs":[fact.model_dump(mode="json"), evidence.model_dump(mode="json")],
+                    "statement_type":"FACTUAL","support":"SOURCE_BACKED",
+                    "refs":[dateline_fact.model_dump(mode="json"), evidence.model_dump(mode="json")],
                     "citations":[],"inference_label":None,
                 })
                 statements += [

@@ -26,28 +26,51 @@ class LetterAnatomyV2(unittest.TestCase):
         with self.assertRaises(ValueError): synthetic_dateline(badplace)
 
     def test_structural_marker_and_calendrical_validation(self):
-        target=Ref(kind="Fact",id=UUID(int=1),revision=1)
-        def statement(text,stype="STRUCTURAL",refs=(target,)):
-            return SimpleNamespace(text=text,statement_type=stype,refs=refs)
-        self.assertEqual(_source_bound_dateline(statement(
-            "LUKART_DATELINE_V1:Warszawa, 05.10.2026")),"Warszawa, 05.10.2026")
-        self.assertIsNone(_source_bound_dateline(statement("Warszawa, 05.10.2026")))
+        from tests.fixtures import fact as sample_fact, ref as sample_ref
+        from lukart_work.domain.models import Decision
+        from tests.fixtures import common, ACTOR
+        dateline = "LUKART_DATELINE_V1:Warszawa, 05.10.2026"
+        f = sample_fact().model_copy(update={
+            "statement": dateline, "status": "CONFIRMED", "revision": 3,
+            "acceptance": Ref(kind="Decision", id=UUID(int=50), revision=1),
+        })
+        target = sample_ref(f)
+        approval = Decision(
+            **common(50), kind="Decision", status="RECORDED",
+            decision_type="FACT_ACCEPTANCE", targets=(
+                Ref(kind="Fact", id=f.id, revision=f.revision - 1),
+            ), outcome="ACCEPT", rationale="Synthetic explicit approval",
+            decided_by=ACTOR,
+        )
+        records = {target: f, sample_ref(approval): approval}
+        scope = (f.tenant_id, f.case_id)
+        def statement(text, stype="FACTUAL", refs=(target,), support="SOURCE_BACKED"):
+            return SimpleNamespace(text=text,statement_type=stype,refs=refs,support=support)
+        self.assertEqual(_source_bound_dateline(statement(dateline), records, scope),
+                         "Warszawa, 05.10.2026")
+        self.assertIsNone(_source_bound_dateline(statement("Warszawa, 05.10.2026"), records, scope))
         with self.assertRaises(Violation):
-            _source_bound_dateline(statement(
-                "LUKART_DATELINE_V1:Warszawa, 05.10.2026", "FACTUAL"))
+            _source_bound_dateline(statement(dateline, "STRUCTURAL"), records, scope)
         with self.assertRaises(Violation):
-            _source_bound_dateline(statement(
-                "Tekst LUKART_DATELINE_V1:Warszawa, 05.10.2026"))
+            _source_bound_dateline(statement(dateline, support="INFERRED"), records, scope)
+        with self.assertRaises(Violation):
+            _source_bound_dateline(statement(dateline, refs=()), records, scope)
         for bad in ["LUKART_DATELINE_V1:Warszawa, 31.02.2026",
                     "LUKART_DATELINE_V1:Warszawa, 5.10.2026",
                     "LUKART_DATELINE_V1:, 05.10.2026",
                     "LUKART_DATELINE_V1:Warszawa\nX, 05.10.2026",
                     "LUKART_DATELINE_V1:Warszawa\t, 05.10.2026",
                     "LUKART_DATELINE_V1: Warszawa, 05.10.2026"]:
-            with self.subTest(bad=bad),self.assertRaises(Violation):
-                _source_bound_dateline(statement(bad))
+            with self.subTest(bad=bad), self.assertRaises(Violation):
+                _source_bound_dateline(statement(bad), records, scope)
+        mismatched = f.model_copy(update={"statement": "Not the dated source"})
         with self.assertRaises(Violation):
-            _source_bound_dateline(statement("LUKART_DATELINE_V1:Warszawa, 05.10.2026",refs=()))
+            _source_bound_dateline(statement(dateline), {target: mismatched, sample_ref(approval): approval}, scope)
+        unconfirmed = f.model_copy(update={"status": "REVIEWED"})
+        with self.assertRaises(Violation):
+            _source_bound_dateline(statement(dateline), {target: unconfirmed, sample_ref(approval): approval}, scope)
+        with self.assertRaises(Violation):
+            _source_bound_dateline(statement(dateline), {target: f}, scope)
 
     def test_only_exact_source_bound_duplicate_is_suppressed(self):
         req=Ref(kind="Request",id=UUID(int=2),revision=1)

@@ -28,7 +28,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from lukart_work.contracts.messages import RenderRequest, SemanticDocument, ValidationRunPin
-from lukart_work.domain.models import Decision, DocumentPlan, Draft, Entity, Evidence, Institution, Party, Ref, Request, Section
+from lukart_work.domain.models import Decision, DocumentPlan, Draft, Entity, Evidence, Fact, Institution, Party, Ref, Request, Section
 from lukart_work.validation.contracts import PRE_RENDER_CHECKS, ValidationProjection
 from lukart_work.validation.policy import validation_pin
 from lukart_work.validation.rules import Violation, digest, ref as entity_ref
@@ -278,7 +278,7 @@ def derive_render_authority(
 _DATELINE_PREFIX = "LUKART_DATELINE_V1:"
 
 
-def _source_bound_dateline(statement) -> str | None:
+def _source_bound_dateline(statement, records: Mapping[Ref, object], scope: tuple[object, object]) -> str | None:
     """Accept only a typed, traceable, validated date directive; no generated clock dates.
 
     A source ref by itself does not prove factual correctness; upstream accepted
@@ -286,8 +286,26 @@ def _source_bound_dateline(statement) -> str | None:
     """
     if _DATELINE_PREFIX not in statement.text:
         return None
-    if statement.statement_type != "STRUCTURAL" or not statement.text.startswith(_DATELINE_PREFIX):
-        raise Violation("SCHEMA_INVALID")
+    # AI-generated STRUCTURAL output is forbidden by the drafting trust boundary.
+    if (statement.statement_type != "FACTUAL" or statement.support != "SOURCE_BACKED"
+            or not statement.text.startswith(_DATELINE_PREFIX)):
+        raise Violation("GATE_DENIED")
+    # A dateline can be displayed only when its complete literal text is an
+    # independently accepted Fact in this case, not a freeform AI assertion.
+    fact_refs = [item for item in statement.refs if item.kind == "Fact"]
+    if len(fact_refs) != 1 or any(item.kind not in ("Fact", "Evidence") for item in statement.refs):
+        raise Violation("GATE_DENIED")
+    fact = _record(records, fact_refs[0], scope)
+    if (not isinstance(fact, Fact) or fact.status != "CONFIRMED"
+            or fact.support != "SOURCE_BACKED" or fact.acceptance is None
+            or fact.statement != statement.text or not fact.evidence):
+        raise Violation("GATE_DENIED")
+    approval = _record(records, fact.acceptance, scope)
+    prior = Ref(kind="Fact", id=fact.id, revision=fact.revision - 1)
+    if (not isinstance(approval, Decision) or approval.decision_type != "FACT_ACCEPTANCE"
+            or approval.outcome != "ACCEPT" or approval.decided_by.kind != "HUMAN"
+            or prior not in approval.targets):
+        raise Violation("GATE_DENIED")
     value = statement.text[len(_DATELINE_PREFIX):]
     match = re.fullmatch(r"([^,\r\n]{1,100}), (\d{2}\.\d{2}\.\d{4})", value)
     if not match or not match.group(1).strip() or not statement.refs:
@@ -414,7 +432,7 @@ def assemble_render_model(
         )
         request_ordinal = 1
         for statement in section_text.statements:
-            dateline = _source_bound_dateline(statement)
+            dateline = _source_bound_dateline(statement, records, scope)
             if dateline is not None:
                 if section.section_type != "HEADER_AND_PARTIES" or dateline_block is not None:
                     raise Violation("SCHEMA_INVALID")
