@@ -53,10 +53,17 @@ FORBIDDEN_SAMPLE_MARKERS = (
     "Synthetic requested payment outcome", "Synthetic legal proposition",
 )
 
+def synthetic_dateline(fixture):
+    place = fixture.document_place.strip()
+    if not place or "," in place or "\n" in place or "\r" in place:
+        raise ValueError("INVALID_DOCUMENT_PLACE")
+    document_date = date.fromisoformat(fixture.document_date_iso).strftime("%d.%m.%Y")
+    return f"LUKART_DATELINE_V1:{place}, {document_date}"
+
+
 def synthetic_payment_body(fixture):
     """Fikcyjne dane kontraktu: tylko test renderingu, bez oceny prawa."""
     amount = f"{Decimal(fixture.principal_amount_decimal):.2f}".replace(".", ",") + " zł"
-    document_date = date.fromisoformat(fixture.document_date_iso).strftime("%d.%m.%Y")
     due_date = date.fromisoformat(fixture.performance_due_date_iso).strftime("%d.%m.%Y")
     request = (
         f"Wzywam do zapłaty kwoty {amount} do dnia "
@@ -64,9 +71,7 @@ def synthetic_payment_body(fixture):
     )
     sections = {
         "HEADER_AND_PARTIES": (
-            f"{fixture.document_place}, {document_date}. Sygnatura: {fixture.case_reference}. "
-            f"Wierzyciel: {fixture.sender_name}, {fixture.sender_address}. "
-            f"Adresat: {fixture.recipient_name}, {fixture.recipient_address}."
+            f"Sygnatura: {fixture.case_reference}."
         ),
         "PAYMENT_DEMAND": (
             f"Należność główna: {amount}. Termin płatności wynikający z danych testowych: {due_date}. "
@@ -94,6 +99,9 @@ def check_synthetic_output(docx_bytes, pdf_bytes, fixture, amount):
     pdf_text = "\n".join((p.extract_text() or "") for p in PdfReader(BytesIO(pdf_bytes)).pages)
     mandatory = (
         fixture.case_reference, fixture.sender_name, fixture.recipient_name,
+        fixture.sender_address, fixture.recipient_address,
+        synthetic_dateline(fixture).removeprefix("LUKART_DATELINE_V1:"),
+        "_______________________________",
         amount, fixture.payment_destination, fixture.requested_payment_date_human,
         *SECTION_TITLES_PL.values(),
         "PRÓBA TECHNICZNA",
@@ -105,6 +113,12 @@ def check_synthetic_output(docx_bytes, pdf_bytes, fixture, amount):
         require(needle in docx_text, f"DOCX_MISSING_REQUIRED_SAMPLE_FIELD:{needle}")
         require(" ".join(needle.split()) in flattened_pdf,
                 f"PDF_MISSING_REQUIRED_SAMPLE_FIELD:{needle}")
+    requested_text, _, _ = synthetic_payment_body(fixture)
+    require(docx_text.count(requested_text) == 1, "DOCX_DUPLICATE_REQUEST")
+    require(flattened_pdf.count(" ".join(requested_text.split())) == 1,
+            "PDF_DUPLICATE_REQUEST")
+    require("LUKART_DATELINE_V1:" not in docx_text and "LUKART_DATELINE_V1:" not in pdf_text,
+            "DATELINE_CONTROL_MARKER_LEAK")
     for forbidden in FORBIDDEN_SAMPLE_MARKERS:
         require(forbidden not in docx_text and forbidden not in pdf_text,
                 "SYNTHETIC_ENGLISH_PLACEHOLDER_PRESENT")
@@ -274,10 +288,14 @@ class OperatorE2E:
     def run(self):
         self.core_apply("CreateCase",{"title":"Generator Pism public operator E2E","jurisdiction":"PL",
                                      "retention_policy":self.retention_pin.model_dump(mode="json")})
-        sender=self.core_apply("AddParty",{"party_type":"PERSON","display_name":self.fixture.sender_name,"identity_evidence":[]})[0].refs[0]
+        sender=self.core_apply("AddParty",{"party_type":"PERSON","display_name":self.fixture.sender_name,
+            "address":{"country":"PL","lines":[self.fixture.sender_address]},
+            "identity_evidence":[]})[0].refs[0]
         sender_dec=self.decision("IDENTITY",[sender])
         sender=self.core_apply("VerifyParty",{"decision":sender_dec.model_dump(mode="json")},sender)[0].refs[0]
-        recipient=self.core_apply("AddParty",{"party_type":"PERSON","display_name":self.fixture.recipient_name,"identity_evidence":[]})[0].refs[0]
+        recipient=self.core_apply("AddParty",{"party_type":"PERSON","display_name":self.fixture.recipient_name,
+            "address":{"country":"PL","lines":[self.fixture.recipient_address]},
+            "identity_evidence":[]})[0].refs[0]
         recipient_dec=self.decision("IDENTITY",[recipient])
         recipient=self.core_apply("VerifyParty",{"decision":recipient_dec.model_dump(mode="json")},recipient)[0].refs[0]
 
@@ -374,6 +392,13 @@ class OperatorE2E:
                          "refs":[fact.model_dump(mode="json"),evidence.model_dump(mode="json")],
                          "citations":[],"inference_label":None}]
             if idx==0:
+                statements.append({
+                    "id":str(uuid5(draft_cmd,"provided-dateline")),
+                    "text":synthetic_dateline(self.fixture),
+                    "statement_type":"STRUCTURAL","support":"SOURCE_BACKED",
+                    "refs":[fact.model_dump(mode="json"), evidence.model_dump(mode="json")],
+                    "citations":[],"inference_label":None,
+                })
                 statements += [
                     {"id":str(uuid5(draft_cmd,"provided-request")),"text":request_text,
                      "statement_type":"REQUEST","support":"SOURCE_BACKED",
