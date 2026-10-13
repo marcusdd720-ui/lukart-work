@@ -236,6 +236,7 @@
       "properties": {
         "role": {
           "enum": [
+            "DATELINE",
             "DOCUMENT_HEADER",
             "PARTY_BLOCK",
             "REQUEST_HEADING",
@@ -778,6 +779,7 @@
       "properties": {
         "role": {
           "enum": [
+            "DATELINE",
             "DOCUMENT_HEADER",
             "PARTY_BLOCK",
             "REQUEST_HEADING",
