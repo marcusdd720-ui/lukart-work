@@ -554,6 +554,72 @@ class FinalizationTests(validation.ValidationTests):
             )
         self.assertEqual(self.state(), before)
 
+    def test_package_assembly_requires_audit_read_and_preserves_other_grants(self):
+        rendered, render_id = self.released()
+        request = json.dumps(self.package_request(rendered, render_id))
+        before = self.state()
+        no_audit = self.authority.provision(
+            Principal(self.actor, self.tenant, self.case_id,
+                      self.principal.actions - {"AuditRead"})
+        )
+        denied = self.finalization.execute(request, no_audit)
+        self.assertIsInstance(denied, DomainError)
+        self.assertEqual(denied.code, "FORBIDDEN")
+        self.assertEqual(self.state(), before)
+
+        # Assembling a package does not require a grant to read its members.
+        assembler = self.authority.provision(
+            Principal(self.actor, self.tenant, self.case_id,
+                      self.principal.actions - {"GetFinalPackage", "ReadFinalPackageMember"})
+        )
+        applied = self.finalization.execute(request, assembler)
+        self.assertIsInstance(applied, CommandResult, applied)
+        self.assertEqual(applied.state, "APPLIED")
+        self.assertIsInstance(self.package_query("GetFinalPackage", render_id), FinalPackageRecord)
+
+    def test_audit_member_requires_both_capabilities_but_other_reads_work(self):
+        rendered, render_id = self.released()
+        self.final_apply(self.package_request(rendered, render_id))
+        query = dict(
+            contract="urn:lukart:work:FinalizationQuery:1.0.0",
+            operation="ReadFinalPackageMember",
+            tenant_id=str(self.tenant),
+            case_id=str(self.case_id),
+            render_id=str(render_id),
+        )
+
+        def read(member, token):
+            return self.finalization.query(json.dumps(dict(query, member=member)), token)
+
+        no_audit = self.authority.provision(
+            Principal(self.actor, self.tenant, self.case_id,
+                      self.principal.actions - {"AuditRead"})
+        )
+        denied = read("audit.json", no_audit)
+        self.assertIsInstance(denied, DomainError)
+        self.assertEqual(denied.code, "FORBIDDEN")
+        self.assertIsInstance(read("manifest.json", no_audit), bytes)
+        self.assertIsInstance(read("final.pdf", no_audit), bytes)
+        package_query = dict(query, operation="GetFinalPackage", member=None)
+        self.assertIsInstance(
+            self.finalization.query(json.dumps(package_query), no_audit), FinalPackageRecord
+        )
+
+        no_member_read = self.authority.provision(
+            Principal(self.actor, self.tenant, self.case_id,
+                      self.principal.actions - {"ReadFinalPackageMember"})
+        )
+        denied = read("audit.json", no_member_read)
+        self.assertIsInstance(denied, DomainError)
+        self.assertEqual(denied.code, "FORBIDDEN")
+        foreign = self.authority.provision(
+            Principal(self.actor, self.tenant, uuid4(), self.principal.actions)
+        )
+        denied = read("audit.json", foreign)
+        self.assertIsInstance(denied, DomainError)
+        self.assertEqual(denied.code, "FORBIDDEN")
+        self.assertIsInstance(read("audit.json", self.token), bytes)
+
     def test_package_reads_require_distinct_capabilities_and_detect_tamper(self):
         rendered, render_id = self.released()
         self.final_apply(self.package_request(rendered, render_id))

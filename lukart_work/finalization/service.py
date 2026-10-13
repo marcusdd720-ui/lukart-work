@@ -647,6 +647,7 @@ class FinalizationService(CommandService):
         filing = resolve(plan.filing, records, principal.tenant_id, principal.case_id)
         evidence, arguments = self._package_maps(records, render, principal)
         sources = self._sources(tx, records, render, evidence, arguments, principal)
+        principal.require(principal.tenant_id, principal.case_id, "AuditRead")
         audit = AuditService._package(
             tx, principal, case_sequence=request.meta.expected_case_sequence
         )
@@ -810,6 +811,8 @@ class FinalizationService(CommandService):
                 with self.repository.transaction(query.tenant_id, query.case_id) as tx:
                     records = tx.records()
                     if query.operation in ("GetFinalPackage", "ReadFinalPackageMember"):
+                        if query.operation == "ReadFinalPackageMember" and query.member == "audit.json":
+                            principal.require(query.tenant_id, query.case_id, "AuditRead")
                         package, package_data = self._load_package(
                             tx, records, principal, query.render_id
                         )
