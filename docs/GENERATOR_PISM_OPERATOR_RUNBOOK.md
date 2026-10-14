@@ -1,4 +1,27 @@
-# Generator Pism v1.0 — Operator GO-LIVE Runbook
+# Generator Pism — CASE-first local execution
+
+The rejected payment, complaint and reply packs have been removed. The built-in
+runtime catalogue is empty and rejects their identifiers. No replacement
+templates are registered. Historical records and evidence retain their pins.
+
+Hosts construct the existing operator with an explicit trusted
+`case_profile: FinalizationProfile`, repository, authority, provider and execution
+profiles. They use authenticated CASE commands for sources, evidence, HUMAN
+decisions, snapshot, plan, drafting, validation and rendering. An intake payload
+cannot substitute for those records (`CASE_COMMANDS_REQUIRED`).
+
+`operator.export_local(tenant_id=..., case_id=..., render_id=..., token=...,
+output=...)` reads persisted DOCX/PDF through the existing scoped finalization
+query. It writes a fresh directory containing exact bytes, hashes and
+`preview.html`. Open the HTML locally for the PDF preview and DOCX/PDF downloads.
+This operation does not approve or release a document.
+
+The E2E script below now exercises existing synthetic CASE service fixtures and
+the operator's authorized local export. Its evidence declares that scope; it
+does not demonstrate admission of a legal document type or real HUMAN decisions.
+Full regression and CI are pending after the authorized implementation phase.
+
+## Historical v1 runbook context
 
 Status: technical execution runbook. Legal/type admission remains HUMAN_REQUIRED.
 

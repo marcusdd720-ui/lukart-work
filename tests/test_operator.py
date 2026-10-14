@@ -11,7 +11,8 @@ from lukart_work.operator import GeneratorPismOperator, OperatorTypeBinding
 from lukart_work.domain.models import Ref, VersionPin
 from lukart_work.drafting.contracts import DraftingInvocation
 from lukart_work.drafting.manual_provider import ManualAttestedDraftingProvider
-from lukart_work.type_packs.runtime import RUNTIME_PROFILES, runtime_profile
+from lukart_work.type_packs.runtime import RUNTIME_PROFILES, TypePackRuntimeProfile
+from pydantic import BaseModel
 
 
 def pin(name: str) -> VersionPin:
@@ -67,7 +68,11 @@ class ManualProviderTests(unittest.TestCase):
 
     def test_operator_rejects_malformed_and_foreign_type_pins_without_drafting(self):
         operator = GeneratorPismOperator.__new__(GeneratorPismOperator)
-        operator.binding = OperatorTypeBinding(runtime_profile("PL-PRE-PAYMENT-1"))
+        operator.binding = OperatorTypeBinding(TypePackRuntimeProfile(
+            type_id="urn:test:explicit-profile", schema_version="1.0.0",
+            contract_pin=sha256(b"explicit-test-contract").hexdigest(),
+            header="Test", plan_sections=("FACTS",), input_model=BaseModel,
+        ))
         operator.drafting = Mock()
         operator.drafting.generate.return_value = "SAFE_PROVIDER_RESULT"
         actual = operator.binding.document_type
@@ -91,13 +96,24 @@ class ManualProviderTests(unittest.TestCase):
         )
         operator.drafting.generate.assert_called_once()
 
-    def test_all_baseline_runtime_profiles_have_real_contract_pins_and_sections(self):
-        self.assertEqual(len(RUNTIME_PROFILES), 3)
-        for profile in RUNTIME_PROFILES:
-            self.assertEqual(profile.document_type.content_hash, profile.contract_pin)
-            self.assertTrue(profile.plan_sections)
-        self.assertEqual(runtime_profile("PL-PRE-PAYMENT-1").header, "WEZWANIE DO ZAPŁATY")
-        self.assertEqual(runtime_profile("PL-PRE-REPLY-1").header, "ODPOWIEDŹ NA WEZWANIE")
+    def test_builtin_runtime_catalogue_is_empty(self):
+        self.assertEqual(RUNTIME_PROFILES, ())
+
+    def test_case_profile_requires_case_commands_and_retains_exact_pin_guard(self):
+        from lukart_work.finalization.contracts import FinalizationProfile
+        from lukart_work.rendering.profiles import OFFICIAL_PL_V1, profile_pin
+        profile = FinalizationProfile(
+            profile_id="urn:test:case-profile", version="1.0.0",
+            document_type=pin("case-document"), header="Case",
+            render_profile=profile_pin(OFFICIAL_PL_V1))
+        operator = GeneratorPismOperator(repository=Mock(), authority=Mock(),
+            case_profile=profile, drafting_profiles={}, provider=Mock(), package_profile=None)
+        with self.assertRaisesRegex(ValueError, "CASE_COMMANDS_REQUIRED"):
+            operator.validate_intake({})
+        operator.drafting = Mock()
+        denied = operator.execute_draft({"document_type": pin("foreign").model_dump(mode="json")}, "token")
+        self.assertEqual(denied.code, "SCHEMA_INVALID")
+        operator.drafting.generate.assert_not_called()
 
 
 if __name__ == "__main__":

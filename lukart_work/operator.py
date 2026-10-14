@@ -9,6 +9,7 @@ from lukart_work.core.service import CommandService, safe_error
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.facts.service import FactEvidenceService
 from lukart_work.finalization.service import FinalizationService
+from lukart_work.finalization.contracts import FinalizationProfile
 from lukart_work.planner.service import DocumentPlannerService
 from lukart_work.procedural.service import ProceduralEngineService
 from lukart_work.validation.service import ValidationEngineService
@@ -35,9 +36,9 @@ class GeneratorPismOperator:
 
     It deliberately does not manufacture HUMAN decisions. The caller must use
     the existing authenticated commands for evidence/snapshot/plan/document
-    approval and finalization. This facade binds one admitted technical
-    type-pack identity to the generic engines and routes the public application
-    services required by the end-to-end document path.
+    approval and finalization. A trusted host supplies a CASE semantic profile
+    or an explicitly configured optional type bridge. Neither grants admission
+    or substitutes for the stored CASE records and HUMAN decisions.
     """
 
     def __init__(
@@ -45,14 +46,25 @@ class GeneratorPismOperator:
         *,
         repository,
         authority,
-        type_id: str,
+        type_id: str | None = None,
+        runtime: TypePackRuntimeProfile | None = None,
+        case_profile: FinalizationProfile | None = None,
         drafting_profiles: dict[str, Any],
         provider: ManualAttestedDraftingProvider,
         package_profile,
         clock=None,
     ):
-        runtime = runtime_profile(type_id)
-        self.binding = OperatorTypeBinding(runtime)
+        if case_profile is not None:
+            if runtime is not None or type_id is not None:
+                raise ValueError("AMBIGUOUS_DOCUMENT_PROFILE")
+            self.binding = None
+        else:
+            runtime = runtime if runtime is not None else runtime_profile(type_id)
+            if runtime.type_id != type_id:
+                raise ValueError("TYPE_PACK_IDENTITY_MISMATCH")
+            self.binding = OperatorTypeBinding(runtime)
+            case_profile = runtime.finalization_profile
+        self.case_profile = case_profile
         self.core = CommandService(repository, authority, clock)
         self.facts = FactEvidenceService(repository, authority, clock)
         self.procedural = ProceduralEngineService(repository, authority, clock)
@@ -64,7 +76,7 @@ class GeneratorPismOperator:
         self.finalization = FinalizationService(
             repository,
             authority,
-            (runtime.finalization_profile,),
+            (case_profile,),
             clock,
             package_profile=package_profile,
         )
@@ -74,13 +86,16 @@ class GeneratorPismOperator:
         return json.dumps(request) if isinstance(request, dict) else request
 
     def validate_intake(self, payload: Any):
+        if self.binding is None:
+            raise ValueError("CASE_COMMANDS_REQUIRED")
         return self.binding.runtime.validate_input(payload)
 
     def _require_type_pin(self, raw: str | dict[str, Any]) -> None:
         value = json.loads(raw) if isinstance(raw, str) else raw
         if not isinstance(value, dict):
             raise ValueError("OPERATOR_REQUEST_OBJECT_REQUIRED")
-        expected = self.binding.document_type
+        expected = (self.binding.document_type if self.binding is not None
+                    else self.case_profile.document_type)
         wanted = (expected.id, expected.version, expected.content_hash)
         for field in ("document_type", "type_pin"):
             if field not in value:
@@ -135,3 +150,20 @@ class GeneratorPismOperator:
 
     def query_finalization(self, request, token):
         return self.finalization.query(self._raw(request), token)
+
+    def export_local(self, *, tenant_id, case_id, render_id, token, output):
+        """Read exact persisted bytes through the existing scoped boundary."""
+        from .rendering.local import export_local
+
+        query = dict(
+            contract="urn:lukart:work:FinalizationQuery:1.0.0",
+            operation="ReadFinalArtifact", tenant_id=str(tenant_id),
+            case_id=str(case_id), render_id=str(render_id),
+        )
+        artifacts = {}
+        for format in ("DOCX", "PDF"):
+            value = self.query_finalization(dict(query, format=format), token)
+            if not isinstance(value, bytes):
+                return value
+            artifacts[format] = value
+        return export_local(artifacts["DOCX"], artifacts["PDF"], output)

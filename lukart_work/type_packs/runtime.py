@@ -9,27 +9,6 @@ from lukart_work.domain.models import VersionPin
 from lukart_work.finalization.contracts import FinalizationProfile
 from lukart_work.rendering.profiles import OFFICIAL_PL_V1, profile_pin
 
-from .pl_pre_complaint_1.contract import (
-    PLAN_SECTIONS as COMPLAINT_SECTIONS,
-    SCHEMA_VERSION as COMPLAINT_SCHEMA_VERSION,
-    TYPE_CONTRACT_PIN as COMPLAINT_CONTRACT_PIN,
-    TYPE_ID as COMPLAINT_TYPE_ID,
-    PLPreComplaint1Input,
-)
-from .pl_pre_payment_1.contract import (
-    PLAN_SECTIONS as PAYMENT_SECTIONS,
-    SCHEMA_VERSION as PAYMENT_SCHEMA_VERSION,
-    TYPE_CONTRACT_PIN as PAYMENT_CONTRACT_PIN,
-    TYPE_ID as PAYMENT_TYPE_ID,
-    PLPrePayment1Input,
-)
-from .pl_pre_reply_1.contract import (
-    PLAN_SECTIONS as REPLY_SECTIONS,
-    SCHEMA_VERSION as REPLY_SCHEMA_VERSION,
-    TYPE_CONTRACT_PIN as REPLY_CONTRACT_PIN,
-    TYPE_ID as REPLY_TYPE_ID,
-    PLPreReply1Input,
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,32 +60,9 @@ class TypePackRuntimeProfile:
         return value
 
 
-RUNTIME_PROFILES: tuple[TypePackRuntimeProfile, ...] = (
-    TypePackRuntimeProfile(
-        type_id=PAYMENT_TYPE_ID,
-        schema_version=PAYMENT_SCHEMA_VERSION,
-        contract_pin=PAYMENT_CONTRACT_PIN,
-        header="WEZWANIE DO ZAPŁATY",
-        plan_sections=PAYMENT_SECTIONS,
-        input_model=PLPrePayment1Input,
-    ),
-    TypePackRuntimeProfile(
-        type_id=COMPLAINT_TYPE_ID,
-        schema_version=COMPLAINT_SCHEMA_VERSION,
-        contract_pin=COMPLAINT_CONTRACT_PIN,
-        header="REKLAMACJA",
-        plan_sections=COMPLAINT_SECTIONS,
-        input_model=PLPreComplaint1Input,
-    ),
-    TypePackRuntimeProfile(
-        type_id=REPLY_TYPE_ID,
-        schema_version=REPLY_SCHEMA_VERSION,
-        contract_pin=REPLY_CONTRACT_PIN,
-        header="ODPOWIEDŹ NA WEZWANIE",
-        plan_sections=REPLY_SECTIONS,
-        input_model=PLPreReply1Input,
-    ),
-)
+# Rejected catalogue entries are not executable registrations. Historical
+# records keep their original pins and remain readable through finalization.
+RUNTIME_PROFILES: tuple[TypePackRuntimeProfile, ...] = ()
 
 _BY_TYPE_ID = {profile.type_id: profile for profile in RUNTIME_PROFILES}
 

@@ -9,21 +9,9 @@ from lukart_work.rendering.contracts import LayoutBlock
 from lukart_work.rendering.service import (
     _source_bound_dateline, _identical_authoritative_request, _display_text,
 )
-from lukart_work.type_packs.pl_pre_payment_1.fixture import positive_fixture
 from lukart_work.validation.rules import Violation
-from scripts.run_generator_pism_operator_e2e import (
-    synthetic_dateline, synthetic_payment_body,
-)
 
 class LetterAnatomyV2(unittest.TestCase):
-    def test_source_bound_date_and_place(self):
-        fixture=positive_fixture()
-        self.assertEqual(synthetic_dateline(fixture),
-                         "LUKART_DATELINE_V1:Warszawa, 05.10.2026")
-        copy=fixture.model_copy(update={"document_date_iso":"not-a-date"})
-        with self.assertRaises(ValueError): synthetic_dateline(copy)
-        badplace=fixture.model_copy(update={"document_place":"A, B"})
-        with self.assertRaises(ValueError): synthetic_dateline(badplace)
 
     def test_structural_marker_and_calendrical_validation(self):
         from tests.fixtures import fact as sample_fact, ref as sample_ref
@@ -103,10 +91,5 @@ class LetterAnatomyV2(unittest.TestCase):
         self.assertTrue(display.endswith("Wierzyciel testowy"))
         self.assertNotIn("PODPISANO",display)
 
-    def test_sample_no_longer_embeds_dateline_in_prose(self):
-        request,sections,_=synthetic_payment_body(positive_fixture())
-        self.assertNotIn("05.10.2026",sections["HEADER_AND_PARTIES"])
-        self.assertNotIn("Wierzyciel testowy", sections["HEADER_AND_PARTIES"])
-        self.assertIn("Wzywam do zapłaty",request)
 
 if __name__=='__main__':unittest.main()
