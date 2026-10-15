@@ -171,6 +171,49 @@ manifest nor focused host tests establish a full regression PASS, production
 startup, legal admission or real HUMAN approval. No unchanged full suite needs
 to be repeated until the relevant failure or environment changes.
 
+## Zero-cost continuation after checkpoint 767c916
+
+The signed PR candidate `767c91660f9664ce969a8c6a843f3c0af2aef799` retained
+the 703 PASS / 2 FAIL regression. Its 145 tested-source hashes, 386 manifest
+entries and the preserved HTTP 413 source segments were verified before repair.
+The recorded full regression remains historical evidence for those sources;
+it is not a full-regression result for the subsequent socket repair.
+
+The confirmed Windows cancellation defect was repaired by explicitly closing
+the registered socket after shutdown on total-deadline expiry, retaining the
+static timeout error even if socket cleanup raises OSError. The existing
+`tests.test_chat_zero_cost.ZeroCostChatProviderTests` class passed all 31 tests,
+including actual blocked-read cancellation, bounded workers and authorization
+before sending. No test, TLS control, endpoint allowlist or HUMAN boundary changed.
+No database or remote model call was needed for this repair verification.
+
+Linux validation is BLOCKED in the available environment. The registered
+LUKART-R4-SANDBOX references a missing VHDX; Debian's VHDX is also absent. Ubuntu's
+VHDX exists, but a bounded `uname` probe timed out after 20 seconds. No WSL repair,
+installation or new environment was attempted. The existing GitHub runner
+`lukart-stage11-wsl` is offline. No runner was registered or started, and no
+workflow, permission, secret or branch protection was changed.
+
+Linux run 38455098182 on historical commit
+`6f523bf18f8afac043cdd4694ec9807fb4ca8761` contains exactly the recorded golden
+identity. A diagnostic using that commit's source pin in memory reproduced all
+golden metadata, whereas the 767c916 source pin changes validation, projection,
+model and layout identities. The renderer, semantic/profile/plan/draft identities
+and rendered blocks remain unchanged. This confirms provenance drift; it does
+not validate current Linux bytes. Windows DOCX/PDF bytes remain different from
+the historical Linux bytes even under the historical pin. Their exact platform
+cause remains NOT VERIFIED; Golden and renderer assertions were not changed.
+
+Current workflow jobs target GitHub-hosted Ubuntu. This private repository's
+free allowance and artifact-storage budget have not been established, and
+current jobs are blocked at runner admission by billing/spending-limit errors.
+The repair checkpoint is kept local without a push that would trigger Actions.
+Self-hosted compute can avoid hosted-runner fees, but requires an available,
+isolated Linux host and separately authorized workflow/runner configuration;
+artifact storage can still consume a billed allowance. No cost was incurred or
+paid service requested by this continuation. Evidence is retained under ignored
+`build/pr64-exact-sha-*` directories with source and log hashes.
+
 ## Historical restricted-session observations (superseded where noted above)
 
 Observed session blockers: workspace Python denied access to its base interpreter;

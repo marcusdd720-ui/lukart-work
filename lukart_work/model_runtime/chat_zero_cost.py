@@ -209,6 +209,11 @@ class DirectTLSChatTransport:
                     sock.shutdown(socket.SHUT_RDWR)
                 except OSError:
                     pass
+                # Windows recv() may remain blocked after shutdown alone.
+                try:
+                    sock.close()
+                except OSError:
+                    pass
             raise ProviderTimeout()
         with state_lock:
             error = state.get("error")
