@@ -4,6 +4,16 @@ run-name: stage12-procedure-${{ inputs.dispatch_token || github.sha }}
 on:
   push:
     branches: [pr64-ci-recovery]
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Exact Stage 12 candidate SHA to validate
+        required: true
+        type: string
+      dispatch_token:
+        description: Correlation token for trusted Stage 12 dispatch binding
+        required: true
+        type: string
 
 permissions:
   contents: read
