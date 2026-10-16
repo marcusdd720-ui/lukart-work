@@ -1,0 +1,25 @@
+name: PR64 isolated self-hosted admission probe
+on:
+  push:
+    branches:
+      - ci/selfhosted-pr64-admission-20261016
+    paths:
+      - .github/workflows/pr64-selfhosted-admission-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  admission:
+    name: pr64-runner-admission
+    runs-on: lukart-pr64-ci-one-shot
+    timeout-minutes: 2
+    steps:
+      - name: Confirm approved ephemeral runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${RUNNER_NAME}" = "lukart-pr64-isolated"
+          test "${RUNNER_ENVIRONMENT}" = "self-hosted"
+          test "${GITHUB_REPOSITORY}" = "marcusdd720-ui/lukart-work"
+          echo "LUKART_PR64_SELF_HOSTED_ADMISSION_PASS"
