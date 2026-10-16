@@ -1,7 +1,7 @@
 {
   ".gitattributes": "0214b2a82b0fd55dcbaa33bb4f04b4b000af344781b82bcb3120d804765c1a36",
   ".github/workflows/cross-repo-conformance.yml": "7f0999d0f958709c0768a83825562a00822bb2654c30553cad95bb2f7c330853",
-  ".github/workflows/generator-pism-go-live.yml": "e29f8b9946ebad20c7191d510f91aa92839008a870fb68d0893295dee2a43432",
+  ".github/workflows/generator-pism-go-live.yml": "ccf6ad0385c97008e2fedec5e275cb6cb09e30ca2cc440242c10eee07dfc1fc2",
   ".github/workflows/stage02.yml": "2b3203c7b54492486dd806eb946ed16bc127a76c0c5cbbbece70b9ea990fd5d8",
   ".github/workflows/stage11-assurance.yml": "9fb97168c36dc8c51a53e897f70e1393d429d1e65086e59e874dc257ad1f964e",
   ".github/workflows/stage11-control.yml": "be4b8c41354d19aa02db94f8f6a6145236213768caf0525ecf09f17fef4b582c",
@@ -348,7 +348,7 @@
   "tests/golden_cases/document_registry.json": "8f197a4ec40b290c0f046b9786e7694d07a5f5b5723b6a048c144047075089e5",
   "tests/golden_cases/procedural_engine.json": "a7793ea39ca890b01329a99a410ceca105e8a53c90823f6963b70f704eb8b22e",
   "tests/golden_cases/source_to_fact.json": "c4b5cc5d1ff8512da672c47a0e6ead3bbcd76201bee061378935a84896376340",
-  "tests/golden_cases/stage11_render_identity.json": "2d3a15e77d49c176b3704fbd5be1bc3ce216408756035b80f8c8abc57144fadd",
+  "tests/golden_cases/stage11_render_identity.json": "506b8ca947f1fa5d5e0a6635782c3108bced049058ef96becd1481cb9b019d2f",
   "tests/stage02_restart_probe.py": "a907973b993b77d5daec2d91d61eba065fb8e64678dcb2592967f09b2a9ef25b",
   "tests/stage11_render_fixture.py": "55f83ac51d99f443b227fd8cef0c2c15d025b13960dd8874fb521025d4a8f93f",
   "tests/stage11_subprocess_fixture.py": "84646bd5b0ab5c21295d16042e38763025ad8b64074a3e15ad11211918a58876",
