@@ -2,15 +2,7 @@ name: Generator Pism GO-LIVE E2E
 run-name: generator-pism-go-live-${{ github.sha }}
 on:
   push:
-    branches: [feature/generator-pism-operator-v1-2026-10-07]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-    inputs:
-      candidate_sha:
-        description: Exact candidate SHA
-        required: true
-        type: string
+    branches: [pr64-ci-recovery]
 permissions:
   contents: read
 
@@ -21,20 +13,8 @@ jobs:
   operator-e2e:
     # Nigdy nie uruchamiaj niezaufanego kodu z forków na prywatnym runnerze.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
+    runs-on: lukart-pr64-ci-one-shot
     timeout-minutes: 45
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_PASSWORD: disposable-ci-password
-          POSTGRES_DB: lukart_stage02_test
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     env:
       PYTHONPATH: ${{ github.workspace }}
       LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
