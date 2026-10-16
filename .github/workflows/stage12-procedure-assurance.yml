@@ -3,21 +3,7 @@ run-name: stage12-procedure-${{ inputs.dispatch_token || github.sha }}
 
 on:
   push:
-    branches:
-      - 'codex/stage12-*'
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
-    inputs:
-      candidate_sha:
-        description: Exact Stage 12 candidate SHA to validate
-        required: true
-        type: string
-      dispatch_token:
-        description: Correlation token for trusted Stage 12 dispatch binding
-        required: true
-        type: string
+    branches: [pr64-ci-recovery]
 
 permissions:
   contents: read
@@ -26,20 +12,8 @@ jobs:
   stage12-assurance:
     name: stage12-assurance
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
+    runs-on: lukart-pr64-ci-one-shot
     timeout-minutes: 40
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_PASSWORD: disposable-ci-password
-          POSTGRES_DB: lukart_stage02_test
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     env:
       LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
       LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
@@ -105,14 +79,10 @@ jobs:
         with:
           python-version: '3.14'
 
-      - name: PostgreSQL 18 backup tools
+      - name: Verify PostgreSQL 18 backup tools
         run: |
-          sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl --fail -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
-          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-18
-          echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
+          pg_dump --version | grep -F '18.'
+          pg_restore --version | grep -F '18.'
 
       - name: Install package
         run: python -m pip install '.[postgres,ingestion]' 'jsonschema==4.26.0'
