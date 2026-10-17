@@ -281,3 +281,32 @@ class OperatorHostPostgresTests(unittest.TestCase):
             self.assertEqual(json.loads(body)["code"], "FORBIDDEN")
         self.authority.revoke(self.token)
         self.assertEqual(self.request(json.dumps(query), self.headers())[0], 403)
+
+
+class OperatorGuidedCaseUIContractTests(unittest.TestCase):
+    """Static safety contract for the non-automatic, human-gated CASE wizard."""
+
+    def test_guided_case_creation_never_auto_dispatches(self):
+        from lukart_work.operator_host import PAGE, CLIENT
+        html = PAGE.decode('utf-8')
+        js = CLIENT.decode('utf-8')
+        for field in ('caseTitle', 'policyId', 'policyVersion', 'policyHash',
+                      'prepareCase', 'advanced', 'send'):
+            self.assertIn(f'id="{field}"', html)
+        self.assertIn("route.value='execute_core';request.value=JSON.stringify(body,null,2)", js)
+        self.assertNotIn("submit('execute_core',body)", js)
+        self.assertIn('expected_case_sequence:0', js)
+        self.assertIn("rationale:'Jawna decyzja", js)
+        self.assertIn("function clearPrivate()", js)
+        self.assertIn('caseTitle.value=''', js)
+        for contract in ('PlannerQuery:1.0.0', 'ValidationQuery:1.0.0',
+                         'FinalizationQuery:1.0.0'):
+            self.assertIn(contract, js)
+        self.assertIn('Number.isSafeInteger(revision)', js)
+        self.assertIn('function idReady(...ids)', js)
+
+    def test_guided_case_does_not_weaken_existing_boundaries(self):
+        from lukart_work.operator_host import create_server, CLIENT, MAX_BODY
+        self.assertGreater(MAX_BODY, 0)
+        self.assertIn("credentials:'omit'", CLIENT.decode())
+        self.assertTrue(callable(create_server))
