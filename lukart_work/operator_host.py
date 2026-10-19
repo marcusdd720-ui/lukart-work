@@ -21,6 +21,7 @@ ROUTES = (
 MAX_BODY = 1024 * 1024
 PAGE = '''<!doctype html><html lang="pl"><meta charset="utf-8">
 <title>LUKART LEGAL OS — operator sprawy</title>
+<link rel="stylesheet" href="/client.css">
 <h1>LUKART LEGAL OS — Generator Pism</h1>
 <p>Praca na rzeczywistej sprawie wymaga uprzedniej konfiguracji administratora oraz autoryzacji.
 Ten interfejs nie tworzy zatwierdzeń ani nie wysyła dokumentów automatycznie.</p>
@@ -59,6 +60,8 @@ Każda decyzja HUMAN musi zostać podjęta przez rzeczywistego uprawnionego czł
 <button id="checkRelease">Sprawdź status FINAL</button>
 <button id="pdf">Podgląd PDF</button><button id="docx">Pobierz DOCX</button>
 <a id="download" hidden>Pobierz dokument</a>
+<p id="pdfStatus" role="status" aria-live="polite"></p>
+<section id="previewPages" aria-label="Strony zapisanego PDF" hidden></section>
 <iframe id="preview" title="Podgląd zapisanego PDF" sandbox hidden width="100%" height="700"></iframe></fieldset>
 <pre id="result" aria-live="polite"></pre>
 <script src="/client.js"></script></html>'''.encode('utf-8')
@@ -97,14 +100,15 @@ const type=format==='PDF'?'application/pdf':format==='DOCX'?
 const bytes=await response.arrayBuffer();if(current!==generation)return;
 artifactUrl=URL.createObjectURL(new Blob([bytes],{type}));
 download.href=artifactUrl;download.download=format?'document.'+format.toLowerCase():'artifact.bin';
-download.hidden=false;if(format==='PDF'){preview.src=artifactUrl;preview.hidden=false;}
-result.textContent='Persisted artifact read. Preview does not grant approval.';
+download.textContent=format?'Pobierz '+format:'Pobierz dokument';
+download.hidden=false;
+result.textContent='Odczytano zapisany dokument. Sam odczyt nie oznacza zatwierdzenia pisma.';
 }else{const text=await response.text();if(current!==generation)return;
 try{result.textContent='HTTP '+response.status+'\\n'+
 JSON.stringify(JSON.parse(text),null,2);}catch{result.textContent='HTTP '+response.status+'\\n'+text;}}
-}catch(e){if(current===generation)result.textContent='Request failed';}finally{if(current===generation)send.disabled=false;}}
+}catch(e){if(current===generation)result.textContent='Nie udało się połączyć z panelem.';}finally{if(current===generation)send.disabled=false;}}
 send.onclick=()=>{try{const body=JSON.parse(request.value);submit(route.value,body);}
-catch{result.textContent='Enter valid JSON before submitting.';}};
+catch{result.textContent='Wpisz poprawne żądanie JSON przed wysłaniem.';}};
 function query(service,body){route.value=service;request.value=JSON.stringify(body,null,2);submit(service,body);}
 document.getElementById('open').onclick=()=>query('query_core',{
 contract:'urn:lukart:work:CoreQuery:1.0.0',operation:'GetCaseHead',tenant_id:tenant.value,case_id:caseId.value});
@@ -169,11 +173,21 @@ operation,tenant_id:tenant.value.trim(),case_id:caseId.value.trim(),render_id:re
 }
 
 ''').encode()
+CLIENT += b'\n' + Path(__file__).with_name('operator_preview.js').read_bytes()
+CSS = b'''body{max-width:1400px;margin:auto;padding:16px;font-family:system-ui,sans-serif}
+fieldset{min-width:0;margin:12px 0;padding:16px}label{display:inline-flex;flex-direction:column;gap:4px;margin:4px}
+input:not([type=number]){width:38ch;max-width:100%;box-sizing:border-box}textarea{width:100%;max-width:100%;box-sizing:border-box}
+pre{white-space:pre-wrap;overflow-wrap:anywhere}button{margin:4px;min-height:32px}
+#previewPages{max-height:85vh;overflow:auto;background:#e5e7eb;padding:12px;margin-top:12px}
+#previewPages img{display:block;width:100%;max-width:1100px;height:auto;margin:0 auto 16px;background:white}
+#pdfStatus{font-weight:bold}'''
 
 
-def create_server(operator: GeneratorPismOperator, port: int = 8765) -> HTTPServer:
+def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_preview=None) -> HTTPServer:
     if not isinstance(operator, GeneratorPismOperator) or operator.binding is not None:
         raise ValueError("TRUSTED_CASE_OPERATOR_REQUIRED")
+    if pdf_preview is not None and not callable(pdf_preview):
+        raise ValueError("TRUSTED_PDF_PREVIEW_REQUIRED")
 
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
@@ -190,7 +204,7 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765) -> HTTPServ
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
-            self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'self'; connect-src 'self'; frame-src blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+            self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'self'; connect-src 'self'; frame-src blob:; img-src blob:; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
             self.send_header("Connection", "close")
             self.end_headers()
             self.wfile.write(body)
@@ -228,6 +242,8 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765) -> HTTPServ
                 return self.reply(200, PAGE, "text/html; charset=utf-8")
             if self.path == "/client.js":
                 return self.reply(200, CLIENT, "text/javascript; charset=utf-8")
+            if self.path == "/client.css":
+                return self.reply(200, CSS, "text/css; charset=utf-8")
             self.reply(404, b'{"error":"NOT_FOUND"}')
 
         def do_POST(self):
@@ -261,6 +277,15 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765) -> HTTPServ
                         return self.reply(400, b'{"error":"INVALID_REQUEST"}')
                     result = getattr(operator, route)(payload, token)
                     if isinstance(result, bytes):
+                        if (route == 'query_finalization' and payload.get('operation') == 'ReadFinalArtifact'
+                                and payload.get('format') == 'PDF'
+                                and self.headers.get_all('Accept') == ['application/vnd.lukart.local-pdf-preview+json']):
+                            if pdf_preview is None:
+                                return self.reply(503, b'{"error":"PDF_PREVIEW_NOT_CONFIGURED"}')
+                            if not result.startswith(b'%PDF-'):
+                                return self.reply(422, b'{"error":"PDF_PREVIEW_INVALID_DOCUMENT"}')
+                            preview = pdf_preview(result)
+                            return self.reply(200, json.dumps(preview, allow_nan=False).encode())
                         return self.reply(200, result, "application/octet-stream")
                     self.reply(200, result.model_dump_json().encode())
             except Violation:
@@ -280,8 +305,9 @@ def main():
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     try:
-        factory = runpy.run_path(str(args.config.resolve()))["build_operator"]
-        server = create_server(factory(), args.port)
+        config = runpy.run_path(str(args.config.resolve()))
+        factory = config["build_operator"]
+        server = create_server(factory(), args.port, pdf_preview=config.get('render_pdf_preview'))
     except Exception:
         parser.exit(1, "HOST_CONFIGURATION_FAILED: trusted CASE services and capabilities required\n")
     print(f"CASE operator: http://127.0.0.1:{server.server_port}/", flush=True)

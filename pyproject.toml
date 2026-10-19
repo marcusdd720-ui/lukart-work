@@ -24,5 +24,6 @@ ingestion = ["pypdf==6.10.0"]
 include = ["lukart_work*"]
 
 [tool.setuptools.package-data]
+"lukart_work" = ["operator_preview.js"]
 "lukart_work.core" = ["migration.sql", "migration_ai_egress.sql"]
 "lukart_work.storage" = ["migration.sql"]
