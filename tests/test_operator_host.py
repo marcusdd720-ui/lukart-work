@@ -203,7 +203,7 @@ class OperatorBrowserContractTests(unittest.TestCase):
         harness = r'''
 const fs=require('node:fs'),vm=require('node:vm'),elements=new Map(),calls=[];
 const document={getElementById(id){if(!elements.has(id))elements.set(id,{
-value:'',append(){},removeAttribute(){}});return elements.get(id);},createElement(){return {};}};
+value:'',append(){},removeAttribute(){},replaceChildren(...children){this.children=children;}});return elements.get(id);},createElement(){return {};}};
 vm.runInNewContext(fs.readFileSync(0,'utf8'),{document,window:{addEventListener(){}},
 fetch:async(url,options)=>{calls.push({url,options});return {ok:true,status:200,
 headers:{get(){return 'application/json';}},text:async()=> '{}'};},URL:{revokeObjectURL(){}}});
