@@ -9,6 +9,54 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Localize only this public synthetic scenario. Persist Polish inputs before
+# snapshot/plan approval and model receipts; never rewrite released artifacts.
+POLISH_COMMAND_FIELDS = {
+    "AddParty": {"display_name": ("Synthetic Person", "Jan Testowy")},
+    "AddEvidence": {"description": ("Synthetic receipt", "Syntetyczne potwierdzenie wpłaty")},
+    "AddFact": {"statement": ("A payment is asserted", "Zgłoszono dokonanie wpłaty")},
+    "AddRequest": {"text": ("Synthetic requested outcome", "Syntetyczny wniosek testowy")},
+}
+POLISH_STATEMENTS = {
+    "Synthetic source-backed factual statement.": "Syntetyczne stwierdzenie faktyczne oparte na źródle.",
+    "Synthetic requested outcome.": "Syntetyczny wniosek testowy.",
+    "Synthetic legal proposition.": "Syntetyczne twierdzenie prawne.",
+}
+
+def polish_fixture_type(base):
+    class PolishE2EFixture(base):
+        def request(self, operation, data=None, target=None, **extra):
+            data = dict(data or {})
+            for field, (original, translated) in POLISH_COMMAND_FIELDS.get(operation, {}).items():
+                require(data.get(field) == original, "UNEXPECTED_SYNTHETIC_INPUT:" + operation)
+                data[field] = translated
+            if operation == "PlanDocument":
+                data["sections"] = [dict(section) for section in data["sections"]]
+                require(len(data["sections"]) == 1 and data["sections"][0]["title"] == "Synthetic section",
+                        "UNEXPECTED_SYNTHETIC_SECTION")
+                data["sections"][0]["title"] = "Uzasadnienie"
+            return super().request(operation, data, target, **extra)
+
+        @staticmethod
+        def statement(text, *args, **kwargs):
+            require(text in POLISH_STATEMENTS, "UNEXPECTED_SYNTHETIC_STATEMENT")
+            return base.statement(POLISH_STATEMENTS[text], *args, **kwargs)
+    return PolishE2EFixture
+
+def verify_polish_document_text(text):
+    normalized = " ".join(text.split())
+    expected = ("SYNTETYCZNE PISMO TESTOWE", "Jan Testowy", "Wnioski", "Uzasadnienie",
+                "Załączniki", "Syntetyczne potwierdzenie wpłaty", *POLISH_STATEMENTS.values())
+    require(all(fragment in normalized for fragment in expected), "POLISH_DOCUMENT_TEXT_REQUIRED")
+    require("Synthetic" not in normalized and "A payment is asserted" not in normalized,
+            "ENGLISH_SYNTHETIC_TEXT_FORBIDDEN")
+
+def verify_polish_artifacts(directory):
+    from docx import Document
+    from pypdf import PdfReader
+    verify_polish_document_text("\n".join(p.text for p in Document(directory / "final.docx").paragraphs))
+    verify_polish_document_text("\n".join(page.extract_text() for page in PdfReader(directory / "final.pdf").pages))
+
 def require(condition, label):
     if not condition:
         raise ValueError(label)
@@ -25,8 +73,9 @@ def run(output, tested_sha):
     from lukart_work.operator import GeneratorPismOperator
     require(final.core.ADMIN_RUNTIME and final.core.DSN, "ISOLATED_POSTGRESQL_REQUIRED")
     require(not output.exists(), "OUTPUT_ALREADY_EXISTS")
-    final.FinalizationTests.setUpClass()
-    h = final.FinalizationTests("test_public_happy_path_persists_exact_bytes_approval_and_release_chain")
+    fixture = polish_fixture_type(final.FinalizationTests)
+    fixture.setUpClass()
+    h = fixture("test_public_happy_path_persists_exact_bytes_approval_and_release_chain")
     h.setUp()
     h.package_profile = h.package_profile.model_copy(update={"build_revision": tested_sha})
     operator = GeneratorPismOperator(repository=h.repo, authority=h.authority,
@@ -57,6 +106,7 @@ def run(output, tested_sha):
     for local_name, member_name in (("document.docx", "final.docx"), ("document.pdf", "final.pdf")):
         require((preview.parent / local_name).read_bytes() == (directory / member_name).read_bytes(),
                 "DIRECT_ARTIFACT_MISMATCH")
+    verify_polish_artifacts(directory)
     with h.repo.transaction(h.tenant, h.case_id) as tx:
         events, outbox = tx.events(), tx.outbox()
         require(events == outbox, "EVENT_OUTBOX_MISMATCH")
