@@ -1,0 +1,39 @@
+{
+  "scope": "TASK_SPECIFIC_POLISH_E2E_SOURCE_DELTA_NOT_GITHUB_CI",
+  "tested_source_commit": "b1d3e93623f0c8a589f61316049c6a30fb9716f0",
+  "retained_regression_source_commit": "e91d10a8403dcfa30e43e5edf0972db2fc3eac7b",
+  "previous_status_git_object": "b1d3e93623f0c8a589f61316049c6a30fb9716f0:reports/stage10-status.json",
+  "previous_status_sha256": "dba6a204ab8a86051ea66ed26b60c62f81e4a77542cbbe7ca2899eb7e6cfeea1",
+  "previous_continuation": "reports/pr64_regression_continuation/continuation.json (historical, unchanged)",
+  "new_status_sha256": "e822500cf9a29f9ed37ac3b60541255288f328eaeccc06a4e692e070b0e7fb36",
+  "unchanged_source_hashes_verified": 144,
+  "changed_sources": [
+    {
+      "path": "scripts/run_generator_pism_operator_e2e.py",
+      "previous_sha256": "b05eb7a29f0cd41734e207f3c1e91fa081a6b6f0c55052333b974547a8e25121",
+      "sha256": "12b91ef6a83435bc8743d25fd996816f91498c4da77d8f467fbef73669299dce"
+    }
+  ],
+  "retained_unittest_successes": 707,
+  "unittest_tests_reexecuted": 0,
+  "monolithic_full_regression_reexecuted": false,
+  "new_execution": [
+    "old English PDF and DOCX rejected by language guard",
+    "Polish CASE service E2E including PDF/DOCX text assertions",
+    "ten-member package integrity verifier"
+  ],
+  "visual_review": {
+    "pdf_pages": 1,
+    "polish_text": "PASS",
+    "layout": "PASS",
+    "kind": "IMPLEMENTER_VISUAL_INSPECTION"
+  },
+  "production_code_changed": false,
+  "golden_files_changed": false,
+  "github_required_checks": "BLOCKED_NOT_SUBSTITUTED",
+  "artifacts": {
+    "evidence.json": "e7ef9dfc0cf7ba9114fad02546463c877adb210477f7b9155a1077cf2d5c2125",
+    "package-verifier.json": "c3af13ec46cddd179d58324b131e7012f3993c030407102ae6080dce73bf1d1f",
+    "execution.json": "c735c9ff84989ff4a6132559a515dc8ecac5108e439cfa761cdcaa363d37ef3c"
+  }
+}
