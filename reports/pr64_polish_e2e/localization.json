@@ -5,7 +5,7 @@
   "previous_status_git_object": "b1d3e93623f0c8a589f61316049c6a30fb9716f0:reports/stage10-status.json",
   "previous_status_sha256": "dba6a204ab8a86051ea66ed26b60c62f81e4a77542cbbe7ca2899eb7e6cfeea1",
   "previous_continuation": "reports/pr64_regression_continuation/continuation.json (historical, unchanged)",
-  "new_status_sha256": "e822500cf9a29f9ed37ac3b60541255288f328eaeccc06a4e692e070b0e7fb36",
+  "new_status_sha256": "5b064984a11eb5f31c8ac407656f67be4f1e1c9300fae028f6fc756089cb2609",
   "unchanged_source_hashes_verified": 144,
   "changed_sources": [
     {
