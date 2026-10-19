@@ -1,0 +1,15 @@
+{
+  "candidate_sha": "e91d10a8403dcfa30e43e5edf0972db2fc3eac7b",
+  "retained_source_hashes_verified": 145,
+  "retained_tests": 707,
+  "retained_successes": 706,
+  "retained_skips": 1,
+  "retained_report_result": "FAIL",
+  "completed_tests_rerun": false,
+  "node_version": "v24.19.0",
+  "node_sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12",
+  "node_copy_only": true,
+  "trusted_runner_executed_candidate": false,
+  "new_packages_downloaded": false,
+  "source": "/var/tmp/lukart-pr64-pending-20261019/source"
+}

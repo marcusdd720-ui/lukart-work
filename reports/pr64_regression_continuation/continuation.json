@@ -1,0 +1,3603 @@
+{
+  "scope": "TASK_SPECIFIC_SOURCE_HASH_BOUND_REGRESSION_CONTINUATION",
+  "measured_source_commit": "e91d10a8403dcfa30e43e5edf0972db2fc3eac7b",
+  "result": "ALL_707_TESTS_HAVE_SUCCESS_EVIDENCE",
+  "retained_successes": 706,
+  "newly_executed_successes": 1,
+  "newly_executed_test_id": "tests.test_operator_host.OperatorBrowserContractTests.test_open_case_emits_valid_core_query",
+  "completed_tests_reexecuted": 0,
+  "full_native_verifier_reexecuted": false,
+  "retained_full_run_result": "FAIL_WITH_ONE_SKIP_PRESERVED_IN_ARCHIVE",
+  "source_hashes_verified": 145,
+  "test_catalogue_count": 707,
+  "source_identity_sha256": "c86bb712b0bdbf8ffb51d6300d69223eee8937c269e9e3f5f2113e8f427e9232",
+  "published_status_sha256": "dba6a204ab8a86051ea66ed26b60c62f81e4a77542cbbe7ca2899eb7e6cfeea1",
+  "artifacts": {
+    "retained-full-run.log": {
+      "sha256": "498a88a2700f9e36b90f0f1588dd6894f8c24e1cb14bda2f0e3d9e8b06ad1d93",
+      "bytes": 111926
+    },
+    "retained-status.json": {
+      "sha256": "9f14de775dadaff214f405e52c35f065fbaccac34cc08ad042a4167a372f5684",
+      "bytes": 15694
+    },
+    "node-completion.log": {
+      "sha256": "6540f5abb3bbbc077ba7f867b20ea68812d67f04e7eb15d650d0fa9e1c47fa05",
+      "bytes": 236
+    },
+    "test-discovery.json": {
+      "sha256": "a1bfbf04f4a0bc430ea07ac73b66056084200b37e8bb013ca62629f08ae62c6f",
+      "bytes": 71058
+    },
+    "preparation.json": {
+      "sha256": "b97be8736e8aa4a7c2f48935d61495b5b0726fa4c8f1699a24f84969e89981ef",
+      "bytes": 538
+    }
+  },
+  "new_execution_isolation": {
+    "user": "1000:1000",
+    "readonly_rootfs": true,
+    "capabilities": "ALL_DROPPED",
+    "no_new_privileges": true,
+    "network": "POSTGRES_LOOPBACK_NAMESPACE_WITHOUT_EXTERNAL_INTERFACE",
+    "mounts": {
+      "/opt/venv": [
+        "/var/tmp/lukart-pr64-e91d10a-20261019/venv",
+        false
+      ],
+      "/tools": [
+        "/var/tmp/lukart-pr64-pending-20261019/tools",
+        false
+      ],
+      "/usr": [
+        "/usr",
+        false
+      ],
+      "/source": [
+        "/var/tmp/lukart-pr64-pending-20261019/source",
+        true
+      ]
+    },
+    "host_docker_socket": false
+  },
+  "test_results": [
+    {
+      "id": "tests.test_baseline_type_packs.BaselineTypePackTests.test_no_implicit_replacement_registration",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_baseline_type_packs.BaselineTypePackTests.test_rejected_packages_are_absent",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_boundaries.BoundaryTests.test_duplicate_json_keys",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_boundaries.BoundaryTests.test_empty_draft",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_boundaries.BoundaryTests.test_finding_omission",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_boundaries.BoundaryTests.test_golden_case_source_to_fact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_boundaries.BoundaryTests.test_json_size",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_boundaries.BoundaryTests.test_nonfinite_json",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_boundaries.BoundaryTests.test_snapshot_missing_closure",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_boundaries.BoundaryTests.test_unknown_freshness",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_boundaries.BoundaryTests.test_wrong_policy",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_actual_prompt_and_wire_hash_mismatch_precedes_secret",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_admission_binds_snapshot_and_entire_invocation_before_secret",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_all_stale_or_paid_or_wrong_scope_grants_fail_before_secret",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_atomic_committer_denial_changed_or_expired_permit_prevents_post",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_attempt_ledger_is_bounded_without_eviction_or_reexecution",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_default_network_disabled",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_direct_transport_requires_send_callback_before_connection",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_duplicate_json_key_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_exact_serialized_bytes_are_admitted_committed_and_posted",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_expiry_after_slow_prompt_or_secret_fails_before_network",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_expiry_during_connect_fails_before_post",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_incomplete_or_unbounded_generation_refused",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_missing_atomic_committer_denies_before_secret_or_connect",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_one_reservation_cannot_authorize_another_request",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_parameters_must_be_bound",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_positive_propose_json_uuid_and_tuple_wire_types",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_prompt_or_secret_invalid_without_network",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_reserved_prompt_budget_and_reservation_replay_are_enforced",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_response_contract_exact_request_binding",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_revocation_during_prompt_or_secret_is_observed_by_fresh_resolver",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_revocation_or_revision_change_during_connect_prevents_post",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_safe_synthetic_execution_and_exact_receipt",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_secret_supplier_exception_does_not_leak_in_traceback",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_send_callback_is_one_use_and_missing_callback_cannot_issue_receipt",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_slow_initial_resolver_expiry_denies_before_secret",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_snapshot_mismatch_is_rejected_without_receipt",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_stuck_connect_worker_does_not_accumulate_replacement_threads",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_total_deadline_aborts_actual_blocked_socket_read",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_url_allowlist_no_plaintext_or_arbitrary_hosts",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_valid_shape_with_duplicate_json_key_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostChatProviderTests.test_wire_budget_includes_system_envelope_and_parameters_before_secret",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_chat_zero_cost.ZeroCostControlledDraftingTests.test_chat_propose_commits_only_generated_draft_through_existing_service",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_23_entities_and_lifecycles",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_abstain",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_ai_extra_authority",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_ai_unknown_refs",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_approval_content_substitution",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_boolean_revision_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_broken_reference",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_concurrency_conflict",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_creation_cannot_skip_lifecycle",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_cross_case",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_dag_cycle",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_dag_propagation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_draft_content_locked",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_duplicate_refs",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_extra_field_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_fact_confirm_without_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_generated_artifacts_use_canonical_lf",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_hash_key_order",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_human_approval_happy",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_idempotency_conflict",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_idempotent_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_immutable",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_inference_requires_label",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_invalid_kg_predicate",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_malformed_ai",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_missing_source",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_naive_timestamp_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_negative_money",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_party_approval_required",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_python_metadata_invalid_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_python_runtime_bounds_are_enforced",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_python_version_spec_matches_canonical_pyproject_requirements",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_revision_hash",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_roundtrip",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_snapshot",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_source_hash_changed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_transition",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_transition_skip",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_valid_graph",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.ContractTests.test_wrong_reference_type",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_ai_cannot_approve",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_all_blocking_severities_including_fake_resolution",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_all_nonpass_check_outcomes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_changed_draft_hash",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_changed_render",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_complete_gate_contract",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_cross_case_approval",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_generated_is_not_rendered",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_missing_and_duplicate_checks",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_stale",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_unsupported_final",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_contracts.GateTests.test_wrong_approval_target",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_canonical_json_is_deterministic",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_duplicate_json_key_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_evidence_id_is_content_addressed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_evidence_must_be_immutable",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_non_finite_json_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_pass_report_requires_all_checks_pass",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_report_outcome_mismatch_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_result_rejects_undeclared_effect",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_ros_declared_effects_must_equal_allowed_effects",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_ros_fixture_converges_to_success",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_ros_privacy_scope_is_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_ros_required_evidence_is_enforced",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_sha256_digest_is_algorithm_tagged",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_sha512_digest_is_supported",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_success_result_rejects_errors",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_unknown_digest_algorithm_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_work_command_fixture_converges_to_success",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_work_command_replay_has_no_actual_effect",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_work_ingestion_body_tamper_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_cross_repo_conformance.CrossRepoConformanceTests.test_work_ingestion_fixture_converges_to_success",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_budget_revocation_blocks_existing_reservation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_cross_case_tenant_shared_budget_and_capability_scope",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_database_role_cannot_mutate_immutable_grant_or_bypass_quota",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_durable_one_use_after_restart_and_idempotent_rejection",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_existing_chat_adapter_consumes_durable_grant_at_send_boundary",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_expired_or_false_pricing_proof_does_not_register",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_expired_same_case_reservations_reclaim_exact_quota",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_no_client_or_ai_actor_can_issue_grants",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_revoke_before_send_releases_budget_without_replaying_grant",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_revoked_sql_grant_and_budget_refuse_late_consumption_or_reservation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_runtime_sql_cannot_mint_budget_or_grant_even_with_human_token",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_tenant_wide_revoke_requires_separate_budget_capability",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_two_simultaneous_commits_consume_once",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_unknown_budget_revocation_fails_closed_and_repeat_is_idempotent",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_egress_authority.DurableEgressTests.test_wrong_body_and_consent_hash_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalPackageContractTests.test_package_profile_requires_exact_git_commit_sha",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_abstain_lost_sequence_cas_writes_no_terminal_event",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_abstain_stays_abstain_is_audited_and_replays_without_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_actor_is_server_assigned",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_ai_actor_and_model_status_injection_are_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_append_only_runtime_cannot_modify_revision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_artifact_failure_rolls_back_bytes_record_sequence_and_event",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_audit_member_requires_both_capabilities_but_other_reads_work",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_caller_cannot_inject_semantics_pass_receipt_or_wrong_profile",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_candidate_or_claim_cannot_be_materialized_as_factual_prose",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_case_change_between_proposal_and_commit_is_conflict_without_draft",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_closed_and_archived_case_guards",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_concurrent_same_command_calls_model_once",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_corrupt_source_bytes_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_database_failure_rolls_back_entire_unit_of_work",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_domain_event_v1_rejects_v2_only_terminal_events",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_domain_event_v2_reader_accepts_drafting_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_domain_event_v2_reader_accepts_historical_v1_payload",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_duplicate_json_unknown_contract_and_safe_errors",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_execution_receipt_mismatch_is_terminal_and_replays_without_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_fact_cannot_confirm_without_correct_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_fact_transition_preserves_provenance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_final_package_has_ten_verified_members_and_survives_restart",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_full_core_golden_all_guards_and_plan_approval",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_golden_generate_document_commits_only_generated_draft_and_auditable_trace",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_historical_package_reads_survive_validation_pin_change",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_historical_revisions_survive_and_stale_target_conflicts",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_legal_rule_must_be_currently_applicable_before_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_legal_statement_requires_live_rule_verified_citation_and_verified_source",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_machine_cannot_record_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_model_cannot_hide_new_fact_as_structural_text",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_model_cannot_propose_domain_fact_or_claim_write",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_multisection_provider_failure_records_failing_request_id",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_multisection_receipt_mismatch_records_failing_request_id",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_package_assembly_requires_audit_read_and_preserves_other_grants",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_package_reads_require_distinct_capabilities_and_detect_tamper",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_package_requires_release_and_rolls_back_partial_member_writes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_plan_approval_change_between_proposal_and_commit_is_conflict",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_plan_approval_revocation_blocks_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_provider_exception_is_terminal_and_replays_without_second_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_public_citation_lifecycle_is_audited_and_human_only",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_public_happy_path_persists_exact_bytes_approval_and_release_chain",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_rbac_explicit_action_grants",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_reference_outside_approved_section_contract_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_rejection_lost_sequence_cas_writes_no_terminal_event",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_release_cas_race_revocation_and_scope_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_release_validation_and_generation_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_render_uses_validation_pinned_evidence_when_history_shares_anchor",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_replay_after_restart_and_conflicting_body",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_request_objective_cannot_disappear",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_request_statement_cannot_expand_approved_plan_objectives",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_review_r1_audit_pin_covers_real_rule_artifact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_review_r1_dispute_fact_after_revocation_preserves_sources",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_review_r1_dispute_party_after_revocation_preserves_history",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_review_r1_outbox_validates_event_contract_hash_and_chain",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_review_r1_replay_rejects_unknown_contract_and_changed_bytes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_review_r1_snapshot_acceptance_revocation_invalidates_plan",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_review_r2_revoke_plan_then_supersede_and_approve_replacement",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_review_r2_supersede_plan_requires_human_and_legal_transition",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_review_r3_event_ids_distinguish_scopes_and_preserve_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_revoked_decision_rejected_for_verification",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_revoked_legal_interpretation_approval_blocks_before_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_revoked_token_cannot_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_revoking_superseding_decision_does_not_resurrect_old",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_rls_read_write_and_no_scope_deny",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_same_command_replay_does_not_call_model_again",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_scope_authorization_for_writes_and_reads",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_snapshot_acceptance_change_between_proposal_and_commit_is_conflict",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_snapshot_current_heads_checked_before_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_snapshot_hash_substitution_and_missing_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_source_cross_case_download_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_source_pin_change_still_blocks_stale_approval_mutation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage09_product_authority_can_draft_but_cannot_use_legacy_planning_bypass",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_ai_service_and_cross_case_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_claim_context_never_becomes_procedural_fact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_client_pass_and_policy_substitution_rejected_without_writes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_concurrent_distinct_commands_enforce_case_cas",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_concurrent_same_key_replays_once",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_cross_case_sql_objects_and_runtime_immutability",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_exact_replay_and_actor_binding_across_instances",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_execution_date_expiry_and_source_drift",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_fabricated_quotation_cannot_be_overridden_by_human_pass",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_fake_fact_context_rejected_atomically",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_finding_ids_manifest_and_audit_are_reproducible",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_findings_resolution_does_not_rewrite_failed_run",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_golden_validated_is_not_rendered_or_final",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_legal_authority_revocation_denies_new_run",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_live_snapshot_and_plan_approval_revocation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_missing_procedural_rules_never_pass_vacuously",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_missing_review_persists_findings_and_denies_validation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_procedural_violation_and_unknown_are_not_overridden_by_review",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_product_profile_and_legacy_bypass_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_query_database_failure_returns_only_safe_code",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_rejected_resolution_without_live_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_remediation_current_uncited_source_passes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_remediation_distinct_rules_preserve_finding_identity",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_remediation_expired_uncited_source_blocks",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_remediation_foreign_uncited_source_blocks",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_remediation_future_uncited_source_blocks",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_remediation_source_period_endpoints_and_query_expiry",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_remediation_unavailable_sources_produce_findings",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_review_duplicate_incomplete_and_contradictory_outcomes_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_review_provider_proposal_is_not_a_command",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_review_revocation_after_success_and_historical_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_severity_model_cannot_clear_blockers",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_snapshot_revocation_denies_new_run",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_source_disappearance_invalidates_success",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_success_becomes_stale_after_case_mutation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_supported_deadline_context_expires_within_same_day",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_transaction_rollback_after_findings_and_run",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_stage10_unverifiable_locator_denies_quotation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_transaction_rollback_covers_draft_trace_audit_and_outbox",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_two_real_connections_same_sequence_one_commit",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_unknown_source_and_type_guard_rollback",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_unknown_stored_contract_preserves_payload_and_denies_read",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_unmarked_inference_and_unsupported_statement_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_untrusted_actor_and_metadata_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_finalization.FinalizationTests.test_verified_party_cannot_be_edited_in_place",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_generator_pism_type_e2e.GeneratorPismCaseE2ETests.test_case_reaches_persisted_render_and_local_preview",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_letter_anatomy_v2.LetterAnatomyV2.test_only_exact_source_bound_duplicate_is_suppressed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_letter_anatomy_v2.LetterAnatomyV2.test_signature_affordance_is_not_signed_artifact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_letter_anatomy_v2.LetterAnatomyV2.test_structural_marker_and_calendrical_validation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_local_export.LocalExportTests.test_denied_scoped_read_writes_nothing",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_local_export.LocalExportTests.test_exact_bytes_preview_and_no_overwrite",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_local_export.LocalExportTests.test_invalid_artifact_creates_no_output",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator.ManualProviderTests.test_builtin_runtime_catalogue_is_empty",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator.ManualProviderTests.test_case_profile_requires_case_commands_and_retains_exact_pin_guard",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator.ManualProviderTests.test_manual_provider_is_exact_request_bound_and_receipted",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator.ManualProviderTests.test_operator_rejects_malformed_and_foreign_type_pins_without_drafting",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_config.OperatorConfigTests.test_drafting_profiles_must_be_explicit_and_identified",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_config.OperatorConfigTests.test_explicit_components_are_retained_without_database_io",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_config.OperatorConfigTests.test_missing_or_wrong_components_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_config.OperatorConfigTests.test_provider_identity_and_parameter_pins_must_match",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_config.OperatorConfigTests.test_real_components_serve_shell_and_deny_unprovisioned_capability",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_config.OperatorConfigTests.test_render_profile_mismatch_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_config.OperatorConfigTests.test_storage_and_retention_configuration_are_required",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_config.OperatorConfigTests.test_unbound_example_and_cli_fail_closed_without_credentials",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_evidence_verifier.OperatorEvidenceNativePositiveTests.test_entire_native_synthetic_ten_member_package_validates_offline",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_evidence_verifier.OperatorEvidenceVerifierTests.test_canonical_typed_json_accepts_valid_contract_rejects_empty_or_duplicate",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_evidence_verifier.OperatorEvidenceVerifierTests.test_duplicate_evidence_and_bad_expected_sha_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_evidence_verifier.OperatorEvidenceVerifierTests.test_existing_pass_output_is_not_reused_or_overwritten",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_evidence_verifier.OperatorEvidenceVerifierTests.test_false_manifest_metadata_cannot_pass_member_hash_or_length",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_evidence_verifier.OperatorEvidenceVerifierTests.test_forged_package_never_returns_pass_even_python_optimized",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_evidence_verifier.OperatorEvidenceVerifierTests.test_real_renderer_docx_pdf_parsed_positive_invalid_magic_only_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorBrowserContractTests.test_open_case_emits_valid_core_query",
+      "result": "PASS",
+      "execution": "completion"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorGuidedCaseUIContractTests.test_guided_case_creation_never_auto_dispatches",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorGuidedCaseUIContractTests.test_guided_case_does_not_weaken_existing_boundaries",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostPostgresTests.test_authenticated_case_query_and_foreign_scope_denial",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_ambiguous_security_headers_are_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_authenticated_dispatch_preserves_service_denial",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_browser_and_rebinding_boundaries",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_bytes_returned_exactly_and_unknown_route_blocked",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_incomplete_rejected_upload_cannot_hold_single_thread",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_invalid_payload_and_body_limit",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_missing_wrong_and_revoked_tokens_do_not_dispatch",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_optional_type_bridge_cannot_be_hosted",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_oversized_upload_returns_413_forty_times_then_accepts_request",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_public_shell_contains_no_credentials_or_case_data",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_rejected_body_drain_has_byte_chunk_and_time_limits",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_service_exception_does_not_disclose_private_details",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_operator_host.OperatorHostTests.test_truncated_allowed_upload_is_not_dispatched",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.ContractTests.test_missing_unknown_duplicate_and_self_certification_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.ContractTests.test_pure_final_evaluator_has_only_the_trusted_finalization_call_site",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.ContractTests.test_source_hash_profile_preserves_semantic_changes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.ContractTests.test_sources_and_production_pins_resolve_the_exact_base_tree",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.ContractTests.test_traceability_and_frozen_scope",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.PostgreSQLGateTests.test_authorized_human_denials_rollback_all_scoped_tables",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.PostgreSQLGateTests.test_denials_also_hold_after_real_stage10_validation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.PublicGateTests.test_authentication_ai_and_scope_fail_before_business_gate",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.PublicGateTests.test_caller_pass_and_final_payload_cannot_bypass_release",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.PublicGateTests.test_create_case_is_real_public_execution_and_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.PublicGateTests.test_document_approval_is_gate_denied_for_authorized_human",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.PublicGateTests.test_legacy_generation_validation_and_certification_do_not_supply_final_authority",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_product_baseline.PublicGateTests.test_request_release_is_gate_denied_for_authorized_human",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_001_snapshot_acceptance_exact_binding",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_001_snapshot_acceptance_requires_human_accept",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_002_approval_cannot_be_reused_for_another_render",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_002_receipt_and_approval_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_003_finding_content_is_immutable",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_003_resolution_requires_exact_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_004_participation_uniqueness_is_party_and_role",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_004_reuse_fact_and_citation_across_statements",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_005_required_citation_is_counted_in_ai_and_domain",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_006_plan_draft_snapshot_and_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_006_snapshot_source_closure",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_006_used_input_must_belong_to_snapshot",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_007_deadline_satisfaction",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_007_plan_filing_ownership",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_remediation.RemediationTests.test_agr_007_proceeding_parent_cycles",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_ros_work_integration_contract.RosWorkIntegrationContractTests.test_contract_is_complete_and_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_ros_work_integration_contract.RosWorkIntegrationContractTests.test_existing_convergence_contract_is_composed_not_duplicated",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_ros_work_integration_contract.RosWorkIntegrationContractTests.test_no_runtime_lukart_ros_dependency_exists",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_ros_work_integration_contract.RosWorkIntegrationContractTests.test_package_read_exception_never_broadens_to_case_export",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_ros_work_integration_contract.RosWorkIntegrationContractTests.test_unknown_operation_and_false_ros_freshness_are_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_ros_work_integration_contract.RosWorkIntegrationContractTests.test_work_baseline_and_source_blobs_are_exact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_ros_work_integration_contract.RosWorkIntegrationContractTests.test_write_and_package_operations_cannot_be_marked_ready",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.ParsingTests.test_public_append_revision_is_not_an_intent",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_actor_is_server_assigned",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_append_only_runtime_cannot_modify_revision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_closed_and_archived_case_guards",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_corrupt_source_bytes_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_database_failure_rolls_back_entire_unit_of_work",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_duplicate_json_unknown_contract_and_safe_errors",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_fact_cannot_confirm_without_correct_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_fact_transition_preserves_provenance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_full_core_golden_all_guards_and_plan_approval",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_historical_revisions_survive_and_stale_target_conflicts",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_machine_cannot_record_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_rbac_explicit_action_grants",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_release_validation_and_generation_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_replay_after_restart_and_conflicting_body",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_review_r1_audit_pin_covers_real_rule_artifact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_review_r1_dispute_fact_after_revocation_preserves_sources",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_review_r1_dispute_party_after_revocation_preserves_history",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_review_r1_outbox_validates_event_contract_hash_and_chain",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_review_r1_replay_rejects_unknown_contract_and_changed_bytes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_review_r1_snapshot_acceptance_revocation_invalidates_plan",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_review_r2_revoke_plan_then_supersede_and_approve_replacement",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_review_r2_supersede_plan_requires_human_and_legal_transition",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_review_r3_event_ids_distinguish_scopes_and_preserve_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_revoked_decision_rejected_for_verification",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_revoked_token_cannot_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_revoking_superseding_decision_does_not_resurrect_old",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_rls_read_write_and_no_scope_deny",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_scope_authorization_for_writes_and_reads",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_snapshot_current_heads_checked_before_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_snapshot_hash_substitution_and_missing_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_source_cross_case_download_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_two_real_connections_same_sequence_one_commit",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_unknown_source_and_type_guard_rollback",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_unknown_stored_contract_preserves_payload_and_denies_read",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_untrusted_actor_and_metadata_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage02.Stage02Tests.test_verified_party_cannot_be_edited_in_place",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_adoption_rejects_ai_egress_rls_drift",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_atomic_rollback_and_concurrent_version_conflict",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_backup_restore_preserves_raw_history_and_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_corruption_and_runtime_immutability",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_exact_version_pin_limits_and_revoked_capability",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_golden_source_snapshot_acceptance_and_retention",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_isolation_authorization_and_sql_rls",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_migration_rollback_and_unknown_version",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_retention_hold_tombstone_and_no_resurrection",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_review_r1_adoption_rejects_weakened_legacy_schema",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_unknown_policy_and_future_deadline_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_upgrade_preserves_legacy_payloads_and_detects_ledger_drift",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage03.Stage03Tests.test_versions_original_bytes_and_process_restart",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.ExtractionTests.test_contract_rejects_forged_quote_hash_status_and_extra",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.ExtractionTests.test_docx_table_paragraphs_and_original_preserved",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.ExtractionTests.test_email_multipart_and_untrusted_headers",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.ExtractionTests.test_empty_image_unknown_and_zip_are_explicit",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.ExtractionTests.test_malformed_encrypted_xml_entities_and_size_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.ExtractionTests.test_pdf_text_page_and_scan_outcomes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.ExtractionTests.test_text_quotes_offsets_dates_amounts_parties_never_confirmed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.ExtractionTests.test_worker_environment_rejects_inherited_loader_path",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.ExtractionTests.test_worker_timeout_and_bad_output_are_safe",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.IngestionTests.test_concurrency_atomic_rollback_and_closed_case",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.IngestionTests.test_deleted_original_or_result_cannot_be_replayed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.IngestionTests.test_failed_and_unsupported_are_persisted_without_candidates",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.IngestionTests.test_golden_original_history_approval_and_heads_unchanged",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.IngestionTests.test_process_restart_exact_output",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.IngestionTests.test_retry_new_run_actor_conflict_and_source_binding",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage04.IngestionTests.test_scope_authentication_ai_revocation_and_reserved_namespace",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_atomic_failure_rolls_back_entities_receipt_sequence_audit_outbox",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_authorization_scope_service_ai_and_revocation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_cas_concurrency_and_exact_actor_bound_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_deleted_extraction_and_original_mark_projection_unavailable",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_disputed_authenticity_and_accepted_content_lock",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_evidence_challenge_invalidates_current_confirmation_without_rewriting",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_fact_lifecycle_rejection_and_evidence_exclusion",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_forged_envelope_and_legacy_contract_are_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_golden_explicit_admission_and_confirmation_preserve_history",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_matrix_used_in_and_closed_case_read_only",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_no_implicit_approval_and_forbidden_status_injection",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_receipt_and_dependency_sql_rls_and_runtime_immutability",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_rejection_reconsideration_and_no_duplicate_admission",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_restart_preserves_matrix_and_receipt",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_revoked_and_wrong_decision_changed_content_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_stale_evidence_requires_explicit_relink_before_confirmation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage05.FactEvidenceTests.test_wrong_pin_index_kind_scope_and_missing_source_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_cross_case_receipt_and_nonhuman_authority_are_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_exact_replay_idempotency_conflict_and_concurrent_cas",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_golden_registry_submission_acknowledgement_withdrawal_and_history",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_identical_bytes_can_back_distinct_incoming_and_outgoing_filings",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_illegal_transition_and_artifact_rows_are_database_immutable",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_legacy_filing_is_explicitly_unregistered",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_receipt_rows_are_immutable_and_forged_chain_is_detected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_stale_or_mismatched_evidence_revision_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_submission_rejects_mere_source_unaccepted_evidence_and_receipt_reuse",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_submission_time_is_explicit_timezone_aware_and_not_system_now",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage06.DocumentRegistryTests.test_transaction_rollback_leaves_no_partial_registry_state",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_activation_requires_verified_source_and_correct_live_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_claim_unknown_unresolved_and_interpretation_do_not_become_fact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_cross_scope_service_write_and_ai_read_are_forbidden",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_deadline_requires_verified_trigger_and_abstains_for_business_calendar",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_exact_replay_idempotency_conflict_and_concurrent_cas",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_fact_context_requires_exact_current_confirmed_evidence_bound_fact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_golden_all_procedural_dimensions_are_deterministic_and_provenance_bound",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_revoked_rule_approval_abstains_in_current_assessment",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_rls_object_immutability_and_forged_binding_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_rule_applicability_covers_not_applicable_unknown_and_disputed_interpretation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage07.ProceduralEngineTests.test_transaction_rollback_leaves_no_rule_binding_audit_or_outbox",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_actor_is_server_assigned",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_ai_and_cross_scope_access_are_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_append_only_runtime_cannot_modify_revision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_approved_plan_can_be_superseded_without_content_rewrite",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_closed_and_archived_case_guards",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_corrupt_source_bytes_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_database_failure_rolls_back_entire_unit_of_work",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_duplicate_json_unknown_contract_and_safe_errors",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_fact_cannot_confirm_without_correct_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_fact_transition_preserves_provenance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_full_core_golden_all_guards_and_plan_approval",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_golden_plan_is_derived_after_snapshot_and_provenance_bound",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_historical_revisions_survive_and_stale_target_conflicts",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_idempotency_conflict_and_case_sequence_cas",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_internal_plan_construction_matches_public_contract",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_legacy_core_planning_path_is_not_authorized_for_stage08_profile",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_machine_cannot_record_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_rbac_explicit_action_grants",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_reference_outside_snapshot_fails_closed_without_fact_promotion",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_release_validation_and_generation_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_replay_after_restart_and_conflicting_body",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_approval_and_revocation_are_live_authority",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_r1_audit_pin_covers_real_rule_artifact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_r1_dispute_fact_after_revocation_preserves_sources",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_r1_dispute_party_after_revocation_preserves_history",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_r1_outbox_validates_event_contract_hash_and_chain",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_r1_replay_rejects_unknown_contract_and_changed_bytes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_r1_snapshot_acceptance_revocation_invalidates_plan",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_r2_revoke_plan_then_supersede_and_approve_replacement",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_r2_supersede_plan_requires_human_and_legal_transition",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_review_r3_event_ids_distinguish_scopes_and_preserve_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_revoked_decision_rejected_for_verification",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_revoked_snapshot_acceptance_blocks_new_plan",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_revoked_snapshot_acceptance_invalidates_effective_plan_approval",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_revoked_token_cannot_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_revoking_superseding_decision_does_not_resurrect_old",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_rls_read_write_and_no_scope_deny",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_scope_authorization_for_writes_and_reads",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_snapshot_current_heads_checked_before_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_snapshot_hash_substitution_and_missing_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_source_cross_case_download_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_transaction_rolls_back_sections_plan_audit_and_outbox",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_two_real_connections_same_sequence_one_commit",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_unknown_source_and_type_guard_rollback",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_unknown_stored_contract_preserves_payload_and_denies_read",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_unsafe_section_contract_and_claim_escape_are_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_untrusted_actor_and_metadata_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.DocumentPlannerTests.test_verified_party_cannot_be_edited_in_place",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.PlannerContractTests.test_plan_document_contract_accepts_safe_minimal_payload",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.PlannerContractTests.test_section_argument_outside_allowed_inputs_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.PlannerContractTests.test_unreachable_argument_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage08.PlannerContractTests.test_unreachable_objective_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_abstain_lost_sequence_cas_writes_no_terminal_event",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_abstain_stays_abstain_is_audited_and_replays_without_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_actor_is_server_assigned",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_ai_actor_and_model_status_injection_are_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_append_only_runtime_cannot_modify_revision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_candidate_or_claim_cannot_be_materialized_as_factual_prose",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_case_change_between_proposal_and_commit_is_conflict_without_draft",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_closed_and_archived_case_guards",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_concurrent_same_command_calls_model_once",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_corrupt_source_bytes_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_database_failure_rolls_back_entire_unit_of_work",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_domain_event_v1_rejects_v2_only_terminal_events",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_domain_event_v2_reader_accepts_drafting_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_domain_event_v2_reader_accepts_historical_v1_payload",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_duplicate_json_unknown_contract_and_safe_errors",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_execution_receipt_mismatch_is_terminal_and_replays_without_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_fact_cannot_confirm_without_correct_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_fact_transition_preserves_provenance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_full_core_golden_all_guards_and_plan_approval",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_golden_generate_document_commits_only_generated_draft_and_auditable_trace",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_historical_revisions_survive_and_stale_target_conflicts",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_legal_rule_must_be_currently_applicable_before_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_legal_statement_requires_live_rule_verified_citation_and_verified_source",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_machine_cannot_record_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_model_cannot_hide_new_fact_as_structural_text",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_model_cannot_propose_domain_fact_or_claim_write",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_multisection_provider_failure_records_failing_request_id",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_multisection_receipt_mismatch_records_failing_request_id",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_plan_approval_change_between_proposal_and_commit_is_conflict",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_plan_approval_revocation_blocks_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_provider_exception_is_terminal_and_replays_without_second_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_public_citation_lifecycle_is_audited_and_human_only",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_rbac_explicit_action_grants",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_reference_outside_approved_section_contract_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_rejection_lost_sequence_cas_writes_no_terminal_event",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_release_validation_and_generation_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_replay_after_restart_and_conflicting_body",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_request_objective_cannot_disappear",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_request_statement_cannot_expand_approved_plan_objectives",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_review_r1_audit_pin_covers_real_rule_artifact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_review_r1_dispute_fact_after_revocation_preserves_sources",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_review_r1_dispute_party_after_revocation_preserves_history",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_review_r1_outbox_validates_event_contract_hash_and_chain",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_review_r1_replay_rejects_unknown_contract_and_changed_bytes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_review_r1_snapshot_acceptance_revocation_invalidates_plan",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_review_r2_revoke_plan_then_supersede_and_approve_replacement",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_review_r2_supersede_plan_requires_human_and_legal_transition",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_review_r3_event_ids_distinguish_scopes_and_preserve_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_revoked_decision_rejected_for_verification",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_revoked_legal_interpretation_approval_blocks_before_model_call",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_revoked_token_cannot_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_revoking_superseding_decision_does_not_resurrect_old",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_rls_read_write_and_no_scope_deny",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_same_command_replay_does_not_call_model_again",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_scope_authorization_for_writes_and_reads",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_snapshot_acceptance_change_between_proposal_and_commit_is_conflict",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_snapshot_current_heads_checked_before_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_snapshot_hash_substitution_and_missing_acceptance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_source_cross_case_download_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_stage09_product_authority_can_draft_but_cannot_use_legacy_planning_bypass",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_transaction_rollback_covers_draft_trace_audit_and_outbox",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_two_real_connections_same_sequence_one_commit",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_unknown_source_and_type_guard_rollback",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_unknown_stored_contract_preserves_payload_and_denies_read",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_unmarked_inference_and_unsupported_statement_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_untrusted_actor_and_metadata_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09.ControlledDraftingTests.test_verified_party_cannot_be_edited_in_place",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09_reproducibility.Stage09ReproducibilityTests.test_baseline_hash_normalizes_line_endings",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09_reproducibility.Stage09ReproducibilityTests.test_packaging_artifacts_are_excluded_from_manifest_inputs",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09_reproducibility.Stage09ReproducibilityTests.test_schema_ordering_uses_normalized_posix_paths",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage09_reproducibility.Stage09ReproducibilityTests.test_terminal_result_schema_is_exported_and_versioned",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_ai_service_and_cross_case_denied",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_claim_context_never_becomes_procedural_fact",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_client_pass_and_policy_substitution_rejected_without_writes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_concurrent_distinct_commands_enforce_case_cas",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_concurrent_same_key_replays_once",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_cross_case_sql_objects_and_runtime_immutability",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_exact_replay_and_actor_binding_across_instances",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_execution_date_expiry_and_source_drift",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_fabricated_quotation_cannot_be_overridden_by_human_pass",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_fake_fact_context_rejected_atomically",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_finding_ids_manifest_and_audit_are_reproducible",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_findings_resolution_does_not_rewrite_failed_run",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_golden_validated_is_not_rendered_or_final",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_legal_authority_revocation_denies_new_run",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_live_snapshot_and_plan_approval_revocation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_missing_procedural_rules_never_pass_vacuously",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_missing_review_persists_findings_and_denies_validation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_procedural_violation_and_unknown_are_not_overridden_by_review",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_product_profile_and_legacy_bypass_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_query_database_failure_returns_only_safe_code",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_rejected_resolution_without_live_human_decision",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_remediation_current_uncited_source_passes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_remediation_distinct_rules_preserve_finding_identity",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_remediation_expired_uncited_source_blocks",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_remediation_foreign_uncited_source_blocks",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_remediation_future_uncited_source_blocks",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_remediation_source_period_endpoints_and_query_expiry",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_remediation_unavailable_sources_produce_findings",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_review_duplicate_incomplete_and_contradictory_outcomes_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_review_provider_proposal_is_not_a_command",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_review_revocation_after_success_and_historical_replay",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_severity_model_cannot_clear_blockers",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_snapshot_revocation_denies_new_run",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_source_disappearance_invalidates_success",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_success_becomes_stale_after_case_mutation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_supported_deadline_context_expires_within_same_day",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_transaction_rollback_after_findings_and_run",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage10.ValidationTests.test_stage10_unverifiable_locator_denies_quotation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_artifact_receipt_binds_semantic_layout_profile_renderer_and_bytes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_cross_case_record_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_docx_declares_single_profile_font_and_preserves_polish_text",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_docx_pagination_is_profile_controlled",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_duplicate_attachment_provenance_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_fresh_process_reproduction_is_stable",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_layout_formatting_is_controlled_by_profile_tokens",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_missing_plan_authority_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_missing_record_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_official_profile_font_is_exact_and_supports_polish",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_pdf_embeds_font_and_forbids_active_content",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_profile_substitution_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_render_source_outside_validation_authority_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_same_input_produces_exact_same_docx_pdf_and_receipt",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_semantic_document_cannot_drift_from_bound_draft",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_stale_authorization_binding_rejects_semantic_drift",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_stale_validation_projection_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_unvalidated_profile_change_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_validation_output_hash_drift_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11.Stage11RenderingTests.test_xml_like_user_text_is_data_not_markup",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_actual_workflow_step_rejects_missing_empty_skipped_and_failed_tests",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_dispatch_binding_rejects_correlated_run_for_wrong_head",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_dispatch_binding_rejects_target_movement_before_between_and_after_dispatches",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_merge_rejects_invalid_receipt_before_merge_api",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_promotion_blocks_target_move_after_dispatch_binding_before_receipt",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_promotion_failure_never_overwrites_concurrent_ref_updates",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_promotion_never_rewrites_source_ref_after_concurrent_source_advance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_receipt_accepts_only_exact_structured_owner_attestation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_receipt_rejects_malformed_duplicate_and_substring_collisions",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_receipt_rejects_untrusted_author_and_identity_spoofing",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_receipt_rejects_wrong_sha_base_and_nonzero_findings",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_stage11_bootstrap_exception_requires_exact_base_and_procedure_only_diff",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.P1RegressionTests.test_stage11_missing_tests_fail_closed_for_ordinary_branches",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.PostMergeRemediationRegressionTests.test_atomic_landing_binds_expected_base_sha_and_avoids_pr_merge_api",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.PostMergeRemediationRegressionTests.test_atomic_landing_rejects_last_moment_base_drift_without_main_mutation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.PostMergeRemediationRegressionTests.test_cleanup_is_non_destructive_and_does_not_require_source_sha_identity",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.PostMergeRemediationRegressionTests.test_cleanup_rechecks_head_after_assurance_and_never_deletes_newer_ref",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.PostMergeRemediationRegressionTests.test_post_landing_dispatch_binds_main_to_exact_sha",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.PostMergeRemediationRegressionTests.test_post_landing_gate_prefers_dispatch_and_allows_complete_bootstrap_push",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_check_gate_binds_required_workflows_to_exact_sha_and_event",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_check_gate_paginates_and_rejects_failure_on_second_page",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_check_gate_rejects_untrusted_or_wrong_provenance",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_dispatch_candidate_checks_binds_exact_sha_and_stage_branch",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_dispatch_candidate_checks_rejects_moved_candidate_branch",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_dispatch_candidate_checks_rejects_untrusted_ref_or_sha",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_dispatch_run_correlation_fail_closed_matrix",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_parse_promote",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_parse_rejects_duplicate_argument",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_parse_rejects_unknown_command",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_promotion_accepts_stage11_product_paths",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_promotion_preserves_target_when_ci_dispatch_fails",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_promotion_rejects_all_workflow_changes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_promotion_rejects_traversal",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_promotion_rejects_trusted_control_paths",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_required_assurance_workflows_have_exact_sha_dispatch_guards",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_sha_requires_exact_lowercase_40_hex",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_stage11_control_bootstrap_uses_pinned_checkout_without_bearer_git_auth",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage11_delivery_control.Stage11DeliveryControlTests.test_workflow_dispatch_run_listing_paginates",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12.Stage12Tests.test_audit_package_contains_hashes_not_raw_source_bytes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12.Stage12Tests.test_audit_read_is_authorized_and_ai_is_not_a_trust_boundary",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12.Stage12Tests.test_corrupt_immutable_command_metadata_fails_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12.Stage12Tests.test_missing_case_sequence_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12.Stage12Tests.test_missing_ref_and_foreign_scope_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12.Stage12Tests.test_package_is_deterministic_and_exact_chain",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12.Stage12Tests.test_tampered_declared_event_hash_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12.Stage12Tests.test_trace_follows_fact_to_source_and_audit_events",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_ambiguous_existing_ci_dispatch_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_base_or_main_mismatch_is_rejected_before_mutation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_command_namespace_is_stage12_only",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_control_source_has_no_ref_patch_delete_force_or_pr_merge",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_cross_repository_head_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_dispatch_binds_existing_exact_sha_ci_and_rechecks_ref",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_dispatch_rejects_stage11_branch",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_failed_promotion_never_performs_destructive_compensation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_only_reviewed_tree_workflows_are_candidate_ci",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_owner_boundary_is_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_owner_boundary_rejects_github_app_performed_comment",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_owner_boundary_requires_id_type_and_owner_association",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_receipt_binds_source_new_parent_tree_and_never_uses_stage11_namespace",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_resulting_parent_mismatch_is_rejected_and_preserved",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_resulting_tree_mismatch_is_rejected_and_preserved",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_sha_requires_exact_lowercase_40_hex",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_source_sha_mismatch_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_source_tree_mismatch_is_rejected_before_mutation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_stage11_independent_review_receipt_cannot_be_reused",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_stage12_control_workflow_is_isolated_from_stage11_command_namespace",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_stage12_procedure_assurance_is_not_product_candidate_ci",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_stale_expected_head_fails_closed_without_receipt",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_tree_preserving_mutation_uses_exact_expected_head_and_zero_file_changes",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_unsigned_result_is_rejected_and_preserved",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_verification_is_read_back_from_github_commit",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage12_delivery_control.Stage12DeliveryControlTests.test_wrong_stage12_branch_namespace_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_cancel_unknown_request_does_not_accumulate_state",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_cancellation_is_propagated_to_transport",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_concurrency_backpressure_is_fail_closed",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_digest_drift_fails_closed_and_emits_no_receipt",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_duplicate_inflight_request_id_is_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_empty_partial_and_wrong_model_envelopes_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_endpoint_userinfo_path_query_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_explicit_remote_allowlist_requires_local_only_off",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_health_reports_digest_drift_without_claiming_ready",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_malformed_ai_result_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_missing_model_fails_before_generation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_options_are_deeply_frozen_after_hash_validation",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_parameters_hash_binds_options",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_post_implementation_benchmark_runs_as_direct_script",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_prompt_builder_pin_must_match_request",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_prompt_size_bound",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_remote_endpoint_denied_by_default",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_request_binding_substitution_rejected",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_strict_outer_json_rejects_duplicate_keys",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_success_binds_model_digest_and_receipt",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_timeout_is_not_retried",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_transport_rejects_oversized_body_without_stale_active_request",
+      "result": "PASS",
+      "execution": "retained"
+    },
+    {
+      "id": "tests.test_stage13.Stage13ProviderTests.test_transport_rejects_unapproved_method_path_pairs",
+      "result": "PASS",
+      "execution": "retained"
+    }
+  ],
+  "github_ci": "NOT_SATISFIED_BY_THIS_LOCAL_RECEIPT",
+  "independent_or_human_review": "NOT_CLAIMED",
+  "authority": "TEST_MEASUREMENT_ONLY_NOT_STAGE_CLOSURE"
+}
