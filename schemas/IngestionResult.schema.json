@@ -60,6 +60,15 @@
           "pattern": "^[0-9a-f]{64}$",
           "title": "Text Hash",
           "type": "string"
+        },
+        "extraction_method": {
+          "default": "TEXT",
+          "enum": [
+            "TEXT",
+            "OCR"
+          ],
+          "title": "Extraction Method",
+          "type": "string"
         }
       },
       "required": [
@@ -139,6 +148,17 @@
           "default": "NOT_RUN",
           "title": "Contradiction Check",
           "type": "string"
+        },
+        "ocr_engine": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VersionPin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [

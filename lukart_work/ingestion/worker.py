@@ -13,12 +13,17 @@ def main():
         if sys.platform != 'win32':
             import resource
             resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
-            resource.setrlimit(resource.RLIMIT_CPU, (10, 10))
+            resource.setrlimit(resource.RLIMIT_CPU, (10, 30))
         payload = json.loads(sys.stdin.buffer.read(24 * 1024 * 1024 + 1))
         data = base64.b64decode(payload['data'], validate=True)
         if len(data) > 16 * 1024 * 1024:
             raise ValueError('INPUT_LIMIT')
-        result = extract(data, payload['media_type'])
+        from .ocr import OCRConfig
+        config = OCRConfig(**payload['ocr']) if payload.get('ocr') is not None else None
+        if sys.platform != 'win32':
+            cpu = 30 if config is not None else 10
+            resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu))
+        result = extract(data, payload['media_type'], config)
         output = result.model_dump_json().encode()
         if len(output) > 8 * 1024 * 1024:
             raise ValueError('OUTPUT_LIMIT')

@@ -17,6 +17,7 @@ ROUTES = (
     "execute_procedural", "query_procedural", "execute_plan", "query_plan",
     "execute_draft", "execute_validation", "query_validation",
     "execute_finalization", "query_finalization",
+    "upload_source", "query_ingestion", "query_fact_evidence",
 )
 MAX_BODY = 1024 * 1024
 PAGE = '''<!doctype html><html lang="pl"><meta charset="utf-8">
@@ -39,6 +40,30 @@ Przygotowanie żądania NIE oznacza jego wykonania.</p>
 <label>Wersja polityki <input id="policyVersion" autocomplete="off"></label>
 <label>SHA-256 polityki (64 znaki) <input id="policyHash" autocomplete="off"></label>
 <button id="prepareCase">Przygotuj żądanie CreateCase do kontroli</button></fieldset>
+<button id="confirmCase">Zatwierdzam utworzenie przygotowanej sprawy</button>
+<fieldset><legend>Dokumenty i automatyczne OCR</legend>
+<p>Otwórz sprawę, aby odczytać aktualny numer sekwencji. Wybierz PDF, PNG, JPEG, TIFF, DOCX lub TXT (do 700 KiB).
+Zapis zachowuje oryginał. OCR i parser tworzą wyłącznie kandydatów do weryfikacji.</p>
+<label>Sekwencja sprawy <input id="caseSequence" type="number" min="1"></label>
+<label>Dokument <input id="sourceFile" type="file" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.docx,.txt"></label>
+<button id="uploadSource">Zapisz dokument i odczytaj tekst</button>
+<label>ID źródła <input id="sourceId" autocomplete="off"></label>
+<label>ID odczytu <input id="ingestionId" autocomplete="off"></label>
+<button id="readIngestion">Pokaż zapisany tekst i kandydatów</button>
+<button id="retryIngestion">Ponów odczyt źródła jako nowy przebieg</button>
+<p id="ingestionStatus" role="status" aria-live="polite"></p></fieldset>
+<fieldset><legend>Weryfikacja kandydatów przez uprawnionego HUMAN</legend>
+<p>Porównaj tekst z oryginałem. Przyjęcie kandydata tworzy informację do dalszej weryfikacji;
+potwierdzenie faktu i akceptacja dowodu pozostają odrębnymi decyzjami.</p>
+<label>Kandydat <select id="candidateIndex"></select></label>
+<pre id="candidateQuote"></pre>
+<label>Dyspozycja <select id="candidateDisposition"><option value="REJECT">Odrzuć</option><option value="ADMIT">Przyjmij do dalszej weryfikacji</option></select></label>
+<label>Wersja dotychczasowej oceny (0 dla pierwszej) <input id="reviewRevision" type="number" min="0" value="0"></label>
+<label>Opis dowodu <textarea id="candidateDescription" rows="2"></textarea></label>
+<label>Treść proponowanego faktu <textarea id="candidateStatement" rows="3"></textarea></label>
+<label>Uzasadnienie oceny <textarea id="candidateRationale" rows="2"></textarea></label>
+<button id="prepareReview">Przygotuj ocenę do jawnego zatwierdzenia</button>
+<button id="viewFacts">Pokaż fakty, dowody i statusy weryfikacji</button></fieldset>
 <fieldset><legend>3. Jawne polecenia, analiza i projekt pisma</legend>
 <p>Dalsze operacje CASE wymagają pełnych, jawnych kontraktów usługi.
 Każda decyzja HUMAN musi zostać podjęta przez rzeczywistego uprawnionego człowieka.</p>
@@ -86,7 +111,7 @@ function clearPrivate(){generation++;token.value='';request.value='{}';
 tenant.value='';caseId.value='';render.value='';
 caseTitle.value='';policyId.value='';policyVersion.value='';policyHash.value='';
 planId.value='';planRevision.value='1';validationId.value='';
-result.textContent='';send.disabled=false;clearArtifact();}
+result.textContent='';send.disabled=false;clearArtifact();clearIntake();}
 document.getElementById('clear').onclick=clearPrivate;
 window.addEventListener('pagehide',clearPrivate);
 for(const r of routes){const o=document.createElement('option');o.value=o.textContent=r;route.append(o);}
@@ -105,7 +130,7 @@ download.hidden=false;
 result.textContent='Odczytano zapisany dokument. Sam odczyt nie oznacza zatwierdzenia pisma.';
 }else{const text=await response.text();if(current!==generation)return;
 try{result.textContent='HTTP '+response.status+'\\n'+
-JSON.stringify(JSON.parse(text),null,2);}catch{result.textContent='HTTP '+response.status+'\\n'+text;}}
+JSON.stringify(JSON.parse(text),null,2);handleIntakeResult(service,body,JSON.parse(text));}catch{result.textContent='HTTP '+response.status+'\\n'+text;}}
 }catch(e){if(current===generation)result.textContent='Nie udało się połączyć z panelem.';}finally{if(current===generation)send.disabled=false;}}
 send.onclick=()=>{try{const body=JSON.parse(request.value);submit(route.value,body);}
 catch{result.textContent='Wpisz poprawne żądanie JSON przed wysłaniem.';}};
@@ -174,6 +199,7 @@ operation,tenant_id:tenant.value.trim(),case_id:caseId.value.trim(),render_id:re
 
 ''').encode()
 CLIENT += b'\n' + Path(__file__).with_name('operator_preview.js').read_bytes()
+CLIENT += b'\n' + Path(__file__).with_name('operator_intake.js').read_bytes()
 CSS = b'''body{max-width:1400px;margin:auto;padding:16px;font-family:system-ui,sans-serif}
 fieldset{min-width:0;margin:12px 0;padding:16px}label{display:inline-flex;flex-direction:column;gap:4px;margin:4px}
 input:not([type=number]){width:38ch;max-width:100%;box-sizing:border-box}textarea{width:100%;max-width:100%;box-sizing:border-box}

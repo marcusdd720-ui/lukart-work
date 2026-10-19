@@ -1,0 +1,76 @@
+name: Generator OCR and CreateCase acceptance
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  ocr-intake:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: disposable-ci-password
+          POSTGRES_DB: lukart_ocr_acceptance_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_ocr_acceptance_ci user=postgres password=disposable-ci-password
+      LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
+      LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_ocr_acceptance_ci user=lw_core_runtime password=disposable-runtime-password
+      LUKART_TEST_EGRESS_HOST_PASSWORD: disposable-egress-host-password
+    steps:
+      - name: Resolve exact source
+        id: source
+        env:
+          EVENT_SHA: ${{ github.sha }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="${PR_SHA:-${EVENT_SHA}}"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "TESTED_SHA=$sha" >> "$GITHUB_ENV"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ steps.source.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.14'
+      - name: Install local OCR dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-pol poppler-utils
+          python -m pip install '.[postgres,ingestion]'
+          node --version
+      - name: Prepare disposable database
+        run: python -B -X utf8 scripts/prepare_ci_database.py
+      - name: OCR, CreateCase, provenance and HUMAN gate regressions
+        run: >-
+          python -B -X utf8 scripts/verify_ocr_intake.py
+          --tessdata /usr/share/tesseract-ocr/5/tessdata
+          --output build/ocr-intake-ci
+      - name: Package and whitespace verification
+        run: |
+          python -B -X utf8 verify_package.py
+          git diff --check
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: generator-ocr-intake-${{ steps.source.outputs.sha }}
+          retention-days: 3
+          path: |
+            build/ocr-intake-ci/
+            build/ocr-createcase/draft-*/

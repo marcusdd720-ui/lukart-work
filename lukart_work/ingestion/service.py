@@ -51,13 +51,14 @@ def _worker_env():
     return env
 
 
-def parse_isolated(data, media_type):
+def parse_isolated(data, media_type, ocr_config=None):
     failed = lambda: ExtractionBody(media_type='application/octet-stream', classification='UNKNOWN', status='FAILED',
         fragments=(), candidates=(), warnings=('UNTRUSTED_SOURCE', 'REVIEW_REQUIRED', 'PARSER_REJECTED'))
     try:
         process = subprocess.run([sys.executable, '-B', '-m', 'lukart_work.ingestion.worker'],
-            input=json.dumps({'data': base64.b64encode(data).decode(), 'media_type': media_type}).encode(),
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15,
+            input=json.dumps({'data': base64.b64encode(data).decode(), 'media_type': media_type,
+                              'ocr': ocr_config.payload() if ocr_config else None}).encode(),
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=60 if ocr_config else 15,
             cwd=Path(__file__).resolve().parents[2],
             env=_worker_env())
         if process.returncode or len(process.stdout) > 8 * 1024 * 1024:
@@ -69,8 +70,14 @@ def parse_isolated(data, media_type):
 
 class IngestionService:
     """Trusted host supplies repository and authority, never an arbitrary parser callback."""
-    def __init__(self, repository, authority):
+    def __init__(self, repository, authority, ocr_config=None):
         self.repository, self.authority = repository, authority
+        if ocr_config is not None:
+            from .ocr import OCRConfig
+            if not isinstance(ocr_config, OCRConfig):
+                raise ValueError('TRUSTED_OCR_CONFIGURATION_REQUIRED')
+            ocr_config.pin()
+        self.ocr_config = ocr_config
 
     def _run(self, token, action, source_id, run_id, callback):
         try:
@@ -134,7 +141,7 @@ class IngestionService:
                     raise Violation('CONFLICT')
                 return old  # Replay original pin/output after an implementation upgrade.
             extractor, parser = implementation_pin(), parser_pin()
-            body = parse_isolated(data, source.media_type)
+            body = parse_isolated(data, source.media_type, self.ocr_config)
             now = datetime.now(timezone.utc)
             result = IngestionResult(contract='urn:lukart:work:IngestionResult:1.0.0',
                 tenant_id=p.tenant_id, case_id=p.case_id, run_id=run_id, source_id=source.id,
