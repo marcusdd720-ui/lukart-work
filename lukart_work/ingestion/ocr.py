@@ -35,10 +35,13 @@ class OCRConfig:
             raise ValueError('OCR_PILLOW_VERSION_MISMATCH')
         identity['pillow_version'] = distribution.version
         # Bind decoder/preprocessing code and bundled native libraries too.
-        for name in sorted(distribution.files or (), key=str):
+        if not distribution.files:
+            raise ValueError('OCR_PILLOW_PROVENANCE_REQUIRED')
+        for name in sorted(distribution.files, key=str):
             normalized = str(name).replace('\\', '/')
-            if (normalized.startswith(('PIL/', 'pillow.libs/'))
-                    and normalized.endswith(('.py', '.pyd', '.dll', '.so', '.dylib'))):
+            if (normalized.lower().startswith('pillow.libs/') or
+                    normalized.startswith('PIL/') and
+                    (normalized.endswith(('.py', '.pyd', '.dll', '.so', '.dylib')) or '.so.' in normalized)):
                 path = distribution.locate_file(name)
                 identity['pillow/' + normalized] = sha256(path.read_bytes().replace(b'\r\n', b'\n')
                     if normalized.endswith('.py') else path.read_bytes()).hexdigest()

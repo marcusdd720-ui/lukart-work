@@ -78,15 +78,22 @@ class OCRContractTests(unittest.TestCase):
     def test_pillow_preprocessor_changes_the_ocr_pin(self):
         with TemporaryDirectory() as folder:
             root = Path(folder)
-            for name in ('tesseract', 'pol.traineddata', 'pdftoppm', 'decoder.py'):
+            for name in ('tesseract', 'pol.traineddata', 'pdftoppm', 'decoder.py', 'libjpeg.so.62.4.0'):
                 (root / name).write_bytes(b'synthetic-version-one')
-            distribution = SimpleNamespace(version='12.3.0', files=(Path('PIL/decoder.py'),),
-                locate_file=lambda name: root / 'decoder.py')
+            distribution = SimpleNamespace(version='12.3.0',
+                files=(Path('PIL/decoder.py'),Path('pillow.libs/libjpeg.so.62.4.0')),
+                locate_file=lambda name: root / Path(name).name)
             config = OCRConfig(str(root/'tesseract'), str(root), str(root/'pdftoppm'))
             with patch('lukart_work.ingestion.ocr.importlib.metadata.distribution', return_value=distribution):
                 before = config.pin()
                 (root/'decoder.py').write_bytes(b'synthetic-version-two')
-                self.assertNotEqual(before, config.pin())
+                decoded = config.pin()
+                self.assertNotEqual(before, decoded)
+                (root/'libjpeg.so.62.4.0').write_bytes(b'synthetic-version-two')
+                self.assertNotEqual(decoded,config.pin())
+                distribution.files=()
+                with self.assertRaisesRegex(ValueError,'OCR_PILLOW_PROVENANCE_REQUIRED'):
+                    config.pin()
 
 
 class IntakeBrowserTests(unittest.TestCase):
