@@ -1,0 +1,72 @@
+{
+  "checks": [
+    "exact-sha",
+    "typed-canonical-json",
+    "cross-case-binding",
+    "typed-final-release",
+    "ten-member-package",
+    "manifest-member-byte-hashes",
+    "parsed-docx-pdf",
+    "render-receipt-binding",
+    "audit-chain"
+  ],
+  "contract": "urn:lukart:work:GeneratorPismIndependentVerifier:1.0.0",
+  "evidence_hash": "e7ef9dfc0cf7ba9114fad02546463c877adb210477f7b9155a1077cf2d5c2125",
+  "human_decision_authenticity": "NOT_VERIFIED",
+  "repository_issuance": "NOT_VERIFIED",
+  "result": "PASS",
+  "scope": "OFFLINE_PACKAGE_INTEGRITY_ONLY",
+  "tested_sha": "b1d3e93623f0c8a589f61316049c6a30fb9716f0",
+  "verified_members": [
+    {
+      "byte_length": 37694,
+      "content_hash": "702ea11c8ad6ab55d7aa0fe562143f8b1353286f204650da200e001e02fd6fb6",
+      "name": "final.docx"
+    },
+    {
+      "byte_length": 36907,
+      "content_hash": "4d45890b14177db3816f5e98229fa42e54ad6cdfea4fdb31efb37b815adf9c8d",
+      "name": "final.pdf"
+    },
+    {
+      "byte_length": 25491,
+      "content_hash": "40216aaea2bab7f134f943866d223bffe62b9ea410307f74437f58948232dd5a",
+      "name": "document.json"
+    },
+    {
+      "byte_length": 14698,
+      "content_hash": "6ce4d21567f7cf039d62959b92c7f0e343268d6c2e914def290f188b79b0e088",
+      "name": "validation.json"
+    },
+    {
+      "byte_length": 1280,
+      "content_hash": "22e2ddb2634f7821985d4a6517ad6edf8ed9bb425f25338200d54bfb547caddb",
+      "name": "sources.json"
+    },
+    {
+      "byte_length": 6337,
+      "content_hash": "b23f846c0da54a7d7c3c5ff643a509b62c06fbd6753674f890b1d3aaca7df575",
+      "name": "evidence-map.json"
+    },
+    {
+      "byte_length": 3687,
+      "content_hash": "d68dc96d43b609f9e8c7e9ee5bdea11fe296ea139511f66bc38cd311b83dde7b",
+      "name": "argument-map.json"
+    },
+    {
+      "byte_length": 93639,
+      "content_hash": "4630d6bc344b16032e9489e0a7077dd8d1e8e709d677efe9ac6bcb485f99e48f",
+      "name": "audit.json"
+    },
+    {
+      "byte_length": 2013,
+      "content_hash": "ed24d30864276dbb6e6aa4014ee7e690c6a4d7ff985857d8f5534b2af02eb900",
+      "name": "release.json"
+    },
+    {
+      "byte_length": 2849,
+      "content_hash": "550be3b4f162895f8fb9a977ca4432f8864eb8715d1a59ca33d995d513912401",
+      "name": "manifest.json"
+    }
+  ]
+}

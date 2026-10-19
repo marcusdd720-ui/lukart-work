@@ -1,0 +1,195 @@
+{
+  "candidate_sha": "b1d3e93623f0c8a589f61316049c6a30fb9716f0",
+  "scope": "LOCAL_POLISH_E2E_REMEDIATION_NOT_GITHUB_CI",
+  "owner": "pr64-polish-resume-4e5c5235280a",
+  "image": "sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+  "completed_tests_rerun": false,
+  "private_case_used": false,
+  "steps": [
+    {
+      "name": "original-language-defect",
+      "container_id": "0c241dc1850b6744e88024348f4352d9e6f02a2a5b7d29da88ba4462729da081",
+      "isolation": {
+        "user": "1000:1000",
+        "readonly_rootfs": true,
+        "capabilities": "ALL_DROPPED",
+        "no_new_privileges": true,
+        "network": "POSTGRES_LOOPBACK_NAMESPACE_WITHOUT_EXTERNAL_INTERFACE",
+        "mounts": {
+          "/tools": [
+            "/var/tmp/lukart-pr64-pending-20261019/tools",
+            false
+          ],
+          "/usr": [
+            "/usr",
+            false
+          ],
+          "/source": [
+            "/var/tmp/lukart-pr64-polish-20261019/source",
+            true
+          ],
+          "/opt/venv": [
+            "/var/tmp/lukart-pr64-e91d10a-20261019/venv",
+            false
+          ]
+        },
+        "host_docker_socket": false
+      },
+      "command": [
+        "build/verify_english_baseline.py"
+      ],
+      "exit": 0,
+      "docker_attach_exit": 0,
+      "seconds": 2.081
+    },
+    {
+      "name": "prepare-database",
+      "container_id": "b8f026fd0f214005804561a4842dd15b150932c46aaf1dca63ec3ee00f4becd2",
+      "isolation": {
+        "user": "1000:1000",
+        "readonly_rootfs": true,
+        "capabilities": "ALL_DROPPED",
+        "no_new_privileges": true,
+        "network": "POSTGRES_LOOPBACK_NAMESPACE_WITHOUT_EXTERNAL_INTERFACE",
+        "mounts": {
+          "/usr": [
+            "/usr",
+            false
+          ],
+          "/source": [
+            "/var/tmp/lukart-pr64-polish-20261019/source",
+            true
+          ],
+          "/opt/venv": [
+            "/var/tmp/lukart-pr64-e91d10a-20261019/venv",
+            false
+          ],
+          "/tools": [
+            "/var/tmp/lukart-pr64-pending-20261019/tools",
+            false
+          ]
+        },
+        "host_docker_socket": false
+      },
+      "command": [
+        "scripts/prepare_ci_database.py"
+      ],
+      "exit": 0,
+      "docker_attach_exit": 0,
+      "seconds": 2.22
+    },
+    {
+      "name": "operator-e2e",
+      "container_id": "dac0fcf0d49528bbd998822effc97622b973dfd88721e1295b2e1e55d4bf6652",
+      "isolation": {
+        "user": "1000:1000",
+        "readonly_rootfs": true,
+        "capabilities": "ALL_DROPPED",
+        "no_new_privileges": true,
+        "network": "POSTGRES_LOOPBACK_NAMESPACE_WITHOUT_EXTERNAL_INTERFACE",
+        "mounts": {
+          "/usr": [
+            "/usr",
+            false
+          ],
+          "/source": [
+            "/var/tmp/lukart-pr64-polish-20261019/source",
+            true
+          ],
+          "/opt/venv": [
+            "/var/tmp/lukart-pr64-e91d10a-20261019/venv",
+            false
+          ],
+          "/tools": [
+            "/var/tmp/lukart-pr64-pending-20261019/tools",
+            false
+          ]
+        },
+        "host_docker_socket": false
+      },
+      "command": [
+        "scripts/run_generator_pism_operator_e2e.py",
+        "--output",
+        "build/generator-pism/operator-e2e-polish-20261019"
+      ],
+      "exit": 0,
+      "docker_attach_exit": 0,
+      "seconds": 27.336
+    },
+    {
+      "name": "package-evidence",
+      "container_id": "17bad4ee7169ad7e281c79cc97655595ecc2368fd0d38c78f46760e9f316bc6e",
+      "isolation": {
+        "user": "1000:1000",
+        "readonly_rootfs": true,
+        "capabilities": "ALL_DROPPED",
+        "no_new_privileges": true,
+        "network": "POSTGRES_LOOPBACK_NAMESPACE_WITHOUT_EXTERNAL_INTERFACE",
+        "mounts": {
+          "/usr": [
+            "/usr",
+            false
+          ],
+          "/source": [
+            "/var/tmp/lukart-pr64-polish-20261019/source",
+            true
+          ],
+          "/opt/venv": [
+            "/var/tmp/lukart-pr64-e91d10a-20261019/venv",
+            false
+          ],
+          "/tools": [
+            "/var/tmp/lukart-pr64-pending-20261019/tools",
+            false
+          ]
+        },
+        "host_docker_socket": false
+      },
+      "command": [
+        "scripts/verify_generator_pism_operator_evidence.py",
+        "--evidence",
+        "build/generator-pism/operator-e2e-polish-20261019/evidence.json",
+        "--package-dir",
+        "build/generator-pism/operator-e2e-polish-20261019/package",
+        "--expected-sha",
+        "b1d3e93623f0c8a589f61316049c6a30fb9716f0",
+        "--output",
+        "build/generator-pism/operator-e2e-polish-20261019/verifier.json"
+      ],
+      "exit": 0,
+      "docker_attach_exit": 0,
+      "seconds": 4.389
+    }
+  ],
+  "state": "POLISH_E2E_PASS",
+  "resume_from": "polish-validation-results-20261019.json",
+  "retained_completed_check": "runtime-isolation:PASS; container configuration rechecked before each new worker",
+  "postgres_container_id": "0f47c5bf7e47ba6b3b5186251a7194d84405975ec2f0748a3f2bf8d8a32cf32b",
+  "generated_reproducibility_exit": 0,
+  "cleanup": [
+    {
+      "container_id": "0c241dc1850b6744e88024348f4352d9e6f02a2a5b7d29da88ba4462729da081",
+      "stop_exit": 0,
+      "remove_owned_disposable_exit": 0
+    },
+    {
+      "container_id": "b8f026fd0f214005804561a4842dd15b150932c46aaf1dca63ec3ee00f4becd2",
+      "stop_exit": 0,
+      "remove_owned_disposable_exit": 0
+    },
+    {
+      "container_id": "dac0fcf0d49528bbd998822effc97622b973dfd88721e1295b2e1e55d4bf6652",
+      "stop_exit": 0,
+      "remove_owned_disposable_exit": 0
+    },
+    {
+      "container_id": "17bad4ee7169ad7e281c79cc97655595ecc2368fd0d38c78f46760e9f316bc6e",
+      "stop_exit": 0,
+      "remove_owned_disposable_exit": 0
+    },
+    {
+      "container_id": "0f47c5bf7e47ba6b3b5186251a7194d84405975ec2f0748a3f2bf8d8a32cf32b",
+      "stop_exit": 0
+    }
+  ]
+}

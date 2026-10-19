@@ -1,0 +1,169 @@
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from typing import Any
+from uuid import UUID
+
+from lukart_work.core.service import CommandService, safe_error
+from lukart_work.drafting.service import ControlledDraftingService
+from lukart_work.facts.service import FactEvidenceService
+from lukart_work.finalization.service import FinalizationService
+from lukart_work.finalization.contracts import FinalizationProfile
+from lukart_work.planner.service import DocumentPlannerService
+from lukart_work.procedural.service import ProceduralEngineService
+from lukart_work.validation.service import ValidationEngineService
+
+from .drafting.manual_provider import ManualAttestedDraftingProvider
+from .type_packs.runtime import TypePackRuntimeProfile, runtime_profile
+
+
+@dataclass(frozen=True, slots=True)
+class OperatorTypeBinding:
+    runtime: TypePackRuntimeProfile
+
+    @property
+    def document_type(self):
+        return self.runtime.document_type
+
+    @property
+    def plan_sections(self) -> tuple[str, ...]:
+        return self.runtime.plan_sections
+
+
+class GeneratorPismOperator:
+    """Narrow production facade over the existing WORK services.
+
+    It deliberately does not manufacture HUMAN decisions. The caller must use
+    the existing authenticated commands for evidence/snapshot/plan/document
+    approval and finalization. A trusted host supplies a CASE semantic profile
+    or an explicitly configured optional type bridge. Neither grants admission
+    or substitutes for the stored CASE records and HUMAN decisions.
+    """
+
+    def __init__(
+        self,
+        *,
+        repository,
+        authority,
+        type_id: str | None = None,
+        runtime: TypePackRuntimeProfile | None = None,
+        case_profile: FinalizationProfile | None = None,
+        drafting_profiles: dict[str, Any],
+        provider: ManualAttestedDraftingProvider,
+        package_profile,
+        clock=None,
+    ):
+        if case_profile is not None:
+            if runtime is not None or type_id is not None:
+                raise ValueError("AMBIGUOUS_DOCUMENT_PROFILE")
+            self.binding = None
+        else:
+            runtime = runtime if runtime is not None else runtime_profile(type_id)
+            if runtime.type_id != type_id:
+                raise ValueError("TYPE_PACK_IDENTITY_MISMATCH")
+            self.binding = OperatorTypeBinding(runtime)
+            case_profile = runtime.finalization_profile
+        self.case_profile = case_profile
+        self.core = CommandService(repository, authority, clock)
+        self.facts = FactEvidenceService(repository, authority, clock)
+        self.procedural = ProceduralEngineService(repository, authority, clock)
+        self.planner = DocumentPlannerService(repository, authority, clock)
+        self.drafting = ControlledDraftingService(
+            repository, authority, provider, drafting_profiles, clock
+        )
+        self.validation = ValidationEngineService(repository, authority, clock)
+        self.finalization = FinalizationService(
+            repository,
+            authority,
+            (case_profile,),
+            clock,
+            package_profile=package_profile,
+        )
+
+    @staticmethod
+    def _raw(request: str | dict[str, Any]) -> str:
+        return json.dumps(request) if isinstance(request, dict) else request
+
+    def validate_intake(self, payload: Any):
+        if self.binding is None:
+            raise ValueError("CASE_COMMANDS_REQUIRED")
+        return self.binding.runtime.validate_input(payload)
+
+    def _require_type_pin(self, raw: str | dict[str, Any]) -> None:
+        value = json.loads(raw) if isinstance(raw, str) else raw
+        if not isinstance(value, dict):
+            raise ValueError("OPERATOR_REQUEST_OBJECT_REQUIRED")
+        expected = (self.binding.document_type if self.binding is not None
+                    else self.case_profile.document_type)
+        wanted = (expected.id, expected.version, expected.content_hash)
+        for field in ("document_type", "type_pin"):
+            if field not in value:
+                continue
+            pin = value[field]
+            if not isinstance(pin, dict):
+                raise ValueError("OPERATOR_TYPE_PIN_INVALID")
+            observed = (
+                pin.get("id") or pin.get("document_type_id"),
+                pin.get("version") or pin.get("schema_version"),
+                pin.get("content_hash") or pin.get("contract_pin"),
+            )
+            if observed != wanted:
+                raise ValueError("OPERATOR_TYPE_PIN_MISMATCH")
+
+    def execute_core(self, request, token):
+        return self.core.execute(self._raw(request), token)
+
+    def query_core(self, request, token):
+        return self.core.query(self._raw(request), token)
+
+    def execute_fact_evidence(self, request, token):
+        return self.facts.execute(self._raw(request), token)
+
+    def execute_procedural(self, request, token):
+        return self.procedural.execute(self._raw(request), token)
+
+    def query_procedural(self, request, token):
+        return self.procedural.query(self._raw(request), token)
+
+    def execute_plan(self, request, token):
+        return self.planner.execute(self._raw(request), token)
+
+    def query_plan(self, request, token):
+        return self.planner.get_plan(self._raw(request), token)
+
+    def execute_draft(self, request, token):
+        try:
+            self._require_type_pin(request)
+        except (ValueError, TypeError, KeyError, AttributeError):
+            return safe_error("SCHEMA_INVALID", UUID(int=0))
+        return self.drafting.generate(self._raw(request), token)
+
+    def execute_validation(self, request, token):
+        return self.validation.execute(self._raw(request), token)
+
+    def query_validation(self, request, token):
+        return self.validation.query(self._raw(request), token)
+
+    def execute_finalization(self, request, token):
+        return self.finalization.execute(self._raw(request), token)
+
+    def query_finalization(self, request, token):
+        return self.finalization.query(self._raw(request), token)
+
+    def export_local(self, *, tenant_id, case_id, render_id, token, output):
+        """Read exact persisted bytes through the existing scoped boundary."""
+        from .rendering.local import export_local
+
+        query = dict(
+            contract="urn:lukart:work:FinalizationQuery:1.0.0",
+            operation="ReadFinalArtifact", tenant_id=str(tenant_id),
+            case_id=str(case_id), render_id=str(render_id),
+        )
+        artifacts = {}
+        for format in ("DOCX", "PDF"):
+            value = self.query_finalization(dict(query, format=format), token)
+            if not isinstance(value, bytes):
+                return value
+            artifacts[format] = value
+        return export_local(artifacts["DOCX"], artifacts["PDF"], output)

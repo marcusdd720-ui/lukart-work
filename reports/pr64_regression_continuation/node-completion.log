@@ -1,0 +1,6 @@
+test_open_case_emits_valid_core_query (tests.test_operator_host.OperatorBrowserContractTests.test_open_case_emits_valid_core_query) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.161s
+
+OK

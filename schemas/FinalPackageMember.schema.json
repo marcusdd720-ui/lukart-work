@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "enum": [
+        "final.docx",
+        "final.pdf",
+        "document.json",
+        "validation.json",
+        "sources.json",
+        "evidence-map.json",
+        "argument-map.json",
+        "audit.json",
+        "release.json",
+        "manifest.json"
+      ],
+      "title": "Name",
+      "type": "string"
+    },
+    "artifact_id": {
+      "format": "uuid",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "media_type": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Media Type",
+      "type": "string"
+    },
+    "content_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "byte_length": {
+      "minimum": 1,
+      "title": "Byte Length",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "artifact_id",
+    "media_type",
+    "content_hash",
+    "byte_length"
+  ],
+  "title": "FinalPackageMember",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:FinalPackageMember:1.0.0"
+}

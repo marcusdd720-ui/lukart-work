@@ -230,7 +230,8 @@
         "ValidationCompleted",
         "ReleaseDenied",
         "ReleaseGranted",
-        "DecisionRecorded"
+        "DecisionRecorded",
+        "FinalPackageAssembled"
       ],
       "title": "Event Type",
       "type": "string"

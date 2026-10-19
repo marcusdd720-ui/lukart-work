@@ -8,6 +8,7 @@ version = "0.11.0"
 description = "Architecture 00 Case Core with controlled drafting, validation and deterministic rendering"
 requires-python = ">=3.11"
 dependencies = [
+  "packaging==25.0",
   "pydantic==2.13.5",
   "python-docx==1.2.0",
   "reportlab==4.4.9",
@@ -23,5 +24,6 @@ ingestion = ["pypdf==6.10.0"]
 include = ["lukart_work*"]
 
 [tool.setuptools.package-data]
-"lukart_work.core" = ["migration.sql"]
+"lukart_work" = ["operator_preview.js"]
+"lukart_work.core" = ["migration.sql", "migration_ai_egress.sql"]
 "lukart_work.storage" = ["migration.sql"]

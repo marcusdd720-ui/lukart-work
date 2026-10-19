@@ -1,0 +1,352 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    },
+    "ReleaseReceipt": {
+      "additionalProperties": false,
+      "description": "Immutable evaluation evidence; persistence/authentication belong to the future service.",
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/RenderTarget"
+        },
+        "approval": {
+          "$ref": "#/$defs/Ref"
+        },
+        "approval_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Approval Hash",
+          "type": "string"
+        },
+        "runs": {
+          "items": {
+            "$ref": "#/$defs/ValidationRunPin"
+          },
+          "minItems": 1,
+          "title": "Runs",
+          "type": "array"
+        },
+        "policy": {
+          "$ref": "#/$defs/VersionPin"
+        },
+        "case_sequence": {
+          "minimum": 1,
+          "title": "Case Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "target",
+        "approval",
+        "approval_hash",
+        "runs",
+        "policy",
+        "case_sequence"
+      ],
+      "title": "ReleaseReceipt",
+      "type": "object"
+    },
+    "ReleaseResult": {
+      "additionalProperties": false,
+      "properties": {
+        "eligibility": {
+          "enum": [
+            "FINAL",
+            "DRAFT"
+          ],
+          "title": "Eligibility",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "render_hashes": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "title": "Render Hashes",
+          "type": "array"
+        },
+        "receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReleaseReceipt"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "eligibility",
+        "reasons",
+        "draft",
+        "snapshot_hash",
+        "render_hashes"
+      ],
+      "title": "ReleaseResult",
+      "type": "object"
+    },
+    "RenderTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "tenant_id": {
+          "format": "uuid",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "case_id": {
+          "format": "uuid",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "format": "uuid",
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "snapshot_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Snapshot Hash",
+          "type": "string"
+        },
+        "draft": {
+          "$ref": "#/$defs/Ref"
+        },
+        "draft_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Draft Hash",
+          "type": "string"
+        },
+        "render_hashes": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Render Hashes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "case_id",
+        "snapshot_id",
+        "snapshot_hash",
+        "draft",
+        "draft_hash",
+        "render_hashes"
+      ],
+      "title": "RenderTarget",
+      "type": "object"
+    },
+    "ValidationRunPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "content_hash"
+      ],
+      "title": "ValidationRunPin",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "render_id": {
+      "format": "uuid",
+      "title": "Render Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "result": {
+      "$ref": "#/$defs/ReleaseResult"
+    },
+    "approval": {
+      "$ref": "#/$defs/Ref"
+    },
+    "approval_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Approval Hash",
+      "type": "string"
+    },
+    "audit_previous_event_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Audit Previous Event Hash",
+      "type": "string"
+    },
+    "actor": {
+      "$ref": "#/$defs/Actor"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "committed_sequence": {
+      "title": "Committed Sequence",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "render_id",
+    "tenant_id",
+    "case_id",
+    "result",
+    "approval",
+    "approval_hash",
+    "audit_previous_event_hash",
+    "actor",
+    "recorded_at",
+    "committed_sequence"
+  ],
+  "title": "FinalizationRelease",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:FinalizationRelease:1.0.0"
+}

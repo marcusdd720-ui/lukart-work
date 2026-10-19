@@ -1,5 +1,31 @@
 # LUKART WORK — controlled drafting and validation
 
+PB03 builder candidate adds an authenticated, immutable ten-member final-package assembler and
+scoped read route after the PB02 repository-issued FINAL release. Package creation revalidates
+render bytes, typed JSON, source provenance, trace maps and the Stage 12 audit chain in one atomic
+transaction. It does not admit a real letter type or implement ROS integration. See
+[the PB03 package boundary](docs/PB03_FINAL_PACKAGE.md).
+
+PB02 builder candidate adds an authenticated, PostgreSQL-backed finalization boundary for
+synthetic or separately admitted document types. It derives the semantic document from trusted
+records, persists exact DOCX/PDF bytes, records the HUMAN document approval and post-render
+validation evidence, and issues a durable FINAL eligibility receipt. It does not admit any real
+PL letter type, assemble the later ten-member final package, submit a filing, or certify the
+product. See [the PB02 boundary and verification contract](docs/PB02_FINALIZATION.md).
+Focused verification: `python -B -X utf8 -m unittest -v tests.test_finalization`; schema/package
+verification: `python -B -X utf8 verify_package.py`. PostgreSQL tests must execute with zero
+skips against the isolated runtime/admin DSNs.
+
+Package-validation report contract v2: `reports/package-validation.json` records the
+project compatibility declaration in `requires_python` (from `pyproject.toml`). The
+legacy `python` key remains an alias for that declaration for current spec-shaped
+consumers, NOT evidence of the executing interpreter. Older version-shaped reports
+must be distinguished by `report_schema_version` before interpreting `python`.
+The actual interpreter version is emitted by `verify_package.py` as
+`runtime_python_version` in the CI/runtime output, not the deterministic tracked JSON.
+The `requires-python` declaration is mandatory and enforced via PEP 440 constraints;
+Stage 13 also checks the Python 3.11 lower compatibility boundary.
+
 Stage 10 (pakiet 0.10.0): walidacja pomiędzy GENERATED a późniejszym renderingiem.
 `lukart_work.validation.service.ValidationEngineService` udostępnia `execute` dla jawnych
 poleceń walidacji, oceny człowieka i rozstrzygnięcia findings oraz `query` dla bieżącej kwalifikacji.

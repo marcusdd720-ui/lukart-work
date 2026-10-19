@@ -31,6 +31,10 @@ Sequential replay checks the idempotency record before any provider call. A Post
 
 Every legal Statement must reference at least one current ACTIVE LegalRule whose exact activation still has a live HUMAN INTERPRETATION approval. Each used LegalRule must be covered by a current VERIFIED Citation whose current VERIFIED LegalSource is one of that rule's sources. These authority checks run before the provider call and again before commit.
 
+`VerifyCitation` is an explicit, scoped HUMAN command against the current Citation revision. It appends an immutable Citation revision with the command rationale in its provenance and emits a command audit event binding the request and output hashes; the current Citation contract does not attach a separate `Decision` to that transition. It does not replace the LegalRule's live HUMAN INTERPRETATION approval.
+
+The `VERIFIED` citation status alone does not prove that quotation bytes or the legal proposition are correct. Stage 10 independently checks the quotation against its source fragment and hash when a quotation is supplied, source/rule applicability, and the required recorded HUMAN semantic review. Those checks remain mandatory before validated document output; citation verification does not grant document approval, legal-type admission or release authority.
+
 ## Persistence
 
 The service writes canonical Draft revisions only through the existing PostgreSQL repository. The resulting head is `GENERATED`; there is no FINAL state in Stage 09. The internal PLANNED→GENERATED lifecycle remains append-only history.

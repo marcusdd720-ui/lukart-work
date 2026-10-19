@@ -44,20 +44,9 @@ class ValidationTests(drafting.ControlledDraftingTests):
         return fact, party, evidence, source
 
     def legal_authority_fixture(self, source_id, **kwargs):
-        source, rule, citation_ref, approval = super().legal_authority_fixture(source_id, **kwargs)
-        # Stage 09 tests a citation identity boundary; Stage 10 additionally checks literal quotation bytes.
-        old = self.get(citation_ref)
-        quote = 'Synthetic payment receipt.'
-        citation = old.model_copy(update={'revision':old.revision + 1, 'previous_hash':digest(old),
-            'quotation':quote, 'locator':old.locator.model_copy(update={'unit':'RECORD', 'value':'1', 'fragment_hash':sha256(quote.encode()).hexdigest()})})
-        with self.repo.transaction(self.tenant, self.case_id) as tx:
-            records = tx.records()
-            heads = {(e.kind, e.id):e for e in tx.heads()}
-            self.service._validate(citation, old, tx, records, heads, self.principal)
-            tx.append(citation)
-            tx.set_sequence(tx.sequence() + 1)
-        self.sequence += 1
-        return source, rule, ref(citation), approval
+        # The Stage 09 fixture now uses the audited public Citation lifecycle and
+        # records the exact source quotation locator required by Stage 10.
+        return super().legal_authority_fixture(source_id, **kwargs)
 
     def generated(self, legal=True):
         case = self.approved_planning_case(legal=legal)

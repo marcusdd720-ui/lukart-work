@@ -9,7 +9,8 @@ from lukart_work.validation.rules import Violation
 
 MAX_BYTES = 16 * 1024 * 1024
 CATEGORIES = frozenset(('source', 'raw_input', 'raw_output', 'render', 'prompt', 'model',
-                        'provider', 'rule', 'validator', 'render_profile', 'generator', 'knowledge'))
+                        'provider', 'rule', 'validator', 'render_profile', 'generator', 'knowledge',
+                        'package'))
 
 
 class ArtifactRecord(Value):

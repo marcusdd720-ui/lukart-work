@@ -1,0 +1,208 @@
+{
+  "contract_id": "urn:lukart:ros-work:generator-integration:1.0.0",
+  "contract_version": "1.0.0",
+  "status": "PLANNED_NOT_IMPLEMENTED",
+  "observed_date": "2026-10-04",
+  "architecture": "independent repositories, composed contracts, no runtime package dependency",
+  "baselines": [
+    {
+      "repository": "marcusdd720-ui/lukart-work",
+      "ref": "uaos/generator-pism-p0",
+      "commit": "7b8f0352da4840ce57abddbee19ac6c7774fd965",
+      "freshness": "OBSERVED_CHECKED_OUT_HEAD"
+    },
+    {
+      "repository": "marcusdd720-ui/lukart-ros",
+      "ref": "refs/remotes/origin/main",
+      "commit": "75ab7ebc45421cb49374ebb169449f3367b8be73",
+      "freshness": "OBSERVED_LOCAL_REMOTE_REF_REMOTE_NOT_FETCHED"
+    }
+  ],
+  "composes": [
+    "lukart.operation-contract.v1@1.0",
+    "urn:lukart:cross-repo:convergence:1.0.0",
+    "LW-PB-01"
+  ],
+  "ownership": {
+    "operation_envelope": "lukart-ros",
+    "generator_domain_and_human_gates": "lukart-work",
+    "case_state_and_final_package": "lukart-work",
+    "neutral_evidence_result_and_provenance_envelopes": "cross-repo-convergence-v1",
+    "legal_and_semantic_decisions": "HUMAN"
+  },
+  "capabilities": [
+    {
+      "id": "CAP-ROS-OPERATION",
+      "owner": "lukart-ros",
+      "state": "IMPLEMENTED_AT_OBSERVED_BASELINE",
+      "decision": "REUSE_BY_ADAPTER",
+      "source": "docs/LUKART_OPERATION_CONTRACT_V1.md",
+      "source_blob": "642baf40ce7182ff64bfe71eab7b313af12ed5ae"
+    },
+    {
+      "id": "CAP-ROS-LEDGER",
+      "owner": "lukart-ros",
+      "state": "IMPLEMENTED_AT_OBSERVED_BASELINE",
+      "decision": "DO_NOT_DUPLICATE_OR_REPLACE_WORK_CASE_STATE",
+      "source": "core/case_ledger/contracts.py",
+      "source_blob": "03ff85beedb05d0f61010a935ed0efb99a2e9187"
+    },
+    {
+      "id": "CAP-ROS-CIRP",
+      "owner": "lukart-ros",
+      "state": "IMPLEMENTED_CONTRACTS_AT_OBSERVED_BASELINE",
+      "decision": "OPTIONAL_FUTURE_SOURCE_ARTIFACTS_ONLY_AFTER_EXPLICIT_MAPPING_AND_HUMAN_REVIEW",
+      "source": "core/cirp/contracts.py",
+      "source_blob": "3b3eec99e5f9118155d77fd683eabda0cff0cfc9"
+    },
+    {
+      "id": "CAP-ROS-RENDERER",
+      "owner": "lukart-ros",
+      "state": "IMPLEMENTED_PRESENTATION_RENDERER_AT_OBSERVED_BASELINE",
+      "decision": "DO_NOT_USE_FOR_WORK_DOCX_PDF_FINALIZATION",
+      "source": "renderer/contract.py",
+      "source_blob": "dca7bad149b149b19b8e4c5aa1c07c2f7698e1c1"
+    },
+    {
+      "id": "CAP-WORK-GENERATOR-PIPELINE",
+      "owner": "lukart-work",
+      "state": "COMPONENTS_IMPLEMENTED_PRODUCT_PATH_BLOCKED",
+      "decision": "AUTHORITATIVE_GENERATOR_BOUNDARY",
+      "source": "acceptance/product-baseline-v1.json",
+      "source_blob": "14c9ec8ac3eb00f4e6a0b12b09f7cf8588ab828d"
+    },
+    {
+      "id": "CAP-WORK-DOCX-PDF",
+      "owner": "lukart-work",
+      "state": "PB02_TRUSTED_PERSISTED_ROUTE_BUILDER_CANDIDATE_AT_OBSERVED_BASELINE",
+      "decision": "KEEP_FINALIZATION_AUTHORITY_IN_WORK_AND_REQUIRE_INDEPENDENT_EXACT_SHA_ACCEPTANCE",
+      "source": "lukart_work/finalization/service.py",
+      "source_blob": "f53f033d5cc9cba8ae69a8d7e87d38af0fae46ed"
+    },
+    {
+      "id": "CAP-CROSS-REPO-EVIDENCE",
+      "owner": "lukart-work",
+      "state": "IMPLEMENTED",
+      "decision": "REUSE_WITHOUT_NEW_PARALLEL_ENVELOPE",
+      "source": "contracts/cross_repo/v1/manifest.json",
+      "source_blob": "f8fa8589f272cd6a3bb4d781821e727e812f7510"
+    }
+  ],
+  "operations": [
+    {
+      "id": "ros.work.generator.assess.v1",
+      "effect": "READ_ONLY",
+      "state": "PLANNED",
+      "required_authority": "scoped WORK read capability",
+      "required_gates": [],
+      "output": "cross-repo result envelope with explicit blockers and evidence refs"
+    },
+    {
+      "id": "ros.work.generator.execute.v1",
+      "effect": "CASE_STATE_AND_ARTIFACT_WRITE",
+      "state": "BLOCKED_BY_INDEPENDENT_ACCEPTANCE_AND_SUPPORTED_TYPE_ADMISSION",
+      "required_authority": "scoped HUMAN WORK command capability; ROS authority_ref is never sufficient alone",
+      "required_gates": [
+        "HG-01",
+        "HG-02",
+        "HG-03",
+        "HG-04",
+        "HG-05",
+        "HG-06",
+        "HG-07",
+        "HG-08",
+        "HG-09"
+      ],
+      "output": "WORK repository-issued result, evidence refs and release/package refs"
+    },
+    {
+      "id": "ros.work.generator.read-package.v1",
+      "effect": "SCOPED_ARTIFACT_READ",
+      "state": "BLOCKED_BY_PB03_CHECKPOINT_REVIEW_AND_ADAPTER",
+      "required_authority": "separate scoped WORK package-read capability",
+      "required_gates": [
+        "HG-09"
+      ],
+      "output": "immutable package identity and only exact final-package member bytes (which may contain private case content) under a separate native WORK tenant/case-scoped package-read capability; never raw credentials or original source-byte export"
+    }
+  ],
+  "mapping": {
+    "request": "ROS operation envelope validated first; adapter maps only allowlisted operation/input fields into public WORK requests",
+    "scope": "ROS case_id and privacy scope must map exactly to WORK tenant_id/case_id; mismatch blocks before execution",
+    "authority": "opaque ROS authority_ref is resolved by a trusted host to a native WORK capability; it is not forwarded as authorization truth",
+    "concurrency": "ROS expected_head is an orchestration precondition; WORK expected_case_sequence/CAS remains authoritative for domain writes",
+    "idempotency": "adapter binds ROS idempotency key plus request digest to the exact WORK command ids/results; different digest blocks",
+    "evidence": "existing cross-repo evidence/result/provenance envelopes carry references; original bytes remain in scoped WORK storage",
+    "result": "native WORK result is authoritative; adapter derives a neutral result without rewriting the native record"
+  },
+  "gaps": [
+    {
+      "id": "RW-GAP-01",
+      "severity": "P0",
+      "state": "BLOCKING_INDEPENDENT_ACCEPTANCE",
+      "description": "PB02 is a builder candidate at the pinned WORK baseline and PB03 is the current builder candidate; candidate-SHA binding, CI and independent exact-SHA review remain required.",
+      "owner": "lukart-work",
+      "dependency": "PB03 candidate-SHA binding, CI and independent exact-SHA review"
+    },
+    {
+      "id": "RW-GAP-02",
+      "severity": "P1",
+      "state": "BLOCKING_EXECUTE_OPERATION",
+      "description": "No adapter maps ROS operation scope, authority, CAS and idempotency to public WORK boundaries.",
+      "owner": "integration",
+      "dependency": "RW-GAP-01"
+    },
+    {
+      "id": "RW-GAP-03",
+      "severity": "P1",
+      "state": "BLOCKING_CIRP_IMPORT",
+      "description": "ROS CIRP artifacts have no accepted mapping to exact WORK Ref revisions, HUMAN decisions and legal applicability pins.",
+      "owner": "integration",
+      "dependency": "supported type contract and independent legal/domain review"
+    },
+    {
+      "id": "RW-GAP-04",
+      "severity": "P1",
+      "state": "BLOCKING_PRODUCT_SUPPORT",
+      "description": "All three LW-PB-01 document types remain NOT SUPPORTED / FUTURE.",
+      "owner": "lukart-work",
+      "dependency": "per-type schema, profile, fixtures and HUMAN legal/type admission"
+    },
+    {
+      "id": "RW-GAP-05",
+      "severity": "P2",
+      "state": "OPEN",
+      "description": "The observed ROS remote-tracking ref was not refreshed during this run by policy.",
+      "owner": "verification",
+      "dependency": "supervisor-provided fresh exact ROS SHA or later authorized fetch"
+    }
+  ],
+  "invariants": [
+    "unknown schema, operation, scope, authority, version or mapping blocks",
+    "ROS never writes WORK storage, ledger or release state directly",
+    "WORK never imports lukart_ros as a runtime package dependency",
+    "ROS orchestration success cannot manufacture WORK validation, HUMAN approval or FINAL",
+    "no caller-supplied PASS, legal applicability, render hash or release receipt becomes authoritative",
+    "raw credentials and original source bytes never cross the operation envelope; private case content crosses only as exact final-package member bytes returned by ros.work.generator.read-package.v1 after explicit native WORK tenant/case-scoped package-read authorization and HG-09; the operation remains blocked until its adapter and review gates are admitted",
+    "native records remain authoritative and neutral envelopes are derived views",
+    "replay requires exact code, contract, policy, input and artifact identities",
+    "unknown, NOT_RUN, skipped or missing evidence is never PASS"
+  ],
+  "non_goals": [
+    "replacing either repository ledger",
+    "sharing a database or Python package runtime",
+    "using the ROS renderer for WORK DOCX/PDF",
+    "automatic legal judgment or HUMAN gate substitution",
+    "external filing, delivery, signature or publication",
+    "declaring any LW-PB-01 document type supported"
+  ],
+  "acceptance": [
+    "contract structure and pins validate deterministically",
+    "unknown operation and scope mismatch fail before WORK invocation",
+    "authority_ref without a native WORK capability fails",
+    "same idempotency key with a different digest fails",
+    "neutral result preserves native WORK result identity and provenance",
+    "no runtime import or direct database dependency exists between repositories",
+    "positive execute/read-package tests remain prohibited until their blocking gaps close"
+  ]
+}

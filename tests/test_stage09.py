@@ -1,5 +1,6 @@
 """Stage 09 Controlled Drafting assurance on real PostgreSQL; synthetic data only."""
 from concurrent.futures import ThreadPoolExecutor
+from hashlib import sha256
 import json
 import unittest
 from typing import get_args
@@ -8,7 +9,6 @@ from uuid import uuid4
 from lukart_work.contracts.messages import AIResult, CommandResult, DomainError, DomainEvent
 from lukart_work.core.postgres import canonical, decode
 from lukart_work.core.security import Principal, TokenAuthority
-from lukart_work.domain import models as m
 from lukart_work.domain.models import Actor
 from lukart_work.drafting.contracts import (
     DraftingRejectionTrace, DraftingTerminalResult, DraftingTrace,
@@ -18,7 +18,7 @@ from lukart_work.planner.contracts import PlannerOperation, stage08_actions
 from lukart_work.planner.service import DocumentPlannerService
 from lukart_work.procedural.contracts import ProceduralOperation
 from lukart_work.procedural.service import ProceduralEngineService
-from lukart_work.validation.rules import Violation, digest, ref, validate_revision
+from lukart_work.validation.rules import Violation, digest, ref
 from tests import test_stage02 as core
 
 
@@ -161,62 +161,72 @@ class ControlledDraftingTests(core.Stage02Tests):
             reviewed,
         ).refs[0]
 
-        active = self.get(rule)
-        source_entity = self.get(source)
-        provenance = m.Provenance(
-            actor=self.actor,
-            operation_id=uuid4(),
-            method='MANUAL',
-            inputs=(source, rule),
-            anchors=(),
-            rationale='Synthetic pre-verified citation fixture for Stage 09 drafting',
-        )
-        proposed = m.Citation(
-            schema_version='1.0.0',
-            id=uuid4(),
-            tenant_id=self.tenant,
-            case_id=self.case_id,
-            revision=1,
-            previous_hash=None,
-            created_at=active.recorded_at,
-            recorded_at=active.recorded_at,
-            provenance=provenance,
-            kind='Citation',
-            status='PROPOSED',
-            source=source,
-            locator=m.Locator(
-                unit='ARTICLE',
-                value='synthetic-article-1',
-                fragment_hash=source_entity.content_hash,
-            ),
-            supported=rule,
-            quotation='Synthetic legal quotation',
-        )
-        bound = proposed.model_copy(update={
-            'revision': 2,
-            'previous_hash': digest(proposed),
-            'status': 'BOUND',
-        })
-        verified = bound.model_copy(update={
-            'revision': 3,
-            'previous_hash': digest(bound),
-            'status': 'VERIFIED',
-        })
+        quote = 'Synthetic payment receipt.'
+        citation = self.apply('AddCitation', {
+            'source': source.model_dump(mode='json'),
+            'locator': {
+                'unit': 'RECORD',
+                'value': '1',
+                'fragment_hash': sha256(quote.encode()).hexdigest(),
+            },
+            'supported': rule.model_dump(mode='json'),
+            'quotation': quote,
+        }, inputs=[source.model_dump(mode='json'), rule.model_dump(mode='json')])[0].refs[0]
+        citation = self.apply('BindCitation', target=citation)[0].refs[0]
+        citation = self.apply('VerifyCitation', target=citation)[0].refs[0]
+        return source, rule, citation, approval
+
+    def test_public_citation_lifecycle_is_audited_and_human_only(self):
+        _fact, _party, _evidence, source_id = self.fact()
+        source, rule, citation, _approval = self.legal_authority_fixture(source_id)
+        self.assertEqual(self.get(citation).status, 'VERIFIED')
         with self.repo.transaction(self.tenant, self.case_id) as tx:
-            records = tx.records()
-            heads = {(item.kind, item.id): item for item in tx.heads()}
-            old = None
-            for item in (proposed, bound, verified):
-                if old is not None:
-                    validate_revision(old, item)
-                self.service._validate(item, old, tx, records, heads, self.principal)
-                tx.append(item)
-                records[ref(item)] = item
-                heads[(item.kind, item.id)] = item
-                old = item
-            tx.set_sequence(tx.sequence() + 1)
-        self.sequence += 1
-        return source, rule, ref(verified), approval
+            citation_events = tuple(
+                event for event in tx.events()
+                if event.audit.operation in ('AddCitation', 'BindCitation', 'VerifyCitation')
+            )
+            self.assertEqual(
+                tuple(event.audit.operation for event in citation_events),
+                ('AddCitation', 'BindCitation', 'VerifyCitation'),
+            )
+            self.assertEqual(
+                tuple(event.audit.sequence for event in citation_events),
+                tuple(range(self.sequence - 2, self.sequence + 1)),
+            )
+
+        service_actor = Actor(id=uuid4(), kind='SERVICE')
+        service_token = self.authority.provision(
+            Principal(service_actor, self.tenant, self.case_id, self.principal.actions)
+        )
+        quote = 'Synthetic payment receipt.'
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            before = (
+                tx.sequence(),
+                tx.records(),
+                tx.events(),
+                tx.outbox(),
+                tx.audit_inventory(),
+            )
+        denied = self.service.execute(json.dumps(self.request('AddCitation', {
+            'source': source.model_dump(mode='json'),
+            'locator': {
+                'unit': 'RECORD', 'value': '1',
+                'fragment_hash': sha256(quote.encode()).hexdigest(),
+            },
+            'supported': rule.model_dump(mode='json'),
+            'quotation': quote,
+        })), service_token)
+        self.assertIsInstance(denied, DomainError)
+        self.assertEqual(denied.code, 'FORBIDDEN')
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            after = (
+                tx.sequence(),
+                tx.records(),
+                tx.events(),
+                tx.outbox(),
+                tx.audit_inventory(),
+            )
+        self.assertEqual(after, before)
 
     def approved_planning_case(
         self, requirements=('REQUESTS', 'ATTACHMENTS'), *, legal=False,

@@ -1,0 +1,201 @@
+{
+  "$defs": {
+    "FinalPackageMember": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "final.docx",
+            "final.pdf",
+            "document.json",
+            "validation.json",
+            "sources.json",
+            "evidence-map.json",
+            "argument-map.json",
+            "audit.json",
+            "release.json",
+            "manifest.json"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "artifact_id": {
+          "format": "uuid",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "media_type": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "byte_length": {
+          "minimum": 1,
+          "title": "Byte Length",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "artifact_id",
+        "media_type",
+        "content_hash",
+        "byte_length"
+      ],
+      "title": "FinalPackageMember",
+      "type": "object"
+    },
+    "FinalPackageProfile": {
+      "additionalProperties": false,
+      "description": "Deployment-supplied package provenance; no Git state is guessed at runtime.",
+      "properties": {
+        "profile_id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "build_revision": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Build Revision",
+          "type": "string"
+        },
+        "baseline_contract_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Baseline Contract Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile_id",
+        "version",
+        "build_revision",
+        "baseline_contract_hash"
+      ],
+      "title": "FinalPackageProfile",
+      "type": "object"
+    },
+    "VersionPin": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "content_hash"
+      ],
+      "title": "VersionPin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:FinalPackageManifest:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "package_id": {
+      "format": "uuid",
+      "title": "Package Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "render_id": {
+      "format": "uuid",
+      "title": "Render Id",
+      "type": "string"
+    },
+    "release_id": {
+      "format": "uuid",
+      "title": "Release Id",
+      "type": "string"
+    },
+    "case_sequence": {
+      "minimum": 1,
+      "title": "Case Sequence",
+      "type": "integer"
+    },
+    "profile": {
+      "$ref": "#/$defs/FinalPackageProfile"
+    },
+    "document_type": {
+      "$ref": "#/$defs/VersionPin"
+    },
+    "release_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Release Hash",
+      "type": "string"
+    },
+    "audit_package_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Audit Package Hash",
+      "type": "string"
+    },
+    "members": {
+      "items": {
+        "$ref": "#/$defs/FinalPackageMember"
+      },
+      "maxItems": 9,
+      "minItems": 9,
+      "title": "Members",
+      "type": "array"
+    }
+  },
+  "required": [
+    "contract",
+    "package_id",
+    "tenant_id",
+    "case_id",
+    "render_id",
+    "release_id",
+    "case_sequence",
+    "profile",
+    "document_type",
+    "release_hash",
+    "audit_package_hash",
+    "members"
+  ],
+  "title": "FinalPackageManifest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:FinalPackageManifest:1.0.0"
+}

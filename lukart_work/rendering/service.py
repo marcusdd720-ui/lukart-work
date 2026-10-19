@@ -6,6 +6,7 @@ artifacts.  It never changes legal content or case state.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha256
@@ -27,7 +28,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from lukart_work.contracts.messages import RenderRequest, SemanticDocument, ValidationRunPin
-from lukart_work.domain.models import Decision, DocumentPlan, Draft, Entity, Evidence, Institution, Party, Ref, Request, Section
+from lukart_work.domain.models import Decision, DocumentPlan, Draft, Entity, Evidence, Fact, Institution, Party, Ref, Request, Section
 from lukart_work.validation.contracts import PRE_RENDER_CHECKS, ValidationProjection
 from lukart_work.validation.policy import validation_pin
 from lukart_work.validation.rules import Violation, digest, ref as entity_ref
@@ -47,6 +48,7 @@ from .profiles import OFFICIAL_PL_V1, profile_font_paths, profile_pin, profile_s
 
 
 STYLE_TOKEN = {
+    "DATELINE": "document.party_block",
     "DOCUMENT_HEADER": "document.heading.primary",
     "PARTY_BLOCK": "document.party_block",
     "REQUEST_HEADING": "document.heading.secondary",
@@ -231,11 +233,21 @@ def derive_render_authority(
     approval = _record(records, plan.approval, scope)
     if not isinstance(approval, Decision):
         raise Violation("REFERENCE_TYPE")
+    approved_target = entity_ref(plan) in approval.targets
+    if not approved_target and plan.revision > 1:
+        predecessor = Ref(
+            kind="DocumentPlan",
+            id=plan.id,
+            revision=plan.revision - 1,
+        )
+        if predecessor in approval.targets:
+            previous = _record(records, predecessor, scope)
+            approved_target = plan.previous_hash == digest(previous)
     if (
         approval.status != "RECORDED"
         or approval.decision_type != "PLAN_APPROVAL"
         or approval.outcome != "ACCEPT"
-        or entity_ref(plan) not in approval.targets
+        or not approved_target
     ):
         raise Violation("GATE_DENIED")
 
@@ -260,6 +272,67 @@ def derive_render_authority(
         validation_execution_hash=digest(execution),
         validation_projection_hash=digest(validation),
         case_sequence=execution.committed_sequence,
+    )
+
+
+_DATELINE_PREFIX = "LUKART_DATELINE_V1:"
+
+
+def _source_bound_dateline(statement, records: Mapping[Ref, object], scope: tuple[object, object]) -> str | None:
+    """Accept only a typed, traceable, validated date directive; no generated clock dates.
+
+    A source ref by itself does not prove factual correctness; upstream accepted
+    facts/evidence and human/legal gates remain mandatory.
+    """
+    if _DATELINE_PREFIX not in statement.text:
+        return None
+    # AI-generated STRUCTURAL output is forbidden by the drafting trust boundary.
+    if (statement.statement_type != "FACTUAL" or statement.support != "SOURCE_BACKED"
+            or not statement.text.startswith(_DATELINE_PREFIX)):
+        raise Violation("GATE_DENIED")
+    # A dateline can be displayed only when its complete literal text is an
+    # independently accepted Fact in this case, not a freeform AI assertion.
+    fact_refs = [item for item in statement.refs if item.kind == "Fact"]
+    if len(fact_refs) != 1 or any(item.kind not in ("Fact", "Evidence") for item in statement.refs):
+        raise Violation("GATE_DENIED")
+    fact = _record(records, fact_refs[0], scope)
+    if (not isinstance(fact, Fact) or fact.status != "CONFIRMED"
+            or fact.support != "SOURCE_BACKED" or fact.acceptance is None
+            or fact.statement != statement.text or not fact.evidence):
+        raise Violation("GATE_DENIED")
+    approval = _record(records, fact.acceptance, scope)
+    prior = Ref(kind="Fact", id=fact.id, revision=fact.revision - 1)
+    if (not isinstance(approval, Decision) or approval.decision_type != "FACT_ACCEPTANCE"
+            or approval.outcome != "ACCEPT" or approval.decided_by.kind != "HUMAN"
+            or prior not in approval.targets):
+        raise Violation("GATE_DENIED")
+    value = statement.text[len(_DATELINE_PREFIX):]
+    match = re.fullmatch(r"([^,\r\n]{1,100}), (\d{2}\.\d{2}\.\d{4})", value)
+    if not match or not match.group(1).strip() or not statement.refs:
+        raise Violation("SCHEMA_INVALID")
+    place = match.group(1)
+    if place != place.strip() or not all(char.isprintable() for char in place):
+        raise Violation("SCHEMA_INVALID")
+    try:
+        datetime.strptime(match.group(2), "%d.%m.%Y")
+    except ValueError as exc:
+        raise Violation("SCHEMA_INVALID") from exc
+    return value
+
+
+def _identical_authoritative_request(statement, authoritative_requests) -> bool:
+    """Suppress only a redundant display of one identical authoritative request.
+
+    Any additional refs, citations or non-source-backed support preserve the
+    statement, rather than silently deleting potentially relevant content.
+    """
+    if statement.statement_type != "REQUEST" or statement.support != "SOURCE_BACKED":
+        return False
+    if statement.citations:
+        return False
+    return any(
+        statement.refs == (target,) and statement.text == text
+        for target, text in authoritative_requests.items()
     )
 
 
@@ -320,6 +393,8 @@ def assemble_render_model(
     blocks: list[RenderBlock] = [
         RenderBlock(role="DOCUMENT_HEADER", text=document.header, refs=(document.draft,))
     ]
+    authoritative_requests = {}
+    dateline_block = None
 
     for party_ref in document.parties:
         party = _record(records, party_ref, scope)
@@ -331,6 +406,7 @@ def assemble_render_model(
             request = _record(records, request_ref, scope)
             if not isinstance(request, Request):
                 raise Violation("REFERENCE_TYPE")
+            authoritative_requests[request_ref] = request.text
             blocks.append(
                 RenderBlock(
                     role="REQUEST_ITEM",
@@ -356,6 +432,14 @@ def assemble_render_model(
         )
         request_ordinal = 1
         for statement in section_text.statements:
+            dateline = _source_bound_dateline(statement, records, scope)
+            if dateline is not None:
+                if section.section_type != "HEADER_AND_PARTIES" or dateline_block is not None:
+                    raise Violation("SCHEMA_INVALID")
+                dateline_block = RenderBlock(role="DATELINE", text=dateline, refs=statement.refs)
+                continue
+            if _identical_authoritative_request(statement, authoritative_requests):
+                continue
             role = statement_roles[statement.statement_type]
             ordinal = None
             if role == "REQUEST_ITEM":
@@ -388,6 +472,9 @@ def assemble_render_model(
                 refs=(document.signature_party,),
             )
         )
+
+    if dateline_block is not None:
+        blocks.insert(0, dateline_block)
 
     return RenderModel(
         tenant_id=document.tenant_id,
@@ -426,6 +513,9 @@ def build_layout(model: RenderModel, profile: RenderProfile = OFFICIAL_PL_V1) ->
 
 
 def _display_text(block: LayoutBlock) -> str:
+    if block.role == "SIGNATURE":
+        # A physical signature affordance, not a claim that a human signed.
+        return f"_______________________________\n{block.text}"
     return f"{block.ordinal}. {block.text}" if block.ordinal is not None else block.text
 
 
@@ -537,7 +627,8 @@ def render_docx(layout: LayoutTree, profile: RenderProfile = OFFICIAL_PL_V1) -> 
         fmt.keep_together = style.keep_together
         fmt.widow_control = style.widow_control
         fmt.page_break_before = style.page_break_before
-        paragraph.alignment = alignments[style.alignment]
+        paragraph.alignment = (WD_ALIGN_PARAGRAPH.RIGHT if block.role == "DATELINE"
+                               else alignments[style.alignment])
 
         run = paragraph.add_run(_display_text(block))
         _set_run_font(run, profile, size=style.font_size_pt, bold=style.bold)
@@ -681,7 +772,9 @@ def render_pdf(layout: LayoutTree, profile: RenderProfile = OFFICIAL_PL_V1) -> b
             ):
                 new_page()
                 pdf.setFont(font, size)
-            if style.alignment == "CENTER":
+            if block.role == "DATELINE":
+                pdf.drawRightString(right, y, line)
+            elif style.alignment == "CENTER":
                 pdf.drawCentredString(page_width / 2, y, line)
             elif style.alignment == "RIGHT":
                 pdf.drawRightString(right, y, line)

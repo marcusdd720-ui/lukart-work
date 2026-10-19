@@ -88,7 +88,7 @@ class AuditService:
             raise
 
     @staticmethod
-    def _package(tx, principal):
+    def _package(tx, principal, case_sequence=None):
         records = tx.records()
         object_rows, command_rows = tx.audit_inventory()
         events = tx.events()
@@ -99,6 +99,9 @@ class AuditService:
         if tuple(event.audit.event_id for event in outbox) != event_ids:
             raise Violation('PROVENANCE_MISSING')
         hashes = tuple(digest(event) for event in events)
+        effective_sequence = tx.sequence() if case_sequence is None else case_sequence
+        if effective_sequence not in (tx.sequence(), tx.sequence() - 1):
+            raise Violation('PROVENANCE_MISSING')
         revision_pins = tuple(
             AuditRevisionPin(ref=target, content_hash=digest(entity))
             for target, entity in sorted(
@@ -127,7 +130,7 @@ class AuditService:
             contract='urn:lukart:work:AuditPackage:1.0.0',
             tenant_id=principal.tenant_id,
             case_id=principal.case_id,
-            case_sequence=tx.sequence(),
+            case_sequence=effective_sequence,
             heads=tuple(sorted(
                 (ref(entity) for entity in tx.heads()),
                 key=lambda target: (target.kind, str(target.id), target.revision),

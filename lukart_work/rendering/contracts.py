@@ -14,6 +14,7 @@ from lukart_work.contracts.messages import ValidationRunPin
 from lukart_work.domain.models import Hash, Positive, Ref, Text, Value, VersionPin
 
 RenderRole = Literal[
+    "DATELINE",
     "DOCUMENT_HEADER",
     "PARTY_BLOCK",
     "REQUEST_HEADING",
