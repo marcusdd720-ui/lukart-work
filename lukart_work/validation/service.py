@@ -53,8 +53,9 @@ class ValidationEngineService(CommandService):
             raise Violation('GATE_DENIED')
         if digest(draft) != request.draft_hash or draft.snapshot_hash != request.snapshot_hash:
             raise Violation('INVALID_HASH')
-        from lukart_work.drafting.amendments import verify_amendment
+        from lukart_work.drafting.amendments import reject_superseded, verify_amendment
         verify_amendment(tx, draft, records)
+        reject_superseded(tx, draft)
         return draft
 
     @staticmethod

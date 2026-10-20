@@ -239,6 +239,38 @@ class OCRRuntimeTests(unittest.TestCase):
     def setUpClass(cls):
         cls.config = OCRConfig(**json.loads(Path(os.environ['LUKART_OCR_TEST_CONFIG']).read_text()))
 
+    def test_single_frame_jpeg_without_n_frames_is_extracted(self):
+        from PIL import Image
+        stream = BytesIO()
+        with Image.open(BytesIO(scan())) as image:
+            image.save(stream, format='JPEG', quality=95)
+        data = stream.getvalue()
+        with Image.open(BytesIO(data)) as image:
+            self.assertFalse(hasattr(image, 'n_frames'))
+        body = parse_isolated(data, 'image/jpeg', self.config)
+        self.assertEqual(body.status, 'EXTRACTED', body)
+        self.assertEqual(len(body.fragments), 1)
+        self.assertIn('Zażółć gęślą jaźń', body.fragments[0].text)
+        self.assertEqual(body.fragments[0].position, '1')
+        self.assertEqual(body.fragments[0].extraction_method, 'OCR')
+        self.assertEqual(body.ocr_engine, self.config.pin())
+
+    def test_multipage_tiff_preserves_frames_and_page_limit(self):
+        from PIL import Image
+        from lukart_work.ingestion.ocr import MAX_PAGES
+        with Image.open(BytesIO(scan())) as image:
+            stream = BytesIO()
+            image.save(stream, format='TIFF', save_all=True, append_images=[image.copy()])
+        rows = LocalOCR(self.config).image(stream.getvalue())
+        self.assertEqual([row[:2] for row in rows], [('PAGE', '1'), ('PAGE', '2')])
+        self.assertTrue(all('Zażółć gęślą jaźń' in row[2] for row in rows))
+        tiny = Image.new('RGB', (1, 1), 'white')
+        stream = BytesIO()
+        tiny.save(stream, format='TIFF', save_all=True, append_images=[tiny] * MAX_PAGES)
+        with patch.object(LocalOCR, '_text', side_effect=AssertionError('over-limit OCR')):
+            with self.assertRaisesRegex(ValueError, 'OCR_IMAGE_LIMIT'):
+                LocalOCR(self.config).image(stream.getvalue())
+
     def test_real_polish_scan_automatically_becomes_unverified_candidates(self):
         data = scan()
         before = sha256(data).hexdigest()

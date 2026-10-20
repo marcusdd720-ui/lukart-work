@@ -59,6 +59,48 @@ class DraftAmendmentTests(unittest.TestCase):
         self.h.sequence=result.case_sequence
         return self.h.get(result.refs[0])
 
+    def test_superseded_draft_cannot_be_revalidated_but_current_draft_renders(self):
+        from lukart_work.validation.contracts import ValidationRequest
+        old, old_run = self.h.validated()
+        new = self.apply(self.command(old))
+        before = self.h.state()
+        request = self.h.vrequest('ValidateDraft', old)
+        with self.h.repo.transaction(self.h.tenant, self.h.case_id) as tx:
+            with self.assertRaisesRegex(Violation, 'STALE'):
+                self.h.validation._bound_draft(
+                    ValidationRequest.model_validate_json(json.dumps(request)), self.h.principal,
+                    tx, tx.records(), {(e.kind, e.id): e for e in tx.heads()})
+        denied = self.h.vexecute(self.h.vrequest('ValidateDraft', old,
+            review_id=str(self.h.projection(old_run).execution.review.id)))
+        self.assertIsInstance(denied, DomainError, denied)
+        self.assertEqual(denied.code, 'STALE')
+        self.assertEqual(self.h.state(), before)
+        review = self.h.review(new)
+        result, run_id, _ = self.h.validate(new, review)
+        current = self.h.get(result.refs[0])
+        self.assertEqual(current.status, 'VALIDATED')
+        render_id, _, _ = self.h.render(current, run_id)
+        self.assertTrue(self.h.final_query('ReadFinalArtifact', render_id, format='PDF').startswith(b'%PDF-'))
+        self.assertEqual(self.h.get(ref(old)), old)
+
+    def test_superseded_draft_render_guard_rejects_even_matching_validation_sequence(self):
+        from lukart_work.finalization.contracts import FinalizationRequest, semantic_profile_pin
+        from lukart_work.validation.contracts import ValidationExecution
+        old, old_run = self.h.validated()
+        self.apply(self.command(old))
+        before = self.h.state()
+        request = self.h.final_request('RenderDraft', old, validation_run_id=str(old_run),
+            semantic_profile=semantic_profile_pin(self.h.final_profile).model_dump(mode='json'))
+        with self.h.repo.transaction(self.h.tenant, self.h.case_id) as tx:
+            execution = tx.object('validation_execution', old_run, ValidationExecution)
+            # Isolate the successor guard from the independent case-sequence guard.
+            request['meta']['expected_case_sequence'] = execution.committed_sequence
+            with self.assertRaisesRegex(Violation, 'STALE'):
+                self.h.finalization._validation_projection(
+                    FinalizationRequest.model_validate_json(json.dumps(request)), self.h.principal,
+                    tx, tx.records(), {(e.kind, e.id): e for e in tx.heads()}, old, self.h.finalization.clock())
+        self.assertEqual(self.h.state(), before)
+
     def test_amendment_preserves_history_trace_and_requires_fresh_review_then_renders(self):
         original_apply=self.h.apply
         def polish_fixture(operation,data=None,*args,**kwargs):

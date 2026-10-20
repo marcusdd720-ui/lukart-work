@@ -120,8 +120,9 @@ class FinalizationService(CommandService):
 
     @staticmethod
     def _validation_projection(request, principal, tx, records, heads, draft, now):
-        from lukart_work.drafting.amendments import verify_amendment
+        from lukart_work.drafting.amendments import reject_superseded, verify_amendment
         verify_amendment(tx, draft, records)
+        reject_superseded(tx, draft)
         execution = tx.object("validation_execution", request.validation_run_id, ValidationExecution)
         run = tx.object("validation_run", request.validation_run_id, wire.ValidationRun)
         if execution.id != request.validation_run_id or run != execution.run:

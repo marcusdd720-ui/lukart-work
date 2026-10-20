@@ -136,6 +136,11 @@ def verify_amendment(tx, draft, records):
         draft = predecessor
 
 
+def reject_superseded(tx, draft):
+    if any(r.predecessor.id == draft.id for r in tx.objects(CATEGORY, HumanDraftAmendmentReceipt)):
+        raise Violation('STALE')
+
+
 def amend(service, request, principal, tx, records, heads, now):
     from .service import ControlledDraftingService
     from lukart_work.core.service import entity_from
@@ -150,8 +155,7 @@ def amend(service, request, principal, tx, records, heads, now):
         raise Violation('GATE_DENIED')
     if digest(old) != data.draft_hash:
         raise Violation('INVALID_HASH')
-    if any(r.predecessor.id == old.id for r in tx.objects(CATEGORY, HumanDraftAmendmentReceipt)):
-        raise Violation('STALE')
+    reject_superseded(tx, old)
     verify_amendment(tx, old, records)
     plan = resolve(old.plan, records, principal.tenant_id, principal.case_id)
     filing = resolve(plan.filing, records, principal.tenant_id, principal.case_id)

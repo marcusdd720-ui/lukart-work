@@ -86,9 +86,10 @@ class LocalOCR:
         with warnings.catch_warnings(), TemporaryDirectory(prefix='lukart-ocr-') as folder:
             warnings.simplefilter('error', Image.DecompressionBombWarning)
             with Image.open(BytesIO(data)) as image:
-                if image.format not in ('PNG', 'JPEG', 'TIFF') or image.n_frames > MAX_PAGES:
+                frames = getattr(image, 'n_frames', 1)
+                if image.format not in ('PNG', 'JPEG', 'TIFF') or frames > MAX_PAGES:
                     raise ValueError('OCR_IMAGE_LIMIT')
-                for page in range(image.n_frames):
+                for page in range(frames):
                     image.seek(page)
                     self._check_image(image)
                     target = Path(folder) / 'page.png'
