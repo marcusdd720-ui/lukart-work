@@ -1,0 +1,33 @@
+{
+  "tested_sha": "44196d32270503ab1f032f36b30d2a46d106643d",
+  "tests": 725,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "test_result": "PASS",
+  "workflow_result": "FAIL at generated-evidence reproducibility; test/schema/package/benchmark steps passed",
+  "stage10": {
+    "run_id": 39381328121,
+    "artifact_id": 12244674926,
+    "archive_sha256": "ba7c1e393f95766a16e740650f36ccc65d6ed175c196e703d093c22b61a5c804",
+    "adopted_files": {
+      "reports/package-validation.json": "ede707dace2cfd8db4adcfffd0d1896b4cb393557a4f4b9ec85728958a99cde9",
+      "reports/stage10-schema-validation.json": "9addb258861690b57fa5957f07cc542c8ba4e1d4cfa73161db9f1d2124463fbb",
+      "reports/stage10-status.json": "5306e0909ecd51d83f595cbe994899011dfd5b76f1ff6340b22e507ec63eaec5"
+    }
+  },
+  "stage13": {
+    "run_id": 39381323597,
+    "artifact_id": 12245965680,
+    "archive_sha256": "81e771b28d89c94180afe3b9cabd5c0803e41064dea86bc2d176bd76c73244d7",
+    "retained_status": "stage13-44196d3-pass.json",
+    "status_sha256": "bdc2f662f2307fb54b30bb158fad2c6610254d63586857ddf2b7454956557e0a"
+  },
+  "historical_reports_preserved": [
+    "stage10-368298ce.json",
+    "stage10-8feb71a-fail.json"
+  ],
+  "source_hashes_match": true,
+  "manual_full_regression_repeated": false,
+  "note": "These raw CI reports bind to tested sources / exact44196d3. Required CI for any later SHA remains a separate gate."
+}
