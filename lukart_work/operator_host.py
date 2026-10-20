@@ -17,7 +17,7 @@ ROUTES = (
     "execute_procedural", "query_procedural", "execute_plan", "query_plan",
     "execute_draft", "execute_validation", "query_validation",
     "execute_finalization", "query_finalization",
-    "upload_source", "query_ingestion", "query_fact_evidence",
+    "upload_source", "query_ingestion", "query_fact_evidence", "query_draft",
 )
 MAX_BODY = 1024 * 1024
 PAGE = '''<!doctype html><html lang="pl"><meta charset="utf-8">
@@ -71,6 +71,25 @@ Każda decyzja HUMAN musi zostać podjęta przez rzeczywistego uprawnionego czł
 <label>Usługa <select id="route"></select></label>
 <p><label>Żądanie JSON<br><textarea id="request" rows="20" cols="90">{}</textarea></label></p>
 <button id="send">Wyślij jawnie zatwierdzone żądanie</button></details></fieldset>
+<fieldset><legend>Edytor projektu pisma</legend>
+<p>Zapis poprawki tworzy nowy projekt. Poprzednia wersja i źródła pozostają w historii.
+Nowy projekt wymaga ponownego przeglądu i walidacji. Zapis nie zatwierdza pisma ani nie wydaje FINAL.</p>
+<label>ID projektu <input id="draftId" autocomplete="off"></label>
+<label>Rewizja <input id="draftRevision" type="number" min="1" value="2"></label>
+<button id="loadDraft">Otwórz projekt</button><button id="previousDraft" disabled>Otwórz poprzednią wersję</button>
+<p id="draftStatus" role="status"></p><section id="draftTexts"></section>
+<label>Uzasadnienie poprawki <textarea id="amendRationale" rows="2"></textarea></label>
+<button id="prepareAmend">Przygotuj zapis poprawki</button>
+<button id="confirmAmend">Zatwierdzam zapis nowego projektu</button>
+<details><summary>Przegląd HUMAN nowej treści i ponowna walidacja</summary>
+<p>Oceń osobno każdy obszar. System nie nadaje ocen za człowieka.</p>
+<section id="draftAssessments"></section>
+<label>Uzasadnienie przeglądu <textarea id="draftReviewRationale" rows="2"></textarea></label>
+<button id="prepareDraftReview">Przygotuj przegląd do zatwierdzenia</button>
+<button id="prepareDraftValidation">Przygotuj ponowną walidację</button>
+<button id="prepareDraftRender">Przygotuj DOCX/PDF zwalidowanego projektu</button>
+<p>Sprawdź przygotowane polecenie i użyj poniższego przycisku wysłania. Brakujące zatwierdzenia blokują operację.</p>
+</details></fieldset>
 <fieldset><legend>4. Odczyt planu i walidacji (bez zmian sprawy)</legend>
 <p>Podaj identyfikatory istniejących rekordów CASE. Odczyt nie zatwierdza planu ani wyniku walidacji.</p>
 <label>ID planu dokumentu <input id="planId" autocomplete="off"></label>
@@ -111,7 +130,7 @@ function clearPrivate(){generation++;token.value='';request.value='{}';
 tenant.value='';caseId.value='';render.value='';
 caseTitle.value='';policyId.value='';policyVersion.value='';policyHash.value='';
 planId.value='';planRevision.value='1';validationId.value='';
-result.textContent='';send.disabled=false;clearArtifact();clearIntake();}
+result.textContent='';send.disabled=false;clearArtifact();clearIntake();clearDraftEditor();}
 document.getElementById('clear').onclick=clearPrivate;
 window.addEventListener('pagehide',clearPrivate);
 for(const r of routes){const o=document.createElement('option');o.value=o.textContent=r;route.append(o);}
@@ -200,10 +219,12 @@ operation,tenant_id:tenant.value.trim(),case_id:caseId.value.trim(),render_id:re
 ''').encode()
 CLIENT += b'\n' + Path(__file__).with_name('operator_preview.js').read_bytes()
 CLIENT += b'\n' + Path(__file__).with_name('operator_intake.js').read_bytes()
+CLIENT += b'\n' + Path(__file__).with_name('operator_editor.js').read_bytes()
 CSS = b'''body{max-width:1400px;margin:auto;padding:16px;font-family:system-ui,sans-serif}
 fieldset{min-width:0;margin:12px 0;padding:16px}label{display:inline-flex;flex-direction:column;gap:4px;margin:4px}
 input:not([type=number]){width:38ch;max-width:100%;box-sizing:border-box}textarea{width:100%;max-width:100%;box-sizing:border-box}
 pre{white-space:pre-wrap;overflow-wrap:anywhere}button{margin:4px;min-height:32px}
+#draftTexts label{display:flex;width:100%;box-sizing:border-box}#draftTexts textarea{min-height:7em}
 #previewPages{max-height:85vh;overflow:auto;background:#e5e7eb;padding:12px;margin-top:12px}
 #previewPages img{display:block;width:100%;max-width:1100px;height:auto;margin:0 auto 16px;background:white}
 #pdfStatus{font-weight:bold}'''

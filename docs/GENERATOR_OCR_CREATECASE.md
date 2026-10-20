@@ -107,7 +107,10 @@ proper case-scoped capabilities, admitted profiles and request-bound provider.
 No SERVICE actor may be relabeled as HUMAN to unlock CreateCase.
 
 The shell retains advanced explicit contracts for planning/drafting/validation.
-A guided free-text draft editor is not implemented by this change. The existing
-manual attested provider and all legal/final approval gates remain mandatory.
+The guided text editor now prepares the explicit HUMAN AmendDraft operation,
+preserving earlier projects and sources and requiring a fresh review/validation.
+See `docs/DRAFT_AMENDMENT_HUMAN_ACCEPTANCE.md` for the contract and trusted HUMAN
+configuration bridge. The existing manual attested provider and all legal/final
+approval gates remain mandatory.
 Do not declare PRODUCT_READY until those product requirements, actual HUMAN
 acceptance and required exact-SHA GitHub checks are independently satisfied.

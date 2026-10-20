@@ -205,7 +205,8 @@
         "AcceptSnapshot",
         "GenerateDocument",
         "ValidateDraft",
-        "RequestRelease"
+        "RequestRelease",
+        "AmendDraft"
       ],
       "title": "Operation",
       "type": "string"

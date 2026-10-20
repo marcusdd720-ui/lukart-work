@@ -20,7 +20,7 @@ Operation = Literal[
     'AddCitation', 'BindCitation', 'VerifyCitation',
     'AddPlan', 'ReviewPlan', 'ApprovePlan', 'SupersedePlan',
     'RecordDecision', 'RevokeDecision', 'RegisterSource', 'CreateSnapshot', 'AcceptSnapshot',
-    'GenerateDocument', 'ValidateDraft', 'RequestRelease',
+    'GenerateDocument', 'ValidateDraft', 'RequestRelease', 'AmendDraft',
 ]
 
 

@@ -1,0 +1,192 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "HUMAN",
+            "SERVICE",
+            "AI"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "DraftTextEdit": {
+      "additionalProperties": false,
+      "properties": {
+        "statement_id": {
+          "format": "uuid",
+          "title": "Statement Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "statement_id",
+        "text"
+      ],
+      "title": "DraftTextEdit",
+      "type": "object"
+    },
+    "Ref": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "Case",
+            "Party",
+            "Institution",
+            "Proceeding",
+            "Filing",
+            "Fact",
+            "Evidence",
+            "Issue",
+            "LegalSource",
+            "LegalRule",
+            "Claim",
+            "Defence",
+            "Argument",
+            "CounterArgument",
+            "Request",
+            "Deadline",
+            "Risk",
+            "Citation",
+            "DocumentPlan",
+            "Section",
+            "Draft",
+            "ValidationFinding",
+            "Decision"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "revision"
+      ],
+      "title": "Ref",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:HumanDraftAmendmentReceipt:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "case_id": {
+      "format": "uuid",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "command_id": {
+      "format": "uuid",
+      "title": "Command Id",
+      "type": "string"
+    },
+    "actor": {
+      "$ref": "#/$defs/Actor"
+    },
+    "recorded_at": {
+      "format": "date-time",
+      "title": "Recorded At",
+      "type": "string"
+    },
+    "predecessor": {
+      "$ref": "#/$defs/Ref"
+    },
+    "predecessor_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Predecessor Hash",
+      "type": "string"
+    },
+    "output": {
+      "$ref": "#/$defs/Ref"
+    },
+    "sections_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sections Hash",
+      "type": "string"
+    },
+    "original_reproduction_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Original Reproduction Hash",
+      "type": "string"
+    },
+    "edits": {
+      "items": {
+        "$ref": "#/$defs/DraftTextEdit"
+      },
+      "title": "Edits",
+      "type": "array"
+    },
+    "rationale": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract",
+    "id",
+    "tenant_id",
+    "case_id",
+    "command_id",
+    "actor",
+    "recorded_at",
+    "predecessor",
+    "predecessor_hash",
+    "output",
+    "sections_hash",
+    "original_reproduction_hash",
+    "edits",
+    "rationale"
+  ],
+  "title": "HumanDraftAmendmentReceipt",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:HumanDraftAmendmentReceipt:1.0.0"
+}

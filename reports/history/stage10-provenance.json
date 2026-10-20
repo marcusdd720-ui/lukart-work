@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "sha": "368298ce2b9ab4f6273ca278da907f522cea5fae",
+    "file": "stage10-368298ce.json",
+    "sha256": "8cebde8fa358f9932340e80a964d93a379e1c6ec8a8e94259c1d8c2a968d982a"
+  },
+  "failed": {
+    "sha": "8feb71a98a362047eaa6d8f421f09362211de8e6",
+    "file": "stage10-8feb71a-fail.json",
+    "sha256": "a3a849ba13b2dc9ca748c82bf45b7e7b3fa0ba313a7b6efc3a6e7a7abd8a59b7",
+    "run_id": 39342901397,
+    "artifact_id": 12229164666,
+    "archive_sha256": "36a79999f80265b11b8f88726a12bbb5d606ebd7b7b0b20f11b9a4a4a22c9a8d"
+  },
+  "policy": "Historical evidence only; neither report certifies the current SHA."
+}

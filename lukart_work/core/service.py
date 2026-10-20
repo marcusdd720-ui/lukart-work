@@ -104,7 +104,7 @@ class CommandService:
                         model_provider=None, rule_version=rule_pin(),
                     ))
                     events = [event]
-                    changed_targets = (request.target,) if request.target is not None else ()
+                    changed_targets = (request.target,) if request.target is not None and request.operation != 'AmendDraft' else ()
                     if isinstance(output, m.Decision) and output.supersedes is not None:
                         changed_targets += (output.supersedes,)
                     if changed_targets:
@@ -146,7 +146,7 @@ class CommandService:
             raise Violation('GATE_DENIED')
         if request.operation in (
             'ReopenCase', 'ArchiveCase', 'RevokeDecision', 'SupersedePlan',
-            'AddCitation', 'BindCitation', 'VerifyCitation',
+            'AddCitation', 'BindCitation', 'VerifyCitation', 'AmendDraft',
         ) and principal.actor.kind != 'HUMAN':
             raise Violation('FORBIDDEN')
 
@@ -202,6 +202,8 @@ class CommandService:
                     continue
                 self._live_decision(target, records, heads, principal)
         if entity.kind == 'Draft' and entity.status != 'PLANNED':
+            from lukart_work.drafting.amendments import verify_amendment
+            verify_amendment(tx, entity, candidate)
             snapshot = tx.object('snapshot', entity.snapshot_id, wire.Snapshot)
             acceptance = tx.object('acceptance', snapshot.id, m.Decision)
             live_acceptance = self._live_decision(ref(acceptance), records, heads, principal)
@@ -255,6 +257,9 @@ class CommandService:
     def _apply(self, request, principal, tx, records, heads, now):
         operation = request.operation
         data = dict(request.data)
+        if operation == 'AmendDraft':
+            from lukart_work.drafting.amendments import amend
+            return amend(self, request, principal, tx, records, heads, now)
         if operation in ('GenerateDocument', 'ValidateDraft', 'RequestRelease'):
             raise Violation('GATE_DENIED')
         if operation == 'RegisterSource':

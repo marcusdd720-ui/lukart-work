@@ -120,6 +120,10 @@ class GeneratorPismOperator:
     def query_core(self, request, token):
         return self.core.query(self._raw(request), token)
 
+    def query_draft(self, request, token):
+        from .drafting.amendments import query_editor
+        return query_editor(self, self._raw(request), token)
+
     def upload_source(self, request, token):
         from .operator_ingestion import upload
         return upload(self, request, token)

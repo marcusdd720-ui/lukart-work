@@ -9,9 +9,10 @@ for(const id of ['candidateDescription','candidateStatement','candidateRationale
 document.getElementById('reviewRevision').value='0';document.getElementById('candidateDisposition').value='REJECT';}
 function clearIntake(){caseSequence.value='';sourceFile.value='';sourceId.value='';ingestionId.value='';ingestionStatus.textContent='';clearReview();}
 for(const field of [token,tenant,caseId])field.oninput=()=>{
- generation++;clearIntake();clearArtifact();request.value='{}';result.textContent='';send.disabled=false;
+ generation++;clearIntake();clearArtifact();clearDraftEditor();request.value='{}';result.textContent='';send.disabled=false;
 };
 function handleIntakeResult(service,body,value){
+ handleDraftEditorResult(service,body,value);
  if(value.result_type==='CASE_HEAD')caseSequence.value=String(value.case_sequence);
  const registration=value.registration||value;
  if(['APPLIED','REPLAYED'].includes(registration.state))caseSequence.value=String(registration.case_sequence);
