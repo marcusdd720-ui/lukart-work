@@ -1,5 +1,10 @@
 # LUKART WORK — controlled drafting and validation
 
+Authorized post-PR64 OCR/CreateCase extension: [implementation and acceptance
+requirements](docs/GENERATOR_OCR_CREATECASE.md). It adds local Polish OCR and
+document/candidate controls to the existing authenticated operator. Actual HUMAN
+configuration and final product acceptance remain required.
+
 PB03 builder candidate adds an authenticated, immutable ten-member final-package assembler and
 scoped read route after the PB02 repository-issued FINAL release. Package creation revalidates
 render bytes, typed JSON, source provenance, trace maps and the Stage 12 audit chain in one atomic

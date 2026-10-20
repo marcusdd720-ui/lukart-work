@@ -17,6 +17,7 @@ ROUTES = (
     "execute_procedural", "query_procedural", "execute_plan", "query_plan",
     "execute_draft", "execute_validation", "query_validation",
     "execute_finalization", "query_finalization",
+    "upload_source", "query_ingestion", "query_fact_evidence", "query_draft",
 )
 MAX_BODY = 1024 * 1024
 PAGE = '''<!doctype html><html lang="pl"><meta charset="utf-8">
@@ -39,6 +40,30 @@ Przygotowanie żądania NIE oznacza jego wykonania.</p>
 <label>Wersja polityki <input id="policyVersion" autocomplete="off"></label>
 <label>SHA-256 polityki (64 znaki) <input id="policyHash" autocomplete="off"></label>
 <button id="prepareCase">Przygotuj żądanie CreateCase do kontroli</button></fieldset>
+<button id="confirmCase">Zatwierdzam utworzenie przygotowanej sprawy</button>
+<fieldset><legend>Dokumenty i automatyczne OCR</legend>
+<p>Otwórz sprawę, aby odczytać aktualny numer sekwencji. Wybierz PDF, PNG, JPEG, TIFF, DOCX lub TXT (do 700 KiB).
+Zapis zachowuje oryginał. OCR i parser tworzą wyłącznie kandydatów do weryfikacji.</p>
+<label>Sekwencja sprawy <input id="caseSequence" type="number" min="1"></label>
+<label>Dokument <input id="sourceFile" type="file" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.docx,.txt"></label>
+<button id="uploadSource">Zapisz dokument i odczytaj tekst</button>
+<label>ID źródła <input id="sourceId" autocomplete="off"></label>
+<label>ID odczytu <input id="ingestionId" autocomplete="off"></label>
+<button id="readIngestion">Pokaż zapisany tekst i kandydatów</button>
+<button id="retryIngestion">Ponów odczyt źródła jako nowy przebieg</button>
+<p id="ingestionStatus" role="status" aria-live="polite"></p></fieldset>
+<fieldset><legend>Weryfikacja kandydatów przez uprawnionego HUMAN</legend>
+<p>Porównaj tekst z oryginałem. Przyjęcie kandydata tworzy informację do dalszej weryfikacji;
+potwierdzenie faktu i akceptacja dowodu pozostają odrębnymi decyzjami.</p>
+<label>Kandydat <select id="candidateIndex"></select></label>
+<pre id="candidateQuote"></pre>
+<label>Dyspozycja <select id="candidateDisposition"><option value="REJECT">Odrzuć</option><option value="ADMIT">Przyjmij do dalszej weryfikacji</option></select></label>
+<label>Wersja dotychczasowej oceny (0 dla pierwszej) <input id="reviewRevision" type="number" min="0" value="0"></label>
+<label>Opis dowodu <textarea id="candidateDescription" rows="2"></textarea></label>
+<label>Treść proponowanego faktu <textarea id="candidateStatement" rows="3"></textarea></label>
+<label>Uzasadnienie oceny <textarea id="candidateRationale" rows="2"></textarea></label>
+<button id="prepareReview">Przygotuj ocenę do jawnego zatwierdzenia</button>
+<button id="viewFacts">Pokaż fakty, dowody i statusy weryfikacji</button></fieldset>
 <fieldset><legend>3. Jawne polecenia, analiza i projekt pisma</legend>
 <p>Dalsze operacje CASE wymagają pełnych, jawnych kontraktów usługi.
 Każda decyzja HUMAN musi zostać podjęta przez rzeczywistego uprawnionego człowieka.</p>
@@ -46,6 +71,25 @@ Każda decyzja HUMAN musi zostać podjęta przez rzeczywistego uprawnionego czł
 <label>Usługa <select id="route"></select></label>
 <p><label>Żądanie JSON<br><textarea id="request" rows="20" cols="90">{}</textarea></label></p>
 <button id="send">Wyślij jawnie zatwierdzone żądanie</button></details></fieldset>
+<fieldset><legend>Edytor projektu pisma</legend>
+<p>Zapis poprawki tworzy nowy projekt. Poprzednia wersja i źródła pozostają w historii.
+Nowy projekt wymaga ponownego przeglądu i walidacji. Zapis nie zatwierdza pisma ani nie wydaje FINAL.</p>
+<label>ID projektu <input id="draftId" autocomplete="off"></label>
+<label>Rewizja <input id="draftRevision" type="number" min="1" value="2"></label>
+<button id="loadDraft">Otwórz projekt</button><button id="previousDraft" disabled>Otwórz poprzednią wersję</button>
+<p id="draftStatus" role="status"></p><section id="draftTexts"></section>
+<label>Uzasadnienie poprawki <textarea id="amendRationale" rows="2"></textarea></label>
+<button id="prepareAmend">Przygotuj zapis poprawki</button>
+<button id="confirmAmend">Zatwierdzam zapis nowego projektu</button>
+<details><summary>Przegląd HUMAN nowej treści i ponowna walidacja</summary>
+<p>Oceń osobno każdy obszar. System nie nadaje ocen za człowieka.</p>
+<section id="draftAssessments"></section>
+<label>Uzasadnienie przeglądu <textarea id="draftReviewRationale" rows="2"></textarea></label>
+<button id="prepareDraftReview">Przygotuj przegląd do zatwierdzenia</button>
+<button id="prepareDraftValidation">Przygotuj ponowną walidację</button>
+<button id="prepareDraftRender">Przygotuj DOCX/PDF zwalidowanego projektu</button>
+<p>Sprawdź przygotowane polecenie i użyj poniższego przycisku wysłania. Brakujące zatwierdzenia blokują operację.</p>
+</details></fieldset>
 <fieldset><legend>4. Odczyt planu i walidacji (bez zmian sprawy)</legend>
 <p>Podaj identyfikatory istniejących rekordów CASE. Odczyt nie zatwierdza planu ani wyniku walidacji.</p>
 <label>ID planu dokumentu <input id="planId" autocomplete="off"></label>
@@ -86,7 +130,7 @@ function clearPrivate(){generation++;token.value='';request.value='{}';
 tenant.value='';caseId.value='';render.value='';
 caseTitle.value='';policyId.value='';policyVersion.value='';policyHash.value='';
 planId.value='';planRevision.value='1';validationId.value='';
-result.textContent='';send.disabled=false;clearArtifact();}
+result.textContent='';send.disabled=false;clearArtifact();clearIntake();clearDraftEditor();}
 document.getElementById('clear').onclick=clearPrivate;
 window.addEventListener('pagehide',clearPrivate);
 for(const r of routes){const o=document.createElement('option');o.value=o.textContent=r;route.append(o);}
@@ -105,7 +149,7 @@ download.hidden=false;
 result.textContent='Odczytano zapisany dokument. Sam odczyt nie oznacza zatwierdzenia pisma.';
 }else{const text=await response.text();if(current!==generation)return;
 try{result.textContent='HTTP '+response.status+'\\n'+
-JSON.stringify(JSON.parse(text),null,2);}catch{result.textContent='HTTP '+response.status+'\\n'+text;}}
+JSON.stringify(JSON.parse(text),null,2);handleIntakeResult(service,body,JSON.parse(text));}catch{result.textContent='HTTP '+response.status+'\\n'+text;}}
 }catch(e){if(current===generation)result.textContent='Nie udało się połączyć z panelem.';}finally{if(current===generation)send.disabled=false;}}
 send.onclick=()=>{try{const body=JSON.parse(request.value);submit(route.value,body);}
 catch{result.textContent='Wpisz poprawne żądanie JSON przed wysłaniem.';}};
@@ -174,10 +218,13 @@ operation,tenant_id:tenant.value.trim(),case_id:caseId.value.trim(),render_id:re
 
 ''').encode()
 CLIENT += b'\n' + Path(__file__).with_name('operator_preview.js').read_bytes()
+CLIENT += b'\n' + Path(__file__).with_name('operator_intake.js').read_bytes()
+CLIENT += b'\n' + Path(__file__).with_name('operator_editor.js').read_bytes()
 CSS = b'''body{max-width:1400px;margin:auto;padding:16px;font-family:system-ui,sans-serif}
 fieldset{min-width:0;margin:12px 0;padding:16px}label{display:inline-flex;flex-direction:column;gap:4px;margin:4px}
 input:not([type=number]){width:38ch;max-width:100%;box-sizing:border-box}textarea{width:100%;max-width:100%;box-sizing:border-box}
 pre{white-space:pre-wrap;overflow-wrap:anywhere}button{margin:4px;min-height:32px}
+#draftTexts label{display:flex;width:100%;box-sizing:border-box}#draftTexts textarea{min-height:7em}
 #previewPages{max-height:85vh;overflow:auto;background:#e5e7eb;padding:12px;margin-top:12px}
 #previewPages img{display:block;width:100%;max-width:1100px;height:auto;margin:0 auto 16px;background:white}
 #pdfStatus{font-weight:bold}'''

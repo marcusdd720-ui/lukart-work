@@ -1,0 +1,57 @@
+{
+  "$defs": {
+    "DraftTextEdit": {
+      "additionalProperties": false,
+      "properties": {
+        "statement_id": {
+          "format": "uuid",
+          "title": "Statement Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "statement_id",
+        "text"
+      ],
+      "title": "DraftTextEdit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "urn:lukart:work:AmendDraft:1.0.0",
+      "title": "Contract",
+      "type": "string"
+    },
+    "draft_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Draft Hash",
+      "type": "string"
+    },
+    "edits": {
+      "items": {
+        "$ref": "#/$defs/DraftTextEdit"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Edits",
+      "type": "array"
+    }
+  },
+  "required": [
+    "contract",
+    "draft_hash",
+    "edits"
+  ],
+  "title": "AmendDraft",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:AmendDraft:1.0.0"
+}

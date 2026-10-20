@@ -1,0 +1,39 @@
+{
+  "source_sha": "21bd095e19413fa860bc92fc6b2f44e651b600ad",
+  "kind": "ADOPTED_RAW_CI_EVIDENCE",
+  "artifacts": [
+    {
+      "path": "stage10-21bd095-ci.zip",
+      "run_id": 39446870676,
+      "artifact_id": 12276957996,
+      "sha256": "b7b8df1f380c054163a7e4d3d59a555e7ebcb5330746f287e9c859ad8f7517cc"
+    },
+    {
+      "path": "stage13-21bd095-ci.zip",
+      "run_id": 39446871284,
+      "artifact_id": 12277202551,
+      "sha256": "40c11a446c666331495115e951f1fb7549c45edc79f273d53b5c9156529b78da"
+    }
+  ],
+  "full_regression": {
+    "tests": 727,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "result": "PASS"
+  },
+  "stage10_raw_sha256": "8540bdb8b0c818aa81a4c7e49bd3aa9c5c792cf8e6593e16c62b6a01b4845cde",
+  "stage13_raw_sha256": "cf7f140bfa271fa36fe7b44613af0c369c55f57521882759f8743af514269b74",
+  "previous_stage10_raw_sha256": "5306e0909ecd51d83f595cbe994899011dfd5b76f1ff6340b22e507ec63eaec5",
+  "previous_stage10_repository_blob": "0661a00565070da4635315db4ee2d9cb2cd2d232",
+  "tested_source_hashes_verified": 152,
+  "stage13_workflow_conclusion": "success",
+  "stage11_control_workflow_conclusion": "failure",
+  "stage11_control_failure_step": "Generated evidence is reproducible",
+  "observed_generated_differences": [
+    "reports/manifest.sha256.json",
+    "reports/stage10-status.json"
+  ],
+  "manual_full_regression_repeated": false,
+  "new_reports_only_sha_ci": "NOT_VERIFIED_BEFORE_PUBLICATION"
+}

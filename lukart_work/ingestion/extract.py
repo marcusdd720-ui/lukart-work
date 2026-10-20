@@ -105,11 +105,19 @@ def candidates_for(fragments):
     return tuple(items)
 
 
-def extract(data, declared):
+def extract(data, declared, ocr_config=None):
     """Called only in a disposable worker; callers receive closed, safe outcomes."""
     media, classification = identify(data, declared)
     warnings = ['UNTRUSTED_SOURCE', 'REVIEW_REQUIRED']
     status, rows = 'EXTRACTED', []
+    ocr = None
+    ocr_pages = set()
+    def recognize():
+        nonlocal ocr
+        if ocr is None:
+            from .ocr import LocalOCR
+            ocr = LocalOCR(ocr_config)
+        return ocr
     if classification == 'TEXT':
         rows = [('LINE', str(i), text) for i, text in enumerate(data.decode('utf-8-sig').splitlines(), 1)]
     elif classification == 'DOCUMENT':
@@ -125,24 +133,38 @@ def extract(data, declared):
         if reader.is_encrypted or len(reader.pages) > 200:
             raise ValueError('PDF_LIMIT_OR_ENCRYPTED')
         for i, page in enumerate(reader.pages, 1):
-            rows.append(('PAGE', str(i), page.extract_text() or ''))
+            text = page.extract_text() or ''
+            if not text.strip() and ocr_config is not None:
+                from .ocr import MAX_PAGES
+                if len(reader.pages) > MAX_PAGES:
+                    raise ValueError('OCR_PAGE_LIMIT')
+                text = recognize().pdf_page(data, i, page)
+                ocr_pages.add(str(i))
+            rows.append(('PAGE', str(i), text))
         # Text order/layout and images cannot be certified by a text extractor.
         warnings.append('PARTIAL_EXTRACTION')
         if any(not text.strip() for _, _, text in rows):
             warnings.append('OCR_REQUIRED')
     elif classification == 'IMAGE':
-        status = 'NEEDS_OCR'
-        warnings.append('OCR_REQUIRED')
+        if ocr_config is None:
+            status = 'NEEDS_OCR'
+            warnings.append('OCR_REQUIRED')
+        else:
+            rows = recognize().image(data)
+            ocr_pages.update(position for _, position, _ in rows)
+            warnings.append('PARTIAL_EXTRACTION')
     else:
         status = 'UNSUPPORTED'
         warnings.append('UNSUPPORTED_FORMAT')
     if sum(len(text) for _, _, text in rows) > MAX_TEXT or len(rows) > 1000:
         raise ValueError('TEXT_LIMIT')
     fragments = tuple(ExtractedFragment(index=i, unit=unit, position=position,
-        text=text, text_hash=sha256(text.encode()).hexdigest())
+        text=text, text_hash=sha256(text.encode()).hexdigest(),
+        extraction_method='OCR' if position in ocr_pages and unit == 'PAGE' else 'TEXT')
         for i, (unit, position, text) in enumerate(row for row in rows if row[2].strip()))
     if status == 'EXTRACTED' and not fragments:
         status = 'NEEDS_OCR' if classification == 'PDF' else 'EMPTY'
         warnings.append('OCR_REQUIRED' if classification == 'PDF' else 'NO_TEXT')
     return ExtractionBody(media_type=media, classification=classification, status=status,
-        fragments=fragments, candidates=candidates_for(fragments), warnings=tuple(dict.fromkeys(warnings)))
+        fragments=fragments, candidates=candidates_for(fragments), warnings=tuple(dict.fromkeys(warnings)),
+        ocr_engine=ocr.pin if ocr else None)

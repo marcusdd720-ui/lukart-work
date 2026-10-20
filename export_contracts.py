@@ -18,6 +18,7 @@ from lukart_work.drafting.contracts import (
     DraftingTerminalResult, ModelExecutionReceipt,
 )
 from lukart_work.contracts.versions import contract_version
+from lukart_work.drafting.amendments import AmendDraft, HumanDraftAmendmentReceipt, DraftEditorQuery, DraftEditorProjection
 from lukart_work.validation.contracts import STAGE10_CONTRACTS
 from lukart_work.finalization.contracts import FINALIZATION_CONTRACTS
 from lukart_work.domain.lifecycle import TRANSITIONS,INITIAL
@@ -30,7 +31,8 @@ EXTRA_CONTRACTS=(CoreRequest,CoreQuery,ArtifactRecord,IngestionResult,FactEviden
                  FilingRegistryEntry,RegistryProjection,ProceduralRequest,ProceduralRuleBinding,
                  ProceduralQuery,ProceduralFinding,ProceduralAssessment,PlannerRequest,PlannerQuery,
                  DocumentPlanProjection,DraftingProfile,DraftingInvocation,DraftingTrace,
-                 DraftingRejectionTrace,DraftingTerminalResult,ModelExecutionReceipt)
+                 DraftingRejectionTrace,DraftingTerminalResult,ModelExecutionReceipt,
+                 AmendDraft,HumanDraftAmendmentReceipt,DraftEditorQuery,DraftEditorProjection)
 
 def write(path,obj):
     (ROOT/path).write_text(

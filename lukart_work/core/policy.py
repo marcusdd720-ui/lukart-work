@@ -10,6 +10,7 @@ POLICY_FILES = (
     'validation/rules.py', 'contracts/messages.py', 'contracts/versions.py',
     'storage/objects.py', 'storage/service.py', 'storage/migration.sql', 'storage/migrations.py',
     'facts/contracts.py', 'facts/service.py',
+    'drafting/amendments.py',
 )
 
 

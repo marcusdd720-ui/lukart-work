@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, model_serializer
 from lukart_work.domain.models import Value, Hash, Actor, VersionPin
 
 
@@ -12,6 +12,14 @@ class ExtractedFragment(Value):
     position: Annotated[str, Field(min_length=1, max_length=200)]
     text: Annotated[str, Field(min_length=1, max_length=100000)]
     text_hash: Hash
+    extraction_method: Literal['TEXT', 'OCR'] = 'TEXT'
+
+    @model_serializer(mode='wrap')
+    def serialize_compatible(self, handler):
+        value = handler(self)
+        if self.extraction_method == 'TEXT':
+            value.pop('extraction_method', None)
+        return value
 
 
 class IngestionCandidate(Value):
@@ -32,6 +40,14 @@ class ExtractionBody(Value):
     warnings: tuple[Literal['UNTRUSTED_SOURCE', 'REVIEW_REQUIRED', 'PARTIAL_EXTRACTION',
         'OCR_REQUIRED', 'UNSUPPORTED_FORMAT', 'PARSER_REJECTED', 'NO_TEXT'], ...]
     contradiction_check: Literal['NOT_RUN'] = 'NOT_RUN'
+    ocr_engine: VersionPin | None = None
+
+    @model_serializer(mode='wrap')
+    def serialize_compatible(self, handler):
+        value = handler(self)
+        if self.ocr_engine is None:
+            value.pop('ocr_engine', None)
+        return value
 
     @model_validator(mode='after')
     def check_links(self):
@@ -41,6 +57,8 @@ class ExtractionBody(Value):
         if self.status == 'EXTRACTED' and not self.fragments:
             raise ValueError('EMPTY_EXTRACTION')
         for i, fragment in enumerate(self.fragments):
+            if fragment.extraction_method == 'OCR' and (fragment.unit != 'PAGE' or self.ocr_engine is None):
+                raise ValueError('OCR_PROVENANCE_REQUIRED')
             if fragment.index != i or sha256(fragment.text.encode()).hexdigest() != fragment.text_hash:
                 raise ValueError('INVALID_FRAGMENT')
         for candidate in self.candidates:

@@ -16,6 +16,7 @@ def build_operator(
     drafting_profiles: dict[str, DraftingProfile],
     provider: ManualAttestedDraftingProvider,
     package_profile: FinalPackageProfile,
+    ocr_config=None,
 ) -> GeneratorPismOperator:
     """Assemble existing components supplied by an administrator's trusted code.
 
@@ -48,4 +49,5 @@ def build_operator(
         repository=repository, authority=authority, case_profile=case_profile,
         drafting_profiles=dict(drafting_profiles), provider=provider,
         package_profile=package_profile,
+        ocr_config=ocr_config,
     )

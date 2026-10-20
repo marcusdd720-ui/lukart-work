@@ -53,6 +53,7 @@ class GeneratorPismOperator:
         provider: ManualAttestedDraftingProvider,
         package_profile,
         clock=None,
+        ocr_config=None,
     ):
         if case_profile is not None:
             if runtime is not None or type_id is not None:
@@ -66,6 +67,8 @@ class GeneratorPismOperator:
             case_profile = runtime.finalization_profile
         self.case_profile = case_profile
         self.core = CommandService(repository, authority, clock)
+        from .ingestion.service import IngestionService
+        self.ingestion = IngestionService(repository, authority, ocr_config)
         self.facts = FactEvidenceService(repository, authority, clock)
         self.procedural = ProceduralEngineService(repository, authority, clock)
         self.planner = DocumentPlannerService(repository, authority, clock)
@@ -117,8 +120,23 @@ class GeneratorPismOperator:
     def query_core(self, request, token):
         return self.core.query(self._raw(request), token)
 
+    def query_draft(self, request, token):
+        from .drafting.amendments import query_editor
+        return query_editor(self, self._raw(request), token)
+
+    def upload_source(self, request, token):
+        from .operator_ingestion import upload
+        return upload(self, request, token)
+
+    def query_ingestion(self, request, token):
+        from .operator_ingestion import query
+        return query(self, request, token)
+
     def execute_fact_evidence(self, request, token):
         return self.facts.execute(self._raw(request), token)
+
+    def query_fact_evidence(self, request, token):
+        return self.facts.matrix(self._raw(request), token)
 
     def execute_procedural(self, request, token):
         return self.procedural.execute(self._raw(request), token)

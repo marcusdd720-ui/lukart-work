@@ -18,12 +18,12 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]==3.3.3"]
-ingestion = ["pypdf==6.10.0"]
+ingestion = ["pypdf==6.10.0", "Pillow==12.3.0"]
 
 [tool.setuptools.packages.find]
 include = ["lukart_work*"]
 
 [tool.setuptools.package-data]
-"lukart_work" = ["operator_preview.js"]
+"lukart_work" = ["operator_preview.js", "operator_intake.js", "operator_editor.js"]
 "lukart_work.core" = ["migration.sql", "migration_ai_egress.sql"]
 "lukart_work.storage" = ["migration.sql"]
