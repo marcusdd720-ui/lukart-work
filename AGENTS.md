@@ -6,7 +6,7 @@ Status: ACTIVE
 Scope: Entire repository unless a more specific nested AGENTS.md or AGENTS.override.md applies
 Canonical governance: docs/ENTERPRISE_EXECUTION_CONSTITUTION.md
 Repository: lukart-work
-Operating model: build-first, evidence-first, fail-closed, exact-SHA
+Operating model: adopt-first, build-missing-delta-only, evidence-first, fail-closed, exact-SHA
 
 ---
 
@@ -32,7 +32,7 @@ Nested AGENTS.md files may specialize local behavior, but they must not intentio
 
 Mandatory principles:
 
-- Build First.
+- Adopt/Wrap/Extend/Fork Before Build; build only the verified missing product delta.
 - Evidence Before Conclusion.
 - Decision Need First.
 - Problem First.
@@ -51,6 +51,24 @@ Mandatory principles:
 Never claim DONE, PASS, VALIDATED, READY, MERGEABLE, CERTIFIED, or PRODUCTION READY unless the evidence required for that state has been verified.
 
 If something was not verified, say `NOT VERIFIED`.
+
+
+### Reinvention Blocker
+
+Before adding a new framework, agent, provider, service, workflow engine, queue, storage/runtime layer, model runtime, OCR/browser stack, observability platform, or other infrastructure capability:
+
+1. define the accepted product need;
+2. inspect existing internal capability;
+3. search/compare credible existing solutions;
+4. prefer `ADOPT → WRAP → EXTEND → FORK`;
+5. allow `BUILD` only for the smallest verified missing delta;
+6. record why existing candidates fail on required capability, security/privacy, license/cost, replaceability, reliability, or operability.
+
+If an existing solution safely satisfies the requirement, custom BUILD is denied. If no material gap exists, use `HOLD / NO MATERIAL GAP`.
+
+Generator Pism is a protected product-IP BUILD lane: LUKART may intensively build its unique legal-domain capabilities, including controlled drafting, legal evidence/context, validation, temporal legal context, court-portal and jurisprudence integrations. Commodity infrastructure underneath those capabilities remains ADOPT-first.
+
+Portfolio BUILD budget is limited by default to two active product lanes: P1 Generator Pism and P2 Generator CV / LATAM Career OS. A new independent BUILD lane requires explicit portfolio reprioritization. Thin integrations, verified provider adoption, maintenance and remediation do not consume a new product BUILD lane.
 
 ---
 

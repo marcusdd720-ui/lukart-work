@@ -37,20 +37,58 @@ and explicitly report the conflict.
 
 # 2. CORE OPERATING PRINCIPLES
 
-## 2.1 Build First
+## 2.1 Adopt First / Build Last
 
-Prefer implementation, verification, and evidence over speculative discussion.
+Implementation is preferred over speculative discussion **only after** the system proves that implementation is actually necessary.
 
-Do not spend excessive time proposing architectures when the repository already provides
-enough information to implement or verify the required change.
+For every new capability, infrastructure component, framework, agent, service, runtime, queue, database/storage layer, model provider/runtime, browser/OCR stack, observability system, or similar dependency, use this decision order:
 
-Architecture discussion is required only when there is:
+`REUSE INTERNAL -> ADOPT -> WRAP -> EXTEND -> FORK -> BUILD MISSING DELTA`
 
-- a real architectural conflict,
-- an irreversible design decision,
-- a security boundary change,
-- a data model change with material downstream impact,
-- an unresolved ambiguity that affects correctness.
+BUILD is a last-resort decision requiring evidence. Before custom implementation starts, produce a capability decision that records:
+
+- the accepted product outcome and required capability;
+- existing internal capability;
+- credible existing candidates reviewed;
+- required-vs-provided gap;
+- license and cost, including the portfolio's zero-cost constraint where applicable;
+- security and privacy boundary;
+- operational/reliability implications;
+- vendor lock-in and replacement path;
+- why ADOPT, WRAP, EXTEND, or FORK is insufficient;
+- the smallest remaining product-specific delta to build.
+
+If an existing solution safely meets the requirement with acceptable trade-offs, custom BUILD is blocked.
+If there is no material gap, use `HOLD / NO MATERIAL GAP`.
+
+An interesting idea is not implementation authorization. New ideas enter discovery/backlog first and may reach execution only through:
+
+`product need -> capability scan -> evidence -> decision -> priority -> implementation`.
+
+Provider/model/plugin/framework != Product. LUKART should own product semantics, contracts, policy, evidence/validation, routing and differentiating domain logic. Commodity infrastructure should remain replaceable behind thin adapters.
+
+### Product-IP exception: Generator Pism
+
+Generator Pism is an active product-IP BUILD lane. Intensive custom development is allowed for genuinely differentiating legal-product capabilities, including:
+
+- controlled legal drafting and document planning;
+- legal-domain models and traceability;
+- evidence/context compilation and validation;
+- temporal legal context;
+- legal-source and jurisprudence integration;
+- court-portal integrations;
+- product-specific reasoning, workflow and human/legal decision gates.
+
+This exception does **not** authorize rebuilding generic infrastructure such as schedulers, durable workflow engines, model runtimes, databases, CI, telemetry, browsers, OCR engines, storage systems or generic agent frameworks when a verified solution can be adopted or wrapped.
+
+### Portfolio WIP budget
+
+By default only two intensive product BUILD lanes may be active across the portfolio:
+
+1. P1 — Generator Pism;
+2. P2 — Generator CV / LATAM Career OS.
+
+Other lanes may perform discovery, verification, adoption, integration, remediation and maintenance. A new independent BUILD lane requires explicit portfolio reprioritization.
 
 ## 2.2 Evidence Before Conclusion
 
@@ -1472,7 +1510,9 @@ When an authorized routine operation is safe and reversible:
 
 do it without unnecessary confirmation.
 
-BUILD.
-VERIFY.
+DISCOVER.
+VERIFY EXISTING CAPABILITY.
+ADOPT / WRAP / EXTEND / FORK.
+BUILD ONLY THE MISSING DELTA.
 PROVE.
 THEN CONCLUDE.
