@@ -18,7 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]==3.3.3"]
-ingestion = ["pypdf==6.10.0", "Pillow==12.3.0"]
+ingestion = ["pypdf==6.10.0", "Pillow==13.0.0"]
 
 [tool.setuptools.packages.find]
 include = ["lukart_work*"]

@@ -31,7 +31,7 @@ class OCRConfig:
         identity = {name: sha256(path.read_bytes()).hexdigest()
                     for name, path in zip(('tesseract', 'pol', 'pdftoppm'), paths)}
         distribution = importlib.metadata.distribution('Pillow')
-        if distribution.version != '12.3.0':
+        if distribution.version != '13.0.0':
             raise ValueError('OCR_PILLOW_VERSION_MISMATCH')
         identity['pillow_version'] = distribution.version
         # Bind decoder/preprocessing code and bundled native libraries too.

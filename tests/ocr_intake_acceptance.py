@@ -80,7 +80,7 @@ class OCRContractTests(unittest.TestCase):
             root = Path(folder)
             for name in ('tesseract', 'pol.traineddata', 'pdftoppm', 'decoder.py', 'libjpeg.so.62.4.0'):
                 (root / name).write_bytes(b'synthetic-version-one')
-            distribution = SimpleNamespace(version='12.3.0',
+            distribution = SimpleNamespace(version='13.0.0',
                 files=(Path('PIL/decoder.py'),Path('pillow.libs/libjpeg.so.62.4.0')),
                 locate_file=lambda name: root / Path(name).name)
             config = OCRConfig(str(root/'tesseract'), str(root), str(root/'pdftoppm'))

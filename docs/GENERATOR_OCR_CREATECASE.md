@@ -46,7 +46,7 @@ ocr_config = OCRConfig(
 ```
 
 These are administrator-supplied absolute paths, never HTTP input. No tools or
-models are downloaded at runtime. Pillow 12.3.0 is explicitly pinned in the
+models are downloaded at runtime. Pillow 13.0.0 is explicitly pinned in the
 ingestion extra (it was already installed in the tested environment). The OCR pin
 binds actual engine/model/rasterizer bytes and Pillow preprocessing code/native
 libraries. The ingestion implementation and pypdf implementation retain their
