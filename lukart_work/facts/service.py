@@ -56,7 +56,8 @@ class FactEvidenceService(CommandService):
         result = IngestionService(self.repository, self.authority)._read(tx, source, run_id)
         if digest(result) != expected_hash:
             raise Violation('INVALID_HASH')
-        if result.body.status != 'EXTRACTED':
+        # Immutable legacy results can say EXTRACTED while a PDF page still needs OCR.
+        if result.body.status != 'EXTRACTED' or 'OCR_REQUIRED' in result.body.warnings:
             raise Violation('GATE_DENIED')
         return result
 

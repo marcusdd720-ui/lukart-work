@@ -35,6 +35,13 @@ class ControlError(RuntimeError):
     pass
 
 
+class _NoRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # A redirected bearer request could disclose the privileged workflow token.
+        fp.close()
+        raise ControlError("GitHub API redirect refused")
+
+
 def _require_sha(value: str, field: str) -> str:
     if not SHA_RE.fullmatch(value):
         raise ControlError(f"{field} must be an exact 40-char lowercase SHA")
@@ -77,6 +84,10 @@ def _request(
     url: str,
     payload: dict[str, Any] | None = None,
 ) -> Any:
+    parsed = urllib.parse.urlsplit(url)
+    if (parsed.scheme != "https" or parsed.netloc != "api.github.com"
+            or parsed.fragment):
+        raise ControlError("GitHub API origin is not allowed")
     data = None if payload is None else json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(
         url,
@@ -91,14 +102,13 @@ def _request(
         },
     )
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.build_opener(_NoRedirects()).open(request, timeout=30) as response:
             raw = response.read()
             return None if not raw else json.loads(raw.decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="replace")
-        raise ControlError(
-            f"GitHub API {method} {url} failed: {exc.code} {body}"
-        ) from exc
+        # API error payloads may contain private repository or case content.
+        exc.close()
+        raise ControlError(f"GitHub API {method} failed: {exc.code} (body withheld)") from None
 
 
 def api(method: str, path: str, payload: dict[str, Any] | None = None) -> Any:
