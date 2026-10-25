@@ -63,6 +63,14 @@ FORBIDDEN_PROMOTION_PREFIXES = (
 class ControlError(RuntimeError):
     pass
 
+
+class _NoRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # A redirected bearer request could disclose the privileged workflow token.
+        fp.close()
+        raise ControlError("GitHub API redirect refused")
+
+
 def _dispatch_run_title(dispatch_token: str) -> str:
     if not DISPATCH_TOKEN_RE.fullmatch(dispatch_token):
         raise ControlError("dispatch_token is invalid")
@@ -177,6 +185,10 @@ def _request(
     *,
     accept: str = "application/vnd.github+json",
 ) -> Any:
+    parsed = urllib.parse.urlsplit(url)
+    if (parsed.scheme != "https" or parsed.netloc != "api.github.com"
+            or parsed.fragment):
+        raise ControlError("GitHub API origin is not allowed")
     data = None if payload is None else json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url,
@@ -191,14 +203,15 @@ def _request(
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.build_opener(_NoRedirects()).open(req, timeout=30) as response:
             raw = response.read()
             if not raw:
                 return None
             return json.loads(raw.decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="replace")
-        raise ControlError(f"GitHub API {method} {url} failed: {exc.code} {body}") from exc
+        # API error payloads may contain private repository or case content.
+        exc.close()
+        raise ControlError(f"GitHub API {method} failed: {exc.code} (body withheld)") from None
 
 
 def api(method: str, path: str, payload: dict[str, Any] | None = None) -> Any:
