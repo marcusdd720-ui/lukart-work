@@ -371,12 +371,14 @@ def main():
     parser.add_argument("--config", type=Path, required=True,
                         help="Trusted local Python file defining build_operator(); never an uploaded CASE file")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--legal-os", action="store_true",
+                        help="Open the one-window LEGAL OS case workspace and hide legacy operator API")
     args = parser.parse_args()
     try:
         config = runpy.run_path(str(args.config.resolve()))
         factory = config["build_operator"]
         server = create_server(factory(), args.port, pdf_preview=config.get('render_pdf_preview'),
-                               case_only=config.get('legal_os_case_only', False))
+                               case_only=(args.legal_os or config.get('legal_os_case_only', False)))
     except Exception:
         parser.exit(1, "HOST_CONFIGURATION_FAILED: trusted CASE services and capabilities required\n")
     print(f"CASE operator: http://127.0.0.1:{server.server_port}/", flush=True)
