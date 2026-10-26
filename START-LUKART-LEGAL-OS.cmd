@@ -2,23 +2,27 @@
 setlocal
 cd /d "%~dp0"
 if not defined LUKART_TRUSTED_CONFIG (
-  echo LUKART LEGAL OS: konfiguracja WORK nie jest jeszcze wskazana.
-  echo Ustaw LUKART_TRUSTED_CONFIG na pelna sciezke do zaufanej konfiguracji Python.
-  echo Nie tworz sztucznych tokenow i nie uzywaj prywatnych danych w testach.
-  exit /b 2
+ echo BRAK KONFIGURACJI: Ustaw LUKART_TRUSTED_CONFIG na zaufany plik build_operator().
+ echo Instrukcja: docs\LEGAL_OS_URUCHOMIENIE_WINDOWS_PL.md
+ exit /b 2
 )
 if not exist "%LUKART_TRUSTED_CONFIG%" (
-  echo LUKART LEGAL OS: nie znaleziono zaufanego pliku konfiguracyjnego.
-  exit /b 3
+ echo BRAK PLIKU KONFIGURACJI: %LUKART_TRUSTED_CONFIG%
+ exit /b 3
 )
-where python.exe >nul 2>nul
-if errorlevel 1 (
-  echo LUKART LEGAL OS: Python nie jest dostepny w PATH.
+if exist "%~dp0.venv\Scripts\python.exe" (
+ set "LUKART_PYTHON=%~dp0.venv\Scripts\python.exe"
+) else (
+ where python.exe >nul 2>nul
+ if errorlevel 1 (
+  echo BRAK PYTHON: Utworz .venv zgodnie z instrukcja.
   exit /b 4
+ )
+ set "LUKART_PYTHON=python.exe"
 )
-echo Uruchamiam jeden interfejs LEGAL OS, bez starego formularza Generatora 2.0.
-echo Adres lokalny: http://127.0.0.1:8786/
-python.exe -B -m lukart_work.operator_host --config "%LUKART_TRUSTED_CONFIG%" --port 8786 --legal-os
-set EXIT_CODE=%ERRORLEVEL%
-echo LUKART LEGAL OS: serwer zakonczyl dzialanie. Kod: %EXIT_CODE%
-exit /b %EXIT_CODE%
+echo LUKART LEGAL OS - interfejs: http://127.0.0.1:8786/
+echo Generator Pism 2.0 dziala w tle. Zatrzymanie: Ctrl+C
+"%LUKART_PYTHON%" -B -m lukart_work.operator_host --config "%LUKART_TRUSTED_CONFIG%" --port 8786 --legal-os
+set "LUKART_EXIT=%ERRORLEVEL%"
+echo LUKART LEGAL OS - kod wyjscia: %LUKART_EXIT%
+exit /b %LUKART_EXIT%
