@@ -108,7 +108,7 @@ try {
     status("Sprawa odczytana z WORK. Silnik dokumentów działa w tle.");
     const caseRef=Array.isArray(json.heads)?json.heads.find(v=>v.kind==="Case"&&v.id?.toLowerCase()===$("case").value.trim().toLowerCase()):null;
     if(caseRef&&Number.isInteger(caseRef.revision)&&caseRef.revision>0){
-      invoke("case_title",{case_revision:caseRef.revision});
+      await invoke("case_title",{case_revision:caseRef.revision});
     }
   } else if(action==="case_title"){
     if(json.result_type!=="REVISION"||json.entity?.kind!=="Case")throw new Error("Brak zweryfikowanej wersji sprawy.");
