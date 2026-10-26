@@ -9,7 +9,7 @@ from typing import Any
 from lukart_work.embedded_document_engine import (
     CaseScope, EmbeddedDocumentEngine, EngineBoundaryError, SavedArtifact,
 )
-from lukart_work.contracts.messages import DomainError
+from lukart_work.contracts.messages import DomainError, CaseHeadResult, RevisionResult
 
 
 CASE_HTML = r'''<!doctype html>
@@ -33,6 +33,7 @@ CASE_HTML = r'''<!doctype html>
   </section>
   <section class="panel" aria-labelledby="overview-title">
     <div class="panel-heading"><h2 id="overview-title">Stan sprawy</h2><span class="pill neutral" id="case-state">Nieotwarta</span></div>
+    <h3 id="case-title" class="casetitle">Tytuł sprawy pojawi się po odczycie</h3>
     <div class="metricrow"><div><div class="metric" id="case-seq">—</div><div class="small">Wersja sprawy</div></div><div><div class="metric" id="heads">—</div><div class="small">Aktywne rekordy</div></div></div>
     <p class="hint">Ten panel odczytuje stan bezpośrednio z istniejącego Case Core. Nie jest drugą bazą spraw.</p>
   </section>
@@ -62,7 +63,7 @@ input{font:inherit;width:100%;padding:12px 13px;border:1px solid #cbd6e1;border-
 input:focus-visible,button:focus-visible{outline:3px solid #a7d5cb;outline-offset:2px}
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}button{cursor:pointer;border:0;border-radius:8px;padding:12px 18px;font-weight:660;background:#227c71;color:#fff}
 button.secondary{background:#eef3f6;color:#25394d}button:disabled{opacity:.45;cursor:not-allowed}
-.metricrow{display:flex;gap:54px;padding:20px 0}.metric{font-size:29px;font-weight:740}.small{font-size:12px}
+.casetitle{font-size:16px;font-weight:690;margin:18px 0 4px}.metricrow{display:flex;gap:54px;padding:20px 0}.metric{font-size:29px;font-weight:740}.small{font-size:12px}
 .status{padding:15px 19px;border-radius:8px;border:1px solid #d6dfe7;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
 .status.error{color:#a32035;border-color:#e9bcc4;background:#fff7f8}footer{font-size:12px;padding:18px 0 34px;border-top:1px solid #dce3ea}
 @media(max-width:600px){header{align-items:flex-start;flex-direction:column;gap:3px}.shell{padding:0 15px}.panel{padding:18px}.metricrow{gap:28px}}'''.encode("utf-8")
@@ -74,7 +75,7 @@ const state={opened:false,busy:false,revision:0};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
 function refresh(){for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||state.busy;$("open").disabled=state.busy;}
-function close(){state.revision++;state.opened=false;$("case-state").textContent="Nieotwarta";$("case-seq").textContent="—";$("heads").textContent="—";refresh();}
+function close(){state.revision++;state.opened=false;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";refresh();}
 function scope(){const tenant_id=$("tenant").value.trim(),case_id=$("case").value.trim();
 if(!uuid.test(tenant_id)||!uuid.test(case_id))throw new Error("Sprawdź identyfikatory przestrzeni i sprawy.");
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
@@ -105,6 +106,15 @@ try {
     $("heads").textContent=Array.isArray(json.heads)?String(json.heads.length):"—";
     $("case-state").textContent="Otwarta";
     status("Sprawa odczytana z WORK. Silnik dokumentów działa w tle.");
+    const caseRef=Array.isArray(json.heads)?json.heads.find(v=>v.kind==="Case"&&v.id?.toLowerCase()===$("case").value.trim().toLowerCase()):null;
+    if(caseRef&&Number.isInteger(caseRef.revision)&&caseRef.revision>0){
+      invoke("case_title",{case_revision:caseRef.revision});
+    }
+  } else if(action==="case_title"){
+    if(json.result_type!=="REVISION"||json.entity?.kind!=="Case")throw new Error("Brak zweryfikowanej wersji sprawy.");
+    $("case-title").textContent=json.entity.title||"Sprawa bez tytułu";
+    $("case-state").textContent=json.entity.status||"Otwarta";
+    status("Pobrano aktualny tytuł i status sprawy bez zmiany danych.");
   } else status("Sprawdzono zapisany render. Status i decyzje pozostają w WORK.");
   return json;
 }catch(error){if(generation===state.revision)status(error.message,true);return null;}
@@ -130,6 +140,7 @@ def read_case_action(operator: Any, payload: dict[str, Any], token: str):
     action = payload.get("action")
     fields = {
         "open_case": {"action", "tenant_id", "case_id"},
+        "case_title": {"action", "tenant_id", "case_id", "case_revision"},
         "get_render": {"action", "tenant_id", "case_id", "render_id"},
         "download": {"action", "tenant_id", "case_id", "render_id", "format"},
     }
@@ -139,6 +150,26 @@ def read_case_action(operator: Any, payload: dict[str, Any], token: str):
     engine = EmbeddedDocumentEngine(operator)
     if action == "open_case":
         result = engine.open_case(scope, token=token)
+    elif action == "case_title":
+        revision = payload["case_revision"]
+        if type(revision) is not int or not 1 <= revision <= 1_000_000_000:
+            raise EngineBoundaryError("CASE_REVISION_INVALID")
+        head = engine.open_case(scope, token=token)
+        if not isinstance(head, CaseHeadResult) or len([
+            ref for ref in head.heads if ref.kind == "Case"
+            and str(ref.id) == scope.case_id and ref.revision == revision
+        ]) != 1:
+            raise EngineBoundaryError("CASE_REVISION_NOT_CURRENT")
+        result = operator.query_core({
+            "contract": "urn:lukart:work:CoreQuery:1.0.0",
+            "operation": "GetRevision",
+            "tenant_id": scope.tenant_id, "case_id": scope.case_id,
+            "target": {"kind": "Case", "id": scope.case_id, "revision": revision},
+        }, token)
+        if not isinstance(result, RevisionResult) or result.entity.kind != "Case":
+            raise EngineBoundaryError("CASE_REVISION_READ_REJECTED")
+        if str(result.entity.id) != scope.case_id or result.entity.revision != revision:
+            raise EngineBoundaryError("CASE_REVISION_MISMATCH")
     elif action == "get_render":
         result = engine.get_render(scope, payload["render_id"], token=token)
     else:
