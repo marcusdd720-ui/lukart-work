@@ -34,4 +34,5 @@ jobs:
             tests.test_legal_os_http_integration \
             tests.test_legal_os_intake \
             tests.test_legal_os_review \
-            tests.test_legal_os_editor
+            tests.test_legal_os_editor \
+            tests.test_legal_os_http_editor
