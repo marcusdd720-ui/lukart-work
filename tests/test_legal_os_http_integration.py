@@ -130,6 +130,45 @@ class CaseHTTPIntegrationTests(TestCase):
         self.assertEqual(self.counter["query"], 1)
         self.assertEqual(self.repo.reads, 1)
 
+    def test_session_case_path_needs_no_case_identifiers(self):
+        status, html, _ = self.call(method="GET", path="/case")
+        self.assertEqual(status, 200)
+        self.assertNotIn(b'id="tenant"', html)
+        self.assertNotIn(b'id="case"', html)
+        status, script, _ = self.call(method="GET", path="/case.js")
+        self.assertEqual(status, 200)
+        self.assertIn(b"/api/embedded_session", script)
+        status, body, _ = self.call({"action": "open_case"}, path="/api/embedded_session")
+        self.assertEqual(status, 200)
+        self.assertEqual(loads(body)["case_id"], str(self.case))
+        status, body, _ = self.call({"action": "list_saved"}, path="/api/embedded_session")
+        self.assertEqual(status, 200)
+        self.assertEqual(loads(body)["items"][0]["render_id"], str(self.render_id))
+        status, pdf, _ = self.call({
+            "action": "download", "render_id": str(self.render_id), "format": "PDF",
+        }, path="/api/embedded_session")
+        self.assertEqual(status, 200)
+        self.assertEqual(pdf, self.pdf)
+        self.assertEqual(self.counter["render"], 0)
+
+    def test_browser_cannot_override_session_case(self):
+        status, _, _ = self.call({
+            "action": "list_saved", "tenant_id": str(self.tenant),
+            "case_id": str(uuid4()),
+        }, path="/api/embedded_session")
+        self.assertEqual(status, 403)
+        self.assertEqual(self.repo.reads, 0)
+
+    def test_ai_session_cannot_read_case_workspace(self):
+        ai_token = self.authority.provision(Principal(
+            Actor(id=uuid4(), kind="AI"), self.tenant, self.case,
+            frozenset({"GetCaseHead", "GetFinalization", "ReadFinalArtifact"}),
+        ))
+        status, _, _ = self.call({"action": "open_case"},
+                                  token=ai_token, path="/api/embedded_session")
+        self.assertEqual(status, 403)
+        self.assertEqual(self.counter["query"], 0)
+
     def test_no_token_and_cross_case_listing_denied(self):
         status, _, _ = self.call({
             "action": "list_saved", "tenant_id": str(self.tenant), "case_id": str(self.case),
