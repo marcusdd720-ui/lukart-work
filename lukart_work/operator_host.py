@@ -11,7 +11,7 @@ from time import monotonic
 
 from lukart_work.operator import GeneratorPismOperator
 from lukart_work.embedded_document_engine import EngineBoundaryError, SavedArtifact
-from lukart_work.legal_os_case_view import CASE_HTML, CASE_CSS, CASE_JS, read_case_action
+from lukart_work.legal_os_case_view import CASE_HTML, CASE_CSS, CASE_JS, read_case_action, read_session_case_action
 from lukart_work.validation.rules import Violation, strict_json
 
 ROUTES = (
@@ -305,7 +305,7 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             if not self.boundary():
                 return self.reply(403, b'{"error":"FORBIDDEN"}')
             route = self.path.removeprefix("/api/")
-            if self.path != "/api/" + route or route not in (*ROUTES, "embedded_case"):
+            if self.path != "/api/" + route or route not in (*ROUTES, "embedded_case", "embedded_session"):
                 return self.reply(404, b'{"error":"NOT_FOUND"}')
             auth = self.headers.get_all("Authorization") or []
             if len(auth) != 1 or not auth[0].startswith("Bearer "):
@@ -330,7 +330,9 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                         return self.reply(400, b'{"error":"INVALID_REQUEST"}')
                     if not isinstance(payload, dict):
                         return self.reply(400, b'{"error":"INVALID_REQUEST"}')
-                    result = (read_case_action(operator, payload, token)
+                    result = (read_session_case_action(operator, payload, token)
+                              if route == "embedded_session" else
+                              read_case_action(operator, payload, token)
                               if route == "embedded_case" else getattr(operator, route)(payload, token))
                     if isinstance(result, SavedArtifact):
                         return self.reply(200, result.data, result.mime_type)
