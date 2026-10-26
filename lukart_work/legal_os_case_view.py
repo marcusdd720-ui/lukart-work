@@ -45,6 +45,17 @@ CASE_HTML = r'''<!doctype html>
     <p id="intake-result" class="hint" role="status" aria-live="polite">Obsługiwane: PDF, JPG, PNG, TIFF, DOCX, TXT i tekst. Obecny limit: 700 KiB na plik. BMP wymaga osobnego adaptera.</p>
     <pre id="intake-preview" class="intake-preview" hidden></pre>
     <div id="intake-proposals" hidden><h3>Wykryte informacje — do weryfikacji</h3><ul id="intake-candidates"></ul></div>
+    <section id="review-panel" hidden aria-label="Weryfikacja materiału">
+      <h3>Fakty i dowody — przegląd HUMAN</h3>
+      <p class="hint">Odczyt OCR nie jest dowodem prawdziwości. Decyzja PRZYJMIJ tworzy kandydata do dalszej oceny, nie potwierdzony fakt.</p>
+      <label>Kandydat ze źródła <select id="review-select"></select></label>
+      <blockquote id="review-quote" class="review-quote"></blockquote>
+      <label>Opis materiału <input id="review-description" autocomplete="off"></label>
+      <label>Proponowane brzmienie faktu (dla faktu) <textarea id="review-statement" rows="3"></textarea></label>
+      <label>Uzasadnienie decyzji <textarea id="review-rationale" rows="2" placeholder="Dlaczego przyjmujesz lub odrzucasz ten materiał?"></textarea></label>
+      <div class="actions"><button type="button" id="review-admit" disabled>Przyjmij jako kandydata</button><button type="button" id="review-reject" class="secondary" disabled>Odrzuć</button></div>
+      <p id="review-result" class="hint" role="status" aria-live="polite">Brak decyzji.</p>
+    </section>
   </section>
   <section class="panel" aria-labelledby="docs-title">
     <div class="panel-heading"><h2 id="docs-title">Dokumenty sprawy</h2><span class="pill neutral">Bez ponownego renderowania</span></div>
@@ -74,7 +85,7 @@ input:focus-visible,button:focus-visible{outline:3px solid #a7d5cb;outline-offse
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}button{cursor:pointer;border:0;border-radius:8px;padding:12px 18px;font-weight:660;background:#227c71;color:#fff}
 button.secondary{background:#eef3f6;color:#25394d}button:disabled{opacity:.45;cursor:not-allowed}
 .casetitle{font-size:16px;font-weight:690;margin:18px 0 4px}.metricrow{display:flex;gap:54px;padding:20px 0}.metric{font-size:29px;font-weight:740}.small{font-size:12px}
-.intake-preview{background:#f6f8fa;border:1px solid #dce3ea;border-radius:8px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow:auto;font-size:13px}
+.review-quote{padding:12px;border-left:3px solid #227c71;background:#f6f8fa;white-space:pre-wrap;overflow-wrap:anywhere}.intake-preview{background:#f6f8fa;border:1px solid #dce3ea;border-radius:8px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow:auto;font-size:13px}
 textarea{width:100%;font:inherit;border:1px solid #cbd6e1;border-radius:8px;padding:12px;resize:vertical}
 .status{padding:15px 19px;border-radius:8px;border:1px solid #d6dfe7;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
 .status.error{color:#a32035;border-color:#e9bcc4;background:#fff7f8}footer{font-size:12px;padding:18px 0 34px;border-top:1px solid #dce3ea}
@@ -83,11 +94,14 @@ textarea{width:100%;font:inherit;border:1px solid #cbd6e1;border-radius:8px;padd
 CASE_JS = r'''(() => {
 "use strict";
 const $=id=>document.getElementById(id);
-const state={opened:false,pending:0,revision:0,caseSequence:0};
+const state={opened:false,pending:0,revision:0,caseSequence:0,review:null};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
-function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;for(const id of ["intake-upload","intake-text-save"])$(id).disabled=!state.opened||busy;}
-function close(){state.revision++;state.opened=false;state.caseSequence=0;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
+function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;for(const id of ["intake-upload","intake-text-save"])$(id).disabled=!state.opened||busy;
+const chosen=state.review?.candidates?.find(v=>String(v.index)===$("review-select").value);
+for(const id of ["review-admit","review-reject"])$(id).disabled=!state.opened||busy||!chosen||chosen.review_status==="ADMIT";
+}
+function close(){state.revision++;state.opened=false;state.caseSequence=0;state.review=null;$("review-panel").hidden=true;$("review-select").replaceChildren();$("review-quote").textContent="";$("review-statement").value="";$("review-description").value="";$("review-rationale").value="";$("review-result").textContent="Brak decyzji.";$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
 function scope(){
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
 return {};
@@ -150,6 +164,38 @@ try {
     $("intake-proposals").hidden=container.childElementCount===0;
     $("intake-file").value="";
     status("Materiał dołączony do sprawy. Żadne fakty nie zostały automatycznie zatwierdzone.");
+    if(extraction?.status==="EXTRACTED"&&uuid.test(json.source_id)&&uuid.test(json.run_id)){
+      await invoke("review_context",{source_id:json.source_id,run_id:json.run_id});
+    }
+  } else if(action==="review_context"){
+    if(json.result_type!=="REVIEW_CONTEXT"||!Array.isArray(json.candidates))
+      throw new Error("Niepotwierdzony wynik przeglądu danych.");
+    state.review=json;
+    state.caseSequence=Number(json.case_sequence);
+    $("case-seq").textContent=String(state.caseSequence);
+    const select=$("review-select");select.replaceChildren();
+    for(const row of json.candidates){
+      select.add(new Option(row.kind+" · "+String(row.quote).slice(0,90)+
+        (row.review_status==="PENDING"?"":" · "+row.review_status),String(row.index)));
+    }
+    $("review-panel").hidden=json.candidates.length===0;
+    const selected=json.candidates[0];
+    $("review-quote").textContent=selected?.quote||"";
+    $("review-statement").value=selected?.kind==="FACT"?selected.quote:"";
+    $("review-description").value=selected?.quote||"";
+    $("review-result").textContent="Wymaga jawnej decyzji człowieka. Nie zatwierdzono automatycznie.";
+    status("Odczytano kandydatów ze źródła. Wybierz i sprawdź dane.");
+  } else if(action==="review_candidate"){
+    if(json.result_type!=="REVIEW_RECEIPT"||!["APPLIED","REPLAYED"].includes(json.state))
+      throw new Error("Brak potwierdzenia decyzji w WORK.");
+    state.caseSequence=Number(json.case_sequence);
+    $("case-seq").textContent=String(state.caseSequence);
+    $("review-result").textContent=json.disposition==="ADMIT"?
+      "Zapisano jako kandydata do dalszej weryfikacji — to jeszcze nie jest potwierdzony fakt.":
+      "Zapisano odrzucenie kandydata.";
+    $("review-rationale").value="";
+    status("Decyzja HUMAN zapisana w istniejącej sprawie.");
+    if(state.review)await invoke("review_context",{source_id:state.review.source_id,run_id:state.review.run_id});
   } else if(action==="list_saved"){
     if(json.result_type!=="SAVED_RENDERS"||!Array.isArray(json.items))throw new Error("Nieprawidłowa lista dokumentów.");
     const select=$("render");select.replaceChildren(new Option("Wybierz zapisany dokument",""));
@@ -168,6 +214,38 @@ finally{state.pending=Math.max(0,state.pending-1);refresh();}
 }
 $("open").addEventListener("click",()=>{close();invoke("open_case");});
 $("render").addEventListener("change",refresh);
+function showReviewCandidate(){
+const chosen=state.review?.candidates?.find(v=>String(v.index)===$("review-select").value);
+$("review-quote").textContent=chosen?.quote||"";
+$("review-statement").value=chosen?.kind==="FACT"?chosen.quote:"";
+$("review-description").value=chosen?.quote||"";
+$("review-result").textContent=chosen?.review_status==="ADMIT"?
+  "Już przyjęto jako kandydata; dalsze decyzje w WORK.":"Wymaga decyzji HUMAN.";
+refresh();
+}
+$("review-select").addEventListener("change",showReviewCandidate);
+async function submitReview(disposition){
+const chosen=state.review?.candidates?.find(v=>String(v.index)===$("review-select").value);
+if(!chosen||!state.review||chosen.review_status==="ADMIT")return;
+const rationale=$("review-rationale").value.trim();
+if(!rationale)return $("review-result").textContent="Uzasadnij decyzję przed zapisaniem.";
+if(!globalThis.crypto||typeof crypto.randomUUID!=="function")
+  return $("review-result").textContent="Brak bezpiecznego generatora identyfikatorów.";
+const decision={
+ source_id:state.review.source_id,run_id:state.review.run_id,
+ candidate_index:chosen.index,expected_case_sequence:state.caseSequence,
+ disposition,rationale,command_id:crypto.randomUUID(),idempotency_key:crypto.randomUUID(),
+ correlation_id:crypto.randomUUID(),
+ statement:disposition==="ADMIT"&&chosen.kind==="FACT"?$("review-statement").value.trim():"",
+ description:disposition==="ADMIT"?$("review-description").value.trim():"",
+};
+if(disposition==="ADMIT"&&(!decision.description||(chosen.kind==="FACT"&&!decision.statement)))
+  return $("review-result").textContent="Wypełnij opis i brzmienie faktu.";
+$("review-result").textContent="Zapisywanie jawnej decyzji HUMAN w WORK…";
+await invoke("review_candidate",decision);
+}
+$("review-admit").addEventListener("click",()=>submitReview("ADMIT"));
+$("review-reject").addEventListener("click",()=>submitReview("REJECT"));
 const uploadMime=(file)=>{const name=file.name.toLowerCase();if(name.endsWith(".pdf"))return "application/pdf";
   if(name.endsWith(".png"))return "image/png";
   if(name.endsWith(".jpg")||name.endsWith(".jpeg"))return "image/jpeg";
@@ -278,6 +356,8 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
         "case_title": {"action", "case_revision"},
         "list_saved": {"action"},
         "upload_source": {"action", "media_type", "content_base64", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id", "run_id"},
+        "review_context": {"action", "source_id", "run_id"},
+        "review_candidate": {"action", "source_id", "run_id", "candidate_index", "expected_case_sequence", "disposition", "statement", "description", "rationale", "command_id", "idempotency_key", "correlation_id"},
         "get_render": {"action", "render_id"},
         "download": {"action", "render_id", "format"},
     }
@@ -288,6 +368,9 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
         if principal.actor.kind == "AI":
             raise EngineBoundaryError("AI_SESSION_DENIED")
         tenant, case = principal.tenant_id, principal.case_id
+    if action in ("review_context", "review_candidate"):
+        from lukart_work.legal_os_review import review_action
+        return review_action(operator, payload, token)
     if action == "upload_source":
         from lukart_work.legal_os_intake import upload_case_source
         return upload_case_source(operator, payload, token)
