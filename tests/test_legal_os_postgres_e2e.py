@@ -223,8 +223,8 @@ class LegalOSRealPostgresE2E(TestCase):
             self.actions
         ))
         status, result = self.action({"action": "open_case"}, token=other)
-        self.assertEqual(status, 200, result)
-        self.assertEqual(result["result_type"], "DOMAIN_ERROR")
+        self.assertEqual(status, 403, result)
+        self.assertEqual(result["error"], "CASE_OPERATION_REJECTED")
 
 
 if __name__ == "__main__":
