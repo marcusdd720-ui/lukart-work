@@ -232,9 +232,11 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere}button{margin:4px;min-height:32p
 #pdfStatus{font-weight:bold}'''
 
 
-def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_preview=None) -> HTTPServer:
+def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_preview=None, case_only=False) -> HTTPServer:
     if not isinstance(operator, GeneratorPismOperator) or operator.binding is not None:
         raise ValueError("TRUSTED_CASE_OPERATOR_REQUIRED")
+    if type(case_only) is not bool:
+        raise ValueError("CASE_ONLY_FLAG_INVALID")
     if pdf_preview is not None and not callable(pdf_preview):
         raise ValueError("TRUSTED_PDF_PREVIEW_REQUIRED")
 
@@ -294,10 +296,10 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             if self.path == "/case.css":
                 return self.reply(200, CASE_CSS, "text/css; charset=utf-8")
             if self.path == "/":
-                return self.reply(200, PAGE, "text/html; charset=utf-8")
-            if self.path == "/client.js":
+                return self.reply(200, CASE_HTML if case_only else PAGE, "text/html; charset=utf-8")
+            if self.path == "/client.js" and not case_only:
                 return self.reply(200, CLIENT, "text/javascript; charset=utf-8")
-            if self.path == "/client.css":
+            if self.path == "/client.css" and not case_only:
                 return self.reply(200, CSS, "text/css; charset=utf-8")
             self.reply(404, b'{"error":"NOT_FOUND"}')
 
@@ -372,7 +374,8 @@ def main():
     try:
         config = runpy.run_path(str(args.config.resolve()))
         factory = config["build_operator"]
-        server = create_server(factory(), args.port, pdf_preview=config.get('render_pdf_preview'))
+        server = create_server(factory(), args.port, pdf_preview=config.get('render_pdf_preview'),
+                               case_only=config.get('legal_os_case_only', False))
     except Exception:
         parser.exit(1, "HOST_CONFIGURATION_FAILED: trusted CASE services and capabilities required\n")
     print(f"CASE operator: http://127.0.0.1:{server.server_port}/", flush=True)
