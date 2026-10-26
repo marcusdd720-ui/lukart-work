@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from base64 import b64encode
+from unittest.mock import patch
 from datetime import datetime, timezone
 from http.client import HTTPConnection
 from io import BytesIO
@@ -14,7 +16,7 @@ from zipfile import ZipFile
 
 from lukart_work.contracts.messages import CaseHeadResult
 from lukart_work.core.security import Principal, TokenAuthority
-from lukart_work.domain.models import Actor
+from lukart_work.domain.models import Actor, Ref, VersionPin
 from lukart_work.operator import GeneratorPismOperator
 from lukart_work.operator_host import create_server
 
@@ -168,6 +170,59 @@ class CaseHTTPIntegrationTests(TestCase):
                                   token=ai_token, path="/api/embedded_session")
         self.assertEqual(status, 403)
         self.assertEqual(self.counter["query"], 0)
+
+    def test_session_upload_text_end_to_end_through_http_into_work(self):
+        class FakeRevision:
+            def __init__(self, entity):
+                self.entity = entity
+
+        actions = {"GetCaseHead", "GetRevision", "RegisterSource", "IngestSource"}
+        token = self.authority.provision(Principal(
+            Actor(id=uuid4(), kind="HUMAN"), self.tenant, self.case, frozenset(actions)
+        ))
+        policy = VersionPin(id="synthetic-retention", version="1.0.0", content_hash="b"*64)
+        original_query = self.operator.query_core
+        received = []
+        def query(request, presented):
+            if request["operation"] == "GetCaseHead":
+                return CaseHeadResult(result_type="CASE_HEAD", tenant_id=self.tenant,
+                    case_id=self.case, case_sequence=3,
+                    heads=(Ref(kind="Case", id=self.case, revision=2),))
+            return FakeRevision(SimpleNamespace(kind="Case", id=self.case,
+                revision=2, status="OPEN", retention_policy=policy))
+        class Result:
+            def model_dump_json(self):
+                return dumps({"registration":{"state":"APPLIED","case_sequence":4},
+                              "ingestion":{"body":{"status":"EXTRACTED","fragments":[],
+                                                   "candidates":[]}}})
+        self.operator.query_core = query
+        def upload(request, presented):
+            received.append((request, presented))
+            return Result()
+        self.operator.upload_source = upload
+        payload = {
+            "action":"upload_source",
+            "expected_case_sequence":3,
+            "media_type":"text/plain",
+            "content_base64":b64encode("Opis syntetycznej sprawy".encode()).decode(),
+            **{k:str(uuid4()) for k in ("command_id","idempotency_key",
+                                         "correlation_id","run_id")},
+        }
+        try:
+            with patch("lukart_work.legal_os_intake.RevisionResult", FakeRevision):
+                status, body, headers = self.call(
+                    payload, token=token, path="/api/embedded_session"
+                )
+            self.assertEqual(status,200)
+            self.assertEqual(loads(body)["registration"]["state"],"APPLIED")
+            self.assertEqual(len(received),1)
+            self.assertEqual(received[0][0]["request"]["meta"]["case_id"],str(self.case))
+            self.assertEqual(received[0][0]["request"]["data"]["retention_policy"],
+                             policy.model_dump(mode="json"))
+            self.assertEqual(headers["Cache-Control"],"no-store")
+            self.assertEqual(self.counter["render"],0)
+        finally:
+            self.operator.query_core = original_query
 
     def test_no_token_and_cross_case_listing_denied(self):
         status, _, _ = self.call({

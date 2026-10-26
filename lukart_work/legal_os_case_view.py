@@ -44,6 +44,7 @@ CASE_HTML = r'''<!doctype html>
     <div class="actions"><button id="intake-text-save" type="button" disabled>Zapisz opis do sprawy</button></div>
     <p id="intake-result" class="hint" role="status" aria-live="polite">Obsługiwane: PDF, JPG, PNG, TIFF, DOCX, TXT i tekst. Obecny limit: 700 KiB na plik. BMP wymaga osobnego adaptera.</p>
     <pre id="intake-preview" class="intake-preview" hidden></pre>
+    <div id="intake-proposals" hidden><h3>Wykryte informacje — do weryfikacji</h3><ul id="intake-candidates"></ul></div>
   </section>
   <section class="panel" aria-labelledby="docs-title">
     <div class="panel-heading"><h2 id="docs-title">Dokumenty sprawy</h2><span class="pill neutral">Bez ponownego renderowania</span></div>
@@ -86,7 +87,7 @@ const state={opened:false,pending:0,revision:0,caseSequence:0};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
 function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;for(const id of ["intake-upload","intake-text-save"])$(id).disabled=!state.opened||busy;}
-function close(){state.revision++;state.opened=false;state.caseSequence=0;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
+function close(){state.revision++;state.opened=false;state.caseSequence=0;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
 function scope(){
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
 return {};
@@ -139,6 +140,14 @@ try {
     const preview=fragments.slice(0,12).map(v=>v.text).join("\n\n");
     $("intake-preview").textContent=preview||"Brak rozpoznanego tekstu; oryginał został zachowany.";
     $("intake-preview").hidden=false;
+    const container=$("intake-candidates");container.replaceChildren();
+    const proposals=Array.isArray(extraction?.candidates)?extraction.candidates:[];
+    for(const proposal of proposals.filter(x=>["PARTY","DATE","AMOUNT"].includes(x.kind)).slice(0,15)){
+      const item=document.createElement("li");
+      item.textContent=proposal.kind+": "+String(proposal.quote||"").slice(0,260);
+      container.append(item);
+    }
+    $("intake-proposals").hidden=container.childElementCount===0;
     $("intake-file").value="";
     status("Materiał dołączony do sprawy. Żadne fakty nie zostały automatycznie zatwierdzone.");
   } else if(action==="list_saved"){
