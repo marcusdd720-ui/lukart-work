@@ -35,6 +35,16 @@ CASE_HTML = r'''<!doctype html>
     <div class="metricrow"><div><div class="metric" id="case-seq">—</div><div class="small">Wersja sprawy</div></div><div><div class="metric" id="heads">—</div><div class="small">Aktywne rekordy</div></div></div>
     <p class="hint">Ten panel odczytuje stan bezpośrednio z istniejącego Case Core. Nie jest drugą bazą spraw.</p>
   </section>
+  <section class="panel" aria-labelledby="intake-title">
+    <div class="panel-heading"><h2 id="intake-title">Dodaj materiał do sprawy</h2><span class="pill neutral">OCR lokalny</span></div>
+    <p class="hint">Oryginał zostaje zapisany bez zmian. Rozpoznany tekst i dane są kandydatami do sprawdzenia, a nie automatycznie potwierdzonymi faktami.</p>
+    <label>Wybierz pismo lub skan <input type="file" id="intake-file" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.docx,.txt"></label>
+    <div class="actions"><button id="intake-upload" type="button" disabled>Dodaj dokument i odczytaj tekst</button></div>
+    <label>Lub wprowadź własny opis sprawy <textarea id="intake-text" rows="5" placeholder="Opisz sytuację własnymi słowami, nawet jeśli nie masz dokumentu."></textarea></label>
+    <div class="actions"><button id="intake-text-save" type="button" disabled>Zapisz opis do sprawy</button></div>
+    <p id="intake-result" class="hint" role="status" aria-live="polite">Obsługiwane: PDF, JPG, PNG, TIFF, DOCX, TXT i tekst. Obecny limit: 700 KiB na plik. BMP wymaga osobnego adaptera.</p>
+    <pre id="intake-preview" class="intake-preview" hidden></pre>
+  </section>
   <section class="panel" aria-labelledby="docs-title">
     <div class="panel-heading"><h2 id="docs-title">Dokumenty sprawy</h2><span class="pill neutral">Bez ponownego renderowania</span></div>
     <p class="hint">Wybierz projekt zapisany w tej sprawie. Dokument jest odczytywany z WORK bez regenerowania i bez dodatkowych identyfikatorów.</p>
@@ -63,6 +73,8 @@ input:focus-visible,button:focus-visible{outline:3px solid #a7d5cb;outline-offse
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}button{cursor:pointer;border:0;border-radius:8px;padding:12px 18px;font-weight:660;background:#227c71;color:#fff}
 button.secondary{background:#eef3f6;color:#25394d}button:disabled{opacity:.45;cursor:not-allowed}
 .casetitle{font-size:16px;font-weight:690;margin:18px 0 4px}.metricrow{display:flex;gap:54px;padding:20px 0}.metric{font-size:29px;font-weight:740}.small{font-size:12px}
+.intake-preview{background:#f6f8fa;border:1px solid #dce3ea;border-radius:8px;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow:auto;font-size:13px}
+textarea{width:100%;font:inherit;border:1px solid #cbd6e1;border-radius:8px;padding:12px;resize:vertical}
 .status{padding:15px 19px;border-radius:8px;border:1px solid #d6dfe7;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
 .status.error{color:#a32035;border-color:#e9bcc4;background:#fff7f8}footer{font-size:12px;padding:18px 0 34px;border-top:1px solid #dce3ea}
 @media(max-width:600px){header{align-items:flex-start;flex-direction:column;gap:3px}.shell{padding:0 15px}.panel{padding:18px}.metricrow{gap:28px}}'''.encode("utf-8")
@@ -70,11 +82,11 @@ button.secondary{background:#eef3f6;color:#25394d}button:disabled{opacity:.45;cu
 CASE_JS = r'''(() => {
 "use strict";
 const $=id=>document.getElementById(id);
-const state={opened:false,pending:0,revision:0};
+const state={opened:false,pending:0,revision:0,caseSequence:0};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
-function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;}
-function close(){state.revision++;state.opened=false;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";refresh();}
+function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;for(const id of ["intake-upload","intake-text-save"])$(id).disabled=!state.opened||busy;}
+function close(){state.revision++;state.opened=false;state.caseSequence=0;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
 function scope(){
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
 return {};
@@ -101,7 +113,7 @@ try {
   if(json.error||json.code||json.result_type==="DOMAIN_ERROR")throw new Error("Nie można odczytać danych sprawy.");
   if(action==="open_case"){
     if(json.result_type!=="CASE_HEAD")throw new Error("Nieprawidłowy wynik odczytu sprawy.");
-    state.opened=true;$("case-seq").textContent=String(json.case_sequence ?? "—");
+    state.opened=true;state.caseSequence=Number(json.case_sequence);$("case-seq").textContent=String(json.case_sequence ?? "—");
     $("heads").textContent=Array.isArray(json.heads)?String(json.heads.length):"—";
     $("case-state").textContent="Otwarta";
     status("Sprawa odczytana z WORK. Silnik dokumentów działa w tle.");
@@ -115,6 +127,20 @@ try {
     $("case-title").textContent=json.entity.title||"Sprawa bez tytułu";
     $("case-state").textContent=json.entity.status||"Otwarta";
     status("Pobrano aktualny tytuł i status sprawy bez zmiany danych.");
+  } else if(action==="upload_source"){
+    if(!json.registration||!["APPLIED","REPLAYED"].includes(json.registration.state))
+      throw new Error("Nie potwierdzono zapisu źródła.");
+    state.caseSequence=Number(json.registration.case_sequence);
+    $("case-seq").textContent=String(state.caseSequence);
+    const extraction=json.ingestion?.body;
+    const kind=extraction?.status||"NIEPOTWIERDZONY";
+    $("intake-result").textContent="Oryginał zapisany. Odczyt: "+kind+". Odczytane informacje wymagają przeglądu.";
+    const fragments=Array.isArray(extraction?.fragments)?extraction.fragments:[];
+    const preview=fragments.slice(0,12).map(v=>v.text).join("\n\n");
+    $("intake-preview").textContent=preview||"Brak rozpoznanego tekstu; oryginał został zachowany.";
+    $("intake-preview").hidden=false;
+    $("intake-file").value="";
+    status("Materiał dołączony do sprawy. Żadne fakty nie zostały automatycznie zatwierdzone.");
   } else if(action==="list_saved"){
     if(json.result_type!=="SAVED_RENDERS"||!Array.isArray(json.items))throw new Error("Nieprawidłowa lista dokumentów.");
     const select=$("render");select.replaceChildren(new Option("Wybierz zapisany dokument",""));
@@ -133,6 +159,42 @@ finally{state.pending=Math.max(0,state.pending-1);refresh();}
 }
 $("open").addEventListener("click",()=>{close();invoke("open_case");});
 $("render").addEventListener("change",refresh);
+const uploadMime=(file)=>{const name=file.name.toLowerCase();if(name.endsWith(".pdf"))return "application/pdf";
+  if(name.endsWith(".png"))return "image/png";
+  if(name.endsWith(".jpg")||name.endsWith(".jpeg"))return "image/jpeg";
+  if(name.endsWith(".tif")||name.endsWith(".tiff"))return "image/tiff";
+  if(name.endsWith(".docx"))return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if(name.endsWith(".txt"))return "text/plain";throw new Error("Nieobsługiwany format pliku.");};
+function base64Of(bytes){let binary="";for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(binary);}
+async function sendMaterial(bytes,mime){
+  if(!state.opened||!Number.isSafeInteger(state.caseSequence)||state.caseSequence<1)throw new Error("Najpierw otwórz sprawę.");
+  if(!bytes.length||bytes.length>700*1024)throw new Error("Plik jest pusty lub przekracza 700 KiB.");
+  if(!globalThis.crypto||typeof crypto.randomUUID!=="function")throw new Error("Brak bezpiecznego generatora identyfikatorów.");
+  const request={expected_case_sequence:state.caseSequence,command_id:crypto.randomUUID(),
+    idempotency_key:crypto.randomUUID(),correlation_id:crypto.randomUUID(),run_id:crypto.randomUUID(),
+    media_type:mime,content_base64:base64Of(bytes)};
+  $("intake-result").textContent="Zapisywanie oryginału i odczyt OCR (może trwać do 60 sekund)…";
+  return invoke("upload_source",request);
+}
+$("intake-upload").addEventListener("click",async()=>{
+  const selected=$("intake-file").files?.[0];
+  if(!selected)return $("intake-result").textContent="Wybierz plik do dodania.";
+  try{
+    const mime=uploadMime(selected);
+    if(selected.size<1||selected.size>700*1024)throw new Error("Limit pliku wynosi 700 KiB.");
+    const generation=state.revision;const bytes=new Uint8Array(await selected.arrayBuffer());
+    if(generation!==state.revision)return;
+    await sendMaterial(bytes,mime);
+  }catch(err){$("intake-result").textContent=err.message;}
+});
+$("intake-text-save").addEventListener("click",async()=>{
+  try{const value=$("intake-text").value.trim();
+    if(!value)throw new Error("Wpisz opis sprawy.");
+    const data=new TextEncoder().encode(value);
+    const result=await sendMaterial(data,"text/plain");
+    if(result)$("intake-text").value="";
+  }catch(err){$("intake-result").textContent=err.message;}
+});
 $("check").addEventListener("click",()=>{if(!uuid.test($("render").value.trim()))return status("Podaj identyfikator renderu.",true);invoke("get_render",{render_id:$("render").value.trim()});});
 for(const format of ["PDF","DOCX"])$(format.toLowerCase()).addEventListener("click",()=>{
   if(!uuid.test($("render").value.trim()))return status("Podaj identyfikator renderu.",true);
@@ -206,6 +268,7 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
         "open_case": {"action"},
         "case_title": {"action", "case_revision"},
         "list_saved": {"action"},
+        "upload_source": {"action", "media_type", "content_base64", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id", "run_id"},
         "get_render": {"action", "render_id"},
         "download": {"action", "render_id", "format"},
     }
@@ -216,6 +279,9 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
         if principal.actor.kind == "AI":
             raise EngineBoundaryError("AI_SESSION_DENIED")
         tenant, case = principal.tenant_id, principal.case_id
+    if action == "upload_source":
+        from lukart_work.legal_os_intake import upload_case_source
+        return upload_case_source(operator, payload, token)
     return read_case_action(
         operator,
         dict(payload, tenant_id=str(tenant), case_id=str(case)),

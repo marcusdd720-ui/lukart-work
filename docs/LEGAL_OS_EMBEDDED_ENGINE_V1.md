@@ -89,3 +89,16 @@ python -B -m unittest -v tests.test_embedded_document_engine tests.test_legal_os
 
 Zasada: bez przebudowy V5, bez ponownego otwierania wcześniejszych dokumentów, bez kopiowania prywatnych CASE do GitHub, bez płatnych fallbacków i bez zmian `main` / PR #79 / ROS.
 
+
+
+## Inkrement 4 — import plików i opisów w jednej karcie sprawy
+
+- Karta `/case` przyjmuje PDF, JPG/JPEG, PNG, TIFF, DOCX i TXT (do 700 KiB) oraz tekst wpisany w oknie; BMP nadal nieobsługiwany.
+- Backend `legal_os_intake.upload_case_source` pobiera CASE scope **wyłącznie ze zweryfikowanej sesji HUMAN WORK**; politykę retencji z aktualnego rekordu Case. Przeglądarka nie przekazuje tenant/case ani polityki retencji.
+- Dane są przekazywane do istniejącego `GeneratorPismOperator.upload_source` (`RegisterSource` + `IngestSource`). Wykorzystywany jest istniejący OCR Tesseract, jeśli w zaufanym hoście skonfigurowano model polski.
+- Rejestracja zachowuje oryginał; OCR daje wyłącznie kandydatów. Brak automatycznych akceptacji faktów, dowodów i FINAL.
+- Rozmiar ograniczony do 700 KiB przed dekodowaniem; formaty sprawdzane po sygnaturze. Osobne błędy są przekazywane bez danych wrażliwych.
+- Serwer korzysta z natywnych uprawnień GetCaseHead, GetRevision, RegisterSource, IngestSource, aktualnej sekwencji CASE i CAS/replay istniejącego silnika.
+- Ręczne ponowienie uploadu po utracie połączenia wymaga osobnej kontrolowanej obsługi: brak automatycznego retry zapisu przy nieznanym wyniku. Nie odtwarzać starego POST z nowymi UUID bez ustalenia statusu.
+- Docelowy UX i import większych zdjęć należy osobno zaprojektować bez cichej stratnej konwersji, a także dodać HUMAN review do tej samej karty.
+- Odbiór: testy celowane nowego adaptera + lokalny jeden E2E z syntetycznym źródłem. **Brak GO-LIVE dla realnych akt do potwierdzenia.**
