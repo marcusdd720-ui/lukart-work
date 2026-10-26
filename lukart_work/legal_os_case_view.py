@@ -23,11 +23,9 @@ CASE_HTML = r'''<!doctype html>
   <p class="lead">Otwieraj zapisane sprawy i dokumenty w jednym miejscu. Oryginały oraz decyzje pozostają w bazie WORK. Ten widok niczego nie zatwierdza ani nie zmienia.</p>
   <section class="panel" aria-labelledby="connect-title">
     <div class="panel-heading"><h2 id="connect-title">Połączenie z prywatną sprawą</h2><span class="pill">Lokalnie</span></div>
-    <p class="hint">Wersja integracyjna korzysta z istniejących danych sesji WORK. Docelowe logowanie zastąpi ręczne identyfikatory.</p>
+    <p class="hint">Sesja WORK automatycznie wskazuje właściwą sprawę. Nie podawaj identyfikatorów technicznych. Wersja lokalna wymaga jeszcze tokenu; docelowo zastąpi go logowanie.</p>
     <div class="fields">
-      <label>Token uprawnienia <input type="password" id="token" autocomplete="off" spellcheck="false" aria-label="Token uprawnienia"></label>
-      <label>Identyfikator przestrzeni <input type="text" id="tenant" autocomplete="off" spellcheck="false" placeholder="Tenant UUID"></label>
-      <label>Identyfikator sprawy <input type="text" id="case" autocomplete="off" spellcheck="false" placeholder="Case UUID"></label>
+      <label>Token prywatnej sesji WORK <input type="password" id="token" autocomplete="off" spellcheck="false" aria-label="Token sesji WORK"></label>
     </div>
     <div class="actions"><button id="open" type="button">Otwórz sprawę</button><button id="clear" class="secondary" type="button">Wyczyść sesję</button></div>
   </section>
@@ -77,14 +75,14 @@ const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
 function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;}
 function close(){state.revision++;state.opened=false;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";refresh();}
-function scope(){const tenant_id=$("tenant").value.trim(),case_id=$("case").value.trim();
-if(!uuid.test(tenant_id)||!uuid.test(case_id))throw new Error("Sprawdź identyfikatory przestrzeni i sprawy.");
+function scope(){
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
-return {tenant_id,case_id};}
+return {};
+}
 async function invoke(action,extra={}) {
 const args={action,...scope(),...extra};state.pending++;refresh();const generation=state.revision;
 try {
-  const response=await fetch("/api/embedded_case",{method:"POST",cache:"no-store",credentials:"omit",
+  const response=await fetch("/api/embedded_session",{method:"POST",cache:"no-store",credentials:"omit",
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+$("token").value},
     body:JSON.stringify(args)});
   if(generation!==state.revision)return null;
@@ -107,7 +105,7 @@ try {
     $("heads").textContent=Array.isArray(json.heads)?String(json.heads.length):"—";
     $("case-state").textContent="Otwarta";
     status("Sprawa odczytana z WORK. Silnik dokumentów działa w tle.");
-    const caseRef=Array.isArray(json.heads)?json.heads.find(v=>v.kind==="Case"&&v.id?.toLowerCase()===$("case").value.trim().toLowerCase()):null;
+    const caseRef=Array.isArray(json.heads)?json.heads.find(v=>v.kind==="Case"&&v.id?.toLowerCase()===json.case_id?.toLowerCase()):null;
     if(caseRef&&Number.isInteger(caseRef.revision)&&caseRef.revision>0){
       await invoke("case_title",{case_revision:caseRef.revision});
     }
@@ -140,9 +138,9 @@ for(const format of ["PDF","DOCX"])$(format.toLowerCase()).addEventListener("cli
   if(!uuid.test($("render").value.trim()))return status("Podaj identyfikator renderu.",true);
   invoke("download",{render_id:$("render").value.trim(),format});
 });
-$("clear").addEventListener("click",()=>{close();for(const id of ["token","tenant","case","render"])$(id).value="";status("Sesja wyczyszczona.");});
-window.addEventListener("pagehide",()=>{close();for(const id of ["token","tenant","case","render"])$(id).value="";});
-for(const id of ["tenant","case","token"])$(id).addEventListener("input",close);
+$("clear").addEventListener("click",()=>{close();for(const id of ["token","render"])$(id).value="";status("Sesja wyczyszczona.");});
+window.addEventListener("pagehide",()=>{close();for(const id of ["token","render"])$(id).value="";});
+$("token").addEventListener("input",close);
 refresh();
 })();'''.encode("utf-8")
 
@@ -194,3 +192,32 @@ def read_case_action(operator: Any, payload: dict[str, Any], token: str):
     if isinstance(result, DomainError):
         raise EngineBoundaryError("WORK_READ_DENIED")
     return result
+
+
+def read_session_case_action(operator: Any, payload: dict[str, Any], token: str):
+    """Derive the canonical CASE from a trusted authenticated WORK principal.
+
+    The browser must never select another tenant/case by passing identifiers.
+    Native WORK read capability checks remain authoritative in read_case_action.
+    """
+    if not isinstance(payload, dict):
+        raise EngineBoundaryError("SESSION_REQUEST_OBJECT_REQUIRED")
+    allowed = {
+        "open_case": {"action"},
+        "case_title": {"action", "case_revision"},
+        "list_saved": {"action"},
+        "get_render": {"action", "render_id"},
+        "download": {"action", "render_id", "format"},
+    }
+    action = payload.get("action")
+    if action not in allowed or set(payload) != allowed[action]:
+        raise EngineBoundaryError("SESSION_OPERATION_NOT_ALLOWED")
+    with operator.core.authority.session(token) as principal:
+        if principal.actor.kind == "AI":
+            raise EngineBoundaryError("AI_SESSION_DENIED")
+        tenant, case = principal.tenant_id, principal.case_id
+    return read_case_action(
+        operator,
+        dict(payload, tenant_id=str(tenant), case_id=str(case)),
+        token,
+    )
