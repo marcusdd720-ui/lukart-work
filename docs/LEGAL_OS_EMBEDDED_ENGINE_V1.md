@@ -68,3 +68,24 @@ Nowy `tests/test_legal_os_render_listing.py` sprawdza izolację, odmowę uprawni
 5. Rozszerzać o przepisy/orzecznictwo oraz ROS wyłącznie po zweryfikowaniu osobnych kontraktów i licencji.
 
 **Uwaga:** `Case Core` przechowuje kanoniczne dane. Nie synchronizować ich przez publiczne GitHub Actions. Nie wprowadzać rzeczywistych danych do testów syntetycznych.
+
+## Inkrement 3 — jedna sesja, brak technicznych identyfikatorów na ekranie
+
+**Stan kodu:** `/case` ma teraz tylko tymczasowe pole tokenu zaufanej sesji. Nie pokazuje już `tenant_id` i `case_id`; oba są wyznaczane po stronie serwera ze sprawdzonego `TokenAuthority`. Przeglądarka wysyła wyłącznie dozwolone nazwy operacji i identyfikator wybranego renderu. Backend `POST /api/embedded_session` dopisuje wyłącznie scope z natywnej sesji i deleguje do `read_case_action`, które ponownie stosuje natywne kontrole WORK. Nie ma możliwości wybrania innej sprawy przez podmianę `tenant_id` / `case_id` w JSON; nieznane pola są odrzucane.
+
+Użytkownik otrzymuje widok: karta sprawy, tytuł/status, lista zapisanych dokumentów i przyciski pobierania. Silnik Generatora Pism 2.0 działa jako biblioteka; stary widok operatorski nie jest potrzebny do tych operacji.
+
+**Zakres i luki:** wymagana jest jeszcze autoryzowana lokalna konfiguracja WORK i rzeczywiste sprawdzenie wdrożenia. Ten inkrement jest tylko do odczytu; nie zastępuje docelowego logowania, nie pozwala jeszcze wczytywać nowych pism, nie zatwierdza dokumentów ani nie uruchamia modelu AI. Przyszły workflow dokumentowy zostanie dodany do tej samej karty po oddzielnym potwierdzeniu bezpieczeństwa.
+
+**Testy celowane (w jednym przebiegu, bez pełnej regresji):**
+
+```bash
+python -B -m unittest -v tests.test_embedded_document_engine tests.test_legal_os_case_view tests.test_legal_os_case_title tests.test_legal_os_render_listing tests.test_legal_os_http_integration
+```
+
+`test_legal_os_http_integration.py`: syntetyczna ścieżka HTTP `GET /case` → `POST /api/embedded_session open_case` → `list_saved` → `download`; brak wywołań renderera, odmowa dla obcej sprawy i aktora AI. Test nie korzysta z rzeczywistej bazy PostgreSQL.
+
+**Warunki rzeczywistego odbioru end-to-end:** w izolowanym katalogu uruchomić jeden istniejący operator WORK przez zaufany plik konfiguracyjny; otworzyć `/case` na faktycznym porcie, połączyć uprawnioną sesję, odczytać jeden syntetyczny CASE i zapisane w nim pliki. Zachować odciski SHA-256 jako dowód, że pobrano dokładne oryginalne artefakty bez generacji. Bez tej próby stan pozostaje `LOCAL_E2E_NOT_VERIFIED`.
+
+Zasada: bez przebudowy V5, bez ponownego otwierania wcześniejszych dokumentów, bez kopiowania prywatnych CASE do GitHub, bez płatnych fallbacków i bez zmian `main` / PR #79 / ROS.
+
