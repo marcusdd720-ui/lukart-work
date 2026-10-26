@@ -347,6 +347,9 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                             preview = pdf_preview(result)
                             return self.reply(200, json.dumps(preview, allow_nan=False).encode())
                         return self.reply(200, result, "application/octet-stream")
+                    if route == "embedded_session" and isinstance(result, dict):
+                        return self.reply(200, json.dumps(result, ensure_ascii=False,
+                                                          allow_nan=False).encode("utf-8"))
                     self.reply(200, result.model_dump_json().encode())
             except EngineBoundaryError:
                 self.reply(403, b'{"error":"CASE_OPERATION_REJECTED"}')
