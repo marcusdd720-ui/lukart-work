@@ -57,6 +57,19 @@ CASE_HTML = r'''<!doctype html>
       <p id="review-result" class="hint" role="status" aria-live="polite">Brak decyzji.</p>
     </section>
   </section>
+  <section class="panel" aria-labelledby="editor-title">
+    <div class="panel-heading"><h2 id="editor-title">Projekt pisma — edytor</h2><span class="pill neutral">Historia w WORK</span></div>
+    <p class="hint">Wybierz istniejący projekt tej sprawy. Edytujesz cały tekst pisma, ale zapis poprawek nie jest zatwierdzeniem ani wysyłką.</p>
+    <label>Projekty pisma <select id="draft-select"><option value="">Otwórz sprawę, aby zobaczyć projekty</option></select></label>
+    <div class="actions"><button id="draft-open" type="button" class="secondary" disabled>Otwórz do edycji</button></div>
+    <div id="draft-editor" hidden>
+      <p id="draft-details" class="hint"></p>
+      <div id="draft-sections"></div>
+      <label>Uzasadnienie wprowadzonych poprawek <textarea id="draft-rationale" rows="2" placeholder="Co i dlaczego zmieniasz?"></textarea></label>
+      <div class="actions"><button id="draft-save" type="button" disabled>Zapisz poprawki w sprawie</button></div>
+    </div>
+    <p id="draft-result" role="status" aria-live="polite" class="hint">Nie otwarto projektu.</p>
+  </section>
   <section class="panel" aria-labelledby="docs-title">
     <div class="panel-heading"><h2 id="docs-title">Dokumenty sprawy</h2><span class="pill neutral">Bez ponownego renderowania</span></div>
     <p class="hint">Wybierz projekt zapisany w tej sprawie. Dokument jest odczytywany z WORK bez regenerowania i bez dodatkowych identyfikatorów.</p>
@@ -94,14 +107,16 @@ textarea{width:100%;font:inherit;border:1px solid #cbd6e1;border-radius:8px;padd
 CASE_JS = r'''(() => {
 "use strict";
 const $=id=>document.getElementById(id);
-const state={opened:false,pending:0,revision:0,caseSequence:0,review:null};
+const state={opened:false,pending:0,revision:0,caseSequence:0,review:null,draft:null};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
 function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;for(const id of ["intake-upload","intake-text-save"])$(id).disabled=!state.opened||busy;
 const chosen=state.review?.candidates?.find(v=>String(v.index)===$("review-select").value);
 for(const id of ["review-admit","review-reject"])$(id).disabled=!state.opened||busy||!chosen||chosen.review_status==="ADMIT";
+$("draft-open").disabled=!state.opened||busy||!$("draft-select").value;
+$("draft-save").disabled=!state.opened||busy||!state.draft?.editable;
 }
-function close(){state.revision++;state.opened=false;state.caseSequence=0;state.review=null;$("review-panel").hidden=true;$("review-select").replaceChildren();$("review-quote").textContent="";$("review-statement").value="";$("review-description").value="";$("review-rationale").value="";$("review-result").textContent="Brak decyzji.";$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
+function close(){state.revision++;state.opened=false;state.caseSequence=0;state.review=null;state.draft=null;$("draft-editor").hidden=true;$("draft-select").replaceChildren(new Option("Otwórz sprawę, aby zobaczyć projekty",""));$("draft-sections").replaceChildren();$("draft-rationale").value="";$("draft-result").textContent="Nie otwarto projektu.";$("review-panel").hidden=true;$("review-select").replaceChildren();$("review-quote").textContent="";$("review-statement").value="";$("review-description").value="";$("review-rationale").value="";$("review-result").textContent="Brak decyzji.";$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
 function scope(){
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
 return {};
@@ -137,6 +152,7 @@ try {
       await invoke("case_title",{case_revision:caseRef.revision});
     }
     await invoke("list_saved");
+    await invoke("list_drafts");
   } else if(action==="case_title"){
     if(json.result_type!=="REVISION"||json.entity?.kind!=="Case")throw new Error("Brak zweryfikowanej wersji sprawy.");
     $("case-title").textContent=json.entity.title||"Sprawa bez tytułu";
@@ -196,6 +212,40 @@ try {
     $("review-rationale").value="";
     status("Decyzja HUMAN zapisana w istniejącej sprawie.");
     if(state.review)await invoke("review_context",{source_id:state.review.source_id,run_id:state.review.run_id});
+  } else if(action==="list_drafts"){
+    if(json.result_type!=="DRAFT_LIST"||!Array.isArray(json.drafts))throw new Error("Błąd listy projektów pisma.");
+    const select=$("draft-select");select.replaceChildren(new Option("Wybierz projekt pisma",""));
+    for(const item of json.drafts){
+      if(!uuid.test(item.id)||!Number.isInteger(item.revision))continue;
+      select.add(new Option("Projekt · rewizja "+item.revision+" · "+item.id.slice(0,8),
+        item.id+"|"+item.revision));
+    }
+    $("draft-result").textContent=select.options.length===1?"Brak zapisanych projektów w tej sprawie.":
+      "Znaleziono projektów: "+String(select.options.length-1);
+  } else if(action==="open_draft"){
+    if(json.result_type!=="DRAFT_FOR_EDITING"||!Array.isArray(json.sections))
+      throw new Error("Nie potwierdzono odczytu projektu.");
+    state.draft=json;
+    $("draft-editor").hidden=false;
+    $("draft-details").textContent="Rewizja "+json.revision+" · "+json.status+
+      (json.editable?" · edycja dostępna":" · tylko odczyt");
+    const box=$("draft-sections");box.replaceChildren();
+    for(const section of json.sections){
+      const heading=document.createElement("h3");heading.textContent="Sekcja dokumentu";box.append(heading);
+      for(const statement of section.statements){
+        const label=document.createElement("label");label.textContent=statement.statement_type;
+        const area=document.createElement("textarea");area.rows=5;area.value=statement.text;
+        area.dataset.statementId=statement.statement_id;area.disabled=!json.editable;
+        label.append(area);box.append(label);
+      }
+    }
+    $("draft-result").textContent="Projekt odczytany. Zmieniaj tekst wyłącznie tam, gdzie jest dostępna edycja.";
+  } else if(action==="amend_draft"){
+    if(json.result_type!=="DRAFT_AMENDED"||!["APPLIED","REPLAYED"].includes(json.state))
+      throw new Error("Nie potwierdzono zapisania zmian.");
+    state.draft=null;$("draft-editor").hidden=true;
+    $("draft-result").textContent="Poprawki zapisano jako nową wersję. Nie zatwierdzono ani nie wysłano pisma.";
+    await invoke("open_case");
   } else if(action==="list_saved"){
     if(json.result_type!=="SAVED_RENDERS"||!Array.isArray(json.items))throw new Error("Nieprawidłowa lista dokumentów.");
     const select=$("render");select.replaceChildren(new Option("Wybierz zapisany dokument",""));
@@ -246,6 +296,31 @@ await invoke("review_candidate",decision);
 }
 $("review-admit").addEventListener("click",()=>submitReview("ADMIT"));
 $("review-reject").addEventListener("click",()=>submitReview("REJECT"));
+$("draft-select").addEventListener("change",()=>{state.draft=null;$("draft-editor").hidden=true;refresh();});
+$("draft-open").addEventListener("click",()=>{
+  const [draft_id,raw] = $("draft-select").value.split("|");
+  if(!uuid.test(draft_id)||!Number.isSafeInteger(Number(raw))||Number(raw)<1)
+    return $("draft-result").textContent="Wybierz poprawny projekt.";
+  invoke("open_draft",{draft_id,revision:Number(raw)});
+});
+$("draft-save").addEventListener("click",async()=>{
+  const draft=state.draft;if(!draft?.editable)return;
+  const rationale=$("draft-rationale").value.trim();
+  if(!rationale)return $("draft-result").textContent="Podaj uzasadnienie poprawki.";
+  const original=new Map(draft.sections.flatMap(s=>s.statements).map(s=>[s.statement_id,s.text]));
+  const edits=[...$("draft-sections").querySelectorAll("textarea[data-statement-id]")]
+    .filter(e=>e.value!==original.get(e.dataset.statementId))
+    .map(e=>({statement_id:e.dataset.statementId,text:e.value}));
+  if(!edits.length||edits.some(e=>!e.text.trim()))
+    return $("draft-result").textContent="Zmień tekst dokumentu przed zapisaniem.";
+  if(!globalThis.crypto||typeof crypto.randomUUID!=="function")
+    return $("draft-result").textContent="Brak bezpiecznego generatora identyfikatorów.";
+  $("draft-result").textContent="Zapisuję jawnie zatwierdzoną poprawkę w WORK…";
+  await invoke("amend_draft",{draft_id:draft.draft_id,revision:draft.revision,
+    draft_hash:draft.draft_hash,expected_case_sequence:draft.case_sequence,
+    edits,rationale,command_id:crypto.randomUUID(),idempotency_key:crypto.randomUUID(),
+    correlation_id:crypto.randomUUID()});
+});
 const uploadMime=(file)=>{const name=file.name.toLowerCase();if(name.endsWith(".pdf"))return "application/pdf";
   if(name.endsWith(".png"))return "image/png";
   if(name.endsWith(".jpg")||name.endsWith(".jpeg"))return "image/jpeg";
@@ -356,6 +431,9 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
         "case_title": {"action", "case_revision"},
         "list_saved": {"action"},
         "upload_source": {"action", "media_type", "content_base64", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id", "run_id"},
+        "list_drafts": {"action"},
+        "open_draft": {"action", "draft_id", "revision"},
+        "amend_draft": {"action", "draft_id", "revision", "draft_hash", "expected_case_sequence", "edits", "rationale", "command_id", "idempotency_key", "correlation_id"},
         "review_context": {"action", "source_id", "run_id"},
         "review_candidate": {"action", "source_id", "run_id", "candidate_index", "expected_case_sequence", "disposition", "statement", "description", "rationale", "command_id", "idempotency_key", "correlation_id"},
         "get_render": {"action", "render_id"},
@@ -368,6 +446,9 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
         if principal.actor.kind == "AI":
             raise EngineBoundaryError("AI_SESSION_DENIED")
         tenant, case = principal.tenant_id, principal.case_id
+    if action in ("list_drafts", "open_draft", "amend_draft"):
+        from lukart_work.legal_os_editor import edit_action
+        return edit_action(operator, payload, token)
     if action in ("review_context", "review_candidate"):
         from lukart_work.legal_os_review import review_action
         return review_action(operator, payload, token)
