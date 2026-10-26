@@ -37,7 +37,8 @@ jobs:
             tests.test_legal_os_editor \
             tests.test_legal_os_http_editor \
             tests.test_legal_os_case_only_host \
-            tests.test_legal_os_cli
+            tests.test_legal_os_cli \
+            tests.test_legal_os_windows_launcher
 
   postgres-e2e:
     runs-on: ubuntu-24.04
