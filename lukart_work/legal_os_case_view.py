@@ -72,17 +72,17 @@ button.secondary{background:#eef3f6;color:#25394d}button:disabled{opacity:.45;cu
 CASE_JS = r'''(() => {
 "use strict";
 const $=id=>document.getElementById(id);
-const state={opened:false,busy:false,revision:0};
+const state={opened:false,pending:0,revision:0};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
-function refresh(){for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||state.busy;$("open").disabled=state.busy;}
+function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;}
 function close(){state.revision++;state.opened=false;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";refresh();}
 function scope(){const tenant_id=$("tenant").value.trim(),case_id=$("case").value.trim();
 if(!uuid.test(tenant_id)||!uuid.test(case_id))throw new Error("Sprawdź identyfikatory przestrzeni i sprawy.");
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
 return {tenant_id,case_id};}
 async function invoke(action,extra={}) {
-const args={action,...scope(),...extra};state.busy=true;refresh();const generation=state.revision;
+const args={action,...scope(),...extra};state.pending++;refresh();const generation=state.revision;
 try {
   const response=await fetch("/api/embedded_case",{method:"POST",cache:"no-store",credentials:"omit",
     headers:{"Content-Type":"application/json","Authorization":"Bearer "+$("token").value},
@@ -131,9 +131,10 @@ try {
   } else status("Sprawdzono zapisany render. Status i decyzje pozostają w WORK.");
   return json;
 }catch(error){if(generation===state.revision)status(error.message,true);return null;}
-finally{state.busy=false;refresh();}
+finally{state.pending=Math.max(0,state.pending-1);refresh();}
 }
 $("open").addEventListener("click",()=>{close();invoke("open_case");});
+$("render").addEventListener("change",refresh);
 $("check").addEventListener("click",()=>{if(!uuid.test($("render").value.trim()))return status("Podaj identyfikator renderu.",true);invoke("get_render",{render_id:$("render").value.trim()});});
 for(const format of ["PDF","DOCX"])$(format.toLowerCase()).addEventListener("click",()=>{
   if(!uuid.test($("render").value.trim()))return status("Podaj identyfikator renderu.",true);
