@@ -47,6 +47,19 @@ class CaseOnlyHostTests(TestCase):
                 status,_=self.get(path)
                 self.assertEqual(status,404)
 
+    def test_legacy_post_routes_are_not_available_in_case_only_mode(self):
+        for path in ("/api/execute_core", "/api/query_core", "/api/upload_source",
+                     "/api/embedded_case", "/api/execute_finalization"):
+            with self.subTest(path=path):
+                connection=HTTPConnection("127.0.0.1",self.server.server_port,timeout=5)
+                try:
+                    connection.request("POST",path,"{}",{"Content-Type":"application/json"})
+                    response=connection.getresponse()
+                    self.assertEqual(response.status,404)
+                    response.read()
+                finally:
+                    connection.close()
+
     def test_case_js_still_available(self):
         status,script=self.get("/case.js")
         self.assertEqual(status,200)

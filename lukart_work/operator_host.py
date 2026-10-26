@@ -307,7 +307,8 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             if not self.boundary():
                 return self.reply(403, b'{"error":"FORBIDDEN"}')
             route = self.path.removeprefix("/api/")
-            if self.path != "/api/" + route or route not in (*ROUTES, "embedded_case", "embedded_session"):
+            allowed_routes = ("embedded_session",) if case_only else (*ROUTES, "embedded_case", "embedded_session")
+            if self.path != "/api/" + route or route not in allowed_routes:
                 return self.reply(404, b'{"error":"NOT_FOUND"}')
             auth = self.headers.get_all("Authorization") or []
             if len(auth) != 1 or not auth[0].startswith("Bearer "):
