@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime
 from hashlib import sha256
 from hmac import compare_digest
 from io import BytesIO
@@ -15,6 +16,11 @@ from json import dumps
 from typing import Any, Mapping
 from uuid import UUID
 from zipfile import BadZipFile, ZipFile
+
+from lukart_work.domain.models import Value
+from lukart_work.finalization.contracts import PersistedRender
+from lukart_work.finalization.service import RENDER_CATEGORY
+from lukart_work.validation.rules import Violation
 
 
 READ_CASE_CONTRACT = "urn:lukart:work:CoreQuery:1.0.0"
@@ -100,6 +106,18 @@ class SavedArtifact:
     sha256: str
 
 
+class SavedRenderItem(Value):
+    render_id: UUID
+    created_at: datetime
+    profile_id: str
+    label: str
+
+
+class SavedRenderList(Value):
+    result_type: str = "SAVED_RENDERS"
+    items: tuple[SavedRenderItem, ...]
+
+
 class EmbeddedDocumentEngine:
     """Private application-service boundary, invoked inside the LEGAL OS host.
 
@@ -122,6 +140,44 @@ class EmbeddedDocumentEngine:
             "case_id": scope.case_id,
         }
         return self._operator.query_core(request, _token(token))
+
+    def list_saved(self, scope: CaseScope, *, token: str) -> SavedRenderList:
+        """List render metadata under native WORK tenant/case read authority.
+
+        No external indexing, another database, render/release side effect, or
+        transitive credential. Fail-closed when too many records are present:
+        pagination is a separate future contract.
+        """
+        token = _token(token)
+        finalization = self._operator.finalization
+        tenant_id, case_id = UUID(scope.tenant_id), UUID(scope.case_id)
+        try:
+            with finalization.authority.session(token) as principal:
+                principal.require(tenant_id, case_id, "GetFinalization")
+                if principal.actor.kind == "AI":
+                    raise EngineBoundaryError("HUMAN_OR_SERVICE_REQUIRED")
+                with finalization.repository.transaction(tenant_id, case_id) as tx:
+                    if not tx.sequence():
+                        raise EngineBoundaryError("CASE_NOT_FOUND")
+                    records = tx.objects(RENDER_CATEGORY, PersistedRender)
+                    if len(records) > 100:
+                        raise EngineBoundaryError("RENDER_LIST_LIMIT")
+                    rows = []
+                    for record in records:
+                        if (record.tenant_id, record.case_id) != (tenant_id, case_id):
+                            raise EngineBoundaryError("CROSS_CASE_RENDER")
+                        rows.append(SavedRenderItem(
+                            render_id=record.id,
+                            created_at=record.recorded_at,
+                            profile_id=record.semantic_profile.id,
+                            label="Zapisany projekt",
+                        ))
+                    principal.require(tenant_id, case_id, "GetFinalization")
+                return SavedRenderList(items=tuple(sorted(rows, key=lambda r: (
+                    r.created_at, str(r.render_id)
+                ), reverse=True)))
+        except Violation as exc:
+            raise EngineBoundaryError("WORK_RENDER_LIST_REJECTED") from exc
 
     def get_render(self, scope: CaseScope, render_id: str | UUID, *, token: str) -> Any:
         """Read existing renderer status, never create an artifact."""
