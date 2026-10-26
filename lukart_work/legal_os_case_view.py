@@ -39,8 +39,9 @@ CASE_HTML = r'''<!doctype html>
   </section>
   <section class="panel" aria-labelledby="docs-title">
     <div class="panel-heading"><h2 id="docs-title">Dokumenty sprawy</h2><span class="pill neutral">Bez ponownego renderowania</span></div>
-    <p class="hint">W tym inkremencie można otworzyć już zapisany render. Lista dokumentów pojawi się po udostępnieniu autoryzowanego katalogu renderów przez WORK.</p>
-    <label>Identyfikator zapisanego dokumentu <input type="text" id="render" autocomplete="off" spellcheck="false" placeholder="Render UUID"></label>
+    <p class="hint">Wybierz projekt zapisany w tej sprawie. Dokument jest odczytywany z WORK bez regenerowania i bez dodatkowych identyfikatorów.</p>
+    <label>Zapisane dokumenty <select id="render" aria-label="Wybierz zapisany dokument"><option value="">Otwórz sprawę, aby wyświetlić dokumenty</option></select></label>
+    <p class="hint" id="render-count">Lista dokumentów nie została jeszcze pobrana.</p>
     <div class="actions">
       <button id="check" type="button" class="secondary" disabled>Sprawdź dokument</button>
       <button id="pdf" type="button" disabled>Pobierz PDF</button>
@@ -59,7 +60,7 @@ main{padding:32px 0 50px}.eyebrow{font-size:11px;font-weight:740;letter-spacing:
 .panel-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.pill{border-radius:20px;background:#e3f3ef;padding:6px 12px;color:#226f65;font-size:12px;font-weight:650}
 .pill.neutral{background:#f1f4f8;color:#53647b}.hint{font-size:13px;line-height:1.55}
 .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:14px}label{display:flex;flex-direction:column;gap:8px;margin-top:12px;font-weight:620;font-size:13px}
-input{font:inherit;width:100%;padding:12px 13px;border:1px solid #cbd6e1;border-radius:8px;background:#fff;color:#17243b}
+input,select{font:inherit;width:100%;padding:12px 13px;border:1px solid #cbd6e1;border-radius:8px;background:#fff;color:#17243b}
 input:focus-visible,button:focus-visible{outline:3px solid #a7d5cb;outline-offset:2px}
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}button{cursor:pointer;border:0;border-radius:8px;padding:12px 18px;font-weight:660;background:#227c71;color:#fff}
 button.secondary{background:#eef3f6;color:#25394d}button:disabled{opacity:.45;cursor:not-allowed}
@@ -75,7 +76,7 @@ const state={opened:false,busy:false,revision:0};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
 function refresh(){for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||state.busy;$("open").disabled=state.busy;}
-function close(){state.revision++;state.opened=false;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";refresh();}
+function close(){state.revision++;state.opened=false;$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";refresh();}
 function scope(){const tenant_id=$("tenant").value.trim(),case_id=$("case").value.trim();
 if(!uuid.test(tenant_id)||!uuid.test(case_id))throw new Error("Sprawdź identyfikatory przestrzeni i sprawy.");
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
@@ -110,11 +111,23 @@ try {
     if(caseRef&&Number.isInteger(caseRef.revision)&&caseRef.revision>0){
       await invoke("case_title",{case_revision:caseRef.revision});
     }
+    await invoke("list_saved");
   } else if(action==="case_title"){
     if(json.result_type!=="REVISION"||json.entity?.kind!=="Case")throw new Error("Brak zweryfikowanej wersji sprawy.");
     $("case-title").textContent=json.entity.title||"Sprawa bez tytułu";
     $("case-state").textContent=json.entity.status||"Otwarta";
     status("Pobrano aktualny tytuł i status sprawy bez zmiany danych.");
+  } else if(action==="list_saved"){
+    if(json.result_type!=="SAVED_RENDERS"||!Array.isArray(json.items))throw new Error("Nieprawidłowa lista dokumentów.");
+    const select=$("render");select.replaceChildren(new Option("Wybierz zapisany dokument",""));
+    for(const item of json.items){
+      if(!uuid.test(item.render_id)||typeof item.created_at!=="string")continue;
+      const date=new Date(item.created_at);
+      const dateLabel=Number.isNaN(date.getTime())?"bez daty":date.toLocaleString("pl-PL");
+      select.add(new Option((item.label||"Projekt")+" · "+dateLabel,item.render_id));
+    }
+    $("render-count").textContent="Znaleziono dokumentów: "+String(select.options.length-1);
+    status("Lista dokumentów pobrana z WORK. Wybierz plik do odczytu.");
   } else status("Sprawdzono zapisany render. Status i decyzje pozostają w WORK.");
   return json;
 }catch(error){if(generation===state.revision)status(error.message,true);return null;}
@@ -128,7 +141,7 @@ for(const format of ["PDF","DOCX"])$(format.toLowerCase()).addEventListener("cli
 });
 $("clear").addEventListener("click",()=>{close();for(const id of ["token","tenant","case","render"])$(id).value="";status("Sesja wyczyszczona.");});
 window.addEventListener("pagehide",()=>{close();for(const id of ["token","tenant","case","render"])$(id).value="";});
-for(const id of ["tenant","case"])$(id).addEventListener("input",close);
+for(const id of ["tenant","case","token"])$(id).addEventListener("input",close);
 refresh();
 })();'''.encode("utf-8")
 
@@ -141,6 +154,7 @@ def read_case_action(operator: Any, payload: dict[str, Any], token: str):
     fields = {
         "open_case": {"action", "tenant_id", "case_id"},
         "case_title": {"action", "tenant_id", "case_id", "case_revision"},
+        "list_saved": {"action", "tenant_id", "case_id"},
         "get_render": {"action", "tenant_id", "case_id", "render_id"},
         "download": {"action", "tenant_id", "case_id", "render_id", "format"},
     }
@@ -150,6 +164,8 @@ def read_case_action(operator: Any, payload: dict[str, Any], token: str):
     engine = EmbeddedDocumentEngine(operator)
     if action == "open_case":
         result = engine.open_case(scope, token=token)
+    elif action == "list_saved":
+        result = engine.list_saved(scope, token=token)
     elif action == "case_title":
         revision = payload["case_revision"]
         if type(revision) is not int or not 1 <= revision <= 1_000_000_000:
