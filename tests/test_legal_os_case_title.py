@@ -30,6 +30,14 @@ class ReadOnlyOperator:
             kind="Case", id=UUID(case_id), revision=revision, title="Sprawa syntetyczna", status="OPEN"
         ))
 
+    def __getattr__(self, name):
+        # The trusted facade demands complete operator shape even for read-only calls.
+        if name in {"query_finalization", "execute_core", "execute_fact_evidence",
+                    "execute_procedural", "execute_plan", "execute_draft",
+                    "execute_validation", "execute_finalization", "upload_source"}:
+            return lambda *args, **kwargs: None
+        raise AttributeError(name)
+
     def query_core(self, data, token):
         self.calls.append((data, token))
         if data["operation"] == "GetCaseHead":
