@@ -255,6 +255,16 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             self.send_header("Connection", "close")
             self.end_headers()
             self.wfile.write(body)
+            self.wfile.flush()
+            # Graceful send-side close on the loopback host: signal end of
+            # stream to the client before the hard socket close, so a client
+            # still reading the response on Windows gets a clean EOF instead
+            # of a connection abort (WinError 10053). Response framing and
+            # every status code are unchanged; fail-closed behavior intact.
+            try:
+                self.connection.shutdown(socket.SHUT_WR)
+            except OSError:
+                pass  # The peer already closed its side.
             self.close_connection = True
 
         def boundary(self):
