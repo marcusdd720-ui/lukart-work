@@ -28,7 +28,7 @@ Przeczytane i zastosowane: `lukart-work/AGENTS.md` (Enterprise Execution Policy,
 ## Naprawiony defekt (odtworzony i zweryfikowany)
 **Defekt:** `lukart_work/operator_host` — na Windows pętla zaplecza wysyła odpowiedzi z `Connection: close` i twardo zamyka gniazdo tuż po flushu; klient `http.client` czytający odpowiedź w tym samym momencie dostaje `ConnectionAbortedError (WinError 10053)` — odpowiedź HTTP ginie. Odtworzone: skrypt stresowy 300 szybkich sekwencyjnych połączeń (mieszane 200/403/403-odrzucenia nagłówków) → 7× `ConnectionAbortedError` (~2,3%); testy jednostkowe `tests.test_operator_host` (odrzucenia bezpieczeństwa, brak/wadliwy token, granice przeglądarki) — błędy w 3 z 3, potem 1 z 3, potem 1 z 3 (wyścig).
 
-**Poprawka (minimalna, jedna lokalizacja):** w `Handler.reply()` po `self.wfile.write(body)`: `self.wfile.flush()` oraz `self.connection.shutdown(socket.SHUT_WR)` z `except OSource: pass` przed `self.close_connection = True`. Klienci otrzymują czysty EOF (FIN) przed twardym zamknięciem; każdy kod statusu, nagłówki i zachowanie fail-closed niezmienione (`socket` już importowane w module).
+**Poprawka (minimalna, jedna lokalizacja):** w `Handler.reply()` po `self.wfile.write(body)`: `self.wfile.flush()` oraz `self.connection.shutdown(socket.SHUT_WR)` z `except OSError: pass` przed `self.close_connection = True`. Klienci otrzymują czysty EOF (FIN) przed twardym zamknięciem; każdy kod statusu, nagłówki i zachowanie fail-closed niezmienione (`socket` już importowane w module).
 
 **Weryfikacja po poprawce:**
 - Stres 300 połączeń: 200×100, 403×200, 0× abort.

@@ -282,7 +282,6 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             remaining = min(length, MAX_BODY + 1)
             deadline = monotonic() + 1
             try:
-                self.connection.shutdown(socket.SHUT_WR)
                 while remaining > 0 and (timeout := deadline - monotonic()) > 0:
                     self.connection.settimeout(timeout)
                     chunk = self.rfile.read1(min(remaining, 65536))
