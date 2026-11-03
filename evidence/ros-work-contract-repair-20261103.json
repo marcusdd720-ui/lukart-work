@@ -1,0 +1,65 @@
+{
+  "evidence_version": "ros-work-contract-schema-repair/1.0.0",
+  "observed_date": "2026-11-03",
+  "repository": "marcusdd720-ui/lukart-work",
+  "branch": "integration/legal-os-hidden-document-engine-v1",
+  "failing_pr_head": "754c8c6bb6dbb0c0519c142e3eb70d4fdb8d881b",
+  "ci_failures": [
+    {
+      "run_id": 41722563850,
+      "job_id": 126218878389,
+      "workflow": "Stage 10 full regression",
+      "summary": "859 tests; 1 failure and 1 error",
+      "root_errors": [
+        "tests.test_ros_work_integration_contract: CONTRACT_KEYS",
+        "tests.test_stage11: stale source-derived golden metadata"
+      ]
+    },
+    {
+      "run_id": 41722563791,
+      "job_id": 126218877826,
+      "workflow": "Stage 11 rendering assurance",
+      "summary": "20 tests; 1 failure",
+      "root_error": "fresh-process outputs matched each other; four source-derived metadata fields differed from frozen golden"
+    },
+    {
+      "run_id": 41722563703,
+      "job_id": 126218877699,
+      "workflow": "Stage 12 procedure assurance",
+      "summary": "67 Stage 09 tests PASS; Stage 10 tests PASS; Stage 11 rendering regression failed on the same stale golden"
+    },
+    {
+      "run_id": 41722563830,
+      "job_id": 126218878098,
+      "workflow": "Stage 13 full repository regression",
+      "summary": "failed on the same Stage 11 rendering identity mismatch"
+    }
+  ],
+  "contract_root_cause": {
+    "contract_version": "1.0.0",
+    "issue": "candidate_observation and mapping.assess were added as extra fields to a strict v1 contract whose validator intentionally requires exact top-level and mapping key sets; the validator also retained obsolete PLANNED status assumptions after read-only assess implementation.",
+    "resolution": "Keep the normative v1 key set exact; move ephemeral candidate observation to a separate evidence receipt; fold assess mapping into the existing mapping.request field; update validator for the current partially implemented read-only-only status; make package-read authority explicitly HUMAN-only and deny SERVICE/AI."
+  },
+  "source_sha256": {
+    "contracts/ros_work/v1/integration-contract.json": "7d293a2f9a8d258e0878cbc359922064e326908b563aa068b09b8f4b1e3b9cf4",
+    "tests/test_ros_work_integration_contract.py": "e26a4c7927a6fe2532c106c6d29e40f469e188d2bbfd9103bc12a6c27215f54e",
+    "tests/golden_cases/stage11_render_identity.json": "90e8b940ef0484ad93e166e92792d144fde4bb6385e03f87cf971fde4399097e"
+  },
+  "local_validation": {
+    "command": "python -B -m unittest tests.test_ros_work_integration_contract -v",
+    "tests": 7,
+    "passed": 7,
+    "skipped": 0,
+    "failed": 0,
+    "result": "PASS"
+  },
+  "boundaries": {
+    "execute_enabled": false,
+    "package_read_enabled": false,
+    "document_types_admitted": 0,
+    "merge": false,
+    "release": false,
+    "deployment": false
+  },
+  "next_gate": "Commit and push the contract/test/golden repairs with verified signature; rerun exact-head Stage 10/11/12/13 CI. Do not claim production readiness until all gates pass."
+}

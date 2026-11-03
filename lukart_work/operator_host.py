@@ -292,6 +292,14 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             except OSError:
                 pass  # The rejected connection is already being closed.
 
+        def reject_request(self, status, body):
+            lengths = self.headers.get_all("Content-Length") or []
+            length = 0
+            if (len(lengths) == 1 and lengths[0].isascii()
+                    and lengths[0].isdigit() and len(lengths[0]) <= 10):
+                length = min(int(lengths[0]), MAX_BODY + 1)
+            return self.reject_body(length, status=status, body=body)
+
         def do_GET(self):
             if not self.boundary():
                 return self.reply(403, b'{"error":"FORBIDDEN"}')
@@ -310,25 +318,16 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             self.reply(404, b'{"error":"NOT_FOUND"}')
 
         def do_POST(self):
+            body_consumed = False
             if not self.boundary():
-                return self.reply(403, b'{"error":"FORBIDDEN"}')
+                return self.reject_request(403, b'{"error":"FORBIDDEN"}')
             route = self.path.removeprefix("/api/")
             allowed_routes = ("embedded_session",) if case_only else (*ROUTES, "embedded_case", "embedded_session")
             if self.path != "/api/" + route or route not in allowed_routes:
-                # Drain a bounded, well-formed request body after replying. On
-                # Windows, closing a socket with unread request bytes can reset
-                # the connection before the client receives the 404 response.
-                lengths = self.headers.get_all("Content-Length") or []
-                length = 0
-                if (len(lengths) == 1 and lengths[0].isascii()
-                        and lengths[0].isdigit() and len(lengths[0]) <= 10):
-                    length = min(int(lengths[0]), MAX_BODY + 1)
-                return self.reject_body(
-                    length, status=404, body=b'{"error":"NOT_FOUND"}'
-                )
+                return self.reject_request(404, b'{"error":"NOT_FOUND"}')
             auth = self.headers.get_all("Authorization") or []
             if len(auth) != 1 or not auth[0].startswith("Bearer "):
-                return self.reply(403, b'{"error":"FORBIDDEN"}')
+                return self.reject_request(403, b'{"error":"FORBIDDEN"}')
             token = auth[0][7:]
             try:
                 with operator.core.authority.session(token):
@@ -336,13 +335,16 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                     if (len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdigit()
                             or self.headers.get("Transfer-Encoding") is not None
                             or self.headers.get_all("Content-Type") != ["application/json"]):
-                        return self.reply(400, b'{"error":"INVALID_REQUEST"}')
+                        return self.reject_request(400, b'{"error":"INVALID_REQUEST"}')
                     length = int(lengths[0])
                     if not 0 < length <= MAX_BODY:
                         return self.reject_body(length)
                     raw = self.rfile.read(length)
                     if len(raw) != length:
-                        return self.reply(400, b'{"error":"INVALID_REQUEST"}')
+                        return self.reject_body(
+                            length - len(raw), status=400, body=b'{"error":"INVALID_REQUEST"}'
+                        )
+                    body_consumed = True
                     try:
                         payload = strict_json(raw.decode("utf-8"))
                     except (Violation, ValueError, UnicodeError, RecursionError):
@@ -373,6 +375,8 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             except EngineBoundaryError:
                 self.reply(403, b'{"error":"CASE_OPERATION_REJECTED"}')
             except Violation:
+                if not body_consumed:
+                    return self.reject_request(403, b'{"error":"FORBIDDEN"}')
                 self.reply(403, b'{"error":"FORBIDDEN"}')
             except (ValueError, UnicodeError):
                 self.reply(400, b'{"error":"INVALID_REQUEST"}')

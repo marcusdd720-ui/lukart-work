@@ -119,22 +119,21 @@
       "id": "ros.work.generator.read-package.v1",
       "effect": "SCOPED_ARTIFACT_READ",
       "state": "BLOCKED_BY_PB03_CHECKPOINT_REVIEW_AND_ADAPTER",
-      "required_authority": "separate scoped WORK package-read capability",
+      "required_authority": "separate scoped HUMAN-only WORK package-read capability; SERVICE and AI actors are denied",
       "required_gates": [
         "HG-09"
       ],
-      "output": "immutable package identity and only exact final-package member bytes (which may contain private case content) under a separate native WORK tenant/case-scoped package-read capability; never raw credentials or original source-byte export"
+      "output": "immutable package identity and only exact final-package member bytes (which may contain private case content) under a separate native WORK tenant/case-scoped HUMAN-only package-read capability; SERVICE and AI actors are denied; never raw credentials or original source-byte export"
     }
   ],
   "mapping": {
-    "request": "ROS operation envelope validated first; adapter maps only allowlisted operation/input fields into public WORK requests",
+    "request": "ROS operation envelope validated first; adapter maps only allowlisted operation/input fields into public WORK requests; only ros.work.generator.assess.v1 maps to WORK query_core/GetCaseHead; mutation and package-read operations fail closed before dispatch",
     "scope": "ROS case_id and privacy scope must map exactly to WORK tenant_id/case_id; mismatch blocks before execution",
     "authority": "opaque ROS authority_ref is resolved by a trusted host to a native WORK capability; it is not forwarded as authorization truth",
     "concurrency": "ROS expected_head is an orchestration precondition; WORK expected_case_sequence/CAS remains authoritative for domain writes",
     "idempotency": "adapter binds ROS idempotency key plus request digest to the exact WORK command ids/results; different digest blocks",
     "evidence": "existing cross-repo evidence/result/provenance envelopes carry references; original bytes remain in scoped WORK storage",
-    "result": "native WORK result is authoritative; adapter derives a neutral result without rewriting the native record",
-    "assess": "Only ros.work.generator.assess.v1 maps to WORK query_core/GetCaseHead; mutation and package-read operations fail closed before dispatch."
+    "result": "native WORK result is authoritative; adapter derives a neutral result without rewriting the native record"
   },
   "gaps": [
     {
@@ -184,7 +183,7 @@
     "WORK never imports lukart_ros as a runtime package dependency",
     "ROS orchestration success cannot manufacture WORK validation, HUMAN approval or FINAL",
     "no caller-supplied PASS, legal applicability, render hash or release receipt becomes authoritative",
-    "raw credentials and original source bytes never cross the operation envelope; private case content crosses only as exact final-package member bytes returned by ros.work.generator.read-package.v1 after explicit native WORK tenant/case-scoped package-read authorization and HG-09; the operation remains blocked until its adapter and review gates are admitted",
+    "raw credentials and original source bytes never cross the operation envelope; private case content crosses only as exact final-package member bytes returned by ros.work.generator.read-package.v1 after explicit native WORK tenant/case-scoped HUMAN-only package-read authorization and HG-09; SERVICE and AI actors are denied; the operation remains blocked until its adapter and review gates are admitted",
     "native records remain authoritative and neutral envelopes are derived views",
     "replay requires exact code, contract, policy, input and artifact identities",
     "unknown, NOT_RUN, skipped or missing evidence is never PASS"
@@ -206,35 +205,5 @@
     "no runtime import or direct database dependency exists between repositories",
     "positive execute/read-package tests remain prohibited until their blocking gaps close",
     "Read-only assess adapter passes focused local tests and native CoreQuery schema validation; exact-SHA CI and independent review of the current local candidate remain required."
-  ],
-  "candidate_observation": {
-    "observed_date": "2026-11-03",
-    "work": {
-      "repository": "marcusdd720-ui/lukart-work",
-      "ref": "integration/legal-os-hidden-document-engine-v1",
-      "commit": "64c42579819381988707f9b45c496ce84c01eb1e",
-      "working_tree": "DIRTY_UNCOMMITTED",
-      "case_head_schema_blob": "aa97dd4ef4865948fe7c393c224b0bacdca421a2"
-    },
-    "ros": {
-      "repository": "marcusdd720-ui/lukart-ros",
-      "ref": "h2/ros-work-native-corequery-verified-20261103",
-      "commit": "fc4c27b043cf9af4de4c420e3d6b37f9d0e1cc60",
-      "working_tree": "DIRTY_UNCOMMITTED",
-      "pull_request": 381,
-      "pull_request_state": "DRAFT",
-      "remote_ci": "SUCCESS_FOR_COMMITTED_HEAD_ONLY_NOT_LOCAL_WORKTREE"
-    },
-    "adapter_scope": {
-      "implemented": [
-        "ros.work.generator.assess.v1"
-      ],
-      "native_work_route": "POST /api/query_core",
-      "native_work_contract": "urn:lukart:work:CoreQuery:1.0.0",
-      "native_work_operation": "GetCaseHead",
-      "writes_enabled": false,
-      "execute_enabled": false,
-      "package_read_enabled": false
-    }
-  }
+  ]
 }

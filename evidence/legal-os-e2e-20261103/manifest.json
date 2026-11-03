@@ -54,15 +54,8 @@
     "tests/test_legal_os_render_listing.py": "9853e5459f21cd36e9342470ba7e00febde85108a30fc4a6f8086b367833eb6c",
     "tests/test_legal_os_cli.py": "f383df82a47eedd55a3e982273a05c13516e859f245653a1048ec6ad30988174",
     "contracts/ros_work/v1/integration-contract.json": "1fd126823dc365b12e15a3cf8e508e829bdbfc43e9bf2ea37c487dfbdd899530",
-    "docs/ROS_WORK_CAPABILITY_GAP_V1.md": "65129f24e73244764bf9f32283808864f044908c4038dd10494b8bfa7039eb0b",
-    "docs/LEGAL_OS_E2E_INTEGRATION_20261027.md": "745342a9ef0a3ce24f4912f46acfbf8f8d2daf4cb557b760b406b913b2254be0",
-    "lukart_work/finalization/service.py": "20cf2361c5a7a0544f98c21188051f645d75dfc68126ae11e852184c2fc0f48e",
-    "tests/test_finalization.py": "fa4be8bd24c52d3b98da20447a782612b11dd04148a119374e6148467d8cf6bd",
-    "lukart_work/demo_examples/SOURCE_MANIFEST.json": "a71e9d9423cc048592def5517162a388a1692d5268a598312b8882969f56b650"
-  },
-  "additional_evidence_sha256": {
-    "read-authorization-fix.json": "fdda8b890d4ecf771a03beb1994cee8e3f2eed9ad995c3e216a20a0ac72adbd7",
-    "product-baseline-status.json": "71e5efcb3ffa3cba69691aa2edd6f3626265fe541d45f13973faa3d5ec5b6a4b"
+    "docs/ROS_WORK_CAPABILITY_GAP_V1.md": "abe4190b4f9b989fee499ac54164a0853956cc512f79d78cc527d9a57db40b02",
+    "docs/LEGAL_OS_E2E_INTEGRATION_20261027.md": "745342a9ef0a3ce24f4912f46acfbf8f8d2daf4cb557b760b406b913b2254be0"
   },
   "not_verified": [
     "authenticated HUMAN end-to-end session",
