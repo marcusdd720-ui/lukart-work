@@ -1,0 +1,20 @@
+{
+  "document_type_id": "PL-PRE-PAYMENT-1",
+  "claim_basis": "SYNTHETIC ONLY: fictional invoice INV-SYN-0001 under fictional agreement AGR-SYN-0001.",
+  "principal_amount_decimal": "1250.00",
+  "currency_PLN": "PLN",
+  "performance_due_date": "2026-10-01",
+  "payment_history": [
+    {
+      "event": "SYNTHETIC invoice INV-SYN-0001 issued",
+      "date": "2026-09-01",
+      "amount_decimal": "1250.00",
+      "status": "unpaid"
+    }
+  ],
+  "requested_payment_date_human": "2026-11-20",
+  "payment_destination": {
+    "destination_kind": "other_human_confirmed",
+    "display_label": "SYNTHETIC DESTINATION — NOT A REAL ACCOUNT"
+  }
+}

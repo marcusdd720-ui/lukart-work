@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lukart:work:h5-synth-01:PL-PRE-PAYMENT-1:0.1.0",
+  "title": "PL-PRE-PAYMENT-1 synthetic pilot candidate",
+  "description": "REVIEW_ONLY_NOT_PRODUCT. Synthetic fixture contract only; not a supported production document type.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document_type_id",
+    "claim_basis",
+    "principal_amount_decimal",
+    "currency_PLN",
+    "performance_due_date",
+    "payment_history",
+    "requested_payment_date_human",
+    "payment_destination"
+  ],
+  "properties": {
+    "document_type_id": {
+      "const": "PL-PRE-PAYMENT-1"
+    },
+    "claim_basis": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "principal_amount_decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,11})\\.[0-9]{2}$"
+    },
+    "currency_PLN": {
+      "const": "PLN"
+    },
+    "performance_due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "payment_history": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event",
+          "date",
+          "amount_decimal",
+          "status"
+        ],
+        "properties": {
+          "event": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "amount_decimal": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,11})\\.[0-9]{2}$"
+          },
+          "status": {
+            "enum": [
+              "paid",
+              "unpaid",
+              "reversed"
+            ]
+          }
+        }
+      }
+    },
+    "requested_payment_date_human": {
+      "type": "string",
+      "format": "date",
+      "description": "Explicit HUMAN input only; no inferred deadline."
+    },
+    "payment_destination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "destination_kind",
+        "display_label"
+      ],
+      "properties": {
+        "destination_kind": {
+          "enum": [
+            "contractual_account_reference",
+            "other_human_confirmed"
+          ]
+        },
+        "display_label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      }
+    }
+  },
+  "$comment": "No automatic interest, limitation period, statutory deadline, legal conclusion, legal-source assertion or delivery. No execute/read-package authority."
+}

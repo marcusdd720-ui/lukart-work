@@ -1,0 +1,47 @@
+{
+  "profile_id": "urn:lukart:work:h5-synth-01:profile:PL-PRE-PAYMENT-1",
+  "profile_version": "0.1.0",
+  "status": "REVIEW_ONLY_NOT_PRODUCT",
+  "product_support": "NOT_SUPPORTED_FUTURE",
+  "document_type_id": "PL-PRE-PAYMENT-1",
+  "label_pl": "Wezwanie do zapłaty",
+  "repository": "marcusdd720-ui/lukart-work",
+  "pinned_work_sha": "7a924f37696cdf74666c08f924f1941edb4fc030",
+  "source_product_baseline_blob": "14c9ec8ac3eb00f4e6a0b12b09f7cf8588ab828d",
+  "schema": "pl-pre-payment-1.schema.json",
+  "fixture": "fixture.synthetic.json",
+  "field_mapping": {
+    "claim_basis": "claim_basis",
+    "principal_amount_decimal": "principal_amount_decimal",
+    "currency_PLN": "currency_PLN",
+    "performance_due_date": "performance_due_date",
+    "payment_history": "payment_history",
+    "requested_payment_date_human": "requested_payment_date_human",
+    "payment_destination": "payment_destination"
+  },
+  "prohibited_automation": [
+    "interest_calculation",
+    "limitation_period_calculation",
+    "statutory_deadline_calculation",
+    "legal_conclusion",
+    "legal_source_selection",
+    "delivery_or_filing"
+  ],
+  "required_human_inputs": [
+    "requested_payment_date_human",
+    "payment_destination"
+  ],
+  "execution": {
+    "native_execute": "BLOCKED",
+    "read_package": "BLOCKED",
+    "reason": "PB02/PB03 independent exact-SHA acceptance, legal/type admission and native WORK capabilities are not granted."
+  },
+  "scope": {
+    "synthetic_only": true,
+    "real_case_data": false,
+    "external_delivery": false,
+    "merge": false,
+    "release": false,
+    "production": false
+  }
+}
