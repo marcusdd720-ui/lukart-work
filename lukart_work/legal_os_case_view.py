@@ -110,6 +110,21 @@ CASE_HTML = r'''<!doctype html>
       <button id="docx" type="button" disabled>Pobierz DOCX</button>
     </div>
   </section>
+  <section class="panel" aria-labelledby="finalization-title">
+    <div class="panel-heading"><h2 id="finalization-title">Zatwierdzenie i pakiet ko?cowy</h2><span class="pill neutral" id="finalization-state">Nie wybrano renderu</span></div>
+    <p class="hint">Przed zatwierdzeniem pobierz i przeczytaj dok?adny zapisany DOCX oraz PDF. Akceptacja dokumentu, wydanie FINAL i z?o?enie pakietu s? odr?bnymi czynno?ciami HUMAN. Ka?da wymaga osobnego klikni?cia i uzasadnienia; system nie podejmuje tych decyzji automatycznie.</p>
+    <div class="actions"><button id="finalization-refresh" type="button" class="secondary" disabled>Odczytaj status finalizacji</button></div>
+    <pre id="finalization-status" class="status" role="status" aria-live="polite">Wybierz zapisany render, aby odczyta? stan.</pre>
+    <label>Uzasadnienie akceptacji dok?adnego dokumentu <textarea id="approval-rationale" rows="2" maxlength="4000" placeholder="Potwierd?, co zosta?o sprawdzone w DOCX i PDF."></textarea></label>
+    <div class="actions"><button id="approve-document" type="button" disabled>Jawnie zatwierdzam dokument</button></div>
+    <label>Uzasadnienie wydania FINAL <textarea id="release-rationale" rows="2" maxlength="4000" placeholder="Uzasadnij wydanie dok?adnej, zatwierdzonej wersji."></textarea></label>
+    <div class="actions"><button id="release-document" type="button" disabled>Wydaj FINAL</button></div>
+    <label>Uzasadnienie z?o?enia pakietu <textarea id="package-rationale" rows="2" maxlength="4000" placeholder="Uzasadnij utrwalenie kompletnego pakietu ko?cowego."></textarea></label>
+    <div class="actions"><button id="assemble-package" type="button" disabled>Z??? pakiet ko?cowy</button></div>
+    <label>Plik pakietu <select id="package-member" disabled><option value="">Pakiet nie jest jeszcze dost?pny</option></select></label>
+    <div class="actions"><button id="package-download" type="button" class="secondary" disabled>Pobierz wybrany plik pakietu</button></div>
+    <pre id="package-status" class="status" role="status" aria-live="polite">Pakiet nie zosta? jeszcze z?o?ony.</pre>
+  </section>
   <p id="status" class="status" role="status" aria-live="polite">Połącz się z istniejącą sprawą.</p>
 </main><footer>Generator Pism 2.0: silnik wewnętrzny · HUMAN approvals: wyłącznie przez autoryzowane operacje WORK</footer>
 </div><script src="/case.js"></script></body></html>'''.encode()
@@ -136,7 +151,7 @@ textarea{width:100%;font:inherit;border:1px solid #cbd6e1;border-radius:8px;padd
 CASE_JS = r'''(() => {
 "use strict";
 const $=id=>document.getElementById(id);
-const state={opened:false,pending:0,revision:0,caseSequence:0,review:null,draft:null,composeDraft:null,composeValidation:null,composeUnknown:false};
+const state={opened:false,pending:0,revision:0,caseSequence:0,review:null,draft:null,composeDraft:null,composeValidation:null,composeUnknown:false,finalization:null,finalizationUnknown:false};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
 function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;for(const id of ["intake-upload","intake-text-save"])$(id).disabled=!state.opened||busy;
@@ -150,8 +165,16 @@ $("compose-save").disabled=composeBlocked||!$("compose-type").value;
 $("compose-generate").disabled=composeBlocked||!$("compose-plan").value||!$("compose-profile").value;
 $("compose-validate").disabled=composeBlocked||!state.composeDraft;
 $("compose-render").disabled=composeBlocked||!state.composeDraft||!state.composeValidation;
+const finalizationSelected=state.opened&&selected;
+$("finalization-refresh").disabled=!finalizationSelected||busy;
+$("approve-document").disabled=!finalizationSelected||busy||state.finalizationUnknown||!state.finalization?.can_approve;
+$("release-document").disabled=!finalizationSelected||busy||state.finalizationUnknown||!state.finalization?.can_release;
+$("assemble-package").disabled=!finalizationSelected||busy||state.finalizationUnknown||!state.finalization?.can_assemble;
+const hasPackage=Boolean(state.finalization?.package);
+$("package-member").disabled=!hasPackage||busy;
+$("package-download").disabled=!hasPackage||busy||!$("package-member").value;
 }
-function close(){composeReset();state.revision++;state.opened=false;state.caseSequence=0;state.review=null;state.draft=null;$("draft-editor").hidden=true;$("draft-select").replaceChildren(new Option("Otwórz sprawę, aby zobaczyć projekty",""));$("draft-sections").replaceChildren();$("draft-rationale").value="";$("draft-result").textContent="Nie otwarto projektu.";$("review-panel").hidden=true;$("review-select").replaceChildren();$("review-quote").textContent="";$("review-statement").value="";$("review-description").value="";$("review-rationale").value="";$("review-result").textContent="Brak decyzji.";$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
+function close(){composeReset();state.revision++;state.opened=false;state.caseSequence=0;state.review=null;state.draft=null;state.finalization=null;state.finalizationUnknown=false;$("finalization-state").textContent="Nie wybrano renderu";$("finalization-status").textContent="Wybierz zapisany render, aby odczyta? stan.";$("package-member").replaceChildren(new Option("Pakiet nie jest jeszcze dost?pny",""));$("package-status").textContent="Pakiet nie zosta? jeszcze z?o?ony.";$("approval-rationale").value="";$("release-rationale").value="";$("package-rationale").value="";$("draft-editor").hidden=true;$("draft-select").replaceChildren(new Option("Otwórz sprawę, aby zobaczyć projekty",""));$("draft-sections").replaceChildren();$("draft-rationale").value="";$("draft-result").textContent="Nie otwarto projektu.";$("review-panel").hidden=true;$("review-select").replaceChildren();$("review-quote").textContent="";$("review-statement").value="";$("review-description").value="";$("review-rationale").value="";$("review-result").textContent="Brak decyzji.";$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
 function scope(){
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
 return {};
@@ -188,6 +211,10 @@ try {
   if(action==="download"){
     const bytes=await response.blob();
     if(generation!==state.revision)return null;
+    const expected=state.finalization?.artifacts?.find(item=>item.format===extra.format);
+    const actual=response.headers.get("X-Content-SHA256");
+    if(!expected||actual!==expected.content_hash||bytes.size!==expected.byte_length)
+      throw new Error("Pobrany plik nie odpowiada dok?adnemu, zapisanemu renderowi.");
     const url=URL.createObjectURL(bytes);
     const link=document.createElement("a");
     link.href=url;link.download="dokument."+extra.format.toLowerCase();document.body.appendChild(link);link.click();link.remove();
@@ -283,23 +310,71 @@ try {
     $("draft-result").textContent="Poprawki zapisano jako nową wersję. Nie zatwierdzono ani nie wysłano pisma.";
     await invoke("open_case");
   } else if(action==="list_saved"){
-    if(json.result_type!=="SAVED_RENDERS"||!Array.isArray(json.items))throw new Error("Nieprawidłowa lista dokumentów.");
+    if(json.result_type!=="SAVED_RENDERS"||!Array.isArray(json.items))throw new Error("Nieprawid?owa lista dokument?w.");
     const select=$("render");select.replaceChildren(new Option("Wybierz zapisany dokument",""));
     for(const item of json.items){
       if(!uuid.test(item.render_id)||typeof item.created_at!=="string")continue;
       const date=new Date(item.created_at);
       const dateLabel=Number.isNaN(date.getTime())?"bez daty":date.toLocaleString("pl-PL");
-      select.add(new Option((item.label||"Projekt")+" · "+dateLabel,item.render_id));
+      select.add(new Option((item.label||"Projekt")+" ? "+dateLabel,item.render_id));
     }
-    $("render-count").textContent="Znaleziono dokumentów: "+String(select.options.length-1);
-    status("Lista dokumentów pobrana z WORK. Wybierz plik do odczytu.");
-  } else status("Sprawdzono zapisany render. Status i decyzje pozostają w WORK.");
+    $("render-count").textContent="Znaleziono dokument?w: "+String(select.options.length-1);
+    if(select.options.length>1){select.selectedIndex=1;await invoke("finalization_context",{render_id:select.value});}
+    else{state.finalization=null;$("finalization-state").textContent="Brak zapisanego renderu";$("finalization-status").textContent="Najpierw utw?rz zapisany render DOCX/PDF.";}
+    status("Lista dokument?w pobrana z WORK. Wybierz plik do odczytu.");
+  } else if(action==="finalization_context"){
+    if(json.result_type!=="FINALIZATION_CONTEXT"||json.render_id!==$("render").value)throw new Error("Nieprawid?owy stan finalizacji.");
+    state.finalization=json;state.finalizationUnknown=false;state.caseSequence=Number(json.case_sequence);
+    $("case-seq").textContent=String(state.caseSequence);
+    $("finalization-state").textContent=json.status;
+    $("finalization-status").textContent=[
+      "Render: "+json.render_id,
+      "Stan: "+json.status,
+      "Wersja sprawy: "+String(json.case_sequence),
+      "Status projektu: "+json.draft_status,
+      ...json.artifacts.map(item=>item.format+": "+item.byte_length+" B ? SHA-256 "+item.content_hash),
+      "Akceptacja HUMAN: "+(json.approval?"zapisana ? sekwencja "+json.approval.committed_sequence:"brak"),
+      "Wydanie FINAL: "+(json.release?json.release.eligibility+" ? sekwencja "+json.release.committed_sequence:"brak"),
+      "Pakiet: "+(json.package?"z?o?ony ? "+json.package.package_id:"brak"),
+      "Nast?pna bramka: "+json.next_gate,
+      json.current?"Stan zgodny z bie??c? sekwencj? CASE.":"Stan nie jest bie??cy ? wymagane ponowne sprawdzenie / walidacja."
+    ].join("\n");
+    const members=$("package-member");members.replaceChildren(new Option("Wybierz plik pakietu",""));
+    if(json.package){for(const item of json.package.members){
+      const label=item.name+" ? "+String(item.byte_length)+" B ? SHA-256 "+item.content_hash.slice(0,12);
+      members.add(new Option(label,item.name));
+    }}
+    $("package-status").textContent=json.package?[
+      "Pakiet: "+json.package.package_id,
+      "Sekwencja: "+json.package.committed_sequence,
+      "SHA-256 manifestu: "+json.package.manifest_hash,
+      "Cz?onkowie: "+String(json.package.members.length)+" / 10"
+    ].join("\n"):"Pakiet nie zosta? jeszcze z?o?ony.";
+  } else if(action==="approve_document"||action==="release_document"||action==="assemble_package"){
+    const expected={approve_document:"DOCUMENT_APPROVED",release_document:"DOCUMENT_RELEASED",assemble_package:"PACKAGE_ASSEMBLED"}[action];
+    if(json.result_type!==expected||!Number.isSafeInteger(json.case_sequence))throw new Error("WORK nie potwierdzi? oczekiwanego przej?cia.");
+    state.caseSequence=json.case_sequence;state.finalizationUnknown=false;
+    for(const id of ["approval-rationale","release-rationale","package-rationale"])$(id).value="";
+    status(action==="approve_document"?"WORK zapisa? akceptacj? HUMAN dok?adnego renderu.":action==="release_document"?"WORK potwierdzi? wydanie FINAL.":"WORK utrwali? pakiet ko?cowy.");
+    await invoke("finalization_context",{render_id:json.render_id});
+  } else status("Sprawdzono zapisany render. Status i decyzje pozostaj? w WORK.");
   return json;
-}catch(error){if(generation===state.revision)status(error.message,true);return null;}
+}catch(error){if(generation===state.revision){
+  if(["approve_document","release_document","assemble_package"].includes(action))state.finalizationUnknown=true;
+  status(error.message,true);
+}return null;}
 finally{state.pending=Math.max(0,state.pending-1);refresh();}
 }
 $("open").addEventListener("click",()=>{close();invoke("open_case");});
-$("render").addEventListener("change",refresh);
+$("render").addEventListener("change",()=>{
+state.finalization=null;state.finalizationUnknown=false;
+$("finalization-state").textContent="Odczyt wymagany";
+$("finalization-status").textContent="Odczytaj status wybranego renderu.";
+$("package-member").replaceChildren(new Option("Pakiet nie jest jeszcze dost?pny",""));
+$("package-status").textContent="Pakiet nie zosta? jeszcze z?o?ony.";
+refresh();
+if(uuid.test($("render").value))invoke("finalization_context",{render_id:$("render").value});
+});
 function showReviewCandidate(){
 const chosen=state.review?.candidates?.find(v=>String(v.index)===$("review-select").value);
 $("review-quote").textContent=chosen?.quote||"";
@@ -398,6 +473,51 @@ for(const format of ["PDF","DOCX"])$(format.toLowerCase()).addEventListener("cli
   if(!uuid.test($("render").value.trim()))return status("Podaj identyfikator renderu.",true);
   invoke("download",{render_id:$("render").value.trim(),format});
 });
+
+function finalizationCommand(action,rationaleId){
+  const renderId=$("render").value.trim(),rationale=$(rationaleId).value.trim();
+  if(!uuid.test(renderId))return status("Wybierz zapisany render.",true);
+  if(!rationale)return status("Podaj uzasadnienie decyzji.",true);
+  const permitted={approve_document:"can_approve",release_document:"can_release",assemble_package:"can_assemble"}[action];
+  if(!state.finalization?.[permitted]||state.finalizationUnknown)return status("Najpierw odczytaj aktualny stan WORK; przej?cie nie jest obecnie dozwolone.",true);
+  if(typeof crypto.randomUUID!=="function")return status("Brak bezpiecznego generatora identyfikator?w.",true);
+  invoke(action,{render_id:renderId,rationale,command_id:crypto.randomUUID(),
+    idempotency_key:crypto.randomUUID(),correlation_id:crypto.randomUUID()});
+}
+$("finalization-refresh").addEventListener("click",()=>{
+  const renderId=$("render").value.trim();
+  if(!uuid.test(renderId))return status("Wybierz zapisany render.",true);
+  invoke("finalization_context",{render_id:renderId});
+});
+$("approve-document").addEventListener("click",()=>finalizationCommand("approve_document","approval-rationale"));
+$("release-document").addEventListener("click",()=>finalizationCommand("release_document","release-rationale"));
+$("assemble-package").addEventListener("click",()=>finalizationCommand("assemble_package","package-rationale"));
+async function downloadPackageMember(){
+  const renderId=$("render").value.trim(),member=$("package-member").value;
+  if(!uuid.test(renderId)||!state.finalization?.package||!member)return status("Wybierz istniej?cego cz?onka pakietu.",true);
+  const expected=state.finalization.package.members.find(item=>item.name===member);
+  if(!expected)return status("Cz?onek nie nale?y do manifestu pakietu.",true);
+  const generation=state.revision;state.pending++;refresh();
+  try{
+    const response=await fetch("/api/embedded_session",{method:"POST",cache:"no-store",credentials:"omit",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+$("token").value},
+      body:JSON.stringify({action:"read_package_member",render_id:renderId,member})});
+    if(generation!==state.revision)return;
+    if(!response.ok)throw new Error("WORK odm?wi? odczytu cz?onka pakietu ("+response.status+").");
+    const bytes=await response.arrayBuffer();
+    const actual=response.headers.get("X-Content-SHA256");
+    if(actual!==expected.content_hash||bytes.byteLength!==expected.byte_length)
+      throw new Error("Odczytane bajty nie odpowiadaj? manifestowi pakietu.");
+    const blob=new Blob([bytes],{type:response.headers.get("Content-Type")||expected.media_type});
+    const url=URL.createObjectURL(blob),link=document.createElement("a");
+    link.href=url;link.download=member;document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    $("package-status").textContent="Pobrano: "+member+"\nRozmiar: "+bytes.byteLength+" B\nSHA-256: "+actual;
+  }catch(error){status(error.message,true);}
+  finally{state.pending=Math.max(0,state.pending-1);refresh();}
+}
+$("package-member").addEventListener("change",refresh);
+$("package-download").addEventListener("click",downloadPackageMember);
 function composeReset(){
 state.composeDraft=null;state.composeValidation=null;
 for(const id of ["compose-description",...['sender','recipient'].flatMap(role=>['name','lines','postal','country'].map(field=>'compose-'+role+'-'+field))])$(id).value='';
@@ -466,7 +586,7 @@ async function composePerform(action){
   $('compose-result').textContent=action==='save_document_brief'?'Zapisano dane jako materiał źródłowy. Wymagane pozostają przegląd i zatwierdzony plan.':action==='generate_document'?'Generator 2.0 przygotował projekt. Możesz otworzyć go w edytorze poniżej.':action==='validate_document'?'Przeprowadzono kontrolę projektu. Renderer niezależnie sprawdzi wymagane bramki; nie zatwierdzono pisma.':'Zapisano DOCX i PDF. Pobierz je w sekcji Dokumenty sprawy.';
   if(action==='save_document_brief')await showUploadedSource(data.native_result);
   await composeLoad();await invoke('list_drafts');
-  if(action==='render_document'){await invoke('list_saved');$('render').value=data.render_id;}
+  if(action==='render_document'){await invoke('list_saved');$('render').value=data.render_id;await invoke('finalization_context',{render_id:data.render_id});}
  }catch(error){state.composeUnknown=true;$('compose-result').textContent=error.message+' Nie ponawiaj zapisu automatycznie. Sprawdź stan WORK w autoryzowanej sesji.';}
  finally{refresh();}
 }
@@ -552,6 +672,11 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
         "generate_document": {"action", "form", "plan_id", "plan_revision", "profile", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id"},
         "validate_document": {"action", "draft_id", "draft_revision", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id"},
         "render_document": {"action", "draft_id", "draft_revision", "validation_run_id", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id"},
+        "finalization_context": {"action", "render_id"},
+        "approve_document": {"action", "render_id", "rationale", "command_id", "idempotency_key", "correlation_id"},
+        "release_document": {"action", "render_id", "rationale", "command_id", "idempotency_key", "correlation_id"},
+        "assemble_package": {"action", "render_id", "rationale", "command_id", "idempotency_key", "correlation_id"},
+        "read_package_member": {"action", "render_id", "member"},
         "open_case": {"action"},
         "case_title": {"action", "case_revision"},
         "list_saved": {"action"},
@@ -571,7 +696,11 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
         if principal.actor.kind == "AI":
             raise EngineBoundaryError("AI_SESSION_DENIED")
         tenant, case = principal.tenant_id, principal.case_id
-    if action in ("composition_context", "save_document_brief", "generate_document", "validate_document", "render_document"):
+    if action in (
+        "composition_context", "save_document_brief", "generate_document",
+        "validate_document", "render_document", "finalization_context",
+        "approve_document", "release_document", "assemble_package", "read_package_member",
+    ):
         from lukart_work.legal_os_composer import composer_action
         return composer_action(operator, payload, token)
     if action in ("list_drafts", "open_draft", "amend_draft"):

@@ -3,6 +3,8 @@ from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha1, sha256
 import json
 import unittest
+from http.client import HTTPConnection
+from threading import Thread
 from uuid import UUID, uuid4, uuid5
 from unittest.mock import patch
 
@@ -663,6 +665,116 @@ class FinalizationTests(validation.ValidationTests):
         self.assertIsInstance(denied, DomainError)
         self.assertEqual(denied.code, "FORBIDDEN")
         self.assertIsInstance(read("audit.json", self.token), bytes)
+
+    def test_case_only_http_persisted_render_to_human_final_package(self):
+        draft, run_id = self.validated()
+        render_id, render_result, _request = self.render(draft, run_id)
+        self.assertEqual(render_result.state, "APPLIED")
+
+        operator = GeneratorPismOperator.__new__(GeneratorPismOperator)
+        operator.binding = None
+        operator.core = self.service
+        operator.finalization = self.finalization
+        server = create_server(operator, 0, case_only=True)
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        def post(payload):
+            connection = HTTPConnection("127.0.0.1", server.server_port, timeout=75)
+            try:
+                connection.request(
+                    "POST", "/api/embedded_session", json.dumps(payload),
+                    {"Content-Type": "application/json", "Authorization": "Bearer " + self.token},
+                )
+                response = connection.getresponse()
+                return response.status, response.read(), dict(response.getheaders())
+            finally:
+                connection.close()
+
+        def action(payload):
+            status, body, _headers = post(payload)
+            decoded = json.loads(body.decode("utf-8")) if body else None
+            self.assertEqual(status, 200, decoded)
+            return decoded
+
+        def command(action_name, rationale):
+            return {
+                "action": action_name,
+                "render_id": str(render_id),
+                "rationale": rationale,
+                **{name: str(uuid4()) for name in (
+                    "command_id", "idempotency_key", "correlation_id"
+                )},
+            }
+
+        try:
+            status, html = self._http_get(server.server_port, "/")
+            self.assertEqual(status, 200)
+            self.assertIn(b"approve-document", html)
+            context = action({"action": "finalization_context", "render_id": str(render_id)})
+            self.assertTrue(context["can_approve"])
+            self.assertEqual({item["format"] for item in context["artifacts"]}, {"DOCX", "PDF"})
+
+            for format_name in ("DOCX", "PDF"):
+                status, body, headers = post({
+                    "action": "download", "render_id": str(render_id), "format": format_name,
+                })
+                artifact = next(item for item in context["artifacts"] if item["format"] == format_name)
+                self.assertEqual(status, 200)
+                self.assertEqual(len(body), artifact["byte_length"])
+                self.assertEqual(sha256(body).hexdigest(), artifact["content_hash"])
+                self.assertEqual(headers["X-Content-SHA256"], artifact["content_hash"])
+
+            approved = action(command("approve_document", "Human checked the exact DOCX and PDF."))
+            self.assertEqual(approved["result_type"], "DOCUMENT_APPROVED")
+            context = action({"action": "finalization_context", "render_id": str(render_id)})
+            self.assertTrue(context["can_release"])
+
+            released = action(command("release_document", "Release the exact approved revision as FINAL."))
+            self.assertEqual(released["result_type"], "DOCUMENT_RELEASED")
+            self.assertEqual(released["eligibility"], "FINAL")
+            context = action({"action": "finalization_context", "render_id": str(render_id)})
+            self.assertTrue(context["can_assemble"])
+
+            assembled = action(command("assemble_package", "Persist the verified final package."))
+            self.assertEqual(assembled["result_type"], "PACKAGE_ASSEMBLED")
+            context = action({"action": "finalization_context", "render_id": str(render_id)})
+            package = context["package"]
+            self.assertEqual(context["status"], "PACKAGE_READY")
+            self.assertEqual(len(package["members"]), len(FINAL_PACKAGE_MEMBER_NAMES))
+            self.assertEqual(tuple(item["name"] for item in package["members"]), FINAL_PACKAGE_MEMBER_NAMES)
+
+            for member in package["members"]:
+                status, body, headers = post({
+                    "action": "read_package_member", "render_id": str(render_id),
+                    "member": member["name"],
+                })
+                self.assertEqual(status, 200, member["name"])
+                self.assertEqual(len(body), member["byte_length"], member["name"])
+                self.assertEqual(sha256(body).hexdigest(), member["content_hash"], member["name"])
+                self.assertEqual(headers["X-Content-SHA256"], member["content_hash"])
+                self.assertEqual(headers["Content-Disposition"], f'attachment; filename="{member["name"]}"')
+
+            persisted = self.final_query("GetFinalPackage", render_id)
+            self.assertIsInstance(persisted, FinalPackageRecord)
+            self.assertEqual(persisted.manifest_hash, package["manifest_hash"])
+            with self.repo.transaction(self.tenant, self.case_id) as tx:
+                self.assertEqual(tx.events()[-1].event_type, "FinalPackageAssembled")
+                self.assertEqual(tx.outbox()[-1], tx.events()[-1])
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    @staticmethod
+    def _http_get(port, path):
+        connection = HTTPConnection("127.0.0.1", port, timeout=10)
+        try:
+            connection.request("GET", path)
+            response = connection.getresponse()
+            return response.status, response.read()
+        finally:
+            connection.close()
 
     def test_package_reads_require_distinct_capabilities_and_detect_tamper(self):
         rendered, render_id = self.released()

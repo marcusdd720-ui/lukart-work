@@ -254,9 +254,13 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
         def log_message(self, *args):
             pass  # No tokens, request bodies, CASE identifiers or URLs in logs.
 
-        def reply(self, status, body, content_type="application/json"):
+        def reply(self, status, body, content_type="application/json", extra_headers=()):
             self.send_response(status)
             self.send_header("Content-Type", content_type)
+            for name, value in extra_headers:
+                if name not in {"Content-Disposition", "X-Content-SHA256"} or any(ord(char) < 32 for char in value):
+                    raise ValueError("INVALID_RESPONSE_HEADER")
+                self.send_header(name, value)
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
@@ -356,7 +360,19 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                               read_case_action(operator, payload, token)
                               if route == "embedded_case" else getattr(operator, route)(payload, token))
                     if isinstance(result, SavedArtifact):
-                        return self.reply(200, result.data, result.mime_type)
+                        if (
+                            not isinstance(result.filename, str)
+                            or not result.filename
+                            or any(char in result.filename for char in '\r\n"\\')
+                            or not isinstance(result.sha256, str)
+                            or len(result.sha256) != 64
+                            or any(char not in "0123456789abcdef" for char in result.sha256)
+                        ):
+                            raise ValueError("INVALID_SAVED_ARTIFACT_METADATA")
+                        return self.reply(200, result.data, result.mime_type, extra_headers=(
+                            ("Content-Disposition", f'attachment; filename="{result.filename}"'),
+                            ("X-Content-SHA256", result.sha256),
+                        ))
                     if isinstance(result, bytes):
                         if (route == 'query_finalization' and payload.get('operation') == 'ReadFinalArtifact'
                                 and payload.get('format') == 'PDF'

@@ -6,6 +6,7 @@ from base64 import b64encode
 from unittest.mock import patch
 from datetime import datetime, timezone
 from http.client import HTTPConnection
+from hashlib import sha256
 from io import BytesIO
 from json import dumps, loads
 from threading import Thread
@@ -15,6 +16,7 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 from lukart_work.contracts.messages import CaseHeadResult
+from lukart_work.finalization.contracts import FinalPackageRecord
 from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.domain.models import Actor, Ref, VersionPin
 from lukart_work.operator import GeneratorPismOperator
@@ -54,7 +56,7 @@ class CaseHTTPIntegrationTests(TestCase):
         principal = Principal(
             Actor(id=uuid4(), kind="HUMAN"),
             self.tenant, self.case,
-            frozenset({"GetCaseHead", "GetFinalization", "ReadFinalArtifact"}),
+            frozenset({"GetCaseHead", "GetRevision", "GetFinalization", "ReadFinalArtifact"}),
         )
         self.token = self.authority.provision(principal)
         self.record = SimpleNamespace(
@@ -112,6 +114,9 @@ class CaseHTTPIntegrationTests(TestCase):
         status, html, _ = self.call(method="GET", path="/case")
         self.assertEqual(status, 200)
         self.assertIn(b"/case.js", html)
+        self.assertIn(b"approve-document", html)
+        self.assertIn(b"release-document", html)
+        self.assertIn(b"assemble-package", html)
         scope = {"tenant_id": str(self.tenant), "case_id": str(self.case)}
         status, data, _ = self.call({"action": "open_case", **scope})
         self.assertEqual(status, 200)
@@ -128,6 +133,8 @@ class CaseHTTPIntegrationTests(TestCase):
                 self.assertEqual(status, 200)
                 self.assertEqual(data, exact)
                 self.assertEqual(headers["Cache-Control"], "no-store")
+                self.assertEqual(headers["Content-Disposition"], f'attachment; filename="dokument.{format.lower()}"')
+                self.assertEqual(headers["X-Content-SHA256"], sha256(exact).hexdigest())
         self.assertEqual(self.counter["render"], 0)
         self.assertEqual(self.counter["query"], 1)
         self.assertEqual(self.repo.reads, 1)
@@ -140,6 +147,7 @@ class CaseHTTPIntegrationTests(TestCase):
         status, script, _ = self.call(method="GET", path="/case.js")
         self.assertEqual(status, 200)
         self.assertIn(b"/api/embedded_session", script)
+        self.assertIn(b"read_package_member", script)
         status, body, _ = self.call({"action": "open_case"}, path="/api/embedded_session")
         self.assertEqual(status, 200)
         self.assertEqual(loads(body)["case_id"], str(self.case))
@@ -223,6 +231,43 @@ class CaseHTTPIntegrationTests(TestCase):
             self.assertEqual(self.counter["render"],0)
         finally:
             self.operator.query_core = original_query
+
+    def test_session_package_member_download_is_scope_and_hash_bound(self):
+        content = b'{"manifest_member":"verified"}'
+        member = SimpleNamespace(
+            name="document.json", media_type="application/json",
+            byte_length=len(content), content_hash=sha256(content).hexdigest(),
+        )
+        package = FinalPackageRecord.model_construct(
+            id=uuid4(), tenant_id=self.tenant, case_id=self.case,
+            render_id=self.render_id, release_id=uuid4(), manifest_hash="a" * 64,
+            members=(member,), committed_sequence=4,
+        )
+        token = self.authority.provision(Principal(
+            Actor(id=uuid4(), kind="HUMAN"), self.tenant, self.case,
+            frozenset({"GetCaseHead", "GetRevision", "GetFinalPackage", "ReadFinalPackageMember"}),
+        ))
+        self.operator.case_profile = object()
+        self.operator.finalization = SimpleNamespace(
+            package_profile=object(), repository=SimpleNamespace(storage=True),
+        )
+        def query(request, presented):
+            if request["operation"] == "GetFinalPackage":
+                return package
+            if request["operation"] == "ReadFinalPackageMember":
+                return content
+            raise AssertionError("unexpected finalization query")
+        self.operator.query_finalization = query
+        status, body, headers = self.call({
+            "action": "read_package_member", "render_id": str(self.render_id),
+            "member": "document.json",
+        }, token=token, path="/api/embedded_session")
+        self.assertEqual(status, 200)
+        self.assertEqual(body, content)
+        self.assertEqual(headers["Content-Type"], "application/json")
+        self.assertEqual(headers["Content-Disposition"], 'attachment; filename="document.json"')
+        self.assertEqual(headers["X-Content-SHA256"], sha256(content).hexdigest())
+        self.assertEqual(headers["Cache-Control"], "no-store")
 
     def test_no_token_and_cross_case_listing_denied(self):
         status, _, _ = self.call({

@@ -32,6 +32,7 @@ jobs:
             tests.test_legal_os_case_title \
             tests.test_legal_os_render_listing \
             tests.test_legal_os_http_integration \
+            tests.test_legal_os_composer \
             tests.test_legal_os_intake \
             tests.test_legal_os_review \
             tests.test_legal_os_editor \
@@ -78,3 +79,5 @@ jobs:
           test -n "$LUKART_TEST_ADMIN_DSN"
           test -n "$LUKART_TEST_DSN"
           python -B -X utf8 -m unittest -v tests.test_legal_os_postgres_e2e
+          python -B -X utf8 -m unittest -v \
+            tests.test_finalization.FinalizationTests.test_case_only_http_persisted_render_to_human_final_package
