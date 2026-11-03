@@ -21,7 +21,11 @@ from lukart_work.rendering.service import (
     renderer_pin,
 )
 from lukart_work.storage.objects import ObjectStore, RetentionPolicies, artifact_id
-from lukart_work.validation.contracts import PRE_RENDER_CHECKS, ValidationExecution, ValidationProjection
+from lukart_work.validation.contracts import (
+    PRE_RENDER_CHECKS,
+    ValidationExecution,
+    ValidationProjection,
+)
 from lukart_work.validation.policy import validation_pin
 from lukart_work.validation.rules import (
     Violation,
@@ -34,10 +38,15 @@ from lukart_work.validation.rules import (
 )
 
 from .contracts import (
-    FINAL_PACKAGE_MEMBER_NAMES,
     FinalArgumentMap,
     FinalDocumentRecord,
     FinalEvidenceMap,
+    FinalizationApproval,
+    FinalizationProfile,
+    FinalizationProjection,
+    FinalizationQuery,
+    FinalizationRelease,
+    FinalizationRequest,
     FinalPackageManifest,
     FinalPackageMember,
     FinalPackageProfile,
@@ -46,18 +55,11 @@ from .contracts import (
     FinalStatementTrace,
     FinalTraceNode,
     FinalValidationRecord,
-    FinalizationApproval,
-    FinalizationProfile,
-    FinalizationProjection,
-    FinalizationQuery,
-    FinalizationRelease,
-    FinalizationRequest,
     PersistedRender,
     PersistedRenderArtifact,
     PostRenderManifest,
     semantic_profile_pin,
 )
-
 
 RENDER_CATEGORY = "finalization_render"
 APPROVAL_CATEGORY = "finalization_approval"

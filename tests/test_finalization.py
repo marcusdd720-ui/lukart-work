@@ -1,10 +1,10 @@
 """PB02 trusted render/persist/approval/release tests on real PostgreSQL."""
-from concurrent.futures import ThreadPoolExecutor
-from hashlib import sha1, sha256
 import json
 import unittest
-from uuid import UUID, uuid4, uuid5
+from concurrent.futures import ThreadPoolExecutor
+from hashlib import sha1, sha256
 from unittest.mock import patch
+from uuid import UUID, uuid4, uuid5
 
 import psycopg
 
@@ -12,14 +12,15 @@ from lukart_work.contracts.messages import CommandResult, DomainError
 from lukart_work.core.postgres import PostgresRepository
 from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.core.service import CommandService
+from lukart_work.domain.models import Actor
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.finalization.contracts import (
     FINAL_PACKAGE_MEMBER_NAMES,
-    FinalPackageProfile,
-    FinalPackageRecord,
     FinalizationProfile,
     FinalizationProjection,
     FinalizationRelease,
+    FinalPackageProfile,
+    FinalPackageRecord,
     semantic_profile_pin,
 )
 from lukart_work.finalization.service import FinalizationService
@@ -32,7 +33,6 @@ from lukart_work.validation.rules import digest, ref
 from lukart_work.validation.service import ValidationEngineService
 from tests import test_stage02 as core
 from tests import test_stage10 as validation
-
 
 FINALIZATION_ACTIONS = {
     "RenderDraft",
@@ -619,6 +619,46 @@ class FinalizationTests(validation.ValidationTests):
         self.assertIsInstance(denied, DomainError)
         self.assertEqual(denied.code, "FORBIDDEN")
         self.assertIsInstance(read("audit.json", self.token), bytes)
+
+    def test_final_artifact_and_package_reads_require_human_actor(self):
+        rendered, render_id = self.released()
+        self.final_apply(self.package_request(rendered, render_id))
+        queries = (
+            {
+                "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                "operation": "ReadFinalArtifact",
+                "tenant_id": str(self.tenant),
+                "case_id": str(self.case_id),
+                "render_id": str(render_id),
+                "format": "DOCX",
+            },
+            {
+                "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                "operation": "GetFinalPackage",
+                "tenant_id": str(self.tenant),
+                "case_id": str(self.case_id),
+                "render_id": str(render_id),
+            },
+            {
+                "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                "operation": "ReadFinalPackageMember",
+                "tenant_id": str(self.tenant),
+                "case_id": str(self.case_id),
+                "render_id": str(render_id),
+                "member": "manifest.json",
+            },
+        )
+        before = self.state()
+        for actor_kind in ("SERVICE", "AI"):
+            actor = Actor(id=uuid4(), kind=actor_kind)
+            token = self.authority.provision(
+                Principal(actor, self.tenant, self.case_id, self.principal.actions)
+            )
+            for query in queries:
+                denied = self.finalization.query(json.dumps(query), token)
+                self.assertIsInstance(denied, DomainError)
+                self.assertEqual(denied.code, "FORBIDDEN")
+        self.assertEqual(self.state(), before)
 
     def test_package_reads_require_distinct_capabilities_and_detect_tamper(self):
         rendered, render_id = self.released()
