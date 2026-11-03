@@ -12,6 +12,7 @@ from lukart_work.contracts.messages import CommandResult, DomainError
 from lukart_work.core.postgres import PostgresRepository
 from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.core.service import CommandService
+from lukart_work.domain.models import Actor
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.finalization.contracts import (
     FINAL_PACKAGE_MEMBER_NAMES,
@@ -65,6 +66,49 @@ class FinalPackageContractTests(unittest.TestCase):
                 **value,
                 build_revision=sha256(b"not-a-git-commit-sha").hexdigest(),
             )
+
+
+class FinalizationReadAuthorityTests(unittest.TestCase):
+    def test_service_actor_cannot_read_final_artifact_or_package_bytes(self):
+        tenant_id, case_id, actor_id, render_id = (uuid4() for _ in range(4))
+        authority = TokenAuthority()
+        principal = Principal(
+            Actor(id=actor_id, kind="SERVICE"),
+            tenant_id,
+            case_id,
+            frozenset(
+                {
+                    "ReadFinalArtifact",
+                    "GetFinalPackage",
+                    "ReadFinalPackageMember",
+                }
+            ),
+        )
+        token = authority.provision(principal)
+
+        class NoDatabaseAccess:
+            def transaction(self, *_args, **_kwargs):
+                raise AssertionError("unauthorized read reached repository")
+
+        service = FinalizationService(NoDatabaseAccess(), authority, ())
+        queries = (
+            ("ReadFinalArtifact", {"format": "PDF"}),
+            ("GetFinalPackage", {}),
+            ("ReadFinalPackageMember", {"member": "final.pdf"}),
+        )
+        for operation, extra in queries:
+            with self.subTest(operation=operation):
+                query = {
+                    "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                    "operation": operation,
+                    "tenant_id": str(tenant_id),
+                    "case_id": str(case_id),
+                    "render_id": str(render_id),
+                    **extra,
+                }
+                result = service.query(json.dumps(query), token)
+                self.assertIsInstance(result, DomainError)
+                self.assertEqual(result.code, "FORBIDDEN")
 
 
 @unittest.skipUnless(core.ADMIN_RUNTIME and core.DSN, "PB02 requires isolated PostgreSQL")

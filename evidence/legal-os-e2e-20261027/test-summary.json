@@ -1,0 +1,8 @@
+{
+  "tests": 31,
+  "failures": 0,
+  "errors": 0,
+  "live_engine_e2e": "NOT VERIFIED",
+  "database_connections": 0,
+  "native_authentication": false
+}

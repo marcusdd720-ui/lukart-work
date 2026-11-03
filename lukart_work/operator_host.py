@@ -3,15 +3,21 @@ from __future__ import annotations
 
 import argparse
 import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from pathlib import Path
 import runpy
 import socket
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from time import monotonic
 
-from lukart_work.operator import GeneratorPismOperator
 from lukart_work.embedded_document_engine import EngineBoundaryError, SavedArtifact
-from lukart_work.legal_os_case_view import CASE_HTML, CASE_CSS, CASE_JS, read_case_action, read_session_case_action
+from lukart_work.legal_os_case_view import (
+    CASE_CSS,
+    CASE_HTML,
+    CASE_JS,
+    read_case_action,
+    read_session_case_action,
+)
+from lukart_work.operator import GeneratorPismOperator
 from lukart_work.validation.rules import Violation, strict_json
 
 ROUTES = (
@@ -110,7 +116,7 @@ Nowy projekt wymaga ponownego przeglądu i walidacji. Zapis nie zatwierdza pisma
 <section id="previewPages" aria-label="Strony zapisanego PDF" hidden></section>
 <iframe id="preview" title="Podgląd zapisanego PDF" sandbox hidden width="100%" height="700"></iframe></fieldset>
 <pre id="result" aria-live="polite"></pre>
-<script src="/client.js"></script></html>'''.encode('utf-8')
+<script src="/client.js"></script></html>'''.encode()
 CLIENT = ("const routes=" + json.dumps(ROUTES) + ";" + '''
 const token=document.getElementById('token'),route=document.getElementById('route'),
 request=document.getElementById('request'),send=document.getElementById('send'),
@@ -268,8 +274,8 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                     and self.headers.get_all("Sec-Fetch-Site") in
                     (None, ["same-origin"], ["none"]))
 
-        def reject_body(self, length):
-            self.reply(413, b'{"error":"BODY_LIMIT"}')
+        def reject_body(self, length, *, status=413, body=b'{"error":"BODY_LIMIT"}'):
+            self.reply(status, body)
             # Closing over unread upload bytes can reset Windows connections
             # before the client receives 413. Discard only a bounded amount,
             # after sending the rejection; never parse or dispatch this body.
@@ -309,7 +315,17 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             route = self.path.removeprefix("/api/")
             allowed_routes = ("embedded_session",) if case_only else (*ROUTES, "embedded_case", "embedded_session")
             if self.path != "/api/" + route or route not in allowed_routes:
-                return self.reply(404, b'{"error":"NOT_FOUND"}')
+                # Drain a bounded, well-formed request body after replying. On
+                # Windows, closing a socket with unread request bytes can reset
+                # the connection before the client receives the 404 response.
+                lengths = self.headers.get_all("Content-Length") or []
+                length = 0
+                if (len(lengths) == 1 and lengths[0].isascii()
+                        and lengths[0].isdigit() and len(lengths[0]) <= 10):
+                    length = min(int(lengths[0]), MAX_BODY + 1)
+                return self.reject_body(
+                    length, status=404, body=b'{"error":"NOT_FOUND"}'
+                )
             auth = self.headers.get_all("Authorization") or []
             if len(auth) != 1 or not auth[0].startswith("Bearer "):
                 return self.reply(403, b'{"error":"FORBIDDEN"}')
@@ -360,7 +376,7 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                 self.reply(403, b'{"error":"FORBIDDEN"}')
             except (ValueError, UnicodeError):
                 self.reply(400, b'{"error":"INVALID_REQUEST"}')
-            except Exception:
+            except Exception:  # noqa: BLE001 - HTTP boundary must not leak internal details.
                 self.reply(500, b'{"error":"SERVICE_FAILED"}')
 
     return HTTPServer(("127.0.0.1", port), Handler)
@@ -379,7 +395,7 @@ def main():
         factory = config["build_operator"]
         server = create_server(factory(), args.port, pdf_preview=config.get('render_pdf_preview'),
                                case_only=(args.legal_os or config.get('legal_os_case_only', False)))
-    except Exception:
+    except Exception:  # noqa: BLE001 - configuration errors must not expose credentials.
         parser.exit(1, "HOST_CONFIGURATION_FAILED: trusted CASE services and capabilities required\n")
     print(f"CASE operator: http://127.0.0.1:{server.server_port}/", flush=True)
     try:

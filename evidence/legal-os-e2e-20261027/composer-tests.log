@@ -1,0 +1,36 @@
+test_all_required_party_and_address_fields_checked (tests.test_legal_os_composer.ComposerTests.test_all_required_party_and_address_fields_checked) ... ok
+test_client_scope_and_raw_confirmation_injection_refused (tests.test_legal_os_composer.ComposerTests.test_client_scope_and_raw_confirmation_injection_refused) ... ok
+test_context_does_not_invent_approved_plan (tests.test_legal_os_composer.ComposerTests.test_context_does_not_invent_approved_plan) ... ok
+test_context_uses_only_configured_profile_and_real_approved_plan (tests.test_legal_os_composer.ComposerTests.test_context_uses_only_configured_profile_and_real_approved_plan) ... ok
+test_cross_case_revision_is_refused (tests.test_legal_os_composer.ComposerTests.test_cross_case_revision_is_refused) ... ok
+test_description_change_cannot_be_silently_ignored (tests.test_legal_os_composer.ComposerTests.test_description_change_cannot_be_silently_ignored) ... ok
+test_generate_calls_existing_generator_with_valid_native_contract (tests.test_legal_os_composer.ComposerTests.test_generate_calls_existing_generator_with_valid_native_contract) ... ok
+test_native_rejection_is_not_success_or_automatic_retry (tests.test_legal_os_composer.ComposerTests.test_native_rejection_is_not_success_or_automatic_retry) ... ok
+test_no_ai_session_or_missing_session (tests.test_legal_os_composer.ComposerTests.test_no_ai_session_or_missing_session) ... ok
+test_party_change_and_unverified_party_are_refused (tests.test_legal_os_composer.ComposerTests.test_party_change_and_unverified_party_are_refused) ... ok
+test_render_delegates_to_native_renderer_without_final_approval (tests.test_legal_os_composer.ComposerTests.test_render_delegates_to_native_renderer_without_final_approval) ... ok
+test_save_brief_calls_existing_intake_and_preserves_all_values (tests.test_legal_os_composer.ComposerTests.test_save_brief_calls_existing_intake_and_preserves_all_values) ... ok
+test_session_dispatch_reaches_composer_without_client_scope (tests.test_legal_os_composer.ComposerTests.test_session_dispatch_reaches_composer_without_client_scope) ... ok
+test_session_dispatch_rejects_ai_before_any_composer_read (tests.test_legal_os_composer.ComposerTests.test_session_dispatch_rejects_ai_before_any_composer_read) ... ok
+test_stale_sequence_refused_before_writes (tests.test_legal_os_composer.ComposerTests.test_stale_sequence_refused_before_writes) ... ok
+test_unknown_type_and_unconfigured_model_profile_are_refused (tests.test_legal_os_composer.ComposerTests.test_unknown_type_and_unconfigured_model_profile_are_refused) ... ok
+test_validation_delegates_to_native_policy_without_fabricated_review (tests.test_legal_os_composer.ComposerTests.test_validation_delegates_to_native_policy_without_fabricated_review) ... ok
+test_case_read_goes_to_existing_work_backend (tests.test_legal_os_case_view.CaseWorkspaceTests.test_case_read_goes_to_existing_work_backend) ... ok
+test_css_provided (tests.test_legal_os_case_view.CaseWorkspaceTests.test_css_provided) ... ok
+test_empty_token_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_empty_token_denied) ... ok
+test_extra_fields_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_extra_fields_denied) ... ok
+test_missing_fields_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_missing_fields_denied) ... ok
+test_no_automatic_human_approval_in_client (tests.test_legal_os_case_view.CaseWorkspaceTests.test_no_automatic_human_approval_in_client) ... ok
+test_non_object_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_non_object_denied) ... ok
+test_render_status_is_existing_work_query (tests.test_legal_os_case_view.CaseWorkspaceTests.test_render_status_is_existing_work_query) ... ok
+test_saved_docx_exact_bytes (tests.test_legal_os_case_view.CaseWorkspaceTests.test_saved_docx_exact_bytes) ... ok
+test_saved_pdf_is_not_rerendered (tests.test_legal_os_case_view.CaseWorkspaceTests.test_saved_pdf_is_not_rerendered) ... ok
+test_unknown_action_denied_without_dispatch (tests.test_legal_os_case_view.CaseWorkspaceTests.test_unknown_action_denied_without_dispatch) ... ok
+test_unknown_document_format_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_unknown_document_format_denied) ... ok
+test_workspace_is_local_and_has_single_case_view (tests.test_legal_os_case_view.CaseWorkspaceTests.test_workspace_is_local_and_has_single_case_view) ... ok
+test_wrong_case_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_wrong_case_denied) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 0.135s
+
+OK

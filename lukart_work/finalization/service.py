@@ -78,6 +78,10 @@ PACKAGE_MEDIA_TYPES = {
     "manifest.json": "application/json",
 }
 
+HUMAN_ONLY_READ_OPERATIONS = frozenset(
+    {"ReadFinalArtifact", "GetFinalPackage", "ReadFinalPackageMember"}
+)
+
 
 class FinalizationService(CommandService):
     """A trusted host boundary; no caller supplies semantic text, PASS or a receipt."""
@@ -809,7 +813,10 @@ class FinalizationService(CommandService):
             }[query.operation]
             with self.authority.session(token) as principal:
                 principal.require(query.tenant_id, query.case_id, action)
-                if principal.actor.kind == "AI":
+                if principal.actor.kind == "AI" or (
+                    query.operation in HUMAN_ONLY_READ_OPERATIONS
+                    and principal.actor.kind != "HUMAN"
+                ):
                     raise Violation("FORBIDDEN")
                 with self.repository.transaction(query.tenant_id, query.case_id) as tx:
                     records = tx.records()

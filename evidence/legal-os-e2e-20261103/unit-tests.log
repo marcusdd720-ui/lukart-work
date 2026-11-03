@@ -1,0 +1,71 @@
+CASE operator: http://127.0.0.1:8786/
+CASE operator: http://127.0.0.1:8765/
+test_all_required_party_and_address_fields_checked (tests.test_legal_os_composer.ComposerTests.test_all_required_party_and_address_fields_checked) ... ok
+test_client_scope_and_raw_confirmation_injection_refused (tests.test_legal_os_composer.ComposerTests.test_client_scope_and_raw_confirmation_injection_refused) ... ok
+test_context_does_not_invent_approved_plan (tests.test_legal_os_composer.ComposerTests.test_context_does_not_invent_approved_plan) ... ok
+test_context_uses_only_configured_profile_and_real_approved_plan (tests.test_legal_os_composer.ComposerTests.test_context_uses_only_configured_profile_and_real_approved_plan) ... ok
+test_cross_case_revision_is_refused (tests.test_legal_os_composer.ComposerTests.test_cross_case_revision_is_refused) ... ok
+test_description_change_cannot_be_silently_ignored (tests.test_legal_os_composer.ComposerTests.test_description_change_cannot_be_silently_ignored) ... ok
+test_generate_calls_existing_generator_with_valid_native_contract (tests.test_legal_os_composer.ComposerTests.test_generate_calls_existing_generator_with_valid_native_contract) ... ok
+test_native_rejection_is_not_success_or_automatic_retry (tests.test_legal_os_composer.ComposerTests.test_native_rejection_is_not_success_or_automatic_retry) ... ok
+test_no_ai_session_or_missing_session (tests.test_legal_os_composer.ComposerTests.test_no_ai_session_or_missing_session) ... ok
+test_party_change_and_unverified_party_are_refused (tests.test_legal_os_composer.ComposerTests.test_party_change_and_unverified_party_are_refused) ... ok
+test_render_delegates_to_native_renderer_without_final_approval (tests.test_legal_os_composer.ComposerTests.test_render_delegates_to_native_renderer_without_final_approval) ... ok
+test_save_brief_calls_existing_intake_and_preserves_all_values (tests.test_legal_os_composer.ComposerTests.test_save_brief_calls_existing_intake_and_preserves_all_values) ... ok
+test_session_dispatch_reaches_composer_without_client_scope (tests.test_legal_os_composer.ComposerTests.test_session_dispatch_reaches_composer_without_client_scope) ... ok
+test_session_dispatch_rejects_ai_before_any_composer_read (tests.test_legal_os_composer.ComposerTests.test_session_dispatch_rejects_ai_before_any_composer_read) ... ok
+test_stale_sequence_refused_before_writes (tests.test_legal_os_composer.ComposerTests.test_stale_sequence_refused_before_writes) ... ok
+test_unknown_type_and_unconfigured_model_profile_are_refused (tests.test_legal_os_composer.ComposerTests.test_unknown_type_and_unconfigured_model_profile_are_refused) ... ok
+test_validation_delegates_to_native_policy_without_fabricated_review (tests.test_legal_os_composer.ComposerTests.test_validation_delegates_to_native_policy_without_fabricated_review) ... ok
+test_case_read_goes_to_existing_work_backend (tests.test_legal_os_case_view.CaseWorkspaceTests.test_case_read_goes_to_existing_work_backend) ... ok
+test_css_provided (tests.test_legal_os_case_view.CaseWorkspaceTests.test_css_provided) ... ok
+test_empty_token_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_empty_token_denied) ... ok
+test_extra_fields_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_extra_fields_denied) ... ok
+test_missing_fields_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_missing_fields_denied) ... ok
+test_no_automatic_human_approval_in_client (tests.test_legal_os_case_view.CaseWorkspaceTests.test_no_automatic_human_approval_in_client) ... ok
+test_non_object_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_non_object_denied) ... ok
+test_render_status_is_existing_work_query (tests.test_legal_os_case_view.CaseWorkspaceTests.test_render_status_is_existing_work_query) ... ok
+test_saved_docx_exact_bytes (tests.test_legal_os_case_view.CaseWorkspaceTests.test_saved_docx_exact_bytes) ... ok
+test_saved_pdf_is_not_rerendered (tests.test_legal_os_case_view.CaseWorkspaceTests.test_saved_pdf_is_not_rerendered) ... ok
+test_unknown_action_denied_without_dispatch (tests.test_legal_os_case_view.CaseWorkspaceTests.test_unknown_action_denied_without_dispatch) ... ok
+test_unknown_document_format_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_unknown_document_format_denied) ... ok
+test_workspace_is_local_and_has_single_case_view (tests.test_legal_os_case_view.CaseWorkspaceTests.test_workspace_is_local_and_has_single_case_view) ... ok
+test_wrong_case_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_wrong_case_denied) ... ok
+test_existing_composer_validation_and_invalid_input (tests.test_legal_os_demo.DemoSmoke.test_existing_composer_validation_and_invalid_input) ... ok
+test_production_routes_and_cross_origin_denied (tests.test_legal_os_demo.DemoSmoke.test_production_routes_and_cross_origin_denied) ... ok
+test_real_http_page_and_explicit_demo_identity (tests.test_legal_os_demo.DemoSmoke.test_real_http_page_and_explicit_demo_identity) ... ok
+test_exact_pair_and_real_pdf_raster_downloads (tests.test_legal_os_demo_examples.ExampleDownloads.test_exact_pair_and_real_pdf_raster_downloads) ... ok
+test_form_changes_never_change_example_bytes (tests.test_legal_os_demo_examples.ExampleDownloads.test_form_changes_never_change_example_bytes) ... ok
+test_incomplete_or_tampered_pair_denies_all_examples (tests.test_legal_os_demo_examples.ExampleDownloads.test_incomplete_or_tampered_pair_denies_all_examples) ... ok
+test_only_fixed_example_files_are_exposed (tests.test_legal_os_demo_examples.ExampleDownloads.test_only_fixed_example_files_are_exposed) ... ok
+test_authenticated_embedded_session_reaches_read_only_dispatcher (tests.test_legal_os_case_only_host.CaseOnlyHostTests.test_authenticated_embedded_session_reaches_read_only_dispatcher) ... ok
+test_case_js_still_available (tests.test_legal_os_case_only_host.CaseOnlyHostTests.test_case_js_still_available) ... ok
+test_invalid_embedded_session_token_fails_before_dispatch (tests.test_legal_os_case_only_host.CaseOnlyHostTests.test_invalid_embedded_session_token_fails_before_dispatch) ... ok
+test_invalid_host_mode_rejected (tests.test_legal_os_case_only_host.CaseOnlyHostTests.test_invalid_host_mode_rejected) ... ok
+test_legacy_operator_assets_hidden (tests.test_legal_os_case_only_host.CaseOnlyHostTests.test_legacy_operator_assets_hidden) ... ok
+test_legacy_post_routes_are_not_available_in_case_only_mode (tests.test_legal_os_case_only_host.CaseOnlyHostTests.test_legacy_post_routes_are_not_available_in_case_only_mode) ... ok
+test_root_only_exposes_case_workspace (tests.test_legal_os_case_only_host.CaseOnlyHostTests.test_root_only_exposes_case_workspace) ... ok
+test_boolean_revision_is_rejected (tests.test_legal_os_case_title.CaseTitleTests.test_boolean_revision_is_rejected) ... ok
+test_missing_current_case_head_is_rejected (tests.test_legal_os_case_title.CaseTitleTests.test_missing_current_case_head_is_rejected) ... ok
+test_read_only_frontend_displays_title (tests.test_legal_os_case_title.CaseTitleTests.test_read_only_frontend_displays_title) ... ok
+test_reads_current_work_case_revision (tests.test_legal_os_case_title.CaseTitleTests.test_reads_current_work_case_revision) ... ok
+test_stale_case_revision_is_rejected_without_revision_read (tests.test_legal_os_case_title.CaseTitleTests.test_stale_case_revision_is_rejected_without_revision_read) ... ok
+test_wrong_case_entity_is_rejected (tests.test_legal_os_case_title.CaseTitleTests.test_wrong_case_entity_is_rejected) ... ok
+test_ai_principal_cannot_discover_documents (tests.test_legal_os_render_listing.RenderListingTests.test_ai_principal_cannot_discover_documents) ... ok
+test_bad_token_rejected (tests.test_legal_os_render_listing.RenderListingTests.test_bad_token_rejected) ... ok
+test_correct_scope_sent_as_uuids (tests.test_legal_os_render_listing.RenderListingTests.test_correct_scope_sent_as_uuids) ... ok
+test_cross_case_record_fails_closed (tests.test_legal_os_render_listing.RenderListingTests.test_cross_case_record_fails_closed) ... ok
+test_empty_list_is_not_error (tests.test_legal_os_render_listing.RenderListingTests.test_empty_list_is_not_error) ... ok
+test_exact_case_action_shape_and_dispatch (tests.test_legal_os_render_listing.RenderListingTests.test_exact_case_action_shape_and_dispatch) ... ok
+test_extra_field_rejected_before_backend (tests.test_legal_os_render_listing.RenderListingTests.test_extra_field_rejected_before_backend) ... ok
+test_list_limit_fails_closed (tests.test_legal_os_render_listing.RenderListingTests.test_list_limit_fails_closed) ... ok
+test_lists_existing_render_without_regeneration (tests.test_legal_os_render_listing.RenderListingTests.test_lists_existing_render_without_regeneration) ... ok
+test_missing_case_denied (tests.test_legal_os_render_listing.RenderListingTests.test_missing_case_denied) ... ok
+test_unauthorized_session_does_not_enter_database (tests.test_legal_os_render_listing.RenderListingTests.test_unauthorized_session_does_not_enter_database) ... ok
+test_legal_os_switch_is_propagated_to_host (tests.test_legal_os_cli.CliTests.test_legal_os_switch_is_propagated_to_host) ... ok
+test_without_switch_preserves_default_mode (tests.test_legal_os_cli.CliTests.test_without_switch_preserves_default_mode) ... ok
+
+----------------------------------------------------------------------
+Ran 64 tests in 5.056s
+
+OK

@@ -1,0 +1,46 @@
+{
+  "evidence_version": "ros-work-read-authorization/1.0.0",
+  "observed_date": "2026-11-03",
+  "repository": "marcusdd720-ui/lukart-work",
+  "branch": "integration/legal-os-hidden-document-engine-v1",
+  "base_head": "64c42579819381988707f9b45c496ce84c01eb1e",
+  "working_tree": "DIRTY_UNCOMMITTED",
+  "change": {
+    "source": "lukart_work/finalization/service.py",
+    "source_sha256": "20cf2361c5a7a0544f98c21188051f645d75dfc68126ae11e852184c2fc0f48e",
+    "regression_test": "tests/test_finalization.py",
+    "regression_test_sha256": "fa4be8bd24c52d3b98da20447a782612b11dd04148a119374e6148467d8cf6bd",
+    "policy": "ReadFinalArtifact, GetFinalPackage and ReadFinalPackageMember require a scoped HUMAN principal; AI remains denied; exact action and tenant/case checks remain first.",
+    "database_access": "denied before repository transaction for non-HUMAN actors"
+  },
+  "validation": {
+    "command": "python -B -m unittest tests.test_finalization -v",
+    "collected": 119,
+    "passed": 2,
+    "skipped": 117,
+    "failed": 0,
+    "skip_reason": "PB02 requires isolated PostgreSQL",
+    "focused_security_regression": "PASS",
+    "case_only_integration_suite": {
+      "command": "python -B -m unittest tests.test_legal_os_composer tests.test_legal_os_case_view tests.test_legal_os_demo tests.test_legal_os_demo_examples tests.test_legal_os_case_only_host tests.test_legal_os_case_title tests.test_legal_os_render_listing tests.test_legal_os_cli -v",
+      "collected": 64,
+      "passed": 64,
+      "skipped": 0,
+      "failed": 0
+    },
+    "ruff_critical_rules": "PASS (E4,E7,E9,F821,F822,F823)",
+    "python_compile": "PASS",
+    "full_ruff": "BASELINE_FINDINGS_UNCHANGED (2 in service.py, 9 in test_finalization.py; same findings present at HEAD)",
+    "mypy": "NOT_VERIFIED (available mypy interpreter lacks pydantic; no dependency installation attempted)"
+  },
+  "boundaries": {
+    "real_case_data_used": false,
+    "live_postgresql_acceptance": false,
+    "authenticated_human_e2e": false,
+    "pb02_pb03_independent_acceptance": false,
+    "document_type_admission": false,
+    "execute_or_package_read_adapter_enabled": false,
+    "production_release_or_deployment": false
+  },
+  "related_remote_state": "WORK PR #83 is a separate draft branch; this local integration branch was not rebased, merged or pushed."
+}

@@ -1,16 +1,19 @@
 """Case-centric LEGAL OS page, served by the existing authenticated WORK host.
 
-No separate process, database, or GENERATOR user interface. This is the
-first read-only integration increment; all document mutations remain with WORK.
+No separate process, database, or GENERATOR user interface. Source intake,
+drafting, validation and rendering delegate to authoritative WORK services.
 """
 from __future__ import annotations
 
-from typing import Any
-from lukart_work.embedded_document_engine import (
-    CaseScope, EmbeddedDocumentEngine, EngineBoundaryError, SavedArtifact,
-)
-from lukart_work.contracts.messages import DomainError, CaseHeadResult, RevisionResult
+from typing import Any, cast
 
+from lukart_work.contracts.messages import CaseHeadResult, DomainError, RevisionResult
+from lukart_work.domain.models import Case
+from lukart_work.embedded_document_engine import (
+    CaseScope,
+    EmbeddedDocumentEngine,
+    EngineBoundaryError,
+)
 
 CASE_HTML = r'''<!doctype html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,7 +23,7 @@ CASE_HTML = r'''<!doctype html>
 <main>
   <div class="eyebrow">PRZESTRZEŃ SPRAWY</div>
   <h1>Moja sprawa</h1>
-  <p class="lead">Otwieraj zapisane sprawy i dokumenty w jednym miejscu. Oryginały oraz decyzje pozostają w bazie WORK. Ten widok niczego nie zatwierdza ani nie zmienia.</p>
+  <p class="lead">Opisz sprawę, przygotuj projekt i pobierz dokumenty w jednym miejscu. Oryginały i historia pozostają w WORK, a wymagane decyzje należą do człowieka.</p>
   <section class="panel" aria-labelledby="connect-title">
     <div class="panel-heading"><h2 id="connect-title">Połączenie z prywatną sprawą</h2><span class="pill">Lokalnie</span></div>
     <p class="hint">Sesja WORK automatycznie wskazuje właściwą sprawę. Nie podawaj identyfikatorów technicznych. Wersja lokalna wymaga jeszcze tokenu; docelowo zastąpi go logowanie.</p>
@@ -57,6 +60,32 @@ CASE_HTML = r'''<!doctype html>
       <p id="review-result" class="hint" role="status" aria-live="polite">Brak decyzji.</p>
     </section>
   </section>
+  <section class="panel" aria-labelledby="compose-title">
+    <div class="panel-heading"><h2 id="compose-title">Przygotuj pismo</h2><span class="pill neutral">Generator 2.0 w tle</span></div>
+    <p class="hint">Zapisz komplet danych jako materiał sprawy. Generowanie korzysta z zatwierdzonego planu WORK i zweryfikowanych danych stron; zapis formularza nie tworzy tych zatwierdzeń.</p>
+    <label>Rodzaj pisma <select id="compose-type"><option value="">Otwórz sprawę, aby odczytać dostępny profil</option></select></label>
+    <label>Opis sprawy i cel pisma <textarea id="compose-description" rows="5" maxlength="20000" placeholder="Opisz sytuację własnymi słowami i wskaż, czego oczekujesz."></textarea></label>
+    <div class="fields">
+      <fieldset><legend>Nadawca</legend>
+        <label>Imię i nazwisko / pełna nazwa <input id="compose-sender-name" maxlength="500" autocomplete="off"></label>
+        <label>Ulica, numer oraz miejscowość <textarea id="compose-sender-lines" rows="3" placeholder="ul. Przykładowa 1/2&#10;Warszawa"></textarea></label>
+        <label>Kod pocztowy <input id="compose-sender-postal" autocomplete="off"></label>
+        <label>Kraj — kod dwuliterowy <input id="compose-sender-country" maxlength="2" placeholder="PL" autocomplete="off"></label>
+      </fieldset>
+      <fieldset><legend>Adresat</legend>
+        <label>Imię i nazwisko / pełna nazwa <input id="compose-recipient-name" maxlength="500" autocomplete="off"></label>
+        <label>Ulica, numer oraz miejscowość <textarea id="compose-recipient-lines" rows="3" placeholder="ul. Testowa 3&#10;Warszawa"></textarea></label>
+        <label>Kod pocztowy <input id="compose-recipient-postal" autocomplete="off"></label>
+        <label>Kraj — kod dwuliterowy <input id="compose-recipient-country" maxlength="2" placeholder="PL" autocomplete="off"></label>
+      </fieldset>
+    </div>
+    <div class="actions"><button id="compose-save" type="button" disabled>Zapisz komplet danych do sprawy</button><button id="compose-refresh" type="button" class="secondary" disabled>Sprawdź gotowość sprawy</button></div>
+    <p id="compose-gate" class="hint">Wymagana autoryzowana sesja WORK. Nie podawaj hasła Windows.</p>
+    <label>Zatwierdzony plan pisma <select id="compose-plan"><option value="">Brak odczytanych planów</option></select></label>
+    <label>Zakres opracowania <select id="compose-profile"><option value="">Brak odczytanych profili</option></select></label>
+    <div class="actions"><button id="compose-generate" type="button" disabled>Przygotuj projekt pisma</button><button id="compose-validate" type="button" class="secondary" disabled>Sprawdź projekt</button><button id="compose-render" type="button" disabled>Utwórz DOCX i PDF</button></div>
+    <p id="compose-result" class="hint" role="status" aria-live="polite">Nie rozpoczęto przygotowania pisma.</p>
+  </section>
   <section class="panel" aria-labelledby="editor-title">
     <div class="panel-heading"><h2 id="editor-title">Projekt pisma — edytor</h2><span class="pill neutral">Historia w WORK</span></div>
     <p class="hint">Wybierz istniejący projekt tej sprawy. Edytujesz cały tekst pisma, ale zapis poprawek nie jest zatwierdzeniem ani wysyłką.</p>
@@ -83,9 +112,9 @@ CASE_HTML = r'''<!doctype html>
   </section>
   <p id="status" class="status" role="status" aria-live="polite">Połącz się z istniejącą sprawą.</p>
 </main><footer>Generator Pism 2.0: silnik wewnętrzny · HUMAN approvals: wyłącznie przez autoryzowane operacje WORK</footer>
-</div><script src="/case.js"></script></body></html>'''.encode("utf-8")
+</div><script src="/case.js"></script></body></html>'''.encode()
 
-CASE_CSS = r'''*{box-sizing:border-box}body{margin:0;background:#f6f8fa;color:#17243b;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+CASE_CSS = br'''*{box-sizing:border-box}body{margin:0;background:#f6f8fa;color:#17243b;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 .shell{max-width:1040px;margin:auto;padding:0 24px}header{display:flex;gap:20px;justify-content:space-between;align-items:center;padding:25px 0;border-bottom:1px solid #dce3ea}
 .brand{font-weight:780;letter-spacing:.04em;font-size:19px}.brand span{color:#227c71}header small,footer,.small,.hint{color:#64748b}
 main{padding:32px 0 50px}.eyebrow{font-size:11px;font-weight:740;letter-spacing:.18em;color:#227c71}h1{font-size:34px;margin:8px 0}h2{margin:0;font-size:19px}.lead{max-width:760px;line-height:1.6;color:#50617c}
@@ -102,12 +131,12 @@ button.secondary{background:#eef3f6;color:#25394d}button:disabled{opacity:.45;cu
 textarea{width:100%;font:inherit;border:1px solid #cbd6e1;border-radius:8px;padding:12px;resize:vertical}
 .status{padding:15px 19px;border-radius:8px;border:1px solid #d6dfe7;background:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
 .status.error{color:#a32035;border-color:#e9bcc4;background:#fff7f8}footer{font-size:12px;padding:18px 0 34px;border-top:1px solid #dce3ea}
-@media(max-width:600px){header{align-items:flex-start;flex-direction:column;gap:3px}.shell{padding:0 15px}.panel{padding:18px}.metricrow{gap:28px}}'''.encode("utf-8")
+@media(max-width:600px){header{align-items:flex-start;flex-direction:column;gap:3px}.shell{padding:0 15px}.panel{padding:18px}.metricrow{gap:28px}}'''
 
 CASE_JS = r'''(() => {
 "use strict";
 const $=id=>document.getElementById(id);
-const state={opened:false,pending:0,revision:0,caseSequence:0,review:null,draft:null};
+const state={opened:false,pending:0,revision:0,caseSequence:0,review:null,draft:null,composeDraft:null,composeValidation:null,composeUnknown:false};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
 function refresh(){const busy=state.pending>0;const selected=uuid.test($("render").value);for(const id of ["check","pdf","docx"])$(id).disabled=!state.opened||busy||!selected;$("open").disabled=busy;for(const id of ["intake-upload","intake-text-save"])$(id).disabled=!state.opened||busy;
@@ -115,11 +144,38 @@ const chosen=state.review?.candidates?.find(v=>String(v.index)===$("review-selec
 for(const id of ["review-admit","review-reject"])$(id).disabled=!state.opened||busy||!chosen||chosen.review_status==="ADMIT";
 $("draft-open").disabled=!state.opened||busy||!$("draft-select").value;
 $("draft-save").disabled=!state.opened||busy||!state.draft?.editable;
+$("compose-refresh").disabled=!state.opened||busy;
+const composeBlocked=!state.opened||busy||state.composeUnknown;
+$("compose-save").disabled=composeBlocked||!$("compose-type").value;
+$("compose-generate").disabled=composeBlocked||!$("compose-plan").value||!$("compose-profile").value;
+$("compose-validate").disabled=composeBlocked||!state.composeDraft;
+$("compose-render").disabled=composeBlocked||!state.composeDraft||!state.composeValidation;
 }
-function close(){state.revision++;state.opened=false;state.caseSequence=0;state.review=null;state.draft=null;$("draft-editor").hidden=true;$("draft-select").replaceChildren(new Option("Otwórz sprawę, aby zobaczyć projekty",""));$("draft-sections").replaceChildren();$("draft-rationale").value="";$("draft-result").textContent="Nie otwarto projektu.";$("review-panel").hidden=true;$("review-select").replaceChildren();$("review-quote").textContent="";$("review-statement").value="";$("review-description").value="";$("review-rationale").value="";$("review-result").textContent="Brak decyzji.";$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
+function close(){composeReset();state.revision++;state.opened=false;state.caseSequence=0;state.review=null;state.draft=null;$("draft-editor").hidden=true;$("draft-select").replaceChildren(new Option("Otwórz sprawę, aby zobaczyć projekty",""));$("draft-sections").replaceChildren();$("draft-rationale").value="";$("draft-result").textContent="Nie otwarto projektu.";$("review-panel").hidden=true;$("review-select").replaceChildren();$("review-quote").textContent="";$("review-statement").value="";$("review-description").value="";$("review-rationale").value="";$("review-result").textContent="Brak decyzji.";$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
 function scope(){
 if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
 return {};
+}
+async function showUploadedSource(json){
+if(!json.registration||!["APPLIED","REPLAYED"].includes(json.registration.state))
+  throw new Error("Nie potwierdzono zapisu źródła.");
+state.caseSequence=Number(json.registration.case_sequence);
+$("case-seq").textContent=String(state.caseSequence);
+const extraction=json.ingestion?.body;
+$("intake-result").textContent="Oryginał zapisany. Odczyt: "+(extraction?.status||"NIEPOTWIERDZONY")+". Odczytane informacje wymagają przeglądu.";
+const fragments=Array.isArray(extraction?.fragments)?extraction.fragments:[];
+$("intake-preview").textContent=fragments.slice(0,12).map(v=>v.text).join("\n\n")||"Brak rozpoznanego tekstu; oryginał został zachowany.";
+$("intake-preview").hidden=false;
+const container=$("intake-candidates");container.replaceChildren();
+const proposals=Array.isArray(extraction?.candidates)?extraction.candidates:[];
+for(const proposal of proposals.filter(x=>["PARTY","DATE","AMOUNT"].includes(x.kind)).slice(0,15)){
+ const item=document.createElement("li");item.textContent=proposal.kind+": "+String(proposal.quote||"").slice(0,260);container.append(item);
+}
+$("intake-proposals").hidden=container.childElementCount===0;
+$("intake-file").value="";
+status("Materiał dołączony do sprawy. Żadne fakty nie zostały automatycznie zatwierdzone.");
+if(extraction?.status==="EXTRACTED"&&uuid.test(json.source_id)&&uuid.test(json.run_id))
+ await invoke("review_context",{source_id:json.source_id,run_id:json.run_id});
 }
 async function invoke(action,extra={}) {
 const args={action,...scope(),...extra};state.pending++;refresh();const generation=state.revision;
@@ -153,36 +209,14 @@ try {
     }
     await invoke("list_saved");
     await invoke("list_drafts");
+    await composeLoad();
   } else if(action==="case_title"){
     if(json.result_type!=="REVISION"||json.entity?.kind!=="Case")throw new Error("Brak zweryfikowanej wersji sprawy.");
     $("case-title").textContent=json.entity.title||"Sprawa bez tytułu";
     $("case-state").textContent=json.entity.status||"Otwarta";
     status("Pobrano aktualny tytuł i status sprawy bez zmiany danych.");
   } else if(action==="upload_source"){
-    if(!json.registration||!["APPLIED","REPLAYED"].includes(json.registration.state))
-      throw new Error("Nie potwierdzono zapisu źródła.");
-    state.caseSequence=Number(json.registration.case_sequence);
-    $("case-seq").textContent=String(state.caseSequence);
-    const extraction=json.ingestion?.body;
-    const kind=extraction?.status||"NIEPOTWIERDZONY";
-    $("intake-result").textContent="Oryginał zapisany. Odczyt: "+kind+". Odczytane informacje wymagają przeglądu.";
-    const fragments=Array.isArray(extraction?.fragments)?extraction.fragments:[];
-    const preview=fragments.slice(0,12).map(v=>v.text).join("\n\n");
-    $("intake-preview").textContent=preview||"Brak rozpoznanego tekstu; oryginał został zachowany.";
-    $("intake-preview").hidden=false;
-    const container=$("intake-candidates");container.replaceChildren();
-    const proposals=Array.isArray(extraction?.candidates)?extraction.candidates:[];
-    for(const proposal of proposals.filter(x=>["PARTY","DATE","AMOUNT"].includes(x.kind)).slice(0,15)){
-      const item=document.createElement("li");
-      item.textContent=proposal.kind+": "+String(proposal.quote||"").slice(0,260);
-      container.append(item);
-    }
-    $("intake-proposals").hidden=container.childElementCount===0;
-    $("intake-file").value="";
-    status("Materiał dołączony do sprawy. Żadne fakty nie zostały automatycznie zatwierdzone.");
-    if(extraction?.status==="EXTRACTED"&&uuid.test(json.source_id)&&uuid.test(json.run_id)){
-      await invoke("review_context",{source_id:json.source_id,run_id:json.run_id});
-    }
+    await showUploadedSource(json);
   } else if(action==="review_context"){
     if(json.result_type!=="REVIEW_CONTEXT"||!Array.isArray(json.candidates))
       throw new Error("Niepotwierdzony wynik przeglądu danych.");
@@ -226,6 +260,7 @@ try {
     if(json.result_type!=="DRAFT_FOR_EDITING"||!Array.isArray(json.sections))
       throw new Error("Nie potwierdzono odczytu projektu.");
     state.draft=json;
+    state.composeDraft={id:json.draft_id,revision:json.revision};state.composeValidation=null;
     $("draft-editor").hidden=false;
     $("draft-details").textContent="Rewizja "+json.revision+" · "+json.status+
       (json.editable?" · edycja dostępna":" · tylko odczyt");
@@ -244,6 +279,7 @@ try {
     if(json.result_type!=="DRAFT_AMENDED"||!["APPLIED","REPLAYED"].includes(json.state))
       throw new Error("Nie potwierdzono zapisania zmian.");
     state.draft=null;$("draft-editor").hidden=true;
+    state.composeDraft=null;state.composeValidation=null;
     $("draft-result").textContent="Poprawki zapisano jako nową wersję. Nie zatwierdzono ani nie wysłano pisma.";
     await invoke("open_case");
   } else if(action==="list_saved"){
@@ -362,11 +398,94 @@ for(const format of ["PDF","DOCX"])$(format.toLowerCase()).addEventListener("cli
   if(!uuid.test($("render").value.trim()))return status("Podaj identyfikator renderu.",true);
   invoke("download",{render_id:$("render").value.trim(),format});
 });
-$("clear").addEventListener("click",()=>{close();for(const id of ["token","render"])$(id).value="";status("Sesja wyczyszczona.");});
+function composeReset(){
+state.composeDraft=null;state.composeValidation=null;
+for(const id of ["compose-description",...['sender','recipient'].flatMap(role=>['name','lines','postal','country'].map(field=>'compose-'+role+'-'+field))])$(id).value='';
+for(const id of ['compose-type','compose-plan','compose-profile'])$(id).replaceChildren(new Option('Otwórz autoryzowaną sprawę',''));
+$("compose-gate").textContent='Wymagana autoryzowana sesja WORK.';$("compose-result").textContent='Nie rozpoczęto przygotowania pisma.';
+}
+async function composeRequest(action, extra={}){
+const generation=state.revision;state.pending++;refresh();
+try{
+ const response=await fetch('/api/embedded_session',{method:'POST',cache:'no-store',credentials:'omit',
+  headers:{'Content-Type':'application/json','Authorization':'Bearer '+$('token').value},body:JSON.stringify({action,...extra})});
+ if(generation!==state.revision)throw new Error('Sesja została zmieniona. Odczytaj stan sprawy.');
+ if(!response.ok)throw new Error('WORK odmówił operacji ('+response.status+'). Sprawdź sesję, bieżący plan, dane stron i wymagane decyzje.');
+ const data=await response.json();
+ if(generation!==state.revision)throw new Error('Sesja została zmieniona. Odczytaj stan sprawy.');
+ if(data.error||data.result_type==='DOMAIN_ERROR')throw new Error('Operacja nie została potwierdzona przez WORK.');
+ return data;
+}finally{state.pending--;refresh();}
+}
+async function composeLoad(){
+try{const data=await composeRequest('composition_context');
+ if(data.result_type!=='COMPOSITION_CONTEXT'||!Array.isArray(data.document_types)||!Array.isArray(data.plans)||!Array.isArray(data.profiles))throw new Error('Nieprawidłowe warunki przygotowania pisma.');
+ state.caseSequence=data.case_sequence;$('case-seq').textContent=String(data.case_sequence);
+ const selected=$('compose-plan').value;
+ for(const [id,items] of [['compose-type',data.document_types],['compose-plan',data.plans]]){
+  const box=$(id);box.replaceChildren(new Option('Wybierz',''));for(const item of items)box.add(new Option(item.label,item.id));
+  if(items.length===1)box.selectedIndex=1;if(id==='compose-plan'&&items.some(v=>v.id===selected))box.value=selected;
+ }
+ const profiles=$('compose-profile');profiles.replaceChildren();
+ const names={QUICK:'Krótki',PROFESSIONAL:'Rozszerzony',FORENSIC:'Szczegółowy'};
+ for(const profile of data.profiles)profiles.add(new Option(names[profile]||profile,profile));
+ $('compose-plan').dataset.revisions=JSON.stringify(Object.fromEntries(data.plans.map(v=>[v.id,v.revision])));
+ $('compose-plan').dataset.forms=JSON.stringify(Object.fromEntries(data.plans.filter(v=>v.form).map(v=>[v.id,v.form])));
+ composePrefill();
+ $('compose-gate').textContent=data.required_gate?'Brakuje zatwierdzonego planu WORK. Możesz zapisać dane; nie utworzy to akceptacji faktów ani danych stron.':'Odczytano zatwierdzony plan. Formularz musi odpowiadać jego opisowi i zweryfikowanym stronom.';
+}catch(error){$('compose-gate').textContent=error.message;}finally{refresh();}
+}
+function composeForm(){
+ const value={description:$('compose-description').value.trim(),document_type:$('compose-type').value,sender:null,recipient:null};
+ for(const role of ['sender','recipient'])value[role]={name:$('compose-'+role+'-name').value.trim(),address:{
+  country:$('compose-'+role+'-country').value.trim().toUpperCase(),postal_code:$('compose-'+role+'-postal').value.trim(),
+  lines:$('compose-'+role+'-lines').value.split(/\r?\n/).map(v=>v.trim()).filter(Boolean)}};
+ if(!value.description||!value.document_type||['sender','recipient'].some(role=>!value[role].name||!value[role].address.lines.length||!value[role].address.postal_code||!/^[A-Z]{2}$/.test(value[role].address.country)))throw new Error('Uzupełnij opis, rodzaj pisma oraz pełne nazwy i adresy obu stron.');
+ return value;
+}
+async function composePerform(action){
+ if(state.composeUnknown)return;
+ let extra={};
+ try{
+  if(['save_document_brief','generate_document'].includes(action))extra.form=composeForm();
+  if(action==='generate_document')Object.assign(extra,{plan_id:$('compose-plan').value,plan_revision:JSON.parse($('compose-plan').dataset.revisions||'{}')[$('compose-plan').value],profile:$('compose-profile').value});
+  if(['validate_document','render_document'].includes(action)){
+   if(!state.composeDraft)throw new Error('Najpierw przygotuj lub otwórz projekt.');
+   Object.assign(extra,{draft_id:state.composeDraft.id,draft_revision:state.composeDraft.revision});
+  }
+  if(action==='render_document')extra.validation_run_id=state.composeValidation;
+  Object.assign(extra,{expected_case_sequence:state.caseSequence,command_id:crypto.randomUUID(),idempotency_key:crypto.randomUUID(),correlation_id:crypto.randomUUID()});
+  if(action==='save_document_brief')extra.run_id=crypto.randomUUID();
+ }catch(error){$('compose-result').textContent=error.message;return;}
+ try{
+  const data=await composeRequest(action,extra);
+  const wanted={save_document_brief:'DOCUMENT_BRIEF_SAVED',generate_document:'DOCUMENT_GENERATED',validate_document:'DOCUMENT_VALIDATED',render_document:'DOCUMENT_RENDERED'}[action];
+  if(data.result_type!==wanted)throw new Error('WORK nie potwierdził oczekiwanego wyniku.');
+  if(data.draft){state.composeDraft=data.draft;state.composeValidation=null;}
+  if(data.validation_run_id)state.composeValidation=data.validation_run_id;
+  $('compose-result').textContent=action==='save_document_brief'?'Zapisano dane jako materiał źródłowy. Wymagane pozostają przegląd i zatwierdzony plan.':action==='generate_document'?'Generator 2.0 przygotował projekt. Możesz otworzyć go w edytorze poniżej.':action==='validate_document'?'Przeprowadzono kontrolę projektu. Renderer niezależnie sprawdzi wymagane bramki; nie zatwierdzono pisma.':'Zapisano DOCX i PDF. Pobierz je w sekcji Dokumenty sprawy.';
+  if(action==='save_document_brief')await showUploadedSource(data.native_result);
+  await composeLoad();await invoke('list_drafts');
+  if(action==='render_document'){await invoke('list_saved');$('render').value=data.render_id;}
+ }catch(error){state.composeUnknown=true;$('compose-result').textContent=error.message+' Nie ponawiaj zapisu automatycznie. Sprawdź stan WORK w autoryzowanej sesji.';}
+ finally{refresh();}
+}
+$('compose-refresh').addEventListener('click',composeLoad);
+function composePrefill(){
+ const form=JSON.parse($('compose-plan').dataset.forms||'{}')[$('compose-plan').value];if(!form){refresh();return;}
+ if(!$('compose-description').value.trim())$('compose-description').value=form.description;
+ for(const role of ['sender','recipient'])for(const [field,value] of Object.entries({name:form[role].name,lines:form[role].address.lines.join('\n'),postal:form[role].address.postal_code,country:form[role].address.country})){
+  const input=$('compose-'+role+'-'+field);if(!input.value.trim())input.value=value||'';
+ }
+ refresh();
+}
+$('compose-plan').addEventListener('change',composePrefill);
+for(const [id,action] of [['compose-save','save_document_brief'],['compose-generate','generate_document'],['compose-validate','validate_document'],['compose-render','render_document']])$(id).addEventListener('click',()=>composePerform(action));
+$("clear").addEventListener("click",()=>{composeReset();close();for(const id of ["token","render"])$(id).value="";status("Sesja wyczyszczona.");});
 window.addEventListener("pagehide",()=>{close();for(const id of ["token","render"])$(id).value="";});
 $("token").addEventListener("input",close);
 refresh();
-})();'''.encode("utf-8")
+})();'''.encode()
 
 
 def read_case_action(operator: Any, payload: dict[str, Any], token: str):
@@ -405,9 +524,10 @@ def read_case_action(operator: Any, payload: dict[str, Any], token: str):
             "tenant_id": scope.tenant_id, "case_id": scope.case_id,
             "target": {"kind": "Case", "id": scope.case_id, "revision": revision},
         }, token)
-        if not isinstance(result, RevisionResult) or result.entity.kind != "Case":
+        if not isinstance(result, RevisionResult) or getattr(result.entity, "kind", None) != "Case":
             raise EngineBoundaryError("CASE_REVISION_READ_REJECTED")
-        if str(result.entity.id) != scope.case_id or result.entity.revision != revision:
+        case_entity = cast(Case, result.entity)
+        if str(case_entity.id) != scope.case_id or case_entity.revision != revision:
             raise EngineBoundaryError("CASE_REVISION_MISMATCH")
     elif action == "get_render":
         result = engine.get_render(scope, payload["render_id"], token=token)
@@ -427,6 +547,11 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
     if not isinstance(payload, dict):
         raise EngineBoundaryError("SESSION_REQUEST_OBJECT_REQUIRED")
     allowed = {
+        "composition_context": {"action"},
+        "save_document_brief": {"action", "form", "run_id", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id"},
+        "generate_document": {"action", "form", "plan_id", "plan_revision", "profile", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id"},
+        "validate_document": {"action", "draft_id", "draft_revision", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id"},
+        "render_document": {"action", "draft_id", "draft_revision", "validation_run_id", "expected_case_sequence", "command_id", "idempotency_key", "correlation_id"},
         "open_case": {"action"},
         "case_title": {"action", "case_revision"},
         "list_saved": {"action"},
@@ -446,6 +571,9 @@ def read_session_case_action(operator: Any, payload: dict[str, Any], token: str)
         if principal.actor.kind == "AI":
             raise EngineBoundaryError("AI_SESSION_DENIED")
         tenant, case = principal.tenant_id, principal.case_id
+    if action in ("composition_context", "save_document_brief", "generate_document", "validate_document", "render_document"):
+        from lukart_work.legal_os_composer import composer_action
+        return composer_action(operator, payload, token)
     if action in ("list_drafts", "open_draft", "amend_draft"):
         from lukart_work.legal_os_editor import edit_action
         return edit_action(operator, payload, token)

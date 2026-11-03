@@ -1,8 +1,8 @@
 {
   "contract_id": "urn:lukart:ros-work:generator-integration:1.0.0",
   "contract_version": "1.0.0",
-  "status": "PLANNED_NOT_IMPLEMENTED",
-  "observed_date": "2026-10-04",
+  "status": "PARTIALLY_IMPLEMENTED_READ_ONLY_ONLY_PRODUCTION_BLOCKED",
+  "observed_date": "2026-11-03",
   "architecture": "independent repositories, composed contracts, no runtime package dependency",
   "baselines": [
     {
@@ -92,10 +92,10 @@
     {
       "id": "ros.work.generator.assess.v1",
       "effect": "READ_ONLY",
-      "state": "PLANNED",
+      "state": "IMPLEMENTED_READ_ONLY_CANDIDATE_LOCAL_VALIDATION_PASS_CI_PENDING",
       "required_authority": "scoped WORK read capability",
       "required_gates": [],
-      "output": "cross-repo result envelope with explicit blockers and evidence refs"
+      "output": "validated native WORK CASE_HEAD projection with explicit blockers; no case mutation or package bytes"
     },
     {
       "id": "ros.work.generator.execute.v1",
@@ -133,7 +133,8 @@
     "concurrency": "ROS expected_head is an orchestration precondition; WORK expected_case_sequence/CAS remains authoritative for domain writes",
     "idempotency": "adapter binds ROS idempotency key plus request digest to the exact WORK command ids/results; different digest blocks",
     "evidence": "existing cross-repo evidence/result/provenance envelopes carry references; original bytes remain in scoped WORK storage",
-    "result": "native WORK result is authoritative; adapter derives a neutral result without rewriting the native record"
+    "result": "native WORK result is authoritative; adapter derives a neutral result without rewriting the native record",
+    "assess": "Only ros.work.generator.assess.v1 maps to WORK query_core/GetCaseHead; mutation and package-read operations fail closed before dispatch."
   },
   "gaps": [
     {
@@ -147,10 +148,10 @@
     {
       "id": "RW-GAP-02",
       "severity": "P1",
-      "state": "BLOCKING_EXECUTE_OPERATION",
-      "description": "No adapter maps ROS operation scope, authority, CAS and idempotency to public WORK boundaries.",
+      "state": "PARTIALLY_RESOLVED_READ_ONLY_ONLY_EXECUTE_BLOCKED",
+      "description": "A fail-closed read-only adapter maps ros.work.generator.assess.v1 to native CoreQuery.GetCaseHead with exact tenant/case UUID scope, trusted authority resolution, request-digest/idempotency binding, bounded timeout and strict CASE_HEAD response validation. Execute and package-read mappings remain disabled.",
       "owner": "integration",
-      "dependency": "RW-GAP-01"
+      "dependency": "RW-GAP-01 independent PB02/PB03 acceptance, supported document-type admission, and separate native HUMAN/package-read capability reviews"
     },
     {
       "id": "RW-GAP-03",
@@ -203,6 +204,37 @@
     "same idempotency key with a different digest fails",
     "neutral result preserves native WORK result identity and provenance",
     "no runtime import or direct database dependency exists between repositories",
-    "positive execute/read-package tests remain prohibited until their blocking gaps close"
-  ]
+    "positive execute/read-package tests remain prohibited until their blocking gaps close",
+    "Read-only assess adapter passes focused local tests and native CoreQuery schema validation; exact-SHA CI and independent review of the current local candidate remain required."
+  ],
+  "candidate_observation": {
+    "observed_date": "2026-11-03",
+    "work": {
+      "repository": "marcusdd720-ui/lukart-work",
+      "ref": "integration/legal-os-hidden-document-engine-v1",
+      "commit": "64c42579819381988707f9b45c496ce84c01eb1e",
+      "working_tree": "DIRTY_UNCOMMITTED",
+      "case_head_schema_blob": "aa97dd4ef4865948fe7c393c224b0bacdca421a2"
+    },
+    "ros": {
+      "repository": "marcusdd720-ui/lukart-ros",
+      "ref": "h2/ros-work-native-corequery-verified-20261103",
+      "commit": "fc4c27b043cf9af4de4c420e3d6b37f9d0e1cc60",
+      "working_tree": "DIRTY_UNCOMMITTED",
+      "pull_request": 381,
+      "pull_request_state": "DRAFT",
+      "remote_ci": "SUCCESS_FOR_COMMITTED_HEAD_ONLY_NOT_LOCAL_WORKTREE"
+    },
+    "adapter_scope": {
+      "implemented": [
+        "ros.work.generator.assess.v1"
+      ],
+      "native_work_route": "POST /api/query_core",
+      "native_work_contract": "urn:lukart:work:CoreQuery:1.0.0",
+      "native_work_operation": "GetCaseHead",
+      "writes_enabled": false,
+      "execute_enabled": false,
+      "package_read_enabled": false
+    }
+  }
 }

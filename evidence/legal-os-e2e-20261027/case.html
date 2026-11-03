@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUKART LEGAL OS — Moja sprawa</title><link rel="stylesheet" href="/case.css"></head>
+<body><div class="shell">
+<header><div class="brand">LUKART <span>LEGAL OS</span></div><small>Prywatna karta sprawy · silnik dokumentowy działa w tle</small></header>
+<main>
+  <div class="eyebrow">PRZESTRZEŃ SPRAWY</div>
+  <h1>Moja sprawa</h1>
+  <p class="lead">Opisz sprawę, przygotuj projekt i pobierz dokumenty w jednym miejscu. Oryginały i historia pozostają w WORK, a wymagane decyzje należą do człowieka.</p>
+  <section class="panel" aria-labelledby="connect-title">
+    <div class="panel-heading"><h2 id="connect-title">Połączenie z prywatną sprawą</h2><span class="pill">Lokalnie</span></div>
+    <p class="hint">Sesja WORK automatycznie wskazuje właściwą sprawę. Nie podawaj identyfikatorów technicznych. Wersja lokalna wymaga jeszcze tokenu; docelowo zastąpi go logowanie.</p>
+    <div class="fields">
+      <label>Token prywatnej sesji WORK <input type="password" id="token" autocomplete="off" spellcheck="false" aria-label="Token sesji WORK"></label>
+    </div>
+    <div class="actions"><button id="open" type="button">Otwórz sprawę</button><button id="clear" class="secondary" type="button">Wyczyść sesję</button></div>
+  </section>
+  <section class="panel" aria-labelledby="overview-title">
+    <div class="panel-heading"><h2 id="overview-title">Stan sprawy</h2><span class="pill neutral" id="case-state">Nieotwarta</span></div>
+    <h3 id="case-title" class="casetitle">Tytuł sprawy pojawi się po odczycie</h3>
+    <div class="metricrow"><div><div class="metric" id="case-seq">—</div><div class="small">Wersja sprawy</div></div><div><div class="metric" id="heads">—</div><div class="small">Aktywne rekordy</div></div></div>
+    <p class="hint">Ten panel odczytuje stan bezpośrednio z istniejącego Case Core. Nie jest drugą bazą spraw.</p>
+  </section>
+  <section class="panel" aria-labelledby="intake-title">
+    <div class="panel-heading"><h2 id="intake-title">Dodaj materiał do sprawy</h2><span class="pill neutral">OCR lokalny</span></div>
+    <p class="hint">Oryginał zostaje zapisany bez zmian. Rozpoznany tekst i dane są kandydatami do sprawdzenia, a nie automatycznie potwierdzonymi faktami.</p>
+    <label>Wybierz pismo lub skan <input type="file" id="intake-file" accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.docx,.txt"></label>
+    <div class="actions"><button id="intake-upload" type="button" disabled>Dodaj dokument i odczytaj tekst</button></div>
+    <label>Lub wprowadź własny opis sprawy <textarea id="intake-text" rows="5" placeholder="Opisz sytuację własnymi słowami, nawet jeśli nie masz dokumentu."></textarea></label>
+    <div class="actions"><button id="intake-text-save" type="button" disabled>Zapisz opis do sprawy</button></div>
+    <p id="intake-result" class="hint" role="status" aria-live="polite">Obsługiwane: PDF, JPG, PNG, TIFF, DOCX, TXT i tekst. Obecny limit: 700 KiB na plik. BMP wymaga osobnego adaptera.</p>
+    <pre id="intake-preview" class="intake-preview" hidden></pre>
+    <div id="intake-proposals" hidden><h3>Wykryte informacje — do weryfikacji</h3><ul id="intake-candidates"></ul></div>
+    <section id="review-panel" hidden aria-label="Weryfikacja materiału">
+      <h3>Fakty i dowody — przegląd HUMAN</h3>
+      <p class="hint">Odczyt OCR nie jest dowodem prawdziwości. Decyzja PRZYJMIJ tworzy kandydata do dalszej oceny, nie potwierdzony fakt.</p>
+      <label>Kandydat ze źródła <select id="review-select"></select></label>
+      <blockquote id="review-quote" class="review-quote"></blockquote>
+      <label>Opis materiału <input id="review-description" autocomplete="off"></label>
+      <label>Proponowane brzmienie faktu (dla faktu) <textarea id="review-statement" rows="3"></textarea></label>
+      <label>Uzasadnienie decyzji <textarea id="review-rationale" rows="2" placeholder="Dlaczego przyjmujesz lub odrzucasz ten materiał?"></textarea></label>
+      <div class="actions"><button type="button" id="review-admit" disabled>Przyjmij jako kandydata</button><button type="button" id="review-reject" class="secondary" disabled>Odrzuć</button></div>
+      <p id="review-result" class="hint" role="status" aria-live="polite">Brak decyzji.</p>
+    </section>
+  </section>
+  <section class="panel" aria-labelledby="compose-title">
+    <div class="panel-heading"><h2 id="compose-title">Przygotuj pismo</h2><span class="pill neutral">Generator 2.0 w tle</span></div>
+    <p class="hint">Zapisz komplet danych jako materiał sprawy. Generowanie korzysta z zatwierdzonego planu WORK i zweryfikowanych danych stron; zapis formularza nie tworzy tych zatwierdzeń.</p>
+    <label>Rodzaj pisma <select id="compose-type"><option value="">Otwórz sprawę, aby odczytać dostępny profil</option></select></label>
+    <label>Opis sprawy i cel pisma <textarea id="compose-description" rows="5" maxlength="20000" placeholder="Opisz sytuację własnymi słowami i wskaż, czego oczekujesz."></textarea></label>
+    <div class="fields">
+      <fieldset><legend>Nadawca</legend>
+        <label>Imię i nazwisko / pełna nazwa <input id="compose-sender-name" maxlength="500" autocomplete="off"></label>
+        <label>Ulica, numer oraz miejscowość <textarea id="compose-sender-lines" rows="3" placeholder="ul. Przykładowa 1/2&#10;Warszawa"></textarea></label>
+        <label>Kod pocztowy <input id="compose-sender-postal" autocomplete="off"></label>
+        <label>Kraj — kod dwuliterowy <input id="compose-sender-country" maxlength="2" placeholder="PL" autocomplete="off"></label>
+      </fieldset>
+      <fieldset><legend>Adresat</legend>
+        <label>Imię i nazwisko / pełna nazwa <input id="compose-recipient-name" maxlength="500" autocomplete="off"></label>
+        <label>Ulica, numer oraz miejscowość <textarea id="compose-recipient-lines" rows="3" placeholder="ul. Testowa 3&#10;Warszawa"></textarea></label>
+        <label>Kod pocztowy <input id="compose-recipient-postal" autocomplete="off"></label>
+        <label>Kraj — kod dwuliterowy <input id="compose-recipient-country" maxlength="2" placeholder="PL" autocomplete="off"></label>
+      </fieldset>
+    </div>
+    <div class="actions"><button id="compose-save" type="button" disabled>Zapisz komplet danych do sprawy</button><button id="compose-refresh" type="button" class="secondary" disabled>Sprawdź gotowość sprawy</button></div>
+    <p id="compose-gate" class="hint">Wymagana autoryzowana sesja WORK. Nie podawaj hasła Windows.</p>
+    <label>Zatwierdzony plan pisma <select id="compose-plan"><option value="">Brak odczytanych planów</option></select></label>
+    <label>Zakres opracowania <select id="compose-profile"><option value="">Brak odczytanych profili</option></select></label>
+    <div class="actions"><button id="compose-generate" type="button" disabled>Przygotuj projekt pisma</button><button id="compose-validate" type="button" class="secondary" disabled>Sprawdź projekt</button><button id="compose-render" type="button" disabled>Utwórz DOCX i PDF</button></div>
+    <p id="compose-result" class="hint" role="status" aria-live="polite">Nie rozpoczęto przygotowania pisma.</p>
+  </section>
+  <section class="panel" aria-labelledby="editor-title">
+    <div class="panel-heading"><h2 id="editor-title">Projekt pisma — edytor</h2><span class="pill neutral">Historia w WORK</span></div>
+    <p class="hint">Wybierz istniejący projekt tej sprawy. Edytujesz cały tekst pisma, ale zapis poprawek nie jest zatwierdzeniem ani wysyłką.</p>
+    <label>Projekty pisma <select id="draft-select"><option value="">Otwórz sprawę, aby zobaczyć projekty</option></select></label>
+    <div class="actions"><button id="draft-open" type="button" class="secondary" disabled>Otwórz do edycji</button></div>
+    <div id="draft-editor" hidden>
+      <p id="draft-details" class="hint"></p>
+      <div id="draft-sections"></div>
+      <label>Uzasadnienie wprowadzonych poprawek <textarea id="draft-rationale" rows="2" placeholder="Co i dlaczego zmieniasz?"></textarea></label>
+      <div class="actions"><button id="draft-save" type="button" disabled>Zapisz poprawki w sprawie</button></div>
+    </div>
+    <p id="draft-result" role="status" aria-live="polite" class="hint">Nie otwarto projektu.</p>
+  </section>
+  <section class="panel" aria-labelledby="docs-title">
+    <div class="panel-heading"><h2 id="docs-title">Dokumenty sprawy</h2><span class="pill neutral">Bez ponownego renderowania</span></div>
+    <p class="hint">Wybierz projekt zapisany w tej sprawie. Dokument jest odczytywany z WORK bez regenerowania i bez dodatkowych identyfikatorów.</p>
+    <label>Zapisane dokumenty <select id="render" aria-label="Wybierz zapisany dokument"><option value="">Otwórz sprawę, aby wyświetlić dokumenty</option></select></label>
+    <p class="hint" id="render-count">Lista dokumentów nie została jeszcze pobrana.</p>
+    <div class="actions">
+      <button id="check" type="button" class="secondary" disabled>Sprawdź dokument</button>
+      <button id="pdf" type="button" disabled>Pobierz PDF</button>
+      <button id="docx" type="button" disabled>Pobierz DOCX</button>
+    </div>
+  </section>
+  <p id="status" class="status" role="status" aria-live="polite">Połącz się z istniejącą sprawą.</p>
+</main><footer>Generator Pism 2.0: silnik wewnętrzny · HUMAN approvals: wyłącznie przez autoryzowane operacje WORK</footer>
+</div><script src="/case.js"></script></body></html>

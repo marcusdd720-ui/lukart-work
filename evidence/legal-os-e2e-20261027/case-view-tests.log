@@ -1,0 +1,19 @@
+test_case_read_goes_to_existing_work_backend (tests.test_legal_os_case_view.CaseWorkspaceTests.test_case_read_goes_to_existing_work_backend) ... ok
+test_css_provided (tests.test_legal_os_case_view.CaseWorkspaceTests.test_css_provided) ... ok
+test_empty_token_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_empty_token_denied) ... ok
+test_extra_fields_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_extra_fields_denied) ... ok
+test_missing_fields_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_missing_fields_denied) ... ok
+test_no_automatic_human_approval_in_client (tests.test_legal_os_case_view.CaseWorkspaceTests.test_no_automatic_human_approval_in_client) ... ok
+test_non_object_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_non_object_denied) ... ok
+test_render_status_is_existing_work_query (tests.test_legal_os_case_view.CaseWorkspaceTests.test_render_status_is_existing_work_query) ... ok
+test_saved_docx_exact_bytes (tests.test_legal_os_case_view.CaseWorkspaceTests.test_saved_docx_exact_bytes) ... ok
+test_saved_pdf_is_not_rerendered (tests.test_legal_os_case_view.CaseWorkspaceTests.test_saved_pdf_is_not_rerendered) ... ok
+test_unknown_action_denied_without_dispatch (tests.test_legal_os_case_view.CaseWorkspaceTests.test_unknown_action_denied_without_dispatch) ... ok
+test_unknown_document_format_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_unknown_document_format_denied) ... ok
+test_workspace_is_local_and_has_single_case_view (tests.test_legal_os_case_view.CaseWorkspaceTests.test_workspace_is_local_and_has_single_case_view) ... ok
+test_wrong_case_denied (tests.test_legal_os_case_view.CaseWorkspaceTests.test_wrong_case_denied) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.008s
+
+OK

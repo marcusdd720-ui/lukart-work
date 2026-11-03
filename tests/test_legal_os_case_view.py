@@ -3,8 +3,14 @@ from __future__ import annotations
 
 import unittest
 from uuid import uuid4
+
 from lukart_work.embedded_document_engine import EngineBoundaryError, SavedArtifact
-from lukart_work.legal_os_case_view import CASE_HTML, CASE_JS, CASE_CSS, read_case_action
+from lukart_work.legal_os_case_view import (
+    CASE_CSS,
+    CASE_HTML,
+    CASE_JS,
+    read_case_action,
+)
 from tests.test_embedded_document_engine import FakeOperator
 
 
