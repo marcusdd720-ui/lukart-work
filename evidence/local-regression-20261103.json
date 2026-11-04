@@ -1,0 +1,60 @@
+{
+  "evidence_version": "work-local-regression-20261103/1.0.0",
+  "observed_date": "2026-11-03",
+  "repository": "marcusdd720-ui/lukart-work",
+  "branch": "integration/legal-os-hidden-document-engine-v1",
+  "head_before_repair_commit": "754c8c6bb6dbb0c0519c142e3eb70d4fdb8d881b",
+  "local_suite": {
+    "command": "python -B -m unittest tests.test_legal_os_composer tests.test_legal_os_case_view tests.test_legal_os_demo tests.test_legal_os_demo_examples tests.test_legal_os_case_only_host tests.test_legal_os_case_title tests.test_legal_os_render_listing tests.test_legal_os_cli tests.test_finalization tests.test_ros_work_integration_contract -v",
+    "collected": 190,
+    "passed": 73,
+    "skipped": 117,
+    "failed": 0,
+    "skip_reason": "PostgreSQL-backed PB02 FinalizationTests require an isolated PostgreSQL DSN; no such DSN is configured locally."
+  },
+  "focused_windows_host_test": {
+    "module": "tests.test_legal_os_case_only_host",
+    "tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "critical_case": "test_invalid_embedded_session_token_fails_before_dispatch",
+    "result": "PASS on Windows after bounded request-body rejection fix"
+  },
+  "fix": {
+    "file": "lukart_work/operator_host.py",
+    "source_sha256": "8127f31ee5257107cb6d6428355fa7a5617df985e58acadd1eb39500bc2115ad",
+    "cause": "The handler rejected an invalid bearer token before consuming the request body, then closed the socket with unread bytes. Windows could reset the connection before the client received the intended 403 response.",
+    "correction": "Use reject_request to parse only one bounded Content-Length, send the rejection, and drain at most MAX_BODY+1 bytes without parsing or dispatch. Track body_consumed so post-dispatch denials do not attempt to drain an already consumed body."
+  },
+  "contract_repair": {
+    "contract_sha256": "7d293a2f9a8d258e0878cbc359922064e326908b563aa068b09b8f4b1e3b9cf4",
+    "test_sha256": "e26a4c7927a6fe2532c106c6d29e40f469e188d2bbfd9103bc12a6c27215f54e",
+    "focused_contract_tests": "7/7 PASS"
+  },
+  "stage11_golden_repair": {
+    "golden_sha256": "90e8b940ef0484ad93e166e92792d144fde4bb6385e03f87cf971fde4399097e",
+    "evidence": "evidence/stage11-render-identity-20261103.json",
+    "exact_ci_rerun": "PENDING"
+  },
+  "static_checks": {
+    "ruff_critical_rules": "PASS",
+    "python_compile": "PASS",
+    "json_contract_and_golden_parse": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "remaining_gates": [
+    "PB02 PostgreSQL-backed tests",
+    "authenticated HUMAN end-to-end acceptance",
+    "PB02/PB03 independent acceptance",
+    "legal/type admission for all three unsupported document types",
+    "independent review and certification",
+    "exact-head PR #84 CI rerun after repair commit",
+    "production release/deployment approval"
+  ],
+  "source_sha256": {
+    "tests/test_legal_os_case_only_host.py": "769a68a3cc59c7d670b292ebd5fcb609716cbb1dec3263d87d8b2c3203c59f48",
+    "tests/test_ros_work_integration_contract.py": "e26a4c7927a6fe2532c106c6d29e40f469e188d2bbfd9103bc12a6c27215f54e",
+    "contracts/ros_work/v1/integration-contract.json": "7d293a2f9a8d258e0878cbc359922064e326908b563aa068b09b8f4b1e3b9cf4",
+    "tests/golden_cases/stage11_render_identity.json": "90e8b940ef0484ad93e166e92792d144fde4bb6385e03f87cf971fde4399097e"
+  }
+}

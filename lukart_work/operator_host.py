@@ -3,12 +3,20 @@ from __future__ import annotations
 
 import argparse
 import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from pathlib import Path
 import runpy
 import socket
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from time import monotonic
 
+from lukart_work.embedded_document_engine import EngineBoundaryError, SavedArtifact
+from lukart_work.legal_os_case_view import (
+    CASE_CSS,
+    CASE_HTML,
+    CASE_JS,
+    read_case_action,
+    read_session_case_action,
+)
 from lukart_work.operator import GeneratorPismOperator
 from lukart_work.validation.rules import Violation, strict_json
 
@@ -108,7 +116,7 @@ Nowy projekt wymaga ponownego przeglądu i walidacji. Zapis nie zatwierdza pisma
 <section id="previewPages" aria-label="Strony zapisanego PDF" hidden></section>
 <iframe id="preview" title="Podgląd zapisanego PDF" sandbox hidden width="100%" height="700"></iframe></fieldset>
 <pre id="result" aria-live="polite"></pre>
-<script src="/client.js"></script></html>'''.encode('utf-8')
+<script src="/client.js"></script></html>'''.encode()
 CLIENT = ("const routes=" + json.dumps(ROUTES) + ";" + '''
 const token=document.getElementById('token'),route=document.getElementById('route'),
 request=document.getElementById('request'),send=document.getElementById('send'),
@@ -230,9 +238,11 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere}button{margin:4px;min-height:32p
 #pdfStatus{font-weight:bold}'''
 
 
-def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_preview=None) -> HTTPServer:
+def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_preview=None, case_only=False) -> HTTPServer:
     if not isinstance(operator, GeneratorPismOperator) or operator.binding is not None:
         raise ValueError("TRUSTED_CASE_OPERATOR_REQUIRED")
+    if type(case_only) is not bool:
+        raise ValueError("CASE_ONLY_FLAG_INVALID")
     if pdf_preview is not None and not callable(pdf_preview):
         raise ValueError("TRUSTED_PDF_PREVIEW_REQUIRED")
 
@@ -244,9 +254,13 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
         def log_message(self, *args):
             pass  # No tokens, request bodies, CASE identifiers or URLs in logs.
 
-        def reply(self, status, body, content_type="application/json"):
+        def reply(self, status, body, content_type="application/json", extra_headers=()):
             self.send_response(status)
             self.send_header("Content-Type", content_type)
+            for name, value in extra_headers:
+                if name not in {"Content-Disposition", "X-Content-SHA256"} or any(ord(char) < 32 for char in value):
+                    raise ValueError("INVALID_RESPONSE_HEADER")
+                self.send_header(name, value)
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
@@ -255,6 +269,12 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             self.send_header("Connection", "close")
             self.end_headers()
             self.wfile.write(body)
+            self.wfile.flush()
+            # Deliver the response before half-closing the send side.
+            try:
+                self.connection.shutdown(socket.SHUT_WR)
+            except OSError:
+                pass
             self.close_connection = True
 
         def boundary(self):
@@ -264,15 +284,12 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                     and self.headers.get_all("Sec-Fetch-Site") in
                     (None, ["same-origin"], ["none"]))
 
-        def reject_body(self, length):
-            self.reply(413, b'{"error":"BODY_LIMIT"}')
-            # Closing over unread upload bytes can reset Windows connections
-            # before the client receives 413. Discard only a bounded amount,
-            # after sending the rejection; never parse or dispatch this body.
+        def reject_body(self, length, *, status=413, body=b'{"error":"BODY_LIMIT"}'):
+            self.reply(status, body)
+            # Discard a bounded amount after sending the rejection; never parse or dispatch it.
             remaining = min(length, MAX_BODY + 1)
             deadline = monotonic() + 1
             try:
-                self.connection.shutdown(socket.SHUT_WR)
                 while remaining > 0 and (timeout := deadline - monotonic()) > 0:
                     self.connection.settimeout(timeout)
                     chunk = self.rfile.read1(min(remaining, 65536))
@@ -282,47 +299,87 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             except OSError:
                 pass  # The rejected connection is already being closed.
 
+        def reject_request(self, status, body):
+            lengths = self.headers.get_all("Content-Length") or []
+            # Untrusted or ambiguous framing cannot authorize an unbounded drain.
+            length = MAX_BODY + 1
+            if (len(lengths) == 1 and len(lengths[0]) <= 20
+                    and lengths[0].isascii() and lengths[0].isdigit()
+                    and self.headers.get("Transfer-Encoding") is None):
+                length = min(int(lengths[0]), MAX_BODY + 1)
+            return self.reject_body(length, status=status, body=body)
+
         def do_GET(self):
             if not self.boundary():
                 return self.reply(403, b'{"error":"FORBIDDEN"}')
+            if self.path == "/case":
+                return self.reply(200, CASE_HTML, "text/html; charset=utf-8")
+            if self.path == "/case.js":
+                return self.reply(200, CASE_JS, "text/javascript; charset=utf-8")
+            if self.path == "/case.css":
+                return self.reply(200, CASE_CSS, "text/css; charset=utf-8")
             if self.path == "/":
-                return self.reply(200, PAGE, "text/html; charset=utf-8")
-            if self.path == "/client.js":
+                return self.reply(200, CASE_HTML if case_only else PAGE, "text/html; charset=utf-8")
+            if self.path == "/client.js" and not case_only:
                 return self.reply(200, CLIENT, "text/javascript; charset=utf-8")
-            if self.path == "/client.css":
+            if self.path == "/client.css" and not case_only:
                 return self.reply(200, CSS, "text/css; charset=utf-8")
             self.reply(404, b'{"error":"NOT_FOUND"}')
 
         def do_POST(self):
+            body_consumed = False
             if not self.boundary():
-                return self.reply(403, b'{"error":"FORBIDDEN"}')
+                return self.reject_request(403, b'{"error":"FORBIDDEN"}')
             route = self.path.removeprefix("/api/")
-            if self.path != "/api/" + route or route not in ROUTES:
-                return self.reply(404, b'{"error":"NOT_FOUND"}')
+            allowed_routes = ("embedded_session",) if case_only else (*ROUTES, "embedded_case", "embedded_session")
+            if self.path != "/api/" + route or route not in allowed_routes:
+                return self.reject_request(404, b'{"error":"NOT_FOUND"}')
             auth = self.headers.get_all("Authorization") or []
             if len(auth) != 1 or not auth[0].startswith("Bearer "):
-                return self.reply(403, b'{"error":"FORBIDDEN"}')
+                return self.reject_request(403, b'{"error":"FORBIDDEN"}')
             token = auth[0][7:]
             try:
                 with operator.core.authority.session(token):
                     lengths = self.headers.get_all("Content-Length") or []
-                    if (len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdigit()
+                    if (len(lengths) != 1 or len(lengths[0]) > 20
+                            or not lengths[0].isascii() or not lengths[0].isdigit()
                             or self.headers.get("Transfer-Encoding") is not None
                             or self.headers.get_all("Content-Type") != ["application/json"]):
-                        return self.reply(400, b'{"error":"INVALID_REQUEST"}')
+                        return self.reject_request(400, b'{"error":"INVALID_REQUEST"}')
                     length = int(lengths[0])
                     if not 0 < length <= MAX_BODY:
                         return self.reject_body(length)
                     raw = self.rfile.read(length)
+                    body_consumed = True
                     if len(raw) != length:
-                        return self.reply(400, b'{"error":"INVALID_REQUEST"}')
+                        return self.reject_body(
+                            length - len(raw), status=400, body=b'{"error":"INVALID_REQUEST"}'
+                        )
+                    body_consumed = True
                     try:
                         payload = strict_json(raw.decode("utf-8"))
                     except (Violation, ValueError, UnicodeError, RecursionError):
                         return self.reply(400, b'{"error":"INVALID_REQUEST"}')
                     if not isinstance(payload, dict):
                         return self.reply(400, b'{"error":"INVALID_REQUEST"}')
-                    result = getattr(operator, route)(payload, token)
+                    result = (read_session_case_action(operator, payload, token)
+                              if route == "embedded_session" else
+                              read_case_action(operator, payload, token)
+                              if route == "embedded_case" else getattr(operator, route)(payload, token))
+                    if isinstance(result, SavedArtifact):
+                        if (
+                            not isinstance(result.filename, str)
+                            or not result.filename
+                            or any(char in result.filename for char in '\r\n"\\')
+                            or not isinstance(result.sha256, str)
+                            or len(result.sha256) != 64
+                            or any(char not in "0123456789abcdef" for char in result.sha256)
+                        ):
+                            raise ValueError("INVALID_SAVED_ARTIFACT_METADATA")
+                        return self.reply(200, result.data, result.mime_type, extra_headers=(
+                            ("Content-Disposition", f'attachment; filename="{result.filename}"'),
+                            ("X-Content-SHA256", result.sha256),
+                        ))
                     if isinstance(result, bytes):
                         if (route == 'query_finalization' and payload.get('operation') == 'ReadFinalArtifact'
                                 and payload.get('format') == 'PDF'
@@ -334,12 +391,19 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                             preview = pdf_preview(result)
                             return self.reply(200, json.dumps(preview, allow_nan=False).encode())
                         return self.reply(200, result, "application/octet-stream")
+                    if route == "embedded_session" and isinstance(result, dict):
+                        return self.reply(200, json.dumps(result, ensure_ascii=False,
+                                                          allow_nan=False).encode("utf-8"))
                     self.reply(200, result.model_dump_json().encode())
+            except EngineBoundaryError:
+                self.reply(403, b'{"error":"CASE_OPERATION_REJECTED"}')
             except Violation:
+                if not body_consumed:
+                    return self.reject_request(403, b'{"error":"FORBIDDEN"}')
                 self.reply(403, b'{"error":"FORBIDDEN"}')
             except (ValueError, UnicodeError):
                 self.reply(400, b'{"error":"INVALID_REQUEST"}')
-            except Exception:
+            except Exception:  # noqa: BLE001 - HTTP boundary must not leak internal details.
                 self.reply(500, b'{"error":"SERVICE_FAILED"}')
 
     return HTTPServer(("127.0.0.1", port), Handler)
@@ -350,12 +414,15 @@ def main():
     parser.add_argument("--config", type=Path, required=True,
                         help="Trusted local Python file defining build_operator(); never an uploaded CASE file")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--legal-os", action="store_true",
+                        help="Open the one-window LEGAL OS case workspace and hide legacy operator API")
     args = parser.parse_args()
     try:
         config = runpy.run_path(str(args.config.resolve()))
         factory = config["build_operator"]
-        server = create_server(factory(), args.port, pdf_preview=config.get('render_pdf_preview'))
-    except Exception:
+        server = create_server(factory(), args.port, pdf_preview=config.get('render_pdf_preview'),
+                               case_only=(args.legal_os or config.get('legal_os_case_only', False)))
+    except Exception:  # noqa: BLE001 - configuration errors must not expose credentials.
         parser.exit(1, "HOST_CONFIGURATION_FAILED: trusted CASE services and capabilities required\n")
     print(f"CASE operator: http://127.0.0.1:{server.server_port}/", flush=True)
     try:

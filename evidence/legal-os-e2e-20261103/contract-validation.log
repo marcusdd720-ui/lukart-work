@@ -1,0 +1,1 @@
+PASS: assess read-only; execute/package fail-closed

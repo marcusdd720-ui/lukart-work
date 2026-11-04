@@ -1,0 +1,111 @@
+{
+  "evidence_version": "stage11-render-identity-drift/1.0.0",
+  "observed_date": "2026-11-03",
+  "repository": "marcusdd720-ui/lukart-work",
+  "branch": "integration/legal-os-hidden-document-engine-v1",
+  "tested_head_before_repair": "754c8c6bb6dbb0c0519c142e3eb70d4fdb8d881b",
+  "ci_failure": {
+    "workflow": "Stage 11 Rendering Assurance",
+    "run_id": 41722563791,
+    "job_id": 126218877826,
+    "step": "Stage 11 rendering tests",
+    "test": "tests.test_stage11.Stage11RenderingTests.test_fresh_process_reproduction_is_stable",
+    "failure_location": "tests/test_stage11.py:54",
+    "tests_run": 20,
+    "failed": 1,
+    "other_stage11_tests_passed": 19,
+    "fresh_process_comparison": "PASS; first and second subprocess identities were identical",
+    "failure": "current source-derived identity differed from stale golden metadata"
+  },
+  "root_cause": {
+    "function": "lukart_work.validation.policy.validation_pin",
+    "rule": "SHA-256 over every .py and .sql file under lukart_work, with CRLF normalized to LF",
+    "source_inventory_at_prior_golden_commit": "74",
+    "source_inventory_at_candidate_head": "81",
+    "added_source_files": 7,
+    "modified_source_files": [
+      "lukart_work/finalization/service.py",
+      "lukart_work/operator_host.py"
+    ],
+    "current_validation_pin": "233eff95da02859a46559346d116c17faabb82f4e46ffdd50b30961b6b2a9b69",
+    "interpretation": "The package source expansion and modifications intentionally changed the validation source pin; dependent ValidationExecution, ValidationProjection, RenderModel and LayoutTree identities therefore changed."
+  },
+  "golden_repair": {
+    "file": "tests/golden_cases/stage11_render_identity.json",
+    "file_sha256_after_repair": "90e8b940ef0484ad93e166e92792d144fde4bb6385e03f87cf971fde4399097e",
+    "updated_fields": {
+      "layout": [
+        "09c5847e6d0a5e057f7b4902ebc20d1fdaba3ba1cf7c5a43c710ab5cbd382e07",
+        "06d9b68d5e89a4ef2b70b5d8b0a7a09c4a8f94edb0464f7be2e127c95a66749e"
+      ],
+      "model": [
+        "ed35e01b1b713085b91675a77b6a5a7e51502984dfca283c5ab78e35aa2367d1",
+        "c7d61fe2952b622f831311ca85ed248fadb7bbf1a806c14be27901f76466d5c3"
+      ],
+      "projection": [
+        "5701d3c237a93dca60f22be2f6a16eba2610bceea8eeca8a03e0eef12bcb2b7d",
+        "b88da87efd0ca04271c2a4d9609d20a814bfeac5d775e88e431ab9ed0c4a29ea"
+      ],
+      "validation": [
+        "b70eaf22278e00d8a7fd5053c3dbcb0e5f88127ab6cf6f42f098c755ce7243c4",
+        "32484e847dbb2fcb0e71a333b129965ebb79dae2f38b539b3d08a1163b534cd1"
+      ]
+    },
+    "preserved_fields": [
+      "docx",
+      "pdf",
+      "draft",
+      "semantic",
+      "plan",
+      "profile",
+      "renderer"
+    ],
+    "output_bytes_changed": false,
+    "test_code_changed": false
+  },
+  "local_validation": {
+    "python_version": "3.14.7",
+    "fresh_process_metadata": "PASS",
+    "source_derived_fields_match_updated_golden": "PASS",
+    "docx_pdf_golden_comparison": "NOT_VERIFIED_LOCALLY; CI uses Python 3.14.9 and its DOCX/PDF hashes matched the unchanged golden values"
+  },
+  "follow_up_drift": {
+    "tested_head": "4f5529b973bf9d94b38da85909f5dc95516914a0",
+    "ci_run_id": 41726846536,
+    "job_id": 126233780292,
+    "test": "tests.test_stage11.Stage11RenderingTests.test_fresh_process_reproduction_is_stable",
+    "result": "19/20 PASS; fresh-process metadata comparison is stable; golden comparison fails on layout, model, projection and validation only",
+    "root_cause": "The first golden refresh preceded the subsequent Windows embedded-session rejection fix in lukart_work/operator_host.py. validation_pin hashes every .py/.sql file under lukart_work, so that later source change invalidated the four dependent metadata fields again.",
+    "current_operator_host_sha256": "8127f31ee5257107cb6d6428355fa7a5617df985e58acadd1eb39500bc2115ad",
+    "current_validation_source_pin": "234de450e000ee88e4693261551ac7d16eb291d0bd7b6ba8466ef0fccae4442c",
+    "ci_identity": {
+      "layout": "d3ac5b36696de7a27cd51e12b57a6a7ecba06d558d474e1f68fc73af2bcc6e9a",
+      "model": "85a20c44759cd8d495778af57d1c14cb4e671aa1e2046119156d0796a676296e",
+      "projection": "4de401b2aef6ae665af1911b43031f8a62aa2fc44be0b96f5acba5f05a0b6fb4",
+      "validation": "345b211cc12cf72d4718333c5178773430829f7b523a298712ed9b70bd1e2ace"
+    },
+    "preserved_fields": [
+      "docx",
+      "pdf",
+      "draft",
+      "semantic",
+      "plan",
+      "profile",
+      "renderer"
+    ],
+    "local_validation": {
+      "windows_python_versions": [
+        "3.14.7",
+        "3.14.9"
+      ],
+      "metadata_matches_exact_ci": true,
+      "windows_docx_sha256": "ed3744193f3406bc333a19e2a76c50bc036959cbe4b5b22ae6e8bcc898f71810",
+      "windows_pdf_sha256": "712e5323c3a65df431a0ab0ac22fb5e57145e2fd6556f6894c589aeae5cb6f9e",
+      "linux_ci_docx_sha256": "2bb54e254fdc7ff403b876416116cfbc38c092845bb323a544017f8f6552f8d9",
+      "linux_ci_pdf_sha256": "7d04f3e7635183cbc4b4c1cf2203f57775aceaf66360f56c5f290b647ab9596f",
+      "docx_pdf_bytes": "NOT_BYTE_EQUIVALENT_ACROSS_WINDOWS_AND_LINUX; both Windows runtimes emit the same local bytes but differ from the Linux CI golden; preserve CI bytes and do not infer the exact platform cause without a separate controlled comparison"
+    },
+    "golden_sha256_after_follow_up_repair": "cd722415e774d3b1ce9f1c571a3d9d30b0257c90c86ddc45223c4c7e674a8d5c"
+  },
+  "next_gate": "Push the second signed golden repair and require fresh exact-head CI; Stage 11 remains NOT PASS until Python 3.14.9 CI passes."
+}

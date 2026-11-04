@@ -1,4 +1,4 @@
-"""Fail-closed checks for the planned ROS <-> WORK integration contract v1."""
+"""Fail-closed checks for the partially implemented ROS <-> WORK contract v1."""
 
 from __future__ import annotations
 
@@ -15,9 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "ros_work" / "v1" / "integration-contract.json"
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 
-# Exact planned package-read exception: native WORK authority only, never generic case export.
-PACKAGE_READ_OUTPUT = "immutable package identity and only exact final-package member bytes (which may contain private case content) under a separate native WORK tenant/case-scoped package-read capability; never raw credentials or original source-byte export"
-PACKAGE_READ_INVARIANT = "raw credentials and original source bytes never cross the operation envelope; private case content crosses only as exact final-package member bytes returned by ros.work.generator.read-package.v1 after explicit native WORK tenant/case-scoped package-read authorization and HG-09; the operation remains blocked until its adapter and review gates are admitted"
+# Exact package-read exception: native WORK authority only, HUMAN-only, never generic case export.
+PACKAGE_READ_OUTPUT = "immutable package identity and only exact final-package member bytes (which may contain private case content) under a separate native WORK tenant/case-scoped HUMAN-only package-read capability; SERVICE and AI actors are denied; never raw credentials or original source-byte export"
+PACKAGE_READ_INVARIANT = "raw credentials and original source bytes never cross the operation envelope; private case content crosses only as exact final-package member bytes returned by ros.work.generator.read-package.v1 after explicit native WORK tenant/case-scoped HUMAN-only package-read authorization and HG-09; SERVICE and AI actors are denied; the operation remains blocked until its adapter and review gates are admitted"
 
 
 def validate_contract(value: object) -> None:
@@ -32,7 +32,7 @@ def validate_contract(value: object) -> None:
         raise ValueError("CONTRACT_KEYS")
     if value["contract_id"] != "urn:lukart:ros-work:generator-integration:1.0.0":
         raise ValueError("CONTRACT_ID")
-    if value["contract_version"] != "1.0.0" or value["status"] != "PLANNED_NOT_IMPLEMENTED":
+    if value["contract_version"] != "1.0.0" or value["status"] != "PARTIALLY_IMPLEMENTED_READ_ONLY_ONLY_PRODUCTION_BLOCKED":
         raise ValueError("NO_FALSE_IMPLEMENTATION")
     try:
         observed_date = date.fromisoformat(value["observed_date"])
@@ -116,7 +116,10 @@ def validate_contract(value: object) -> None:
         for item in operations for key in ("effect", "state", "required_authority", "output")
     ):
         raise ValueError("OPERATION_VALUE")
-    if operations[0]["effect"] != "READ_ONLY" or operations[0]["state"] != "PLANNED":
+    if (
+        operations[0]["effect"] != "READ_ONLY"
+        or operations[0]["state"] != "IMPLEMENTED_READ_ONLY_CANDIDATE_LOCAL_VALIDATION_PASS_CI_PENDING"
+    ):
         raise ValueError("ASSESS_BOUNDARY")
     if operations[0]["required_gates"] != []:
         raise ValueError("ASSESS_GATES")
@@ -129,7 +132,8 @@ def validate_contract(value: object) -> None:
         raise ValueError("PACKAGE_GATES")
     if (
         operations[2]["effect"] != "SCOPED_ARTIFACT_READ"
-        or operations[2]["required_authority"] != "separate scoped WORK package-read capability"
+        or operations[2]["required_authority"]
+        != "separate scoped HUMAN-only WORK package-read capability; SERVICE and AI actors are denied"
         or operations[2]["output"] != PACKAGE_READ_OUTPUT
     ):
         raise ValueError("PACKAGE_READ_SCOPE")

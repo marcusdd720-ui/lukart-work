@@ -1,0 +1,7 @@
+PASS explicit synthetic confirmation; no automatic save
+PASS round trip restores every editable field and allows incomplete drafts
+PASS delete resets example, survives reload and preserves unrelated storage
+PASS corrupt, unknown and credential-shaped records are refused without mutation
+PASS storage denial and quota errors never report successful save or deletion
+PASS local save and restore leave production controls disabled
+{"scope":"NEW_LOCAL_DRAFT_ONLY","passed":6,"failed":0,"network_requests":0}

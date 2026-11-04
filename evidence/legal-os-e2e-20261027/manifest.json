@@ -1,0 +1,82 @@
+﻿{
+    "schema":  "legal-os-integration-evidence-v1",
+    "recorded_at":  "2026-10-27T05:19:23.5926688+01:00",
+    "repository":  "marcusdd720-ui/lukart-work",
+    "branch":  "integration/legal-os-hidden-document-engine-v1",
+    "head":  "64c42579819381988707f9b45c496ce84c01eb1e",
+    "uncommitted":  true,
+    "status":  "LEGAL OS E2E: PARTIAL",
+    "tests":  {
+                  "composer_contracts":  17,
+                  "changed_view":  14,
+                  "simulated_dom_http":  5,
+                  "failures":  0
+              },
+    "browser_engine_e2e":  "NOT VERIFIED",
+    "human_authentication_executed":  false,
+    "database_contacted":  false,
+    "issue80_modified":  false,
+    "deployment_gate":  "BLOCKED",
+    "files":  [
+                  {
+                      "path":  "lukart_work/legal_os_case_view.py",
+                      "bytes":  44598,
+                      "sha256":  "d479bd5bb8b23e1b36736893650134bb0fe182ccdc684bd8468455dea8c128f1"
+                  },
+                  {
+                      "path":  "lukart_work/legal_os_composer.py",
+                      "bytes":  12635,
+                      "sha256":  "5e880ed7b6800d9574c4eed463e651125a1727f832606714669fa843617c2e90"
+                  },
+                  {
+                      "path":  "tests/test_legal_os_composer.py",
+                      "bytes":  12388,
+                      "sha256":  "6aef24fd91d0b8f90691fda9b238ad9f2feb591dbef7a4d192da2876b85a93fa"
+                  },
+                  {
+                      "path":  "tests/test_legal_os_composer_dom.cjs",
+                      "bytes":  8021,
+                      "sha256":  "b8dacfa9dafa3d8c3279ebd2af2544816218a4b701bd8dd8a42082c1be0e89d3"
+                  },
+                  {
+                      "path":  "docs/LEGAL_OS_E2E_INTEGRATION_20261027.md",
+                      "bytes":  6821,
+                      "sha256":  "745342a9ef0a3ce24f4912f46acfbf8f8d2daf4cb557b760b406b913b2254be0"
+                  },
+                  {
+                      "path":  "evidence/legal-os-e2e-20261027/before.json",
+                      "bytes":  251,
+                      "sha256":  "a101da548061f216a31e2ddd47602a7c44baece473eeeca3107d6e4d50ed77fd"
+                  },
+                  {
+                      "path":  "evidence/legal-os-e2e-20261027/case-view-tests.log",
+                      "bytes":  1850,
+                      "sha256":  "1960718ddc701b4bc40142ebd64d2005dca58654804bde7359f0ac8f6cb84fcd"
+                  },
+                  {
+                      "path":  "evidence/legal-os-e2e-20261027/case.html",
+                      "bytes":  9595,
+                      "sha256":  "cf45531282ba8f04ef3ddfeed05a5e9094ae3488eeaaef4f4a18fc3003b790da"
+                  },
+                  {
+                      "path":  "evidence/legal-os-e2e-20261027/case.js",
+                      "bytes":  25785,
+                      "sha256":  "d2969a6ee6fad81c05e88bc6f768c5daaf2f5a851efee95dfaba0dacc68da430"
+                  },
+                  {
+                      "path":  "evidence/legal-os-e2e-20261027/composer-dom-tests.log",
+                      "bytes":  744,
+                      "sha256":  "31a87b08fddc330f522990b75228427062fa0da4e8bb0d19e29185d5089158d7"
+                  },
+                  {
+                      "path":  "evidence/legal-os-e2e-20261027/composer-tests.log",
+                      "bytes":  4613,
+                      "sha256":  "5cbb0a0efeace59ec4888ae80fd00416a4430df463fad91873c9037999326473"
+                  },
+                  {
+                      "path":  "evidence/legal-os-e2e-20261027/test-summary.json",
+                      "bytes":  156,
+                      "sha256":  "b9cd317906dc05425f50effd16d48e1b7b4a62db7fc37b6b98867a6e79c5a534"
+                  }
+              ]
+}

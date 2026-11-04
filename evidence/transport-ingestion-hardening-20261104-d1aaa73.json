@@ -1,0 +1,43 @@
+{
+  "base_sha": "d1aaa739a85d0230b78bf5816e8e3d82ebced242",
+  "changes": [
+    "Unread PDF page forces NEEDS_OCR and removes admissible fragments/candidates.",
+    "Historical EXTRACTED results carrying OCR_REQUIRED are denied at fact admission.",
+    "HTTP rejection uses bounded byte/time draining and a flushed graceful send-side shutdown.",
+    "Ambiguous framing, oversized Content-Length and Transfer-Encoding are rejected with bounded drain.",
+    "Consumed request bodies are not drained a second time.",
+    "Stage11/12 controllers refuse redirects and suppress response error bodies.",
+    "Stage02/Stage13 workflow ownership is scoped to the same branch across push and PR."
+  ],
+  "evidence_version": "transport-ingestion-hardening-local/1.0.0",
+  "exact_ci_validation": "PENDING_ON_NEW_COMMIT_SHA",
+  "local_validation": {
+    "focused_unittest_modules": [
+      "tests.test_ingestion_completeness",
+      "tests.test_operator_rejection_transport",
+      "tests.test_delivery_control_transport_security",
+      "tests.test_workflow_candidate_ownership",
+      "tests.test_operator_host"
+    ],
+    "focused_unittest_result": "PASS",
+    "fresh_process_outputs_identical": true,
+    "fresh_process_runs": 2,
+    "full_ruff": "NOT_CLAIMED; pre-existing lint findings outside this patch remain",
+    "ruff_changed_runtime_select_F": "PASS",
+    "ruff_new_tests_select_I001_B023_SIM117": "PASS",
+    "source_derived_render_identity_matches_golden": true
+  },
+  "observed_date": "2026-11-04",
+  "repository": "marcusdd720-ui/lukart-work",
+  "scope_exclusions": [
+    "Generator Next experiment excluded; Generator Pism 2.0 remains frozen.",
+    "H5-SYNTH-01 remains review-only and is not admitted as a product type.",
+    "No native execute/read-package authority or production deployment is inferred."
+  ],
+  "stage10_report": {
+    "previous_report_tests": 873,
+    "stage_10_closed": false,
+    "status": "STALE_AFTER_SOURCE_AND_TEST_CHANGES; exact-SHA CI must regenerate"
+  },
+  "validation_source_pin_after": "f1b060c0259ad5bf6f6893994e387a55c5c2bbdfffb2fe780e1460f4cd063532"
+}

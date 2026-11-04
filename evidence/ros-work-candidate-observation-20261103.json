@@ -1,0 +1,74 @@
+{
+  "evidence_version": "ros-work-candidate-observation/1.0.0",
+  "observed_at": "2026-11-03T22:46:41.5207263+01:00",
+  "purpose": "Ephemeral candidate status kept outside the normative ROS-WORK v1 contract.",
+  "work": {
+    "repository": "marcusdd720-ui/lukart-work",
+    "ref": "integration/legal-os-hidden-document-engine-v1",
+    "commit": "754c8c6bb6dbb0c0519c142e3eb70d4fdb8d881b",
+    "working_tree": "DIRTY_UNCOMMITTED_REPAIRS",
+    "pull_request": 84,
+    "pull_request_state": "DRAFT",
+    "remote_ci": {
+      "stage10_full_regression": {
+        "run_id": 41722563850,
+        "status": "FAIL",
+        "summary": "859 tests; 1 failure and 1 error; contract schema and Stage 11 golden repaired locally"
+      },
+      "stage11_rendering": {
+        "run_id": 41722563791,
+        "status": "FAIL",
+        "summary": "stale source-derived golden metadata repaired locally"
+      },
+      "stage12_procedure": {
+        "run_id": 41722563703,
+        "status": "FAIL",
+        "summary": "cascading Stage 11 rendering golden failure"
+      },
+      "stage13_full_regression": {
+        "run_id": 41722563830,
+        "status": "FAIL",
+        "summary": "same Stage 11 rendering golden failure"
+      },
+      "generator_pism_synthetic_e2e": {
+        "run_id": 41722563807,
+        "status": "SUCCESS",
+        "scope": "synthetic technical E2E only; not deployment or product certification"
+      },
+      "ocr_createcase_acceptance": {
+        "run_id": 41722563683,
+        "status": "SUCCESS"
+      }
+    },
+    "repair_commit_and_exact_head_ci": "PENDING"
+  },
+  "ros": {
+    "repository": "marcusdd720-ui/lukart-ros",
+    "ref": "h2/ros-work-native-corequery-verified-20261103",
+    "commit": "fc4c27b043cf9af4de4c420e3d6b37f9d0e1cc60",
+    "working_tree": "DIRTY_UNCOMMITTED",
+    "pull_request": 381,
+    "pull_request_state": "DRAFT",
+    "remote_ci": "SUCCESS_FOR_COMMITTED_HEAD_ONLY_NOT_LOCAL_WORKTREE",
+    "local_full_regression": "IN_PROGRESS; log last observed at 86%; not yet an exact-final-tree PASS"
+  },
+  "adapter_scope": {
+    "implemented": [
+      "ros.work.generator.assess.v1"
+    ],
+    "native_work_route": "query_core",
+    "native_work_operation": "GetCaseHead",
+    "read_only": true,
+    "writes_enabled": false,
+    "execute_enabled": false,
+    "package_read_enabled": false
+  },
+  "production_gates": {
+    "product_baseline": "PLANNED",
+    "supported_document_types": 0,
+    "pb02_pb03_independent_acceptance": "NOT_VERIFIED",
+    "authenticated_human_e2e": "NOT_VERIFIED",
+    "certification": "NOT_VERIFIED",
+    "production_release": "NOT_AUTHORIZED"
+  }
+}

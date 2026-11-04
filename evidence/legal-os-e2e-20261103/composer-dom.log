@@ -1,0 +1,6 @@
+PASS initial gate and authoritative plan prefilling
+PASS required form data prevents write
+PASS one interface dispatches save/generate/validate/render and both downloads
+PASS write rejection locks controls without automatic retry
+PASS late context response cannot repopulate a cleared session
+5/5 PASS; synthetic DOM/HTTP only; live engine/browser E2E NOT VERIFIED

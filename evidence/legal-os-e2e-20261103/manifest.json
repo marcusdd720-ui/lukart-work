@@ -1,0 +1,68 @@
+{
+  "evidence_version": "legal-os-local-e2e/1.0.0",
+  "observed_at_utc": "2026-11-03T20:10:27.364996+00:00",
+  "repository": "marcusdd720-ui/lukart-work",
+  "branch": "integration/legal-os-hidden-document-engine-v1",
+  "base_head": "64c42579819381988707f9b45c496ce84c01eb1e",
+  "working_tree": "DIRTY_UNCOMMITTED",
+  "ros_candidate_head": "fc4c27b043cf9af4de4c420e3d6b37f9d0e1cc60",
+  "validation_scope": "synthetic_and_local_only",
+  "results": {
+    "unit-tests.log": {
+      "exit_code": 0,
+      "sha256": "07c65427faed82500acbefe6b3de68da1f5990a85182d37104494b28ef3fbb62"
+    },
+    "composer-dom.log": {
+      "exit_code": 0,
+      "sha256": "cb2b85df49a8364061c30b02a87572396f31b7466f4ec2547cb26f2fdf48358c"
+    },
+    "demo-draft.log": {
+      "exit_code": 0,
+      "sha256": "0cb9ca63756b7015480bc6e4f656125d379d39f70de41fb5acda3a92b11ff1cf"
+    },
+    "ruff.log": {
+      "exit_code": 0,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    "mypy.log": {
+      "exit_code": 0,
+      "sha256": "71144743c83babea384888a735db0c4daba3d4d7b7942b6839984bd5c21b52bb"
+    },
+    "syntax.log": {
+      "exit_code": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "contract-validation.log": {
+      "exit_code": 0,
+      "sha256": "458c5e9dca284549f749c16a0bfda5a07141ac91ff3c3aa15f1b187845aa1c7d"
+    }
+  },
+  "source_sha256": {
+    "lukart_work/operator_host.py": "8547a9cb76117aba43f43f1b64f9b217c8be1176fe4dce84e35c019142fbe249",
+    "lukart_work/legal_os_case_view.py": "5c757aca45704ddebc99b1ca561b13e276bf93d0ec83e724024ba8cad1c55d11",
+    "lukart_work/legal_os_composer.py": "92f3239a5de3ca6ec147ad56a4fa4d5eecaa7906d7c305a3f42d8ba9cd5dcaa1",
+    "lukart_work/legal_os_demo.py": "0fa70a8c4890e73b560f848c02bfccc2c509537c89fb5e0aa95c3d3eba1115aa",
+    "lukart_work/legal_os_demo.js": "59008cc707a61b85eafef8b92e7b082c0c5fb21e40cbc345d0dae167f3ee174b",
+    "tests/test_legal_os_case_view.py": "7d97373143983b0df69cdc9222445687db30e33b8f6e5754c5e79d601b0dc78e",
+    "tests/test_legal_os_composer.py": "f36f5ee3cf00b66069a8c98aba36ff13a8c69a926b480fca3e689091aa698e94",
+    "tests/test_legal_os_composer_dom.cjs": "b8dacfa9dafa3d8c3279ebd2af2544816218a4b701bd8dd8a42082c1be0e89d3",
+    "tests/test_legal_os_demo.py": "ad2e44643979ca9164378d3053d1e14565f98ad363c36ed617e7d1d499859df1",
+    "tests/test_legal_os_demo_examples.py": "e23fdc2edf5b6d2a69178ce5abdaf25867cc04a686440231a6d0d4a64f11ce93",
+    "tests/test_legal_os_demo_draft.cjs": "f0764a48fb78fee4f686fb6c5caed65a76281ee507491c1594f6598604f197f0",
+    "tests/test_legal_os_case_only_host.py": "769a68a3cc59c7d670b292ebd5fcb609716cbb1dec3263d87d8b2c3203c59f48",
+    "tests/test_legal_os_case_title.py": "73a6609c558acc18e5fe1638e2e895234ad99624f143195473002ca087664460",
+    "tests/test_legal_os_render_listing.py": "9853e5459f21cd36e9342470ba7e00febde85108a30fc4a6f8086b367833eb6c",
+    "tests/test_legal_os_cli.py": "f383df82a47eedd55a3e982273a05c13516e859f245653a1048ec6ad30988174",
+    "contracts/ros_work/v1/integration-contract.json": "1fd126823dc365b12e15a3cf8e508e829bdbfc43e9bf2ea37c487dfbdd899530",
+    "docs/ROS_WORK_CAPABILITY_GAP_V1.md": "abe4190b4f9b989fee499ac54164a0853956cc512f79d78cc527d9a57db40b02",
+    "docs/LEGAL_OS_E2E_INTEGRATION_20261027.md": "745342a9ef0a3ce24f4912f46acfbf8f8d2daf4cb557b760b406b913b2254be0"
+  },
+  "not_verified": [
+    "authenticated HUMAN end-to-end session",
+    "live PostgreSQL-backed operator-host execution on these exact candidates",
+    "exact-SHA GitHub CI for this dirty WORK working tree",
+    "independent exact-SHA review",
+    "legal/type admission",
+    "production release or deployment"
+  ]
+}
