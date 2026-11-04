@@ -83,6 +83,22 @@ class FactEvidenceTests(unittest.TestCase):
         fact = self.fapply('ConfirmFact', {'decision': decision.model_dump(mode='json')}, fact)[0].refs[0]
         return fact, evidence, extraction, decision
 
+    def test_unread_pdf_page_denies_candidate_review_without_writes(self):
+        from tests.test_ingestion_completeness import mixed_pdf
+        source = self.source(mixed_pdf(), 'application/pdf')
+        extraction = self.ingest(source)
+        self.assertEqual(extraction.body.status, 'NEEDS_OCR')
+        before = storage.raw_state(self.admin)
+        request = self.frequest('ReviewCandidate', dict(source_id=str(source),
+            run_id=str(extraction.run_id), result_hash=digest(extraction), candidate_index=0,
+            expected_review_revision=0, disposition='ADMIT',
+            description='Synthetic incomplete source', statement='Synthetic assertion'))
+        result = self.fexecute(request)
+        self.assertIsInstance(result, DomainError)
+        self.assertEqual(result.code, 'GATE_DENIED')
+        self.assertEqual(storage.raw_state(self.admin), before)
+        self.assertFalse(self.matrix().candidate_reviews)
+
     def test_golden_explicit_admission_and_confirmation_preserve_history(self):
         snapshot = self.snapshot()
         self.accept(snapshot)

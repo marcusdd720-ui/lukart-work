@@ -338,3 +338,11 @@ Exact-SHA CI on a21858eaf241b485b9e60557ad967a5b4f0ec2d0:
 Only layout, model, projection, and validation in tests/golden_cases/stage11_render_identity.json were refreshed from the exact CI-emitted identity. The Linux CI DOCX/PDF hashes and draft, semantic, plan, profile, and renderer identities remain unchanged. Two independent Windows fresh processes reproduced all source-derived CI fields and each other. Windows DOCX/PDF bytes differ from Linux CI; the CI golden bytes are preserved, and no cause is inferred from that platform difference.
 
 Evidence receipt: evidence/stage11-render-identity-20261104-a21858.json. This is a source-derived metadata refresh only. It does not convert the pre-refresh CI failures into PASS. Fresh exact-head Stage 11/12/13 CI, Stage 12 full regression and Stage 10 integrity remain required.
+
+### 2026-11-04 transport and evidence-completeness hardening
+
+Integrated the bounded Windows rejection and response-close fixes, the PDF unread-page fail-closed rule, historical OCR_REQUIRED fact-admission denial, controller bearer-token redirect protection, and branch-scoped workflow concurrency ownership. Generator Next was deliberately excluded; Generator Pism 2.0 remains frozen. H5-SYNTH-01 remains a review-only candidate and is not promoted into the supported product catalogue.
+
+Two independent fresh processes reproduced the updated source-derived render identity locally. Only layout, model, projection and validation metadata were refreshed; the Linux CI DOCX/PDF hashes and semantic/render metadata remain unchanged. Focused local transport, ingestion, delivery-control, workflow-ownership and operator-host tests passed. New-test Ruff rules (I001/B023/SIM117) and runtime F checks passed; full-file Ruff findings outside this patch are not represented as clean.
+
+The previously committed Stage10 report (873 tests) is stale after the new source/test changes. It is not evidence for this candidate SHA. Exact-SHA Stage12/Stage02 CI must regenerate the Stage10 report and manifest; the generated-evidence gate must pass on the resulting commit. Evidence receipt: evidence/transport-ingestion-hardening-20261104-d1aaa73.json.

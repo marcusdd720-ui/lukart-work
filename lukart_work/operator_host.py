@@ -269,6 +269,12 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             self.send_header("Connection", "close")
             self.end_headers()
             self.wfile.write(body)
+            self.wfile.flush()
+            # Deliver the response before half-closing the send side.
+            try:
+                self.connection.shutdown(socket.SHUT_WR)
+            except OSError:
+                pass
             self.close_connection = True
 
         def boundary(self):
@@ -280,13 +286,10 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
 
         def reject_body(self, length, *, status=413, body=b'{"error":"BODY_LIMIT"}'):
             self.reply(status, body)
-            # Closing over unread upload bytes can reset Windows connections
-            # before the client receives 413. Discard only a bounded amount,
-            # after sending the rejection; never parse or dispatch this body.
+            # Discard a bounded amount after sending the rejection; never parse or dispatch it.
             remaining = min(length, MAX_BODY + 1)
             deadline = monotonic() + 1
             try:
-                self.connection.shutdown(socket.SHUT_WR)
                 while remaining > 0 and (timeout := deadline - monotonic()) > 0:
                     self.connection.settimeout(timeout)
                     chunk = self.rfile.read1(min(remaining, 65536))
@@ -298,9 +301,11 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
 
         def reject_request(self, status, body):
             lengths = self.headers.get_all("Content-Length") or []
-            length = 0
-            if (len(lengths) == 1 and lengths[0].isascii()
-                    and lengths[0].isdigit() and len(lengths[0]) <= 10):
+            # Untrusted or ambiguous framing cannot authorize an unbounded drain.
+            length = MAX_BODY + 1
+            if (len(lengths) == 1 and len(lengths[0]) <= 20
+                    and lengths[0].isascii() and lengths[0].isdigit()
+                    and self.headers.get("Transfer-Encoding") is None):
                 length = min(int(lengths[0]), MAX_BODY + 1)
             return self.reject_body(length, status=status, body=body)
 
@@ -336,7 +341,8 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             try:
                 with operator.core.authority.session(token):
                     lengths = self.headers.get_all("Content-Length") or []
-                    if (len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdigit()
+                    if (len(lengths) != 1 or len(lengths[0]) > 20
+                            or not lengths[0].isascii() or not lengths[0].isdigit()
                             or self.headers.get("Transfer-Encoding") is not None
                             or self.headers.get_all("Content-Type") != ["application/json"]):
                         return self.reject_request(400, b'{"error":"INVALID_REQUEST"}')
@@ -344,6 +350,7 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                     if not 0 < length <= MAX_BODY:
                         return self.reject_body(length)
                     raw = self.rfile.read(length)
+                    body_consumed = True
                     if len(raw) != length:
                         return self.reject_body(
                             length - len(raw), status=400, body=b'{"error":"INVALID_REQUEST"}'
