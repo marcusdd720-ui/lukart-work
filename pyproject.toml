@@ -19,9 +19,10 @@ dependencies = [
 [project.optional-dependencies]
 postgres = ["psycopg[binary]==3.3.3"]
 ingestion = ["pypdf==6.10.0", "Pillow==13.0.0"]
+windows-auth = ["pyspnego==0.12.4; sys_platform == 'win32'"]
 
 [tool.setuptools.packages.find]
-include = ["lukart_work*"]
+include = ["lukart_work*", "native_windows*"]
 
 [tool.setuptools.package-data]
 "lukart_work" = ["operator_preview.js", "operator_intake.js", "operator_editor.js"]

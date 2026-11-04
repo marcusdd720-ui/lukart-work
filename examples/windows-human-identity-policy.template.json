@@ -1,0 +1,6 @@
+{
+  "schema": "urn:lukart:work:WindowsHumanIdentityPolicy:1.0.0",
+  "policy_id": "LOCAL-ADMIN-POLICY-REPLACE",
+  "session_ttl_seconds": 900,
+  "principals": []
+}

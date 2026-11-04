@@ -14,7 +14,7 @@ stream = io.StringIO()
 suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"), top_level_dir=str(ROOT))
 result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
 files = [
-    p for folder in ("lukart_work", "tests", "scripts")
+    p for folder in ("lukart_work", "native_windows", "tests", "scripts")
     for p in (ROOT / folder).rglob("*")
     if p.is_file() and p.suffix in (".py", ".sql", ".ps1") and "__pycache__" not in p.parts
 ]
