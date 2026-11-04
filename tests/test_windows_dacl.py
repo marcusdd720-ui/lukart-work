@@ -1,4 +1,8 @@
+import os
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from native_windows.dacl import WindowsDaclError, validate_acl_entries
 
@@ -59,6 +63,18 @@ class WindowsDaclPolicyTests(unittest.TestCase):
                         owner_sid=ADMINS,
                     )
 
+    @unittest.skipUnless(os.name == "nt", "Windows trusted host boundary only")
+    def test_trusted_host_module_checks_acl_before_execution(self):
+        from examples.human_case_operator_host import trusted_module
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "trusted_host.py"
+            path.write_text("marker = 'loaded'\n", encoding="utf-8")
+            with patch.dict(os.environ, {"LUKART_TRUSTED_CASE_HOST": str(path)}):
+                with patch("examples.human_case_operator_host.verify_protected_file") as verifier:
+                    module = trusted_module("LUKART_TRUSTED_CASE_HOST")
+            self.assertEqual(module["marker"], "loaded")
+            verifier.assert_called_once_with(path.resolve())
     def test_malformed_acl_is_rejected(self):
         for entries in (
             None,
