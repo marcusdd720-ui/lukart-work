@@ -291,7 +291,7 @@ def run():
             "case_id": payload["case_id"],
             "render_id": render_id,
         })
-        package = FinalPackageRecord.model_validate(package_json)
+        package = FinalPackageRecord.model_validate_json(json.dumps(package_json, ensure_ascii=False, allow_nan=False))
         require(tuple(member.name for member in package.members) == FINAL_PACKAGE_MEMBER_NAMES,
                 "EXACT_TEN_PACKAGE_MEMBERS_REQUIRED")
         require(len(package.members) == 10, "TEN_PACKAGE_MEMBERS_REQUIRED")
