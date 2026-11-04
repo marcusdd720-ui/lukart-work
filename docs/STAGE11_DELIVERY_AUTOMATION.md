@@ -325,3 +325,16 @@ path must bind the tested source to an immutable SHA and assert that identity in
 runner before executing candidate code.
 
 Exact identity first. Trigger second. Evidence last.
+
+### 2026-11-04 Stage 11 source-derived identity refresh
+
+The exact candidate a21858eaf241b485b9e60557ad967a5b4f0ec2d0 changes lukart_work/finalization/service.py to verify each loaded final-package member against the independent immutable package-manifest digest. validation_pin() hashes all 81 .py/.sql files under lukart_work, so the normalized source pin changed from 234de450e000ee88e4693261551ac7d16eb291d0bd7b6ba8466ef0fccae4442c to 59fbffcb42eabe3dae56806d9c6838df5f20c31840e56abdb76b09f68086646f. The dependent validation, projection, model, and layout provenance identities therefore changed deterministically.
+
+Exact-SHA CI on a21858eaf241b485b9e60557ad967a5b4f0ec2d0:
+- Stage 11 run 41795414525, job 126458239486: 19/20 PASS; the only failure was the stale four-field identity comparison. The test's two fresh-process outputs were equal.
+- Stage 12 run 41795414551, job 126458239726: focused Stage 09 and Stage 10 tests passed; Stage 12 procedure, full regression and Stage 10 integrity steps were skipped because Stage 11 failed.
+- Stage 13 run 41795414694, job 126458240746: 872/873 PASS; the sole failure was the same Stage 11 identity comparison.
+
+Only layout, model, projection, and validation in tests/golden_cases/stage11_render_identity.json were refreshed from the exact CI-emitted identity. The Linux CI DOCX/PDF hashes and draft, semantic, plan, profile, and renderer identities remain unchanged. Two independent Windows fresh processes reproduced all source-derived CI fields and each other. Windows DOCX/PDF bytes differ from Linux CI; the CI golden bytes are preserved, and no cause is inferred from that platform difference.
+
+Evidence receipt: evidence/stage11-render-identity-20261104-a21858.json. This is a source-derived metadata refresh only. It does not convert the pre-refresh CI failures into PASS. Fresh exact-head Stage 11/12/13 CI, Stage 12 full regression and Stage 10 integrity remain required.
