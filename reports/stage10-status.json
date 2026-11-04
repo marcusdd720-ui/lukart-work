@@ -1,6 +1,6 @@
 {
   "stage": "10 Validation Engine",
-  "tests": 899,
+  "tests": 906,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
@@ -89,6 +89,9 @@
     "lukart_work/validation/policy.py": "fe572c23787e07d024aa3f5351b88da66f42f3d91a7af8000eeee3265e3231a7",
     "lukart_work/validation/rules.py": "47579a6e00576da2b75d2dcc11b0396beec14f992340e4ce8fbaafbd69648d60",
     "lukart_work/validation/service.py": "be6d5baf4a6d922671c56dddb81a70516abc545abb337f06357c8bdf7ee90bae",
+    "native_windows/__init__.py": "f6e50ba377cfb60531f6006c24e06cb98a6797f34950c2ed896d5193e30da094",
+    "native_windows/frontend.py": "02ac988c0de62794bf1f11b8ca54f97a0538342c27d970585c967b4d0bffa5fe",
+    "native_windows/windows_identity.py": "c40992921c4c55f25a61ca9b560bd3410dcf77814777c1f57e7613f26932bf3d",
     "scripts/check_cross_repo_contract.py": "492483b908de0d155c07eed8708c31c39edaf7741fbb3fef193a9e2a9d69742d",
     "scripts/check_stage03_integrity.py": "27f55fd57f27104dcbcb61c50b9b90d12ba2aa286be61635eca875484d26a363",
     "scripts/check_stage04_integrity.py": "1c5c23f79710a70f7e572919282f4859a0f5014530542d2869e68c25308dd7c6",
@@ -125,8 +128,8 @@
     "scripts/verify_stage07.py": "cabe5c0c41b6bd70ff7a8edea2d0f9b52f1e3b023f37868d97c3ce9b2987a6d4",
     "scripts/verify_stage08.py": "4e78763edee872702e4e7382d85a02d19ddc7064b04935ee87d3c6df45a71b14",
     "scripts/verify_stage09.py": "de0f4a9305a41e273cb28da02221cc3e5a2a112e35632c499bb1b709fce7353c",
-    "scripts/verify_stage10.py": "5f557ba95207f8de9c1a25b3f9007214aa2f1d7c3f0eaf1572262612cb9c69bf",
-    "scripts/verify_stage13.py": "2d456ed5e01cec361dba3e981356391120768fe84fe5600057ac0c5b1a1e2236",
+    "scripts/verify_stage10.py": "ea58758c5a7a9e50999d62de13ac4e4084f669f40733151adaf00d22aea6d0a7",
+    "scripts/verify_stage13.py": "332e8d3b158674dc03a07f5d9cc6c2aa28ac0f7b37eb0e92246856518ca2049c",
     "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "tests/fixtures.py": "2fb1f6982ac34ade2ab164828e67f219c91dda8bebde89d4e4ee2fa6485d9b0d",
     "tests/ocr_intake_acceptance.py": "89138dd5f06c41acd979e215b7f23d22c92d5becd13822969d0c5435036ce824",
@@ -186,6 +189,8 @@
     "tests/test_stage12.py": "c336869453438b19b0a9764fa22d40ba5fe57d10f09daed5f897cae8626860c9",
     "tests/test_stage12_delivery_control.py": "f1693b4b59a36b82144001086996d5ad38d2edccaefaf64201df41e594078589",
     "tests/test_stage13.py": "495e01039a69aa362b11e468e08c8be6ffa98de3a77c42afcaf0f76b022fa9cc",
+    "tests/test_windows_identity.py": "a5999873c1a7498b2ff55d73c2ff0fbd2d906b4f69c3c5b8cf3d9f85c201bb17",
+    "tests/test_windows_native_auth_integration.py": "e19b208a906f05a6fe7fd3a398edf127fc4cb0185a075b2b060686a836b1bd2e",
     "tests/test_workflow_candidate_ownership.py": "044f7a2231cd81011197ea7e88c86bfa8da156a31966175062be0a9cb6ec90aa"
   }
 }
