@@ -152,6 +152,14 @@ def database_snapshot(payload):
     render_id = UUID(payload["render_id"])
     with repository.transaction(tenant_id, case_id) as tx:
         events, outbox = tx.events(), tx.outbox()
+        renders = tx.objects(RENDER_CATEGORY, PersistedRender)
+        approvals = tx.objects(APPROVAL_CATEGORY, FinalizationApproval)
+        releases = tx.objects(RELEASE_CATEGORY, FinalizationRelease)
+        packages = tx.objects(PACKAGE_CATEGORY, FinalPackageRecord)
+        render = next((item for item in renders if item.id == render_id), None)
+        approval = next((item for item in approvals if item.render_id == render_id), None)
+        release = next((item for item in releases if item.render_id == render_id), None)
+        package = next((item for item in packages if item.render_id == render_id), None)
         return {
             "sequence": tx.sequence(),
             "event_ids": tuple(item.audit.event_id for item in events),
@@ -163,14 +171,14 @@ def database_snapshot(payload):
                 for name in ("RenderDraft", "ApproveFinalDocument",
                              "RequestFinalRelease", "AssembleFinalPackage")
             ),
-            "render_count": len(tx.objects(RENDER_CATEGORY, PersistedRender)),
-            "approval_count": len(tx.objects(APPROVAL_CATEGORY, FinalizationApproval)),
-            "release_count": len(tx.objects(RELEASE_CATEGORY, FinalizationRelease)),
-            "package_count": len(tx.objects(PACKAGE_CATEGORY, FinalPackageRecord)),
-            "render": tx.object(RENDER_CATEGORY, render_id, PersistedRender),
-            "approval": tx.object(APPROVAL_CATEGORY, render_id, FinalizationApproval),
-            "release": tx.object(RELEASE_CATEGORY, render_id, FinalizationRelease),
-            "package": tx.object(PACKAGE_CATEGORY, render_id, FinalPackageRecord),
+            "render_count": len(renders),
+            "approval_count": len(approvals),
+            "release_count": len(releases),
+            "package_count": len(packages),
+            "render": render,
+            "approval": approval,
+            "release": release,
+            "package": package,
         }
 
 def command_result(value):
