@@ -130,9 +130,9 @@ def run(output, tested_sha):
             "RenderDraft", validated, validation_run_id=str(run_id),
             semantic_profile=final.semantic_profile_pin(h.final_profile).model_dump(mode="json"),
         )
-        render_result = CommandResult.model_validate(
-            post("execute_finalization", render_request)
-        )
+        render_result = CommandResult.model_validate_json(json.dumps(
+            post("execute_finalization", render_request), ensure_ascii=False
+        ))
         h.sequence = render_result.case_sequence
         render_id = uuid5(UUID(render_request["meta"]["command_id"]), "persisted-render")
         projection = post("query_finalization", {
@@ -143,21 +143,21 @@ def run(output, tested_sha):
         require(projection.get("render", {}).get("id") == str(render_id),
                 "PUBLIC_HTTP_RENDER_PROJECTION_REQUIRED")
 
-        approval_result = CommandResult.model_validate(post(
+        approval_result = CommandResult.model_validate_json(json.dumps(post(
             "execute_finalization",
             h.final_request("ApproveFinalDocument", validated, render_id=str(render_id)),
-        ))
+        ), ensure_ascii=False))
         h.sequence = approval_result.case_sequence
         rendered = h.get(approval_result.refs[0])
 
-        release_result = CommandResult.model_validate(post(
+        release_result = CommandResult.model_validate_json(json.dumps(post(
             "execute_finalization", h.release_request(rendered, render_id),
-        ))
+        ), ensure_ascii=False))
         h.sequence = release_result.case_sequence
 
-        package_result = CommandResult.model_validate(post(
+        package_result = CommandResult.model_validate_json(json.dumps(post(
             "execute_finalization", h.package_request(rendered, render_id),
-        ))
+        ), ensure_ascii=False))
         h.sequence = package_result.case_sequence
 
         package_query = {
@@ -165,10 +165,10 @@ def run(output, tested_sha):
             "operation": "GetFinalPackage", "tenant_id": str(h.tenant),
             "case_id": str(h.case_id), "render_id": str(render_id),
         }
-        package = FinalPackageRecord.model_validate(post("query_finalization", package_query))
-        release = FinalizationRelease.model_validate(post("query_finalization", {
+        package = FinalPackageRecord.model_validate_json(json.dumps(post("query_finalization", package_query), ensure_ascii=False))
+        release = FinalizationRelease.model_validate_json(json.dumps(post("query_finalization", {
             **package_query, "operation": "GetFinalRelease",
-        }))
+        }), ensure_ascii=False))
     finally:
         server.shutdown()
         server.server_close()
@@ -181,10 +181,10 @@ def run(output, tested_sha):
     thread.start()
     try:
         from lukart_work.finalization.contracts import FINAL_PACKAGE_MEMBER_NAMES
-        package = FinalPackageRecord.model_validate(post("query_finalization", package_query))
-        release = FinalizationRelease.model_validate(post("query_finalization", {
+        package = FinalPackageRecord.model_validate_json(json.dumps(post("query_finalization", package_query), ensure_ascii=False))
+        release = FinalizationRelease.model_validate_json(json.dumps(post("query_finalization", {
             **package_query, "operation": "GetFinalRelease",
-        }))
+        }), ensure_ascii=False))
         require(tuple(member.name for member in package.members) == FINAL_PACKAGE_MEMBER_NAMES,
                 "TEN_MEMBERS_REQUIRED")
         require(release.result.eligibility == "FINAL", "FINAL_REQUIRED")
