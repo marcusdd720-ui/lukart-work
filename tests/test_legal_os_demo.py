@@ -22,10 +22,12 @@ class DemoSmoke(TestCase):
         cls.server.server_close()
         cls.thread.join(3)
 
-    def call(self, path, data=None, origin=True):
+    def call(self, path, data=None, origin=True, content_length=None):
         headers = {"Content-Type": "application/json"}
         if origin:
             headers["Origin"] = self.url
+        if content_length is not None:
+            headers["Content-Length"] = str(content_length)
         request = Request(self.url + path, data=None if data is None else json.dumps(data).encode(), headers=headers)
         try:
             with urlopen(request, timeout=3) as response:
@@ -67,7 +69,10 @@ class DemoSmoke(TestCase):
         self.assertEqual(len(response["form"]["description"]), 17000)
         self.assertFalse(response["generator_invoked"])
         self.assertFalse(response["saved"])
-        self.assertEqual(self.call("/demo/validate", {"oversized": "x" * 300000})[0], 413)
+        self.assertEqual(
+            self.call("/demo/validate", {"oversized": "short"}, content_length=256 * 1024 + 1)[0],
+            413,
+        )
 
     def test_production_routes_and_cross_origin_denied(self):
         for path in ("/api/embedded_session", "/api/generate", "/api/approve", "/api/download"):

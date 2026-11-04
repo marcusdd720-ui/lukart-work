@@ -1,6 +1,6 @@
 # ROS -> WORK capability gap and Integration Contract v1
 
-Status: **PARTIALLY IMPLEMENTED ? READ-ONLY ASSESS ONLY / PRODUCTION BLOCKED**. This is a bounded integration contract and gap
+Status: **PARTIALLY IMPLEMENTED — READ-ONLY ASSESS ONLY / PRODUCTION BLOCKED**. This is a bounded integration contract and gap
 inventory, not product support, certification, or permission to bypass any WORK HUMAN gate.
 The machine-readable contract is
 [`contracts/ros_work/v1/integration-contract.json`](../contracts/ros_work/v1/integration-contract.json).
@@ -77,7 +77,7 @@ open. Negative contract tests are evidence of fail-closed planning only, not evi
 integration or Generator Pism product is implemented.
 
 
-## Addendum ? 2026-11-03 local candidate state
+## Addendum — 2026-11-03 local candidate state
 
 The 2026-10-04 observation above is historical. Current local candidate heads were re-inspected:
 
