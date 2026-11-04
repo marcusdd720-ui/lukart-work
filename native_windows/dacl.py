@@ -30,36 +30,46 @@ _WRITE_MASK = (
 # variable and are never interpolated into executable command text.
 _ACL_SCRIPT = r"""
 $ErrorActionPreference = 'Stop'
-$targets = ConvertFrom-Json -InputObject $env:LUKART_DACL_TARGETS
-if ($null -eq $targets -or $targets.Count -lt 2) { throw 'DACL_TARGETS_REQUIRED' }
-$rows = @()
-foreach ($target in $targets) {
-    $acl = Get-Acl -LiteralPath ([string]$target)
-    if ($null -eq $acl -or $null -eq $acl.Access) { throw 'DACL_MISSING' }
-    $owner = ([System.Security.Principal.NTAccount]$acl.Owner).Translate([System.Security.Principal.SecurityIdentifier]).Value
-    $entries = @()
-    foreach ($rule in $acl.Access) {
-        $sid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
-        $entries += [pscustomobject]@{
-            sid = $sid
-            type = [string]$rule.AccessControlType
-            rights = [int64]$rule.FileSystemRights
-            inherited = [bool]$rule.IsInherited
+try {
+    Import-Module Microsoft.PowerShell.Security -ErrorAction Stop
+    $targets = ConvertFrom-Json -InputObject $env:LUKART_DACL_TARGETS
+    if ($null -eq $targets -or $targets.Count -lt 2) { throw 'DACL_TARGETS_REQUIRED' }
+    $rows = @()
+    foreach ($target in $targets) {
+        $acl = Get-Acl -LiteralPath ([string]$target) -ErrorAction Stop
+        if ($null -eq $acl -or $null -eq $acl.Access) { throw 'DACL_MISSING' }
+        $owner = $acl.GetOwner([System.Security.Principal.SecurityIdentifier]).Value
+        $entries = @()
+        foreach ($rule in $acl.Access) {
+            $sid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+            $entries += [pscustomobject]@{
+                sid = $sid
+                type = [string]$rule.AccessControlType
+                rights = [int64]$rule.FileSystemRights
+                inherited = [bool]$rule.IsInherited
+            }
+        }
+        $rows += [pscustomobject]@{
+            path = [string]$target
+            owner = $owner
+            entries = @($entries)
         }
     }
-    $rows += [pscustomobject]@{
-        path = [string]$target
-        owner = $owner
-        entries = @($entries)
-    }
+    $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [System.Security.Principal.WindowsPrincipal]::new($identity)
+    [pscustomobject]@{
+        current_sid = $identity.User.Value
+        current_is_admin = [bool]$principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+        targets = @($rows)
+    } | ConvertTo-Json -Compress -Depth 6
 }
-$identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-$principal = [System.Security.Principal.WindowsPrincipal]::new($identity)
-[pscustomobject]@{
-    current_sid = $identity.User.Value
-    current_is_admin = [bool]$principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
-    targets = @($rows)
-} | ConvertTo-Json -Compress -Depth 6
+catch {
+    [pscustomobject]@{
+        error_id = [string]$_.FullyQualifiedErrorId
+        error_category = [string]$_.CategoryInfo.Category
+        error_type = [string]$_.Exception.GetType().FullName
+    } | ConvertTo-Json -Compress -Depth 4
+}
 """
 
 
@@ -153,6 +163,7 @@ def verify_protected_file(path: str | Path) -> str:
         if key.upper() in {"SYSTEMROOT", "WINDIR", "TEMP", "TMP", "PSMODULEPATH"}
     }
     env["LUKART_DACL_TARGETS"] = json.dumps(targets)
+    env["PSModulePath"] = env.get("PSModulePath") or str(Path(system_root) / "System32" / "WindowsPowerShell" / "v1.0" / "Modules")
     try:
         result = subprocess.run(
             [str(powershell), "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", _ACL_SCRIPT],
@@ -168,6 +179,9 @@ def verify_protected_file(path: str | Path) -> str:
         document = json.loads(result.stdout)
     except (ValueError, TypeError) as exc:
         raise WindowsDaclError("WINDOWS_DACL_RESULT_INVALID") from exc
+    if isinstance(document, dict) and "error_id" in document:
+        detail = ":".join(str(document.get(key, "UNKNOWN")) for key in ("error_category", "error_type", "error_id"))
+        raise WindowsDaclError("WINDOWS_DACL_QUERY_FAILED:" + detail)
     if not isinstance(document, dict) or set(document) != {"current_sid", "current_is_admin", "targets"}:
         raise WindowsDaclError("WINDOWS_DACL_RESULT_INVALID")
     current_sid, current_is_admin = document["current_sid"], document["current_is_admin"]
