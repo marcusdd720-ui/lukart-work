@@ -3,7 +3,7 @@ name: PB02 PB03 process restart E2E
 on:
   push:
     branches:
-      - work/process-restart-e2e-20261104
+      - work/process-restart-e2e-*
 
 permissions:
   contents: read
