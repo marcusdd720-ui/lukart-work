@@ -179,3 +179,11 @@ The procedure must fail closed for:
 - any attempted Stage 11 receipt substitution.
 
 No automated failure path may reset, delete, or force-update a ref.
+
+### 2026-11-04 exact-SHA generated-evidence refresh
+
+Candidate cda33b7940b1f3b4fe0687068167785bc1ee82d1 passed the Stage12 full regression, independent 118-schema validation, package verification, and Stage10 integrity. The only failed step was Generated evidence is reproducible: the committed Stage10 report recorded 859 tests and the global manifest contained stale source hashes, while exact-SHA full regression regenerated a 873-test report and refreshed those hashes.
+
+The Stage12 workflow artifact 13308542391 (SHA-256 d77a3e5500804067e35fed5fbf601cb1805083b58a0b2a8d930e69f024bcf6b8) and the independent Stage02 workflow artifact 13308831417 (SHA-256 89adc79bb4c28cc9e6caf0d85620c1429dd4f5648bfd75a62d9a35210a43ad14) produced byte-identical Stage10 status, global manifest, and schema-validation reports for the same exact SHA. Stage10 is 873/873 PASS, 0 failures/errors/skips, with stage_10_closed=false. All 118 JSON schemas passed. Package verification parsed 118 JSON files, with 113 PASS, 2 REJECTED_AS_EXPECTED, and 0 failures.
+
+The four generated reports were refreshed from the exact-SHA CI artifacts, not reconstructed. Evidence receipt: evidence/stage12-generated-evidence-refresh-20261104-cda33b7.json. Fresh exact-head CI remains required after this receipt and manifest update; this does not close Stage10 or certify the product.
