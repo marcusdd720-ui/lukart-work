@@ -225,7 +225,7 @@
   "lukart_work/validation/rules.py": "47579a6e00576da2b75d2dcc11b0396beec14f992340e4ce8fbaafbd69648d60",
   "lukart_work/validation/service.py": "be6d5baf4a6d922671c56dddb81a70516abc545abb337f06357c8bdf7ee90bae",
   "native_windows/__init__.py": "f6e50ba377cfb60531f6006c24e06cb98a6797f34950c2ed896d5193e30da094",
-  "native_windows/frontend.py": "814ad010aa008a07ef6ef7c0fea25a27aae299f74d5fd129fa674b03e34501c6",
+  "native_windows/frontend.py": "02ac988c0de62794bf1f11b8ca54f97a0538342c27d970585c967b4d0bffa5fe",
   "native_windows/windows_identity.py": "c40992921c4c55f25a61ca9b560bd3410dcf77814777c1f57e7613f26932bf3d",
   "pyproject.toml": "4a346cc0933cccbff8ff8a50ccc23f555f57afd327e1417920aabb708f149bd2",
   "reports/history/pr77-ci-44196d3-provenance.json": "1eac0625b9ff3357d5bace7f82112106b2106a69b2c9333fa3deac93673eeae0",

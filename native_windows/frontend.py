@@ -7,21 +7,11 @@ from lukart_work.operator_host import create_server
 
 
 def _rewrite_html(body: bytes) -> bytes:
-    replacements = (
-        (b"<label>Token uprawnienia", b"<label hidden>Token uprawnienia"),
-        (b"<label>Token prywatnej sesji WORK", b"<label hidden>Token prywatnej sesji WORK"),
-    )
-    for old, new in replacements:
-        body = body.replace(old, new, 1)
-    script = (
-        b'<script>window.LUKART_NATIVE_AUTH=true;'
-        b'var t=document.getElementById("token");'
-        b'if(t)t.value="NATIVE-SSPI-SESSION";</script>'
-    )
-    for marker in (b'<script src="/client.js">', b'<script src="/case.js">'):
-        if marker in body:
-            return body.replace(marker, script + marker, 1)
-    raise ValueError("NATIVE_AUTH_HTML_SCRIPT_MARKER_MISSING")
+    old = b'<label>Token uprawnienia <input id="token" type="password" autocomplete="off"></label>'
+    new = b'<label hidden>Token uprawnienia <input id="token" type="password" autocomplete="off" value="NATIVE-SSPI-SESSION"></label>'
+    if old not in body:
+        raise ValueError("NATIVE_AUTH_TOKEN_FIELD_MISSING")
+    return body.replace(old, new, 1)
 
 
 def _rewrite_javascript(body: bytes) -> bytes:
@@ -54,6 +44,12 @@ def create_frontend_server(operator, human_auth, port: int = 8786) -> HTTPServer
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Referrer-Policy", "no-referrer")
+            self.send_header(
+                "Content-Security-Policy",
+                "default-src 'none'; script-src 'self'; connect-src 'self'; frame-src blob:; "
+                "img-src blob:; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+            )
             self.send_header("Connection", "close")
             headers = (*self._native_cookie_headers, *extra_headers)
             self._native_cookie_headers = []
