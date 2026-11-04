@@ -19,6 +19,7 @@ dependencies = [
 [project.optional-dependencies]
 postgres = ["psycopg[binary]==3.3.3"]
 ingestion = ["pypdf==6.10.0", "Pillow==13.0.0"]
+windows-auth = ["pyspnego==0.12.4; sys_platform == 'win32'"]
 
 [tool.setuptools.packages.find]
 include = ["lukart_work*"]
