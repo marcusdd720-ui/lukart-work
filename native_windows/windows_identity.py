@@ -23,6 +23,7 @@ from typing import Any, Callable
 from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.domain.models import Actor
 from lukart_work.validation.rules import Violation, strict_json
+from native_windows.dacl import verify_protected_file
 
 _POLICY_SCHEMA = "urn:lukart:work:WindowsHumanIdentityPolicy:1.0.0"
 _SID_PATTERN = re.compile(r"^S-1-(?:[0-9]+-)+[0-9]+$")
@@ -61,6 +62,8 @@ class WindowsHumanIdentityPolicy:
         if not source.is_absolute() or source.is_symlink() or not source.is_file():
             raise WindowsIdentityError("TRUSTED_WINDOWS_IDENTITY_POLICY_REQUIRED")
         resolved = source.resolve(strict=True)
+        if os.name == "nt":
+            verify_protected_file(resolved)
         if str(resolved).startswith("\\\\"):
             raise WindowsIdentityError("LOCAL_WINDOWS_IDENTITY_POLICY_REQUIRED")
         raw = resolved.read_bytes()
