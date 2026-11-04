@@ -151,9 +151,6 @@ textarea{width:100%;font:inherit;border:1px solid #cbd6e1;border-radius:8px;padd
 CASE_JS = r'''(() => {
 "use strict";
 const $=id=>document.getElementById(id);
-const nativeAuth=window.LUKART_NATIVE_AUTH===true;
-function authHeaders(){const headers={"Content-Type":"application/json"};if(!nativeAuth)headers.Authorization="Bearer "+$("token").value;return headers;}
-const requestCredentials=()=>nativeAuth?"same-origin":"omit";
 const state={opened:false,pending:0,revision:0,caseSequence:0,review:null,draft:null,composeDraft:null,composeValidation:null,composeUnknown:false,finalization:null,finalizationUnknown:false};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function status(message,error=false){$("status").textContent=message;$("status").classList.toggle("error",error);}
@@ -179,7 +176,7 @@ $("package-download").disabled=!hasPackage||busy||!$("package-member").value;
 }
 function close(){composeReset();state.revision++;state.opened=false;state.caseSequence=0;state.review=null;state.draft=null;state.finalization=null;state.finalizationUnknown=false;$("finalization-state").textContent="Nie wybrano renderu";$("finalization-status").textContent="Wybierz zapisany render, aby odczytać stan.";$("package-member").replaceChildren(new Option("Pakiet nie jest jeszcze dostępny",""));$("package-status").textContent="Pakiet nie został jeszcze złożony.";$("approval-rationale").value="";$("release-rationale").value="";$("package-rationale").value="";$("draft-editor").hidden=true;$("draft-select").replaceChildren(new Option("Otwórz sprawę, aby zobaczyć projekty",""));$("draft-sections").replaceChildren();$("draft-rationale").value="";$("draft-result").textContent="Nie otwarto projektu.";$("review-panel").hidden=true;$("review-select").replaceChildren();$("review-quote").textContent="";$("review-statement").value="";$("review-description").value="";$("review-rationale").value="";$("review-result").textContent="Brak decyzji.";$("case-state").textContent="Nieotwarta";$("case-title").textContent="Tytuł sprawy pojawi się po odczycie";$("case-seq").textContent="—";$("heads").textContent="—";$("render").replaceChildren(new Option("Otwórz sprawę, aby wyświetlić dokumenty",""));$("render-count").textContent="Lista dokumentów nie została jeszcze pobrana.";$("intake-preview").hidden=true;$("intake-preview").textContent="";$("intake-candidates").replaceChildren();$("intake-proposals").hidden=true;$("intake-result").textContent="Dodaj dokument lub wpisz opis.";refresh();}
 function scope(){
-if(!nativeAuth&&!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
+if(!$("token").value)throw new Error("Podaj token autoryzowanej sesji WORK.");
 return {};
 }
 async function showUploadedSource(json){
@@ -206,8 +203,8 @@ if(extraction?.status==="EXTRACTED"&&uuid.test(json.source_id)&&uuid.test(json.r
 async function invoke(action,extra={}) {
 const args={action,...scope(),...extra};state.pending++;refresh();const generation=state.revision;
 try {
-  const response=await fetch("/api/embedded_session",{method:"POST",cache:"no-store",credentials:requestCredentials(),
-    headers:authHeaders(),
+  const response=await fetch("/api/embedded_session",{method:"POST",cache:"no-store",credentials:"omit",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+$("token").value},
     body:JSON.stringify(args)});
   if(generation!==state.revision)return null;
   if(!response.ok)throw new Error("Odmowa dostępu lub błąd operacji ("+response.status+").");
@@ -502,8 +499,8 @@ async function downloadPackageMember(){
   if(!expected)return status("Członek nie należy do manifestu pakietu.",true);
   const generation=state.revision;state.pending++;refresh();
   try{
-    const response=await fetch("/api/embedded_session",{method:"POST",cache:"no-store",credentials:requestCredentials(),
-      headers:authHeaders(),
+    const response=await fetch("/api/embedded_session",{method:"POST",cache:"no-store",credentials:"omit",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+$("token").value},
       body:JSON.stringify({action:"read_package_member",render_id:renderId,member})});
     if(generation!==state.revision)return;
     if(!response.ok)throw new Error("WORK odmówił odczytu członka pakietu ("+response.status+").");
@@ -530,8 +527,8 @@ $("compose-gate").textContent='Wymagana autoryzowana sesja WORK.';$("compose-res
 async function composeRequest(action, extra={}){
 const generation=state.revision;state.pending++;refresh();
 try{
- const response=await fetch('/api/embedded_session',{method:'POST',cache:'no-store',credentials:requestCredentials(),
-  headers:authHeaders(),body:JSON.stringify({action,...extra})});
+ const response=await fetch('/api/embedded_session',{method:'POST',cache:'no-store',credentials:'omit',
+  headers:{'Content-Type':'application/json','Authorization':'Bearer '+$('token').value},body:JSON.stringify({action,...extra})});
  if(generation!==state.revision)throw new Error('Sesja została zmieniona. Odczytaj stan sprawy.');
  if(!response.ok)throw new Error('WORK odmówił operacji ('+response.status+'). Sprawdź sesję, bieżący plan, dane stron i wymagane decyzje.');
  const data=await response.json();

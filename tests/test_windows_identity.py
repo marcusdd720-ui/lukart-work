@@ -3,7 +3,7 @@ from pathlib import Path
 from uuid import uuid4
 from lukart_work.core.security import TokenAuthority
 from lukart_work.validation.rules import Violation
-from lukart_work.windows_identity import WindowsHumanAuthManager,WindowsHumanIdentityPolicy,WindowsIdentityError
+from native_windows.windows_identity import WindowsHumanAuthManager,WindowsHumanIdentityPolicy,WindowsIdentityError
 SID="S-1-5-21-1-2-3-1001"
 def doc(actions=None,enabled=True):
  return {"schema":"urn:lukart:work:WindowsHumanIdentityPolicy:1.0.0","policy_id":"TEST","session_ttl_seconds":60,

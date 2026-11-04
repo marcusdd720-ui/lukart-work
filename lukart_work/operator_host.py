@@ -121,8 +121,6 @@ CLIENT = ("const routes=" + json.dumps(ROUTES) + ";" + '''
 const token=document.getElementById('token'),route=document.getElementById('route'),
 request=document.getElementById('request'),send=document.getElementById('send'),
 result=document.getElementById('result');
-const nativeAuth=window.LUKART_NATIVE_AUTH===true;
-function authHeaders(){const headers={'Content-Type':'application/json'};if(!nativeAuth)headers.Authorization='Bearer '+token.value;return headers;}
 const tenant=document.getElementById('tenant'),caseId=document.getElementById('case'),
 render=document.getElementById('render'),preview=document.getElementById('preview'),
 download=document.getElementById('download');
@@ -145,7 +143,8 @@ document.getElementById('clear').onclick=clearPrivate;
 window.addEventListener('pagehide',clearPrivate);
 for(const r of routes){const o=document.createElement('option');o.value=o.textContent=r;route.append(o);}
 async function submit(service,body){const current=++generation;send.disabled=true;clearArtifact();try{
-const response=await fetch('/api/'+service,{method:'POST',cache:'no-store',credentials:nativeAuth?'same-origin':'omit',headers:authHeaders(),body:JSON.stringify(body)});
+const response=await fetch('/api/'+service,{method:'POST',cache:'no-store',credentials:'omit',headers:{
+'Content-Type':'application/json','Authorization':'Bearer '+token.value},body:JSON.stringify(body)});
 if(response.ok&&response.headers.get('Content-Type')==='application/octet-stream'){
 const format=service==='query_finalization'&&body.operation==='ReadFinalArtifact'?body.format:null;
 const type=format==='PDF'?'application/pdf':format==='DOCX'?
@@ -239,18 +238,9 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere}button{margin:4px;min-height:32p
 #pdfStatus{font-weight:bold}'''
 
 
-def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_preview=None,
-                  case_only=False, human_auth=None) -> HTTPServer:
+def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_preview=None, case_only=False) -> HTTPServer:
     if not isinstance(operator, GeneratorPismOperator) or operator.binding is not None:
         raise ValueError("TRUSTED_CASE_OPERATOR_REQUIRED")
-    if human_auth is None:
-        human_auth = getattr(operator, "_human_authenticator", None)
-    if human_auth is not None and (
-        not callable(getattr(human_auth, "authenticate", None))
-        or not callable(getattr(human_auth, "close", None))
-        or type(getattr(human_auth, "session_ttl_seconds", None)) is not int
-    ):
-        raise ValueError("NATIVE_WINDOWS_HUMAN_AUTHENTICATOR_REQUIRED")
     if type(case_only) is not bool:
         raise ValueError("CASE_ONLY_FLAG_INVALID")
     if pdf_preview is not None and not callable(pdf_preview):
@@ -259,7 +249,6 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
             super().setup()
-            self._native_cookie_headers = []
             self.connection.settimeout(10)
 
         def log_message(self, *args):
@@ -268,10 +257,8 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
         def reply(self, status, body, content_type="application/json", extra_headers=()):
             self.send_response(status)
             self.send_header("Content-Type", content_type)
-            headers = (*getattr(self, "_native_cookie_headers", ()), *extra_headers)
-            self._native_cookie_headers = []
-            for name, value in headers:
-                if name not in {"Content-Disposition", "X-Content-SHA256", "Set-Cookie", "WWW-Authenticate"} or any(ord(char) < 32 for char in value):
+            for name, value in extra_headers:
+                if name not in {"Content-Disposition", "X-Content-SHA256"} or any(ord(char) < 32 for char in value):
                     raise ValueError("INVALID_RESPONSE_HEADER")
                 self.send_header(name, value)
             self.send_header("Content-Length", str(len(body)))
@@ -291,67 +278,14 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             self.close_connection = True
 
         def boundary(self):
-            hosts={f"127.0.0.1:{self.server.server_port}",f"localhost:{self.server.server_port}"}
-            host_values=self.headers.get_all("Host") or []
-            if len(host_values)!=1 or host_values[0] not in hosts: return False
-            origin_values=self.headers.get_all("Origin")
-            if origin_values is not None and origin_values!=["http://"+host_values[0]]: return False
-            fetch_values=self.headers.get_all("Sec-Fetch-Site")
-            if fetch_values not in (None,["same-origin"],["none"]): return False
-            if human_auth is not None and self.command=="POST":
-                return origin_values==["http://"+host_values[0]] and fetch_values==["same-origin"]
-            return True
+            expected = f"127.0.0.1:{self.server.server_port}"
+            return (self.headers.get_all("Host") == [expected]
+                    and self.headers.get_all("Origin") in (None, ["http://" + expected])
+                    and self.headers.get_all("Sec-Fetch-Site") in
+                    (None, ["same-origin"], ["none"]))
 
-        def cookie_value(self,name):
-            values=self.headers.get_all("Cookie") or []
-            if len(values)>1: return None,True
-            found=[]
-            for item in (values[0].split(";") if values else []):
-                key,separator,value=item.strip().partition("=")
-                if separator and key==name: found.append(value)
-            if len(found)>1: return None,True
-            if not found: return None,False
-            value=found[0]
-            if not value or len(value)>256 or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in value):
-                return None,True
-            return value,False
-
-        def native_authorize(self,post=False):
-            session_token,bad_session=self.cookie_value("LUKART_SESSION")
-            handshake_id,bad_handshake=self.cookie_value("LUKART_NEGOTIATE")
-            auth_values=self.headers.get_all("Authorization") or []
-            outcome=None if bad_session or bad_handshake or len(auth_values)>1 else human_auth.authenticate(
-                session_token=session_token,handshake_id=handshake_id,
-                authorization=auth_values[0] if auth_values else None)
-            if outcome is not None and outcome.state=="AUTHENTICATED" and outcome.session_token:
-                token=outcome.session_token
-                self._native_cookie_headers=[
-                    ("Set-Cookie",f"LUKART_SESSION={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={human_auth.session_ttl_seconds}"),
-                    ("Set-Cookie","LUKART_NEGOTIATE=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0")]
-                return token
-            if outcome is not None and outcome.state in ("CHALLENGE","CONTINUE") and outcome.handshake_id and outcome.challenge:
-                headers=(("WWW-Authenticate",outcome.challenge),
-                    ("Set-Cookie",f"LUKART_NEGOTIATE={outcome.handshake_id}; Path=/; HttpOnly; SameSite=Strict; Max-Age=60"))
-                body=b'{"error":"WINDOWS_AUTHENTICATION_REQUIRED"}'
-                if post: self.reject_request(401,body,extra_headers=headers)
-                else: self.reply(401,body,extra_headers=headers)
-                return None
-            if post: self.reject_request(403,b'{"error":"FORBIDDEN"}')
-            else: self.reply(403,b'{"error":"FORBIDDEN"}')
-            return None
-
-        def native_page(self,content,script_name,token_label,old_hint=None,new_hint=None):
-            marker=f'<script src="{script_name}">'.encode("utf-8")
-            if marker not in content: raise ValueError("NATIVE_AUTH_PAGE_SCRIPT_MISSING")
-            content=content.replace(marker,b'<script>window.LUKART_NATIVE_AUTH=true;</script>'+marker,1)
-            if token_label not in content: raise ValueError("NATIVE_AUTH_TOKEN_FIELD_MISSING")
-            content=content.replace(token_label,token_label.replace(b"<label>",b"<label hidden>",1),1)
-            if old_hint and new_hint: content=content.replace(old_hint,new_hint,1)
-            return content
-
-        def reject_body(self,length,*,status=413,body=b'{"error":"BODY_LIMIT"}',extra_headers=()):
-            if extra_headers: self.reply(status,body,extra_headers=extra_headers)
-            else: self.reply(status,body)
+        def reject_body(self, length, *, status=413, body=b'{"error":"BODY_LIMIT"}'):
+            self.reply(status, body)
             # Discard a bounded amount after sending the rejection; never parse or dispatch it.
             remaining = min(length, MAX_BODY + 1)
             deadline = monotonic() + 1
@@ -365,30 +299,27 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             except OSError:
                 pass  # The rejected connection is already being closed.
 
-        def reject_request(self,status,body,*,extra_headers=()):
-            lengths=self.headers.get_all("Content-Length") or []
+        def reject_request(self, status, body):
+            lengths = self.headers.get_all("Content-Length") or []
             # Untrusted or ambiguous framing cannot authorize an unbounded drain.
             length = MAX_BODY + 1
             if (len(lengths) == 1 and len(lengths[0]) <= 20
                     and lengths[0].isascii() and lengths[0].isdigit()
                     and self.headers.get("Transfer-Encoding") is None):
                 length = min(int(lengths[0]), MAX_BODY + 1)
-            if extra_headers: return self.reject_body(length,status=status,body=body,extra_headers=extra_headers)
-            return self.reject_body(length,status=status,body=body)
+            return self.reject_body(length, status=status, body=body)
 
         def do_GET(self):
-            if not self.boundary(): return self.reply(403,b'{"error":"FORBIDDEN"}')
-            if human_auth is not None and self.native_authorize() is None: return
-            case_html,page=CASE_HTML,PAGE
-            if human_auth is not None:
-                case_html=self.native_page(CASE_HTML,"/case.js",b"<label>Token prywatnej sesji WORK",
-                    "Wersja lokalna wymaga jeszcze tokenu; docelowo zastąpi go logowanie.".encode("utf-8"),
-                    "Uwierzytelnienie wykorzystuje natywną sesję Windows (SSPI/Negotiate).".encode("utf-8"))
-                page=self.native_page(PAGE,"/client.js",b"<label>Token uprawnienia")
-            if self.path=="/case": return self.reply(200,case_html,"text/html; charset=utf-8")
-            if self.path=="/case.js": return self.reply(200,CASE_JS,"text/javascript; charset=utf-8")
-            if self.path=="/case.css": return self.reply(200,CASE_CSS,"text/css; charset=utf-8")
-            if self.path=="/": return self.reply(200,case_html if case_only else page,"text/html; charset=utf-8")
+            if not self.boundary():
+                return self.reply(403, b'{"error":"FORBIDDEN"}')
+            if self.path == "/case":
+                return self.reply(200, CASE_HTML, "text/html; charset=utf-8")
+            if self.path == "/case.js":
+                return self.reply(200, CASE_JS, "text/javascript; charset=utf-8")
+            if self.path == "/case.css":
+                return self.reply(200, CASE_CSS, "text/css; charset=utf-8")
+            if self.path == "/":
+                return self.reply(200, CASE_HTML if case_only else PAGE, "text/html; charset=utf-8")
             if self.path == "/client.js" and not case_only:
                 return self.reply(200, CLIENT, "text/javascript; charset=utf-8")
             if self.path == "/client.css" and not case_only:
@@ -403,14 +334,10 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             allowed_routes = ("embedded_session",) if case_only else (*ROUTES, "embedded_case", "embedded_session")
             if self.path != "/api/" + route or route not in allowed_routes:
                 return self.reject_request(404, b'{"error":"NOT_FOUND"}')
-            if human_auth is not None:
-                token=self.native_authorize(post=True)
-                if token is None: return
-            else:
-                auth=self.headers.get_all("Authorization") or []
-                if len(auth)!=1 or not auth[0].startswith("Bearer "):
-                    return self.reject_request(403,b'{"error":"FORBIDDEN"}')
-                token=auth[0][7:]
+            auth = self.headers.get_all("Authorization") or []
+            if len(auth) != 1 or not auth[0].startswith("Bearer "):
+                return self.reject_request(403, b'{"error":"FORBIDDEN"}')
+            token = auth[0][7:]
             try:
                 with operator.core.authority.session(token):
                     lengths = self.headers.get_all("Content-Length") or []
@@ -479,14 +406,7 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             except Exception:  # noqa: BLE001 - HTTP boundary must not leak internal details.
                 self.reply(500, b'{"error":"SERVICE_FAILED"}')
 
-    class OperatorHTTPServer(HTTPServer):
-        def server_close(self):
-            try: super().server_close()
-            finally:
-                if human_auth is not None: human_auth.close()
-    server=OperatorHTTPServer(("127.0.0.1",port),Handler)
-    server.human_auth=human_auth
-    return server
+    return HTTPServer(("127.0.0.1", port), Handler)
 
 
 def main():
@@ -504,8 +424,7 @@ def main():
                                case_only=(args.legal_os or config.get('legal_os_case_only', False)))
     except Exception:  # noqa: BLE001 - configuration errors must not expose credentials.
         parser.exit(1, "HOST_CONFIGURATION_FAILED: trusted CASE services and capabilities required\n")
-    host_name="localhost" if getattr(server,"human_auth",None) is not None else "127.0.0.1"
-    print(f"CASE operator: http://{host_name}:{server.server_port}/",flush=True)
+    print(f"CASE operator: http://127.0.0.1:{server.server_port}/", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

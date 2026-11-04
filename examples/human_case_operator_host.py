@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import runpy
 from lukart_work.operator import GeneratorPismOperator
-from lukart_work.windows_identity import WindowsHumanAuthManager, create_authenticator
+from native_windows.windows_identity import WindowsHumanAuthManager, create_authenticator
 
 def trusted_module(variable):
     path=Path(os.environ[variable])

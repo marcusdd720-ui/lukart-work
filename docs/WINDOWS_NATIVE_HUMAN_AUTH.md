@@ -1,41 +1,36 @@
 # Native Windows HUMAN authentication
 
-The local LEGAL OS host uses Windows SSPI/SPNEGO (Negotiate). It does not collect or
-persist a Windows password and does not expose a bearer token to JavaScript.
+Run the native host with:
+python -B -X utf8 examples/run_windows_human_operator.py
 
-The loopback host challenges the browser with WWW-Authenticate: Negotiate; Windows
-SSPI authenticates the account; the server resolves its canonical SID; an administrator-
-owned JSON policy maps that SID to one HUMAN actor, tenant, CASE and explicit actions.
-WORK receives a process-local capability only in an HttpOnly; SameSite=Strict cookie.
-JavaScript never reads the token. The capability has a bounded sliding lifetime
-(60–3600 seconds); host shutdown/restart revokes it.
+The front-end is a Windows SSPI/SPNEGO (Negotiate) loopback reverse proxy in the
+native_windows adapter package. The existing WORK operator host remains unchanged;
+the front-end authenticates the Windows account, resolves its SID against an
+administrator-owned JSON policy, and injects the resulting case-scoped WORK bearer
+capability only into the loopback backend request. The browser receives the capability
+only as an HttpOnly; SameSite=Strict cookie. JavaScript uses same-origin cookies and
+never reads the real token.
 
-Use http://localhost:<port>/, not a LAN address. Native mode requires same-origin POST
-requests and Sec-Fetch-Site: same-origin.
+The front-end binds to loopback and proxies to a second ephemeral loopback-only
+backend port. Use http://localhost:8786/, not a LAN address. Native POST requests
+require same-origin Origin and Sec-Fetch-Site headers.
 
-Copy examples/windows-human-identity-policy.template.json to a private local path,
-for example %ProgramData%\Lukart\Identity\human-policy.json. The template has an
-empty principals array and grants nobody access. The administrator must populate it
-with the actual Windows SID, a provisioned HUMAN actor UUID, one tenant UUID, one CASE
-UUID and only exact allowed actions. Do not use a wildcard. One SID is bound to one
-CASE scope per policy. Protect the file with a DACL allowing writes only to SYSTEM and
-trusted local Administrators, and read access to the host account. Never store passwords
-or API keys in this file.
+Copy examples/windows-human-identity-policy.template.json to a private path such as
+%ProgramData%\Lukart\Identity\human-policy.json. The template has no principals
+and grants nobody access. The administrator must provision the actual Windows SID,
+HUMAN actor UUID, tenant UUID, CASE UUID, and exact actions. Do not use wildcards.
+Protect the policy and trusted host module with DACLs that allow writes only to SYSTEM
+and trusted local Administrators. Never store passwords or API keys in the policy.
 
-Set LUKART_HUMAN_IDENTITY_POLICY to the absolute path of the private JSON policy and
-LUKART_TRUSTED_CASE_HOST to the trusted WORK operator/database builder module.
-The old LUKART_HUMAN_IDENTITY_ADAPTER Python hook is no longer used; identity mapping
-is validated JSON and SSPI is part of the versioned application.
-
-Install with: uv sync --frozen --extra postgres --extra ingestion --extra windows-auth.
+Set LUKART_HUMAN_IDENTITY_POLICY and LUKART_TRUSTED_CASE_HOST to absolute paths.
+The old executable identity adapter hook is not used; identity mapping is validated
+JSON and SSPI is versioned code.
 
 SSPI proves Windows authenticated the account represented by the negotiated context.
 It does not prove physical user presence, independent legal review, or that a legal
-decision occurred. HUMAN decisions remain explicit UI actions and automation must not
-generate or record them for a person.
-
-The committed policy template grants nobody identities. Production HUMAN authorization
-remains NOT CONFIGURED until an administrator provisions the actual SID-to-actor,
-tenant, CASE and action mapping and verifies its DACL on the target machine. Windows CI
-uses a synthetic policy and a read-only GetCaseHead probe; it does not use real cases,
-approve a document, issue FINAL, assemble a package, or certify full ROS-to-WORK H5.
+decision occurred. HUMAN decisions remain explicit UI actions. The policy template
+grants nobody. Production HUMAN authorization remains NOT CONFIGURED until the
+administrator provisions the real SID-to-actor/tenant/CASE/action mapping and verifies
+the policy DACL on the target machine. Windows CI uses only a synthetic identity and
+read-only GetCaseHead probe; it does not approve documents, issue FINAL, assemble
+packages, or certify full ROS-to-WORK H5.

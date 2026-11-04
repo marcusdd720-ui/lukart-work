@@ -2,9 +2,8 @@ name: Windows Native HUMAN SSPI
 on:
   pull_request:
     paths:
-      - "lukart_work/windows_identity.py"
-      - "lukart_work/operator_host.py"
-      - "lukart_work/legal_os_case_view.py"
+      - "native_windows/*.py"
+      - "examples/run_windows_human_operator.py"
       - "examples/human_case_operator_host.py"
       - "tests/test_windows_identity.py"
       - "tests/test_windows_native_auth_integration.py"
