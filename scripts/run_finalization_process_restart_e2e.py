@@ -184,7 +184,7 @@ def database_snapshot(payload):
 def command_result(value):
     require(isinstance(value, dict) and value.get("state") == "APPLIED",
             "EXPECTED_APPLIED_COMMAND_RESULT")
-    return CommandResult.model_validate(value)
+    return CommandResult.model_validate_json(json.dumps(value, ensure_ascii=False, allow_nan=False))
 
 def error_code(value):
     require(isinstance(value, dict) and isinstance(value.get("code"), str),
