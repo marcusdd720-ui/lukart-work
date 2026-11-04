@@ -4,7 +4,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const {randomUUID} = require('node:crypto');
+const {randomUUID, createHash} = require('node:crypto');
 const script = fs.readFileSync(process.argv[2], 'utf8');
 const html = fs.readFileSync(process.argv[3], 'utf8');
 const plan = '11111111-1111-4111-8111-111111111111';
@@ -21,6 +21,7 @@ class Element {
   replaceChildren(...children){this.children=children;this.options=children;this.value=children[0]?.value??'';}
   add(option){this.options.push(option);if(this.options.length===1)this.value=option.value;}
   append(...children){this.children.push(...children);}
+  appendChild(child){this.append(child);return child;}
   set selectedIndex(index){this.value=this.options[index]?.value??'';}
   get childElementCount(){return this.children.length;}
   click(){this.clicked=true;}
@@ -28,7 +29,9 @@ class Element {
 }
 function setup(){
   const elements=Object.fromEntries([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],new Element()]));
-  const requests=[];let seq=8;let failure=null;let delayed=null;let downloads=0;
+  const requests=[];let seq=8;let failure=null;let delayed=null;let downloads=0;let packageDownloads=0;let packageAvailable=false;
+  const packageBytes=Buffer.from('synthetic');
+  const packageHash=createHash('sha256').update(packageBytes).digest('hex');
   const context={result_type:'COMPOSITION_CONTEXT',document_types:[{id:'synthetic',label:'Pismo testowe'}],
     profiles:['QUICK'],plans:[{id:plan,revision:1,label:'Plan testowy',form}],required_gate:null};
   const fetch=async (url,options)=>{
@@ -42,13 +45,20 @@ function setup(){
       case 'open_case':data={result_type:'CASE_HEAD',case_sequence:seq,heads:[]};break;
       case 'list_saved':data={result_type:'SAVED_RENDERS',items:[{render_id:render,created_at:'2026-10-27T12:00:00Z'}]};break;
       case 'list_drafts':data={result_type:'DRAFT_LIST',drafts:[{id:draft,revision:1}]};break;
+      case 'finalization_context':data={result_type:'FINALIZATION_CONTEXT',render_id:render,case_sequence:seq,status:'RENDERED',draft_status:'RENDERED',
+        artifacts:[{format:'PDF',byte_length:packageBytes.length,content_hash:packageHash},{format:'DOCX',byte_length:packageBytes.length,content_hash:packageHash}],
+        approval:null,release:null,package:packageAvailable?{package_id:'55555555-5555-4555-8555-555555555555',committed_sequence:seq,manifest_hash:'a'.repeat(64),
+          members:[{name:'final.pdf',media_type:'application/pdf',byte_length:packageBytes.length,content_hash:packageHash}]}:null,
+        next_gate:'HUMAN_APPROVAL',current:true,can_approve:false,can_release:false,can_assemble:false};break;
+      case 'read_package_member':packageDownloads++;return {ok:true,headers:{get:name=>name==='X-Content-SHA256'?packageHash:'application/pdf'},
+        arrayBuffer:async()=>packageBytes.buffer.slice(packageBytes.byteOffset,packageBytes.byteOffset+packageBytes.byteLength)};
       case 'composition_context':data={...context,case_sequence:seq};break;
       case 'save_document_brief':seq++;data={result_type:'DOCUMENT_BRIEF_SAVED',native_result:{registration:{state:'APPLIED',case_sequence:seq},ingestion:{body:{status:'EXTRACTED',fragments:[{text:JSON.stringify(form)}],candidates:[]}},source_id:plan,run_id:run}};break;
       case 'review_context':data={result_type:'REVIEW_CONTEXT',case_sequence:seq,candidates:[]};break;
       case 'generate_document':seq++;data={result_type:'DOCUMENT_GENERATED',draft:{id:draft,revision:1}};break;
       case 'validate_document':seq++;data={result_type:'DOCUMENT_VALIDATED',draft:{id:draft,revision:2},validation_run_id:run};break;
       case 'render_document':seq++;data={result_type:'DOCUMENT_RENDERED',render_id:render};break;
-      case 'download':return {ok:true,blob:async()=>{downloads++;return new Blob(['synthetic']);}};
+      case 'download':return {ok:true,headers:{get:name=>name==='X-Content-SHA256'?packageHash:'application/pdf'},blob:async()=>{downloads++;return new Blob([packageBytes]);}};
       default:throw new Error('Unexpected synthetic action: '+body.action);
     }
     return {ok:true,json:async()=>{
@@ -61,7 +71,7 @@ function setup(){
     window:{addEventListener(){}},Option:function(text,value){this.textContent=text;this.value=value;},
     fetch,crypto:{randomUUID},URL:{createObjectURL:()=> 'blob:synthetic',revokeObjectURL(){}},
     setTimeout,TextEncoder,Blob,console});
-  return {elements,requests,setFailure:value=>{failure=value;},setDelayed:value=>{delayed=value;},downloads:()=>downloads};
+  return {elements,requests,setFailure:value=>{failure=value;},setDelayed:value=>{delayed=value;},setPackageAvailable:value=>{packageAvailable=value;},downloads:()=>downloads,packageDownloads:()=>packageDownloads};
 }
 async function flush(){for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve));}
 async function open(t){t.elements.token.value='synthetic-unit-only';await t.elements.token.emit('input');await t.elements.open.emit('click');await flush();}
@@ -110,5 +120,18 @@ async function test(name,fn){await fn();console.log('PASS '+name);}
     assert.equal(t.elements['compose-sender-name'].value,'');assert.equal(t.elements['compose-description'].value,'');
     assert.equal(t.elements['compose-generate'].disabled,true);
   });
-  console.log('5/5 PASS; synthetic DOM/HTTP only; live engine/browser E2E NOT VERIFIED');
+  await test('finalization context and package-member bytes are bound to the selected render',async()=>{
+    const t=setup();t.setPackageAvailable(true);await open(t);
+    assert.ok(t.requests.some(r=>r.action==='finalization_context'&&r.render_id===render));
+    assert.equal(t.elements['finalization-refresh'].disabled,false);
+    assert.equal(t.elements['package-member'].disabled,false);
+    t.elements['package-member'].value='final.pdf';await t.elements['package-member'].emit('change');
+    assert.equal(t.elements['package-download'].disabled,false);
+    await t.elements['package-download'].emit('click');await flush();
+    const request=t.requests.find(r=>r.action==='read_package_member');
+    assert.deepEqual(request,{action:'read_package_member',render_id:render,member:'final.pdf'});
+    assert.equal(t.packageDownloads(),1);
+    assert.match(t.elements['package-status'].textContent,/Pobrano: final\.pdf/);
+  });
+  console.log('6/6 PASS; synthetic DOM/HTTP only; live engine/browser E2E NOT VERIFIED');
 })().catch(error=>{console.error(error);process.exitCode=1;});

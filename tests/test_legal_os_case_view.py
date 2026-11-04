@@ -37,6 +37,18 @@ class CaseWorkspaceTests(unittest.TestCase):
         self.assertNotIn("make_confirmation", javascript)
         self.assertIn('credentials:"omit"', javascript)
 
+    def test_finalization_copy_uses_correct_polish_utf8(self):
+        page = CASE_HTML.decode("utf-8")
+        javascript = CASE_JS.decode("utf-8")
+        self.assertIn("Zatwierdzenie i pakiet końcowy", page)
+        self.assertIn("Złóż pakiet końcowy", page)
+        self.assertIn("dokładny zapisany DOCX oraz PDF", page)
+        self.assertIn("Następna bramka:", javascript)
+        self.assertIn("Członkowie:", javascript)
+        self.assertIn("Odczytane bajty nie odpowiadają manifestowi pakietu.", javascript)
+        for malformed in ("ko?cowy", "dok?adny", "z?o?enie", "dokument?w", "Cz?onkowie", "odm?wi?", "pozostaj?"):
+            self.assertNotIn(malformed, page + javascript)
+
     def test_css_provided(self):
         self.assertIn(b".panel", CASE_CSS)
 

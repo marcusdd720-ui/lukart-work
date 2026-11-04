@@ -56,6 +56,19 @@ class DemoSmoke(TestCase):
         form["description"] = ""
         self.assertEqual(self.call("/demo/validate", form)[0], 400)
 
+    def test_multibyte_valid_form_fits_bounded_request_cap(self):
+        party = {"name": "Osoba Syntetyczna", "address": {"lines": ["ul. Syntetyczna 1", "Miasto Testowe"], "postal_code": "00-000", "country": "PL"}}
+        form = {"description": "ą" * 17000, "document_type": "synthetic-request", "sender": party, "recipient": party}
+        encoded_size = len(json.dumps(form).encode("utf-8"))
+        self.assertGreater(encoded_size, 32768)
+        status, body, _ = self.call("/demo/validate", form)
+        self.assertEqual(status, 200)
+        response = json.loads(body)
+        self.assertEqual(len(response["form"]["description"]), 17000)
+        self.assertFalse(response["generator_invoked"])
+        self.assertFalse(response["saved"])
+        self.assertEqual(self.call("/demo/validate", {"oversized": "x" * 300000})[0], 413)
+
     def test_production_routes_and_cross_origin_denied(self):
         for path in ("/api/embedded_session", "/api/generate", "/api/approve", "/api/download"):
             self.assertEqual(self.call(path, {"action": "generate_document"})[0], 403)

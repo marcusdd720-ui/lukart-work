@@ -19,6 +19,9 @@ from lukart_work.legal_os_case_view import CASE_CSS, CASE_HTML
 from lukart_work.legal_os_composer import validate_form
 
 EXAMPLE_DIR = Path(__file__).with_name("demo_examples")
+
+# 20,000-character Unicode fields can exceed 32 KiB when JSON-escaped.
+MAX_DEMO_FORM_BODY_BYTES = 256 * 1024
 EXAMPLE_FILES = {
     "przyklad-demonstracyjny.pdf": ("application/pdf", "e7c296dd5876650a9b11aa972142337666e6912893630692edbd67d1f8f27c3f"),
     "przyklad-demonstracyjny.docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "ff5acf8466b16e2e6568a940eb772f4c35ab371dc012eae135f5163dea2ab2d1"),
@@ -155,7 +158,7 @@ def make_server(port=8786):
                 return self.reply(415, {"error": "DEMO_JSON_REQUIRED"})
             try:
                 size = int(self.headers.get("Content-Length", "0"))
-                if not 0 < size <= 32768:
+                if not 0 < size <= MAX_DEMO_FORM_BODY_BYTES:
                     return self.reply(413, {"error": "DEMO_FORM_SIZE_LIMIT"})
                 form = validate_form(json.loads(self.rfile.read(size)))
                 if form["document_type"] not in ("synthetic-request", "synthetic-letter"):

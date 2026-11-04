@@ -20,6 +20,14 @@ class WindowsLauncherRegressionTests(unittest.TestCase):
         self.assertIn(':missing_config', code)
         self.assertIn("goto start_server", code)
 
+    def test_windows_batch_launcher_is_checked_out_with_crlf(self):
+        raw = LAUNCHER.read_bytes()
+        self.assertGreater(raw.count(b"\r\n"), 0)
+        self.assertEqual(raw.count(b"\n"), raw.count(b"\r\n"))
+        attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn("*.cmd text eol=crlf", attributes.splitlines())
+        self.assertIn("*.bat text eol=crlf", attributes.splitlines())
+
     def test_launches_case_only_with_same_trusted_python_config(self):
         code = LAUNCHER.read_text(encoding="utf-8")
         self.assertIn(r'.venv\Scripts\python.exe', code)
