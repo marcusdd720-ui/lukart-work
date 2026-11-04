@@ -1,0 +1,100 @@
+{
+  "branch": "integration/legal-os-production-candidate-20261104",
+  "ci": {
+    "actual_identity": {
+      "docx": "2bb54e254fdc7ff403b876416116cfbc38c092845bb323a544017f8f6552f8d9",
+      "draft": "e2938c02308a883e9912901dadbb15fb302b0927d8d629076cbfb8b74ac55b7e",
+      "layout": "5477146bee7dbaaeb390afa07220d6e7655c500ee4cd65b45b1894c9b496492d",
+      "model": "bac6c347313b49710353ad9d6aff4aeb28dda2009147feb92b489ef972959c99",
+      "pdf": "7d04f3e7635183cbc4b4c1cf2203f57775aceaf66360f56c5f290b647ab9596f",
+      "plan": "8cc92a6735faeeca842dca60a9c323ace4296095a4ddc855a777ac23a628dbd5",
+      "profile": "fa565b4b1c148d8901ccfb802ae50f23602b6ab36113759e976bf723666ff950",
+      "projection": "9a14d0975f54295009f419f9c9de1060f9daabde22c39f281426f157f81f0c68",
+      "renderer": "866749a64f4d94aed6ca8ca6916562e0e98624bcae4a0cd326dd11857f3cf22d",
+      "semantic": "e64dba7b01564cc29507ecc44c2b80f795c4a13735ddc018e8565b33cbad7e72",
+      "validation": "da6bcc35b5723198d818bba7c277b24c17809de8c0108752967f7eeb3193f21d"
+    },
+    "errors": 0,
+    "failed": 1,
+    "failure_classification": "fresh-process outputs equal; only expected-vs-actual golden equality failed",
+    "job_id": 126627133230,
+    "passed": 19,
+    "skipped": 0,
+    "test": "tests.test_stage11.Stage11RenderingTests.test_fresh_process_reproduction_is_stable",
+    "tested_sha": "5fa49714a3b7e64e2ffda16170399362adf6f874",
+    "tests_run": 20,
+    "workflow_run_id": 41845304018
+  },
+  "commit_message": "fix(review): close case workspace review findings",
+  "evidence_version": "stage11-source-bound-identity-refresh/1.0.0",
+  "golden_migration": {
+    "ci_docx_sha256_preserved": "2bb54e254fdc7ff403b876416116cfbc38c092845bb323a544017f8f6552f8d9",
+    "ci_pdf_sha256_preserved": "7d04f3e7635183cbc4b4c1cf2203f57775aceaf66360f56c5f290b647ab9596f",
+    "file": "tests/golden_cases/stage11_render_identity.json",
+    "preserved_fields": [
+      "docx",
+      "draft",
+      "pdf",
+      "plan",
+      "profile",
+      "renderer",
+      "semantic"
+    ],
+    "rendering_code_changed": false,
+    "semantic_and_authority_inputs_unchanged": true,
+    "sha256_after_lf_normalized": "5511705c5ddee9afb713546d33d44b879f816892e10d52add57e650e8c733bbe",
+    "sha256_before_lf_normalized": "9abab74d6382d87ad83ba487c1f6e55b61b395a8a164f5209d4e533a2cdca39e",
+    "test_code_changed": false,
+    "updated_fields": {
+      "layout": {
+        "new": "5477146bee7dbaaeb390afa07220d6e7655c500ee4cd65b45b1894c9b496492d",
+        "old": "bd5a6c829442224e77dce078828c288aac30f7a88a7526ac95fca0b59b4ca5b4"
+      },
+      "model": {
+        "new": "bac6c347313b49710353ad9d6aff4aeb28dda2009147feb92b489ef972959c99",
+        "old": "0caa25438db9a1cbe8766abc11c2a2e7f474737ddd2cda661b7e297093597b0b"
+      },
+      "projection": {
+        "new": "9a14d0975f54295009f419f9c9de1060f9daabde22c39f281426f157f81f0c68",
+        "old": "d8135a2c4ff84c8fc49753998dacb91da26bc29478fb7b42f975fe06d222fe38"
+      },
+      "validation": {
+        "new": "da6bcc35b5723198d818bba7c277b24c17809de8c0108752967f7eeb3193f21d",
+        "old": "2f953ccca1c6fe68debb6fd73bc371487dd29717aec448587e3d20668d6a5218"
+      }
+    }
+  },
+  "local_validation": {
+    "cross_platform_docx_pdf_bytes": "DIFFERENT; Linux CI golden bytes preserved",
+    "fresh_process_outputs_identical": true,
+    "fresh_process_runs": 2,
+    "linux_ci_docx_sha256": "2bb54e254fdc7ff403b876416116cfbc38c092845bb323a544017f8f6552f8d9",
+    "linux_ci_pdf_sha256": "7d04f3e7635183cbc4b4c1cf2203f57775aceaf66360f56c5f290b647ab9596f",
+    "non_artifact_identity_fields_match_exact_ci": true,
+    "python": "3.14.6",
+    "source_derived_fields_match_exact_ci": true,
+    "windows_docx_sha256": "ed3744193f3406bc333a19e2a76c50bc036959cbe4b5b22ae6e8bcc898f71810",
+    "windows_pdf_sha256": "712e5323c3a65df431a0ab0ac22fb5e57145e2fd6556f6894c589aeae5cb6f9e"
+  },
+  "next_gates": [
+    "Fresh exact-head Stage 11 CI must pass after this metadata-only migration.",
+    "Stage 12 must complete full regression, Stage 10 report generation, schema validation, package verification, and integrity manifest checks on the new SHA.",
+    "Stage 13 must complete full regression and offline assurance on the new SHA.",
+    "PB02/PB03 independent exact-SHA acceptance, supported document-type admission, trusted native HUMAN authority, and full ROS-to-WORK process crash/recovery/replay remain separate production gates."
+  ],
+  "observed_date": "2026-11-04",
+  "parent_sha": "83d53643b5fea3ca2a0aef8ecf4341a07565d04a",
+  "repository": "marcusdd720-ui/lukart-work",
+  "root_cause": {
+    "algorithm": "SHA-256 over every .py and .sql under lukart_work, with CRLF normalized to LF",
+    "changed_python_sources_in_parent_commit": [
+      "lukart_work/legal_os_case_view.py",
+      "lukart_work/legal_os_demo.py"
+    ],
+    "current_validation_source_pin": "a40d437bd8153600f357cee9f8270db44c7ead57e530d8617f0e0bcc82750ce0",
+    "interpretation": "The review-fix commit changes only case-view copy/JavaScript text and the synthetic demo request-size bound in these two Python source files. The repository-wide source pin intentionally includes both, so dependent validation/projection/model/layout provenance identities change deterministically. No renderer, semantic, plan, profile, or document bytes changed.",
+    "source_inventory_count": 81,
+    "validation_pin_function": "lukart_work.validation.policy.validation_pin"
+  },
+  "tested_sha_before_metadata_refresh": "5fa49714a3b7e64e2ffda16170399362adf6f874"
+}
