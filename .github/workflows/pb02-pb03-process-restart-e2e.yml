@@ -1,0 +1,95 @@
+name: PB02 PB03 process restart E2E
+
+on:
+  push:
+    branches:
+      - work/process-restart-e2e-20261104
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pb02-pb03-process-restart-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  process-restart-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: disposable-ci-password
+          POSTGRES_DB: lukart_stage02_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      LUKART_TEST_ADMIN_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=postgres password=disposable-ci-password
+      LUKART_TEST_RUNTIME_PASSWORD: disposable-runtime-password
+      LUKART_TEST_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_core_runtime password=disposable-runtime-password
+      LUKART_TEST_EGRESS_HOST_PASSWORD: disposable-egress-host-password
+      LUKART_TEST_EGRESS_DSN: host=127.0.0.1 port=5432 dbname=lukart_stage02_test user=lw_ai_egress_host password=disposable-egress-host-password
+    steps:
+      - name: Checkout exact pushed candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Assert exact source and clean checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          [[ "${actual}" == "${GITHUB_SHA}" ]]
+          [[ -z "$(git status --porcelain)" ]]
+          echo "TESTED_SHA=${actual}" >> "${GITHUB_ENV}"
+          echo "tested_sha=${actual}"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.14'
+
+      - name: Install declared project dependencies
+        run: python -m pip install '.[postgres,ingestion]' 'jsonschema==4.26.0'
+
+      - name: Export canonical contracts
+        run: python -B -X utf8 export_contracts.py
+
+      - name: Prepare disposable PostgreSQL 18
+        run: python -B -X utf8 scripts/prepare_ci_database.py
+
+      - name: Run PB02 PB03 OS-process crash/restart/replay E2E
+        run: python -B -X utf8 scripts/run_finalization_process_restart_e2e.py
+
+      - name: Verify receipt binds exact source
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          receipt = json.loads(Path("build/process-restart-e2e/receipt.json").read_text())
+          assert receipt["result"] == "PASS"
+          assert receipt["tested_sha"] == os.environ["TESTED_SHA"]
+          assert receipt["execution_scope"] == "THREE_DISTINCT_OS_PROCESSES_LOOPBACK_HTTP_POSTGRESQL_18"
+          assert receipt["finalization"]["package_members"] == 10
+          assert receipt["finalization"]["package_member_sha256_and_lengths"] == "10/10 PASS"
+          assert receipt["negative_checks"]["tampered_persisted_manifest_bytes"] == "INVALID_HASH"
+          assert receipt["non_claims"]
+          print("PB02_PB03_PROCESS_RESTART_EVIDENCE: PASS")
+          PY
+
+      - name: Upload process restart evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pb02-pb03-process-restart-${{ github.sha }}
+          path: build/process-restart-e2e/
+          if-no-files-found: warn
