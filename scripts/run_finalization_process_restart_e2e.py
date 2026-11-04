@@ -304,6 +304,20 @@ def run():
                     "PACKAGE_MEMBER_SHA256:" + member.name)
             member_bytes[member.name] = body
 
+        # Read canonical render artifacts independently after restart and
+        # prove package DOCX/PDF members are byte-identical to those artifacts.
+        for artifact_format, member_name in (("DOCX", "final.docx"), ("PDF", "final.pdf")):
+            direct_bytes, _headers = third.post("query_finalization", {
+                "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                "operation": "ReadFinalArtifact",
+                "tenant_id": payload["tenant_id"],
+                "case_id": payload["case_id"],
+                "render_id": render_id,
+                "format": artifact_format,
+            }, binary=True)
+            require(direct_bytes == member_bytes[member_name],
+                    "DIRECT_ARTIFACT_PACKAGE_MISMATCH:" + member_name)
+
         from docx import Document
         from pypdf import PdfReader
         docx = Document(BytesIO(member_bytes["final.docx"]))
@@ -425,6 +439,7 @@ def run():
                 "package_member_sha256_and_lengths": "10/10 PASS",
                 "docx_parse": "PASS",
                 "pdf_parse": "PASS",
+                "direct_artifact_bytes_match_package_members": "DOCX/PDF 2/2 PASS",
                 "event_outbox_equality": True,
                 "unique_event_counts": dict(final_snapshot["operations"]),
                 "unique_record_counts": {

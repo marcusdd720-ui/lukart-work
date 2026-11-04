@@ -81,6 +81,7 @@ jobs:
           assert receipt["execution_scope"] == "THREE_DISTINCT_OS_PROCESSES_LOOPBACK_HTTP_POSTGRESQL_18"
           assert receipt["finalization"]["package_members"] == 10
           assert receipt["finalization"]["package_member_sha256_and_lengths"] == "10/10 PASS"
+          assert receipt["finalization"]["direct_artifact_bytes_match_package_members"] == "DOCX/PDF 2/2 PASS"
           assert receipt["negative_checks"]["tampered_persisted_manifest_bytes"] == "INVALID_HASH"
           assert receipt["non_claims"]
           print("PB02_PB03_PROCESS_RESTART_EVIDENCE: PASS")
