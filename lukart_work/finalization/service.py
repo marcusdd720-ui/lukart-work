@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from hashlib import sha256
 from uuid import UUID, uuid5
 
 from pydantic import ValidationError
@@ -21,7 +22,11 @@ from lukart_work.rendering.service import (
     renderer_pin,
 )
 from lukart_work.storage.objects import ObjectStore, RetentionPolicies, artifact_id
-from lukart_work.validation.contracts import PRE_RENDER_CHECKS, ValidationExecution, ValidationProjection
+from lukart_work.validation.contracts import (
+    PRE_RENDER_CHECKS,
+    ValidationExecution,
+    ValidationProjection,
+)
 from lukart_work.validation.policy import validation_pin
 from lukart_work.validation.rules import (
     Violation,
@@ -34,10 +39,15 @@ from lukart_work.validation.rules import (
 )
 
 from .contracts import (
-    FINAL_PACKAGE_MEMBER_NAMES,
     FinalArgumentMap,
     FinalDocumentRecord,
     FinalEvidenceMap,
+    FinalizationApproval,
+    FinalizationProfile,
+    FinalizationProjection,
+    FinalizationQuery,
+    FinalizationRelease,
+    FinalizationRequest,
     FinalPackageManifest,
     FinalPackageMember,
     FinalPackageProfile,
@@ -46,18 +56,11 @@ from .contracts import (
     FinalStatementTrace,
     FinalTraceNode,
     FinalValidationRecord,
-    FinalizationApproval,
-    FinalizationProfile,
-    FinalizationProjection,
-    FinalizationQuery,
-    FinalizationRelease,
-    FinalizationRequest,
     PersistedRender,
     PersistedRenderArtifact,
     PostRenderManifest,
     semantic_profile_pin,
 )
-
 
 RENDER_CATEGORY = "finalization_render"
 APPROVAL_CATEGORY = "finalization_approval"
@@ -740,6 +743,24 @@ class FinalizationService(CommandService):
             raise Violation("INVALID_HASH")
         return value
 
+    @staticmethod
+    def _verify_package_member_bytes(members, data):
+        """Bind every loaded package member to its independent manifest digest."""
+        expected_names = tuple(item.name for item in members)
+        if (
+            len(data) != len(members)
+            or len(set(expected_names)) != len(expected_names)
+            or set(data) != set(expected_names)
+        ):
+            raise Violation("INVALID_HASH")
+        for item in members:
+            body = data[item.name]
+            if (
+                len(body) != item.byte_length
+                or sha256(body).hexdigest() != item.content_hash
+            ):
+                raise Violation("INVALID_HASH")
+
     def _load_package(self, tx, records, principal, render_id):
         package = tx.object(PACKAGE_CATEGORY, render_id, FinalPackageRecord)
         if (package.tenant_id, package.case_id) != (principal.tenant_id, principal.case_id):
@@ -749,9 +770,7 @@ class FinalizationService(CommandService):
         if package.release_id != release.id or package.manifest.release_hash != digest(release):
             raise Violation("INVALID_HASH")
         data = {item.name: ObjectStore(tx).read(item.artifact_id) for item in package.members}
-        for item in package.members:
-            if len(data[item.name]) != item.byte_length:
-                raise Violation("INVALID_HASH")
+        self._verify_package_member_bytes(package.members, data)
         if data["final.docx"] != bundle.docx or data["final.pdf"] != bundle.pdf:
             raise Violation("INVALID_HASH")
         parsers = {

@@ -1,28 +1,27 @@
 """PB02 trusted render/persist/approval/release tests on real PostgreSQL."""
-from concurrent.futures import ThreadPoolExecutor
-from hashlib import sha1, sha256
 import json
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from hashlib import sha1, sha256
 from http.client import HTTPConnection
 from threading import Thread
-from uuid import UUID, uuid4, uuid5
 from unittest.mock import patch
+from uuid import UUID, uuid4, uuid5
 
 import psycopg
-
 from lukart_work.contracts.messages import CommandResult, DomainError
-from lukart_work.core.postgres import PostgresRepository
+from lukart_work.core.postgres import PostgresRepository, canonical
 from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.core.service import CommandService
 from lukart_work.domain.models import Actor
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.finalization.contracts import (
     FINAL_PACKAGE_MEMBER_NAMES,
-    FinalPackageProfile,
-    FinalPackageRecord,
     FinalizationProfile,
     FinalizationProjection,
     FinalizationRelease,
+    FinalPackageProfile,
+    FinalPackageRecord,
     semantic_profile_pin,
 )
 from lukart_work.finalization.service import FinalizationService
@@ -35,9 +34,9 @@ from lukart_work.storage.migrations import grant_runtime, migrate
 from lukart_work.storage.objects import ObjectStore, RetentionPolicies
 from lukart_work.validation.rules import digest, ref
 from lukart_work.validation.service import ValidationEngineService
+
 from tests import test_stage02 as core
 from tests import test_stage10 as validation
-
 
 FINALIZATION_ACTIONS = {
     "RenderDraft",
@@ -815,6 +814,85 @@ class FinalizationTests(validation.ValidationTests):
         corrupted = self.finalization.query(json.dumps(query), self.token)
         self.assertIsInstance(corrupted, DomainError)
         self.assertEqual(corrupted.code, "INVALID_HASH")
+
+    def test_package_member_hash_must_match_storage_metadata(self):
+        rendered, render_id = self.released()
+        self.final_apply(self.package_request(rendered, render_id))
+        package = self.package_query("GetFinalPackage", render_id)
+        member = next(item for item in package.members if item.name == "sources.json")
+        original = self.package_query(
+            "ReadFinalPackageMember", render_id, member="sources.json"
+        )
+        record = json.loads(original.decode("utf-8"))
+        self.assertTrue(record["sources"])
+        media_type = record["sources"][0]["media_type"]
+        record["sources"][0]["media_type"] = media_type[:-1] + (
+            "x" if media_type[-1] != "x" else "y"
+        )
+        tampered = canonical(record).encode("utf-8")
+        tampered_hash = sha256(tampered).hexdigest()
+        self.assertEqual(len(tampered), member.byte_length)
+        self.assertNotEqual(tampered_hash, member.content_hash)
+
+        # Simulate a privileged storage rewrite: the blob and its local artifact
+        # digest are changed together, while the independent package manifest stays immutable.
+        def replace_storage(body, content_hash, byte_length):
+            with psycopg.connect(core.ADMIN_RUNTIME) as connection:
+                connection.execute(
+                    "ALTER TABLE lw_storage.artifacts DISABLE TRIGGER immutable_record"
+                )
+                connection.execute(
+                    "ALTER TABLE lw_storage.blobs DISABLE TRIGGER guarded_blob"
+                )
+                try:
+                    connection.execute(
+                        "UPDATE lw_storage.artifacts SET content_hash=%s,byte_length=%s "
+                        "WHERE tenant_id=%s AND case_id=%s AND artifact_id=%s",
+                        (
+                            content_hash,
+                            byte_length,
+                            self.tenant,
+                            self.case_id,
+                            member.artifact_id,
+                        ),
+                    )
+                    connection.execute(
+                        "UPDATE lw_storage.blobs SET data=%s "
+                        "WHERE tenant_id=%s AND case_id=%s AND artifact_id=%s",
+                        (body, self.tenant, self.case_id, member.artifact_id),
+                    )
+                finally:
+                    connection.execute(
+                        "ALTER TABLE lw_storage.blobs ENABLE TRIGGER guarded_blob"
+                    )
+                    connection.execute(
+                        "ALTER TABLE lw_storage.artifacts ENABLE TRIGGER immutable_record"
+                    )
+
+        replace_storage(tampered, tampered_hash, len(tampered))
+        # Prove the privileged mutation is visible through the scoped runtime path
+        # before asserting that the immutable package manifest rejects it.
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            self.assertEqual(ObjectStore(tx).read(member.artifact_id), tampered)
+        try:
+            corrupted = self.finalization.query(
+                json.dumps(
+                    {
+                        "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                        "operation": "GetFinalPackage",
+                        "tenant_id": str(self.tenant),
+                        "case_id": str(self.case_id),
+                        "render_id": str(render_id),
+                    }
+                ),
+                self.token,
+            )
+            self.assertIsInstance(corrupted, DomainError)
+            self.assertEqual(corrupted.code, "INVALID_HASH")
+        finally:
+            replace_storage(original, member.content_hash, member.byte_length)
+        restored = self.package_query("GetFinalPackage", render_id)
+        self.assertIsInstance(restored, FinalPackageRecord)
 
 
 if __name__ == "__main__":
