@@ -1,0 +1,111 @@
+{
+  "evidence_version": "generator-pism-public-finalization-http-e2e/1.0.0",
+  "recorded_at": "2026-11-04",
+  "overall_status": "TECHNICAL_REGRESSIONS_PASS_GENERATED_EVIDENCE_REFRESH_REQUIRED",
+  "production_readiness": "NOT_CERTIFIED",
+  "repository": "marcusdd720-ui/lukart-work",
+  "tested_sha": "2b0d18f9efdda7a15bac4d8de2bff9b5f849e141",
+  "workflow": {
+    "generator_pism_run_id": 41830229655,
+    "generator_pism_job_id": 126575224163,
+    "generator_pism_artifact_id": 13322596743,
+    "generator_pism_artifact_zip_sha256": "291c16699c6967de8f3227794aed52d9397d5ecdd76a8bc6dc4969d90ad13114",
+    "evidence_json_sha256": "4afb14734fae92b067fa3ae9077756ad1704560af6edda97495463e422bd0d07",
+    "verifier_json_sha256": "adc74e2d56f994f0bce8873c9e79c3b71ff0123eaaece7865d38a6891a6b3ddd",
+    "stage11_run_id": 41830229512,
+    "stage11_job_id": 126575222103,
+    "stage11_render_tests": 20,
+    "stage11_delivery_control_tests": 38,
+    "ocr_createcase_run_id": 41830229444,
+    "ocr_createcase_job_id": 126575220559,
+    "ocr_artifact_id": 13322921995,
+    "ocr_tests": 42,
+    "ocr_schema_checks": 115,
+    "ocr_json_files_parsed": 118,
+    "stage11_dispatch_run_id": 41830229480,
+    "stage11_dispatch_job_id": 126575877143,
+    "stage12_run_id": 41830229446,
+    "stage12_job_id": 126575221367,
+    "stage12_artifact_id": 13322813309,
+    "stage12_artifact_zip_sha256": "ed6348c101abd9a676475bf4142817ad0a1f644e8d6ab8251b484b9b25468a10",
+    "stage13_run_id": 41830229719,
+    "stage13_job_id": 126575845731,
+    "stage13_artifact_id": 13321014712,
+    "stage13_artifact_zip_sha256": "575f6dfcd6bc399efdc793bc61f222592e34970f53b6e1ef041bba4c734d1d4"
+  },
+  "results": {
+    "generator_pism_public_http_e2e": "PASS",
+    "package_verifier": "PASS",
+    "stage11_rendering": "20/20 PASS",
+    "stage11_delivery_control": "38/38 PASS",
+    "ocr_createcase": "42/42 PASS",
+    "stage10_full_regression": "896/896 PASS",
+    "stage12_full_regression": "896/896 PASS",
+    "stage13_full_regression": "896/896 PASS",
+    "independent_json_schema": "118/118 PASS",
+    "stage10_integrity_check": "PASS",
+    "package_verification": "PASS",
+    "stage13_provider_assurance": "23/23 PASS",
+    "stage13_python311_contract_smoke": "52/52 PASS",
+    "stage13_performance_evidence": "PASS"
+  },
+  "generator_e2e": {
+    "result": "PASS",
+    "execution_scope": "PUBLIC_LOOPBACK_FINALIZATION_HTTP_AND_ISOLATED_POSTGRESQL_SYNTHETIC_FIXTURE",
+    "host_restart_mode": "HTTPServer_OBJECT_RECREATION_WITHIN_SAME_PYTHON_PROCESS",
+    "same_operator_and_authority_objects_reused": true,
+    "process_restart": "NOT_TESTED",
+    "crash_recovery": "NOT_TESTED",
+    "event_count": 39,
+    "final_case_sequence": 38,
+    "release_eligibility": "FINAL",
+    "package_member_count": 10,
+    "direct_artifacts": {
+      "final.docx": {
+        "byte_length": 37694,
+        "sha256": "702ea11c8ad6ab55d7aa0fe562143f8b1353286f204650da200e001e02fd6fb6"
+      },
+      "final.pdf": {
+        "byte_length": 36907,
+        "sha256": "4d45890b14177db3816f5e98229fa42e54ad6cdfea4fdb31efb37b815adf9c8d"
+      }
+    },
+    "package_id": "e9615b29-6560-587e-99c2-15f5ba39283a",
+    "render_id": "9c323c28-0396-579e-99e3-700e6e072ec4",
+    "release_id": "1c360fae-7418-5f4e-a403-4fe8aa8eb4fb",
+    "synthetic_only": true,
+    "legal_type_admission": "HUMAN_REQUIRED",
+    "type_contract_pin": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "independent_verifier": {
+    "result": "PASS",
+    "scope": "OFFLINE_PACKAGE_INTEGRITY_ONLY",
+    "checks": [
+      "exact-sha",
+      "typed-canonical-json",
+      "cross-case-binding",
+      "typed-final-release",
+      "ten-member-package",
+      "manifest-member-byte-hashes",
+      "parsed-docx-pdf",
+      "render-receipt-binding",
+      "audit-chain"
+    ],
+    "human_decision_authenticity": "NOT_VERIFIED",
+    "repository_issuance": "NOT_VERIFIED"
+  },
+  "ci_failure_classification": {
+    "stage11_dispatch": "GENERATED_EVIDENCE_NOT_REPRODUCIBLE_ONLY",
+    "stage12": "GENERATED_EVIDENCE_NOT_REPRODUCIBLE_ONLY",
+    "stage13": "GENERATED_EVIDENCE_NOT_REPRODUCIBLE_ONLY",
+    "underlying_regressions": "ALL_PASS",
+    "cause": "The checked-in Stage10 report and global manifest predate the exact tested source SHA; generated evidence must be refreshed from exact-SHA CI artifacts and committed before the final CI rerun."
+  },
+  "non_claims": [
+    "No native Windows HUMAN identity or credential acquisition was exercised.",
+    "No actual legal/type approval was exercised; HUMAN actor and document type are synthetic fixtures.",
+    "No ROS-to-WORK native H5 execution was exercised.",
+    "No process restart, crash recovery, replay-after-process-death, or database restore was exercised.",
+    "No production certification, deployment, or go-live is established."
+  ]
+}

@@ -174,8 +174,9 @@ def run(output, tested_sha):
         server.server_close()
         thread.join(timeout=5)
 
-    # Restart the loopback host and read the durable package through the same
-    # public query route. This is a graceful process restart, not crash recovery.
+    # Recreate the HTTPServer object and read the durable package through the
+    # public query route. The Python process and operator/authority objects remain
+    # alive; this is neither a process restart nor crash-recovery evidence.
     server = create_server(operator, port=0)
     thread = Thread(target=server.serve_forever, daemon=True)
     thread.start()
