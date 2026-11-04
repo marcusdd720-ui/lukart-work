@@ -1,0 +1,62 @@
+{
+  "candidate_sha": "cda33b7940b1f3b4fe0687068167785bc1ee82d1",
+  "cross_run_reproduction": {
+    "manifest_identical": true,
+    "manifest_sha256": "51f79602dbfb49c81734fcd269943159d85a2c4b4b91f86ffb0dfde09d008c22",
+    "schema_report_identical": true,
+    "schema_report_sha256": "9addb258861690b57fa5957f07cc542c8ba4e1d4cfa73161db9f1d2124463fbb",
+    "stage10_status_identical": true,
+    "stage10_status_sha256": "d03a8900fd9a7d3a516a6168c9cec7376897ef1ab17d2dfd2361ae4f0acf6793"
+  },
+  "evidence_version": "stage12-generated-evidence-refresh/1.0.0",
+  "files_refreshed": [
+    "reports/stage10-status.json",
+    "reports/stage10-schema-validation.json",
+    "reports/package-validation.json",
+    "reports/manifest.sha256.json"
+  ],
+  "independent_exact_sha_runs": {
+    "stage02": {
+      "artifact_id": 13308831417,
+      "artifact_sha256": "89adc79bb4c28cc9e6caf0d85620c1429dd4f5648bfd75a62d9a35210a43ad14",
+      "job_id": 126482391978,
+      "workflow_run_id": 41802792253
+    },
+    "stage12": {
+      "artifact_id": 13308542391,
+      "artifact_sha256": "d77a3e5500804067e35fed5fbf601cb1805083b58a0b2a8d930e69f024bcf6b8",
+      "job_id": 126482390100,
+      "workflow_run_id": 41802792053
+    }
+  },
+  "limitations": [
+    "This refresh records engineering evidence only.",
+    "Stage10 closure remains false.",
+    "Product admission, supported document-type legal review, independent review, trusted native HUMAN authority and native ROS-to-WORK DOCX/PDF FINISH recovery remain separate gates."
+  ],
+  "observed_date": "2026-11-04",
+  "package_verification": {
+    "checks_passed": 113,
+    "failures": 0,
+    "independent_json_schema_engine": "NOT_EXECUTED",
+    "json_files_parsed": 118,
+    "rejected_as_expected": 2
+  },
+  "repository": "marcusdd720-ui/lukart-work",
+  "root_cause": "Exact-SHA full Stage10 execution regenerated reports/stage10-status.json from 859 to 873 tests and corrected source hashes in the global manifest. All functional tests passed; only Generated evidence is reproducible failed because those two generated files were stale in the committed tree.",
+  "schemas": {
+    "engine": "jsonschema 4.26.0 Draft202012Validator",
+    "result": "PASS",
+    "schemas_checked": 118
+  },
+  "stage10": {
+    "errors": 0,
+    "failures": 0,
+    "passed": 873,
+    "result": "PASS",
+    "skipped": 0,
+    "stage_10_closed": false,
+    "tested_sources": 175,
+    "tests": 873
+  }
+}

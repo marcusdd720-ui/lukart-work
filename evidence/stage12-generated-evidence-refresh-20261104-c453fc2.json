@@ -1,0 +1,72 @@
+{
+  "branch": "integration/legal-os-production-candidate-20261104",
+  "ci": {
+    "stage11_job_id": 126629223880,
+    "stage11_result": "PASS",
+    "stage11_run_id": 41845911487,
+    "stage11_tests": 20,
+    "stage12_artifact_id": 13332001900,
+    "stage12_artifact_zip_sha256": "6829f18184d8c41fa123eecc43a08c63429d111e4d7f79be220c40f13323d1ac",
+    "stage12_job_id": 126629224582,
+    "stage12_result": "FAIL_ONLY_AT_GENERATED_EVIDENCE_REPRODUCIBILITY",
+    "stage12_run_id": 41845911420,
+    "stage13_job_id": 126629585825,
+    "stage13_result": "PASS",
+    "stage13_run_id": 41845911433
+  },
+  "evidence_version": "stage12-generated-evidence-refresh/1.0.0",
+  "failure_analysis": {
+    "cause": "The full exact-head Stage10 suite added three tests relative to the committed report. CI regenerated the authoritative 899/899 PASS report and refreshed the global manifest; git diff --exit-code detected that these generated files had not yet been committed.",
+    "code_test_failures": 0,
+    "committed_stage10_test_count": 896,
+    "exact_head_ci_stage10_test_count": 899,
+    "failed_step": "Generated evidence is reproducible",
+    "only_tracked_drift": [
+      "reports/stage10-status.json",
+      "reports/manifest.sha256.json"
+    ],
+    "schema_or_package_failure": false
+  },
+  "integrity": {
+    "check_stage10_integrity": "PASS",
+    "ci_generated_manifest_sha256": "39162c3cd85e9bca1d5c7ad3439d7daacf21d09d90661db76ee1a54e78779741",
+    "manifest_entries": 490
+  },
+  "next_gate": "Commit the exact generated report, evidence receipt, documentation and regenerated manifest; then require fresh exact-head Stage11/12/13 and candidate CI. This receipt does not close Stage10, independent review, native HUMAN authority, product admission, or full ROS-to-WORK crash/recovery.",
+  "observed_date": "2026-11-04",
+  "package_validation": {
+    "checks": 115,
+    "json_files_parsed": 118,
+    "pass": 113,
+    "rejected_as_expected": 2,
+    "report_sha256": "ede707dace2cfd8db4adcfffd0d1896b4cb393557a4f4b9ec85728958a99cde9",
+    "result": "PASS"
+  },
+  "repair": {
+    "golden_or_source_code_changed": false,
+    "manifest_regenerated_after_receipt_and_documentation": true,
+    "package_report_preserved_unchanged": true,
+    "schema_report_preserved_unchanged": true,
+    "source": "exact-head Stage12 CI artifact 13332001900",
+    "updated_file": "reports/stage10-status.json"
+  },
+  "repository": "marcusdd720-ui/lukart-work",
+  "schema_validation": {
+    "engine": "jsonschema 4.26.0 Draft202012Validator",
+    "report_sha256": "9addb258861690b57fa5957f07cc542c8ba4e1d4cfa73161db9f1d2124463fbb",
+    "result": "PASS",
+    "schemas_checked": 118
+  },
+  "stage10": {
+    "all_tested_source_hashes_match_exact_candidate": true,
+    "errors": 0,
+    "failures": 0,
+    "report_sha256": "96b813e5319482ded12d285d4b88964b3eaa4435c9799a0f470a00d08ad7078a",
+    "result": "PASS",
+    "skipped": 0,
+    "stage_10_closed": false,
+    "tested_source_count": 179,
+    "tests": 899
+  },
+  "tested_sha": "c453fc2c741f2757e5adb4004e5356cbb4909d1d"
+}

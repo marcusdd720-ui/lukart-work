@@ -1,0 +1,84 @@
+{
+  "evidence_version": "stage12-generated-evidence-repair/1.0.0",
+  "observed_at": "2026-11-03T23:14:00+01:00",
+  "repository": "marcusdd720-ui/lukart-work",
+  "tested_head": "1d547317506df86311753c24675d884d508f516e",
+  "pull_request": 84,
+  "workflow_run_id": 41727832431,
+  "job_id": 126237145976,
+  "artifact_id": 13274038447,
+  "artifact_name": "stage12-procedure-generated",
+  "artifact_zip_sha256": "867593c722de71512643841a49d64e7734a367b6171552fe57e36e95e8d84d06",
+  "failure": {
+    "step": "Generated evidence is reproducible",
+    "exit_code": 1,
+    "root_cause": "The checked-in Stage 10 status and global integrity manifest were stale after the candidate source/test inventory expanded and changed. The checked-in Stage 10 report recorded 727 tests; exact-head CI ran 859 tests with zero failures, errors or skips. The generated manifest also contained newly added modules/tests and updated hashes for finalization/service, operator_host and the ROS/WORK contract test.",
+    "not_a_test_failure": true,
+    "preceding_stage10_full_regression": {
+      "tests": 859,
+      "passed": 859,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result": "PASS",
+      "stage_10_closed": false
+    },
+    "independent_schema_validation": {
+      "engine": "jsonschema 4.26.0 Draft202012Validator",
+      "schemas_checked": 118,
+      "result": "PASS"
+    },
+    "package_validation": {
+      "checks": 115,
+      "pass": 113,
+      "rejected_as_expected": 2,
+      "fail": 0,
+      "json_files_parsed": 118,
+      "independent_json_schema_engine": "NOT_EXECUTED"
+    }
+  },
+  "applied_exact_ci_artifacts": {
+    "reports/stage10-status.json": "f3b33bec33bb743336154644943f00ac55bdf4d0ed5fc865bac1611f2f34c579",
+    "reports/manifest.sha256.json": "f5190da7d790060378306e685ba87b0b32646f0ea7b352a80971c3446f12397a",
+    "reports/stage10-schema-validation.json": "9addb258861690b57fa5957f07cc542c8ba4e1d4cfa73161db9f1d2124463fbb",
+    "reports/package-validation.json": "ede707dace2cfd8db4adcfffd0d1896b4cb393557a4f4b9ec85728958a99cde9"
+  },
+  "stage13_exact_head_run": {
+    "workflow_run_id": 41727832113,
+    "job_id": 126237145558,
+    "artifact_id": 13274634531,
+    "artifact_zip_sha256": "2ce6a014f1638a3e5ae0c5e214ba8ec701153305c75088c9c47b0d69aba61e6c",
+    "tested_sha": "1d547317506df86311753c24675d884d508f516e",
+    "tests": 859,
+    "passed": 859,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "result": "PASS",
+    "performance_mode": "POST_IMPLEMENTATION",
+    "performance_operations": 9,
+    "network_io": "NOT_USED",
+    "case_data": "SYNTHETIC_ONLY",
+    "live_ollama_claim": false,
+    "only_failure": "Generated evidence is reproducible; stale global manifest before this repair"
+  },
+  "local_verification": {
+    "check_stage10_integrity": "PASS",
+    "manifest_entries_before_new_receipt": 479,
+    "manifest_entries_after_receipt_and_docs": 480,
+    "stage10_tested_source_hashes": "PASS",
+    "schema_hashes": "PASS",
+    "untracked_files_in_required_paths": 0,
+    "git_diff_check": "PASS",
+    "next_action": "Push the signed report/manifest/evidence repair and require fresh exact-head Stage 12 and Stage 13 CI."
+  },
+  "production_boundary": {
+    "stage_10_closed": false,
+    "supported_document_types_admitted": 0,
+    "pb02_pb03_independent_acceptance": "NOT_VERIFIED",
+    "authenticated_human_e2e": "NOT_VERIFIED",
+    "independent_review": "NOT_VERIFIED",
+    "certification": "NOT_VERIFIED",
+    "production_release": "NOT_AUTHORIZED"
+  }
+}

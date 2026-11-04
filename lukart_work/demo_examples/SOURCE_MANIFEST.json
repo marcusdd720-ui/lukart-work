@@ -1,0 +1,43 @@
+{
+  "schema": "legal-os-static-demo-example-v1",
+  "label_in_ui": "PRZYKŁAD DEMONSTRACYJNY — NIEGENEROWANY NA ŻYWO",
+  "generator_invoked_for_stage02": false,
+  "source_root": "historical export-recovery-v5 checkout (local provenance only; no runtime dependency)",
+  "historical_manifest": "FINAL_HANDOVER_MANIFEST.json",
+  "historical_manifest_sha256": "bb0efe5198e77c58dfd2087ca242b4753a5fffa4eed1f21793b1804510c11b3d",
+  "files": [
+    {
+      "name": "przyklad-demonstracyjny.pdf",
+      "source": "deliverables/final-completion/01-company.pdf",
+      "sha256": "e7c296dd5876650a9b11aa972142337666e6912893630692edbd67d1f8f27c3f",
+      "bytes": 38652,
+      "content_unchanged": true
+    },
+    {
+      "name": "przyklad-demonstracyjny.docx",
+      "source": "deliverables/final-completion/01-company.docx",
+      "sha256": "ff5acf8466b16e2e6568a940eb772f4c35ab371dc012eae135f5163dea2ab2d1",
+      "bytes": 38144,
+      "content_unchanged": true
+    },
+    {
+      "name": "przyklad-demonstracyjny.png",
+      "source": "PDF raster, pdftoppm -png -r 110 -singlefile; 910 x 1287; page 1 of 1",
+      "source_pdf_sha256": "e7c296dd5876650a9b11aa972142337666e6912893630692edbd67d1f8f27c3f",
+      "sha256": "201e200c79bff57a5e4afab01babb2c870b1d2b2da02a627d827fddcf646d112"
+    }
+  ],
+  "inspection": {
+    "parties": "Podmiot Testowy Alfa / Podmiot Testowy Beta; test addresses and explicit synthetic accounting narrative",
+    "metadata": "LUKART WORK; software metadata; no client identity or credentials observed",
+    "docx_external_relationships": 0,
+    "docx_macros_embedded_objects_comments": 0,
+    "docx_custom_xml": "Empty standard bibliography; no source entries",
+    "pdf_annotations_or_catalog_actions": 0,
+    "pdf_visual": "Single page inspected; readable with Polish glyphs and no clipping",
+    "docx_visual": "NOT VERIFIED; unchanged historical artifact, content/OOXML inspected"
+  },
+  "work_or_human_authorization": "NONE - static demonstration only",
+  "issue80": "FROZEN",
+  "deployment_gate": "BLOCKED"
+}

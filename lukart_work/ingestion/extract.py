@@ -145,6 +145,8 @@ def extract(data, declared, ocr_config=None):
         warnings.append('PARTIAL_EXTRACTION')
         if any(not text.strip() for _, _, text in rows):
             warnings.append('OCR_REQUIRED')
+            # A readable page cannot hide an unread page from fact review.
+            status, rows = 'NEEDS_OCR', []
     elif classification == 'IMAGE':
         if ocr_config is None:
             status = 'NEEDS_OCR'

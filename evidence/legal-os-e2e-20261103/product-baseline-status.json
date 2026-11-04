@@ -1,0 +1,65 @@
+{
+  "evidence_version": "work-product-baseline-readiness/1.0.0",
+  "observed_date": "2026-11-03",
+  "repository": "marcusdd720-ui/lukart-work",
+  "branch": "integration/legal-os-hidden-document-engine-v1",
+  "candidate_head": "64c42579819381988707f9b45c496ce84c01eb1e",
+  "baseline_path": "acceptance/product-baseline-v1.json",
+  "baseline_git_blob": "14c9ec8ac3eb00f4e6a0b12b09f7cf8588ab828d",
+  "baseline_sha256": "275832c6f74ea2200d9eede57bd4362d92d0b991d655c56980390b44e3373aa2",
+  "baseline_base_sha": "f88c3137ef96542ac836478d0f266dcc883ec406",
+  "overall_status": {
+    "contract": "IMPLEMENTED_BUILDER_CANDIDATE",
+    "product": "PLANNED",
+    "independent_review": "NOT_VERIFIED",
+    "certification": "NOT_VERIFIED"
+  },
+  "catalogue": [
+    {
+      "id": "PL-PRE-PAYMENT-1",
+      "support": "NOT SUPPORTED / FUTURE",
+      "intent": "PLANNED"
+    },
+    {
+      "id": "PL-PRE-COMPLAINT-1",
+      "support": "NOT SUPPORTED / FUTURE",
+      "intent": "PLANNED"
+    },
+    {
+      "id": "PL-PRE-REPLY-1",
+      "support": "NOT SUPPORTED / FUTURE",
+      "intent": "PLANNED"
+    }
+  ],
+  "requirements": {
+    "total": 25,
+    "implementation_statuses": {
+      "PLANNED": 2,
+      "PARTIAL": 11,
+      "IMPLEMENTED_COMPONENT": 8,
+      "PLANNED_PRODUCT_BOUNDARY": 1,
+      "PLANNED_PUBLIC_WRITE": 2,
+      "PLANNED_PRODUCT_BUNDLE": 1
+    },
+    "validation_statuses": {
+      "COMPONENT_EVIDENCE_ONLY_OR_NOT_VERIFIED": 24,
+      "NOT_VERIFIED_AS_PRODUCT_TIMELINE": 1
+    },
+    "certified": 0
+  },
+  "material_human_gates": [
+    {
+      "id": "HG-04",
+      "status": "NOT PRESENTLY DEMONSTRATED AS A COMPLETE ENFORCED PRODUCT GATE"
+    },
+    {
+      "id": "HG-09",
+      "status": "PUBLIC DOCUMENT APPROVAL WRITE CURRENTLY GATE_DENIED"
+    },
+    {
+      "id": "HG-10",
+      "status": "INDEPENDENT VERIFIER AND DISTINCT AUTHORIZED PROMOTER REQUIRED"
+    }
+  ],
+  "disposition": "NOT_PRODUCTION_READY; no document type admitted; no positive native execute/package read may be enabled from this baseline."
+}

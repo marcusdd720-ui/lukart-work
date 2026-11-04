@@ -1,28 +1,32 @@
 """PB02 trusted render/persist/approval/release tests on real PostgreSQL."""
-from concurrent.futures import ThreadPoolExecutor
-from hashlib import sha1, sha256
 import json
 import unittest
-from uuid import UUID, uuid4, uuid5
+from concurrent.futures import ThreadPoolExecutor
+from hashlib import sha1, sha256
+from http.client import HTTPConnection
+from threading import Thread
 from unittest.mock import patch
+from uuid import UUID, uuid4, uuid5
 
 import psycopg
-
 from lukart_work.contracts.messages import CommandResult, DomainError
-from lukart_work.core.postgres import PostgresRepository
+from lukart_work.core.postgres import PostgresRepository, canonical
 from lukart_work.core.security import Principal, TokenAuthority
 from lukart_work.core.service import CommandService
+from lukart_work.domain.models import Actor
 from lukart_work.drafting.service import ControlledDraftingService
 from lukart_work.finalization.contracts import (
     FINAL_PACKAGE_MEMBER_NAMES,
-    FinalPackageProfile,
-    FinalPackageRecord,
     FinalizationProfile,
     FinalizationProjection,
     FinalizationRelease,
+    FinalPackageProfile,
+    FinalPackageRecord,
     semantic_profile_pin,
 )
 from lukart_work.finalization.service import FinalizationService
+from lukart_work.operator import GeneratorPismOperator
+from lukart_work.operator_host import create_server
 from lukart_work.planner.service import DocumentPlannerService
 from lukart_work.procedural.service import ProceduralEngineService
 from lukart_work.rendering.profiles import OFFICIAL_PL_V1, profile_pin
@@ -30,9 +34,9 @@ from lukart_work.storage.migrations import grant_runtime, migrate
 from lukart_work.storage.objects import ObjectStore, RetentionPolicies
 from lukart_work.validation.rules import digest, ref
 from lukart_work.validation.service import ValidationEngineService
+
 from tests import test_stage02 as core
 from tests import test_stage10 as validation
-
 
 FINALIZATION_ACTIONS = {
     "RenderDraft",
@@ -65,6 +69,49 @@ class FinalPackageContractTests(unittest.TestCase):
                 **value,
                 build_revision=sha256(b"not-a-git-commit-sha").hexdigest(),
             )
+
+
+class FinalizationReadAuthorityTests(unittest.TestCase):
+    def test_service_actor_cannot_read_final_artifact_or_package_bytes(self):
+        tenant_id, case_id, actor_id, render_id = (uuid4() for _ in range(4))
+        authority = TokenAuthority()
+        principal = Principal(
+            Actor(id=actor_id, kind="SERVICE"),
+            tenant_id,
+            case_id,
+            frozenset(
+                {
+                    "ReadFinalArtifact",
+                    "GetFinalPackage",
+                    "ReadFinalPackageMember",
+                }
+            ),
+        )
+        token = authority.provision(principal)
+
+        class NoDatabaseAccess:
+            def transaction(self, *_args, **_kwargs):
+                raise AssertionError("unauthorized read reached repository")
+
+        service = FinalizationService(NoDatabaseAccess(), authority, ())
+        queries = (
+            ("ReadFinalArtifact", {"format": "PDF"}),
+            ("GetFinalPackage", {}),
+            ("ReadFinalPackageMember", {"member": "final.pdf"}),
+        )
+        for operation, extra in queries:
+            with self.subTest(operation=operation):
+                query = {
+                    "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                    "operation": operation,
+                    "tenant_id": str(tenant_id),
+                    "case_id": str(case_id),
+                    "render_id": str(render_id),
+                    **extra,
+                }
+                result = service.query(json.dumps(query), token)
+                self.assertIsInstance(result, DomainError)
+                self.assertEqual(result.code, "FORBIDDEN")
 
 
 @unittest.skipUnless(core.ADMIN_RUNTIME and core.DSN, "PB02 requires isolated PostgreSQL")
@@ -620,6 +667,116 @@ class FinalizationTests(validation.ValidationTests):
         self.assertEqual(denied.code, "FORBIDDEN")
         self.assertIsInstance(read("audit.json", self.token), bytes)
 
+    def test_case_only_http_persisted_render_to_human_final_package(self):
+        draft, run_id = self.validated()
+        render_id, render_result, _request = self.render(draft, run_id)
+        self.assertEqual(render_result.state, "APPLIED")
+
+        operator = GeneratorPismOperator.__new__(GeneratorPismOperator)
+        operator.binding = None
+        operator.core = self.service
+        operator.finalization = self.finalization
+        server = create_server(operator, 0, case_only=True)
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        def post(payload):
+            connection = HTTPConnection("127.0.0.1", server.server_port, timeout=75)
+            try:
+                connection.request(
+                    "POST", "/api/embedded_session", json.dumps(payload),
+                    {"Content-Type": "application/json", "Authorization": "Bearer " + self.token},
+                )
+                response = connection.getresponse()
+                return response.status, response.read(), dict(response.getheaders())
+            finally:
+                connection.close()
+
+        def action(payload):
+            status, body, _headers = post(payload)
+            decoded = json.loads(body.decode("utf-8")) if body else None
+            self.assertEqual(status, 200, decoded)
+            return decoded
+
+        def command(action_name, rationale):
+            return {
+                "action": action_name,
+                "render_id": str(render_id),
+                "rationale": rationale,
+                **{name: str(uuid4()) for name in (
+                    "command_id", "idempotency_key", "correlation_id"
+                )},
+            }
+
+        try:
+            status, html = self._http_get(server.server_port, "/")
+            self.assertEqual(status, 200)
+            self.assertIn(b"approve-document", html)
+            context = action({"action": "finalization_context", "render_id": str(render_id)})
+            self.assertTrue(context["can_approve"])
+            self.assertEqual({item["format"] for item in context["artifacts"]}, {"DOCX", "PDF"})
+
+            for format_name in ("DOCX", "PDF"):
+                status, body, headers = post({
+                    "action": "download", "render_id": str(render_id), "format": format_name,
+                })
+                artifact = next(item for item in context["artifacts"] if item["format"] == format_name)
+                self.assertEqual(status, 200)
+                self.assertEqual(len(body), artifact["byte_length"])
+                self.assertEqual(sha256(body).hexdigest(), artifact["content_hash"])
+                self.assertEqual(headers["X-Content-SHA256"], artifact["content_hash"])
+
+            approved = action(command("approve_document", "Human checked the exact DOCX and PDF."))
+            self.assertEqual(approved["result_type"], "DOCUMENT_APPROVED")
+            context = action({"action": "finalization_context", "render_id": str(render_id)})
+            self.assertTrue(context["can_release"])
+
+            released = action(command("release_document", "Release the exact approved revision as FINAL."))
+            self.assertEqual(released["result_type"], "DOCUMENT_RELEASED")
+            self.assertEqual(released["eligibility"], "FINAL")
+            context = action({"action": "finalization_context", "render_id": str(render_id)})
+            self.assertTrue(context["can_assemble"])
+
+            assembled = action(command("assemble_package", "Persist the verified final package."))
+            self.assertEqual(assembled["result_type"], "PACKAGE_ASSEMBLED")
+            context = action({"action": "finalization_context", "render_id": str(render_id)})
+            package = context["package"]
+            self.assertEqual(context["status"], "PACKAGE_READY")
+            self.assertEqual(len(package["members"]), len(FINAL_PACKAGE_MEMBER_NAMES))
+            self.assertEqual(tuple(item["name"] for item in package["members"]), FINAL_PACKAGE_MEMBER_NAMES)
+
+            for member in package["members"]:
+                status, body, headers = post({
+                    "action": "read_package_member", "render_id": str(render_id),
+                    "member": member["name"],
+                })
+                self.assertEqual(status, 200, member["name"])
+                self.assertEqual(len(body), member["byte_length"], member["name"])
+                self.assertEqual(sha256(body).hexdigest(), member["content_hash"], member["name"])
+                self.assertEqual(headers["X-Content-SHA256"], member["content_hash"])
+                self.assertEqual(headers["Content-Disposition"], f'attachment; filename="{member["name"]}"')
+
+            persisted = self.final_query("GetFinalPackage", render_id)
+            self.assertIsInstance(persisted, FinalPackageRecord)
+            self.assertEqual(persisted.manifest_hash, package["manifest_hash"])
+            with self.repo.transaction(self.tenant, self.case_id) as tx:
+                self.assertEqual(tx.events()[-1].event_type, "FinalPackageAssembled")
+                self.assertEqual(tx.outbox()[-1], tx.events()[-1])
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    @staticmethod
+    def _http_get(port, path):
+        connection = HTTPConnection("127.0.0.1", port, timeout=10)
+        try:
+            connection.request("GET", path)
+            response = connection.getresponse()
+            return response.status, response.read()
+        finally:
+            connection.close()
+
     def test_package_reads_require_distinct_capabilities_and_detect_tamper(self):
         rendered, render_id = self.released()
         self.final_apply(self.package_request(rendered, render_id))
@@ -657,6 +814,85 @@ class FinalizationTests(validation.ValidationTests):
         corrupted = self.finalization.query(json.dumps(query), self.token)
         self.assertIsInstance(corrupted, DomainError)
         self.assertEqual(corrupted.code, "INVALID_HASH")
+
+    def test_package_member_hash_must_match_storage_metadata(self):
+        rendered, render_id = self.released()
+        self.final_apply(self.package_request(rendered, render_id))
+        package = self.package_query("GetFinalPackage", render_id)
+        member = next(item for item in package.members if item.name == "sources.json")
+        original = self.package_query(
+            "ReadFinalPackageMember", render_id, member="sources.json"
+        )
+        record = json.loads(original.decode("utf-8"))
+        self.assertTrue(record["sources"])
+        media_type = record["sources"][0]["media_type"]
+        record["sources"][0]["media_type"] = media_type[:-1] + (
+            "x" if media_type[-1] != "x" else "y"
+        )
+        tampered = canonical(record).encode("utf-8")
+        tampered_hash = sha256(tampered).hexdigest()
+        self.assertEqual(len(tampered), member.byte_length)
+        self.assertNotEqual(tampered_hash, member.content_hash)
+
+        # Simulate a privileged storage rewrite: the blob and its local artifact
+        # digest are changed together, while the independent package manifest stays immutable.
+        def replace_storage(body, content_hash, byte_length):
+            with psycopg.connect(core.ADMIN_RUNTIME) as connection:
+                connection.execute(
+                    "ALTER TABLE lw_storage.artifacts DISABLE TRIGGER immutable_record"
+                )
+                connection.execute(
+                    "ALTER TABLE lw_storage.blobs DISABLE TRIGGER guarded_blob"
+                )
+                try:
+                    connection.execute(
+                        "UPDATE lw_storage.artifacts SET content_hash=%s,byte_length=%s "
+                        "WHERE tenant_id=%s AND case_id=%s AND artifact_id=%s",
+                        (
+                            content_hash,
+                            byte_length,
+                            self.tenant,
+                            self.case_id,
+                            member.artifact_id,
+                        ),
+                    )
+                    connection.execute(
+                        "UPDATE lw_storage.blobs SET data=%s "
+                        "WHERE tenant_id=%s AND case_id=%s AND artifact_id=%s",
+                        (body, self.tenant, self.case_id, member.artifact_id),
+                    )
+                finally:
+                    connection.execute(
+                        "ALTER TABLE lw_storage.blobs ENABLE TRIGGER guarded_blob"
+                    )
+                    connection.execute(
+                        "ALTER TABLE lw_storage.artifacts ENABLE TRIGGER immutable_record"
+                    )
+
+        replace_storage(tampered, tampered_hash, len(tampered))
+        # Prove the privileged mutation is visible through the scoped runtime path
+        # before asserting that the immutable package manifest rejects it.
+        with self.repo.transaction(self.tenant, self.case_id) as tx:
+            self.assertEqual(ObjectStore(tx).read(member.artifact_id), tampered)
+        try:
+            corrupted = self.finalization.query(
+                json.dumps(
+                    {
+                        "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                        "operation": "GetFinalPackage",
+                        "tenant_id": str(self.tenant),
+                        "case_id": str(self.case_id),
+                        "render_id": str(render_id),
+                    }
+                ),
+                self.token,
+            )
+            self.assertIsInstance(corrupted, DomainError)
+            self.assertEqual(corrupted.code, "INVALID_HASH")
+        finally:
+            replace_storage(original, member.content_hash, member.byte_length)
+        restored = self.package_query("GetFinalPackage", render_id)
+        self.assertIsInstance(restored, FinalPackageRecord)
 
 
 if __name__ == "__main__":

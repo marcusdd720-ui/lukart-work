@@ -81,7 +81,7 @@ jobs:
         run: python -B -X utf8 scripts/prepare_ci_database.py
       - name: Operator unit contract
         run: python -B -X utf8 -m unittest -v tests.test_operator
-      - name: Production-facade public E2E
+      - name: Public finalization HTTP + PostgreSQL synthetic E2E
         run: python -B -X utf8 scripts/run_generator_pism_operator_e2e.py --output build/generator-pism/operator-e2e
       - name: Independent technical verifier
         run: |

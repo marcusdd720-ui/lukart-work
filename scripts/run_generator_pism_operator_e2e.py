@@ -1,11 +1,14 @@
-"""Synthetic CASE service E2E and local preview, without document templates."""
+"""Synthetic PostgreSQL CASE fixture with public loopback finalization HTTP."""
 from __future__ import annotations
 import argparse
 from hashlib import sha256
+from http.client import HTTPConnection
 import json
 import os
 from pathlib import Path
 import subprocess
+from threading import Thread
+from uuid import UUID, uuid5
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -70,7 +73,10 @@ def current_sha():
 
 def run(output, tested_sha):
     from tests import test_finalization as final
+    from lukart_work.contracts.messages import CommandResult
+    from lukart_work.finalization.contracts import FinalPackageRecord, FinalizationRelease
     from lukart_work.operator import GeneratorPismOperator
+    from lukart_work.operator_host import create_server
     require(final.core.ADMIN_RUNTIME and final.core.DSN, "ISOLATED_POSTGRESQL_REQUIRED")
     require(not output.exists(), "OUTPUT_ALREADY_EXISTS")
     fixture = polish_fixture_type(final.FinalizationTests)
@@ -84,36 +90,138 @@ def run(output, tested_sha):
     h.service, h.facts = operator.core, operator.facts
     h.planner, h.procedural = operator.planner, operator.procedural
     h.drafting, h.validation, h.finalization = operator.drafting, operator.validation, operator.finalization
-    rendered, render_id = h.released()
-    h.final_apply(h.package_request(rendered, render_id))
-    package = h.package_query("GetFinalPackage", render_id)
-    release = h.final_query("GetFinalRelease", render_id)
-    from lukart_work.finalization.contracts import FINAL_PACKAGE_MEMBER_NAMES
-    require(tuple(member.name for member in package.members) == FINAL_PACKAGE_MEMBER_NAMES,
-            "TEN_MEMBERS_REQUIRED")
-    require(release.result.eligibility == "FINAL", "FINAL_REQUIRED")
-    preview = operator.export_local(tenant_id=h.tenant, case_id=h.case_id,
-        render_id=render_id, token=h.token, output=output / "local")
-    directory = output / "package"
-    directory.mkdir()
-    members = []
-    for member in package.members:
-        body = h.package_query("ReadFinalPackageMember", render_id, member=member.name)
-        require(isinstance(body, bytes), "PACKAGE_MEMBER_BYTES_REQUIRED")
-        require(sha256(body).hexdigest() == member.content_hash and len(body) == member.byte_length, "PACKAGE_MEMBER_HASH_OR_SIZE")
-        (directory / member.name).write_bytes(body)
-        members.append({"name": member.name, "content_hash": member.content_hash, "byte_length": member.byte_length})
-    for local_name, member_name in (("document.docx", "final.docx"), ("document.pdf", "final.pdf")):
-        require((preview.parent / local_name).read_bytes() == (directory / member_name).read_bytes(),
-                "DIRECT_ARTIFACT_MISMATCH")
-    verify_polish_artifacts(directory)
-    with h.repo.transaction(h.tenant, h.case_id) as tx:
-        events, outbox = tx.events(), tx.outbox()
-        require(events == outbox, "EVENT_OUTBOX_MISMATCH")
+
+    # Exercise the real loopback operator HTTP boundary for every finalization
+    # write and package read. The fixture's HUMAN principal remains synthetic;
+    # this does not claim native Windows identity or legal/type admission.
+    server = create_server(operator, port=0)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    def post(route, payload, *, binary=False):
+        connection = HTTPConnection("127.0.0.1", server.server_port, timeout=30)
+        try:
+            connection.request(
+                "POST", "/api/" + route,
+                body=json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + h.token,
+                    "Origin": f"http://127.0.0.1:{server.server_port}",
+                    "Sec-Fetch-Site": "same-origin",
+                },
+            )
+            response = connection.getresponse()
+            body = response.read()
+            require(response.status == 200, "PUBLIC_HTTP_" + route.upper() + "_FAILED_" + str(response.status))
+            if binary:
+                require(response.getheader("Content-Type") == "application/octet-stream",
+                        "PUBLIC_HTTP_BINARY_CONTENT_TYPE")
+                return body
+            require(response.getheader("Content-Type") == "application/json",
+                    "PUBLIC_HTTP_JSON_CONTENT_TYPE")
+            return json.loads(body)
+        finally:
+            connection.close()
+
+    try:
+        validated, run_id = h.validated()
+        render_request = h.final_request(
+            "RenderDraft", validated, validation_run_id=str(run_id),
+            semantic_profile=final.semantic_profile_pin(h.final_profile).model_dump(mode="json"),
+        )
+        render_result = CommandResult.model_validate_json(json.dumps(
+            post("execute_finalization", render_request), ensure_ascii=False
+        ))
+        h.sequence = render_result.case_sequence
+        render_id = uuid5(UUID(render_request["meta"]["command_id"]), "persisted-render")
+        projection = post("query_finalization", {
+            "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+            "operation": "GetFinalization", "tenant_id": str(h.tenant),
+            "case_id": str(h.case_id), "render_id": str(render_id),
+        })
+        require(projection.get("render", {}).get("id") == str(render_id),
+                "PUBLIC_HTTP_RENDER_PROJECTION_REQUIRED")
+
+        approval_result = CommandResult.model_validate_json(json.dumps(post(
+            "execute_finalization",
+            h.final_request("ApproveFinalDocument", validated, render_id=str(render_id)),
+        ), ensure_ascii=False))
+        h.sequence = approval_result.case_sequence
+        rendered = h.get(approval_result.refs[0])
+
+        release_result = CommandResult.model_validate_json(json.dumps(post(
+            "execute_finalization", h.release_request(rendered, render_id),
+        ), ensure_ascii=False))
+        h.sequence = release_result.case_sequence
+
+        package_result = CommandResult.model_validate_json(json.dumps(post(
+            "execute_finalization", h.package_request(rendered, render_id),
+        ), ensure_ascii=False))
+        h.sequence = package_result.case_sequence
+
+        package_query = {
+            "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+            "operation": "GetFinalPackage", "tenant_id": str(h.tenant),
+            "case_id": str(h.case_id), "render_id": str(render_id),
+        }
+        package = FinalPackageRecord.model_validate_json(json.dumps(post("query_finalization", package_query), ensure_ascii=False))
+        release = FinalizationRelease.model_validate_json(json.dumps(post("query_finalization", {
+            **package_query, "operation": "GetFinalRelease",
+        }), ensure_ascii=False))
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    # Recreate the HTTPServer object and read the durable package through the
+    # public query route. The Python process and operator/authority objects remain
+    # alive; this is neither a process restart nor crash-recovery evidence.
+    server = create_server(operator, port=0)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        from lukart_work.finalization.contracts import FINAL_PACKAGE_MEMBER_NAMES
+        package = FinalPackageRecord.model_validate_json(json.dumps(post("query_finalization", package_query), ensure_ascii=False))
+        release = FinalizationRelease.model_validate_json(json.dumps(post("query_finalization", {
+            **package_query, "operation": "GetFinalRelease",
+        }), ensure_ascii=False))
+        require(tuple(member.name for member in package.members) == FINAL_PACKAGE_MEMBER_NAMES,
+                "TEN_MEMBERS_REQUIRED")
+        require(release.result.eligibility == "FINAL", "FINAL_REQUIRED")
+        preview = operator.export_local(tenant_id=h.tenant, case_id=h.case_id,
+            render_id=render_id, token=h.token, output=output / "local")
+        directory = output / "package"
+        directory.mkdir()
+        members = []
+        for member in package.members:
+            body = post("query_finalization", {
+                "contract": "urn:lukart:work:FinalizationQuery:1.0.0",
+                "operation": "ReadFinalPackageMember", "tenant_id": str(h.tenant),
+                "case_id": str(h.case_id), "render_id": str(render_id),
+                "member": member.name,
+            }, binary=True)
+            require(isinstance(body, bytes), "PACKAGE_MEMBER_BYTES_REQUIRED")
+            require(sha256(body).hexdigest() == member.content_hash and len(body) == member.byte_length,
+                    "PACKAGE_MEMBER_HASH_OR_SIZE")
+            (directory / member.name).write_bytes(body)
+            members.append({"name": member.name, "content_hash": member.content_hash,
+                            "byte_length": member.byte_length})
+        for local_name, member_name in (("document.docx", "final.docx"), ("document.pdf", "final.pdf")):
+            require((preview.parent / local_name).read_bytes() == (directory / member_name).read_bytes(),
+                    "DIRECT_ARTIFACT_MISMATCH")
+        verify_polish_artifacts(directory)
+        with h.repo.transaction(h.tenant, h.case_id) as tx:
+            events, outbox = tx.events(), tx.outbox()
+            require(events == outbox, "EVENT_OUTBOX_MISMATCH")
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
     evidence = {
         "contract": "urn:lukart:work:GeneratorPismOperatorE2EEvidence:1.0.0",
         "result": "PASS", "tested_sha": tested_sha, "synthetic_only": True,
-        "execution_scope": "EXISTING_CASE_SERVICE_FIXTURE_AND_AUTHORIZED_LOCAL_EXPORT",
+        "execution_scope": "PUBLIC_LOOPBACK_FINALIZATION_HTTP_AND_ISOLATED_POSTGRESQL_SYNTHETIC_FIXTURE",
         "human_actor_kind": h.actor.kind, "legal_type_admission": "HUMAN_REQUIRED",
         "type_contract_pin": package.manifest.document_type.content_hash,
         "render_id": str(render_id), "release_id": str(release.id),

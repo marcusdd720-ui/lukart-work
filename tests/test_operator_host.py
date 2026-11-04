@@ -124,6 +124,23 @@ class OperatorHostTests(unittest.TestCase):
         self.operator.query_core.assert_not_called()
         self.assertEqual(self.request(headers=self.headers())[0], 200)
 
+    def test_rejected_body_drains_after_reply_shutdown(self):
+        handler = self.server.RequestHandlerClass.__new__(self.server.RequestHandlerClass)
+        handler.send_response = Mock()
+        handler.send_header = Mock()
+        handler.end_headers = Mock()
+        handler.wfile = Mock()
+        handler.connection = Mock()
+        handler.connection.shutdown.side_effect = [None, OSError("duplicate shutdown")]
+        handler.rfile = Mock()
+        handler.rfile.read1.side_effect = [b"x", b""]
+        with patch("lukart_work.operator_host.monotonic", return_value=10):
+            handler.reject_body(MAX_BODY + 1)
+        handler.send_response.assert_called_once_with(413)
+        handler.wfile.write.assert_called_once_with(b'{"error":"BODY_LIMIT"}')
+        handler.connection.shutdown.assert_called_once_with(socket.SHUT_WR)
+        self.assertEqual(handler.rfile.read1.call_count, 2)
+
     def test_rejected_body_drain_has_byte_chunk_and_time_limits(self):
         handler = self.server.RequestHandlerClass.__new__(self.server.RequestHandlerClass)
         handler.reply = Mock()
@@ -136,7 +153,7 @@ class OperatorHostTests(unittest.TestCase):
         self.assertEqual(sum(sizes), MAX_BODY + 1)
         self.assertLessEqual(max(sizes), 65536)
         handler.reply.assert_called_once_with(413, b'{"error":"BODY_LIMIT"}')
-        handler.connection.shutdown.assert_called_once_with(socket.SHUT_WR)
+        handler.connection.shutdown.assert_not_called()
         handler.connection.settimeout.assert_called_with(1)
         handler.rfile.reset_mock()
         with patch("lukart_work.operator_host.monotonic", side_effect=(10, 12)):
