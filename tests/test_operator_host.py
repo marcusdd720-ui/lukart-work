@@ -203,7 +203,7 @@ class OperatorBrowserContractTests(unittest.TestCase):
         harness = r'''
 const fs=require('node:fs'),vm=require('node:vm'),elements=new Map(),calls=[];
 const document={getElementById(id){if(!elements.has(id))elements.set(id,{
-value:'',append(){},removeAttribute(){},replaceChildren(...children){this.children=children;}});return elements.get(id);},createElement(){return {};}};
+value:'',append(){},removeAttribute(){}});return elements.get(id);},createElement(){return {};}};
 vm.runInNewContext(fs.readFileSync(0,'utf8'),{document,window:{addEventListener(){}},
 fetch:async(url,options)=>{calls.push({url,options});return {ok:true,status:200,
 headers:{get(){return 'application/json';}},text:async()=> '{}'};},URL:{revokeObjectURL(){}}});
@@ -304,6 +304,118 @@ class OperatorGuidedCaseUIContractTests(unittest.TestCase):
             self.assertIn(contract, js)
         self.assertIn('Number.isSafeInteger(revision)', js)
         self.assertIn('function idReady(...ids)', js)
+
+    @unittest.skipUnless(shutil.which("node"), "Browser contract execution requires Node.js")
+    def test_guided_party_preparation_constructs_json_and_never_auto_sends(self):
+        harness = r"""
+const fs=require('node:fs'),vm=require('node:vm'),elements=new Map(),calls=[];
+const makeEl=()=>({value:'',append(){},removeAttribute(){},hidden:false,open:false,selectedIndex:0,options:[]});
+const document={getElementById(id){if(!elements.has(id))elements.set(id,makeEl());return elements.get(id);},createElement(){return {};}};
+vm.runInNewContext(fs.readFileSync(0,'utf8'),{document,window:{addEventListener(){}},
+fetch:async(url,options)=>{calls.push({url,options});return {ok:true,status:200,
+headers:{get(){return 'application/json';}},text:async()=> '{}'};},URL:{revokeObjectURL(){}},
+crypto:{randomUUID:()=>'00000000-0000-4000-8000-000000000000'}});
+const validUuid='00000000-0000-4000-8000-000000000001';
+const validCase='00000000-0000-4000-8000-000000000002';
+elements.get('tenant').value=validUuid;elements.get('case').value=validCase;
+elements.get('partyName').value='Test Party';elements.get('partyType').value='PERSON';
+elements.get('caseSequence').value='1';elements.get('request').value='{}';
+elements.get('route').value='';
+elements.get('prepareParty').onclick();
+const body=JSON.parse(elements.get('request').value);
+process.stdout.write(JSON.stringify({calls:calls.length,route:elements.get('route').value,
+operation:body.operation,contract:body.contract,tenant:body.meta.tenant_id,case:body.meta.case_id,
+seq:body.meta.expected_case_sequence,ptype:body.data.party_type,dname:body.data.display_name,
+evidence:body.data.identity_evidence,rationale:body.rationale}));
+"""
+        process = subprocess.run([shutil.which("node"), "-e", harness],
+            input=CLIENT.decode(), text=True, capture_output=True, check=True, timeout=10)
+        r = json.loads(process.stdout)
+        self.assertEqual(r["calls"], 0, "prepareParty must not auto-dispatch via fetch")
+        self.assertEqual(r["route"], "execute_core")
+        self.assertEqual(r["operation"], "AddParty")
+        self.assertEqual(r["contract"], "urn:lukart:work:CoreRequest:1.0.0")
+        self.assertEqual(r["tenant"], "00000000-0000-4000-8000-000000000001")
+        self.assertEqual(r["case"], "00000000-0000-4000-8000-000000000002")
+        self.assertEqual(r["seq"], 1)
+        self.assertEqual(r["ptype"], "PERSON")
+        self.assertEqual(r["dname"], "Test Party")
+        self.assertEqual(r["evidence"], [])
+        self.assertTrue(r["rationale"].startswith("Jawna decyzja"))
+
+    @unittest.skipUnless(shutil.which("node"), "Browser contract execution requires Node.js")
+    def test_guided_party_preparation_rejects_invalid_input(self):
+        harness = r"""
+const fs=require('node:fs'),vm=require('node:vm'),elements=new Map(),calls=[];
+const makeEl=()=>({value:'',append(){},removeAttribute(){},hidden:false,open:false,selectedIndex:0,options:[]});
+const document={getElementById(id){if(!elements.has(id))elements.set(id,makeEl());return elements.get(id);},createElement(){return {};}};
+vm.runInNewContext(fs.readFileSync(0,'utf8'),{document,window:{addEventListener(){}},
+fetch:async(url,options)=>{calls.push({url,options});return {ok:true,status:200,
+headers:{get(){return 'application/json';}},text:async()=> '{}'};},URL:{revokeObjectURL(){}},
+crypto:{randomUUID:()=>'00000000-0000-4000-8000-000000000000'}});
+const validUuid='00000000-0000-4000-8000-000000000001';
+const validCase='00000000-0000-4000-8000-000000000002';
+function run(t,c,n,t2,v){elements.get('tenant').value=t;elements.get('case').value=c;
+elements.get('partyName').value=n;elements.get('partyType').value=t2;elements.get('caseSequence').value=v;
+elements.get('request').value='{}';elements.get('route').value='';
+let before=calls.length;elements.get('prepareParty').onclick();
+return {req:elements.get('request').value,route:elements.get('route').value,fetched:calls.length-before};
+}
+const results=[run(validUuid,validCase,'Test','PERSON','0'),
+run(validUuid,validCase,'','PERSON','1'),run('not-a-uuid',validCase,'Test','PERSON','1')];
+process.stdout.write(JSON.stringify(results));
+"""
+        process = subprocess.run([shutil.which("node"), "-e", harness],
+            input=CLIENT.decode(), text=True, capture_output=True, check=True, timeout=10)
+        results = json.loads(process.stdout)
+        self.assertEqual(results[0]["req"], "{}", "sequence=0 must not prepare JSON")
+        self.assertEqual(results[0]["fetched"], 0, "sequence=0 must not dispatch")
+        self.assertEqual(results[1]["req"], "{}", "empty name must not prepare JSON")
+        self.assertEqual(results[1]["fetched"], 0, "empty name must not dispatch")
+        self.assertEqual(results[2]["req"], "{}", "invalid UUID must not prepare JSON")
+        self.assertEqual(results[2]["fetched"], 0, "invalid UUID must not dispatch")
+
+    @unittest.skipUnless(shutil.which("node"), "Browser contract execution requires Node.js")
+    def test_guided_filing_preparation_never_auto_sends(self):
+        harness = r"""
+const fs=require('node:fs'),vm=require('node:vm'),elements=new Map(),calls=[];
+const makeEl=()=>({value:'',append(){},removeAttribute(){},hidden:false,open:false,selectedIndex:0,options:[]});
+const document={getElementById(id){if(!elements.has(id))elements.set(id,makeEl());return elements.get(id);},createElement(){return {};}};
+vm.runInNewContext(fs.readFileSync(0,'utf8'),{document,window:{addEventListener(){}},
+fetch:async(url,options)=>{calls.push({url,options});return {ok:true,status:200,
+headers:{get(){return 'application/json';}},text:async()=> '{}'};},URL:{revokeObjectURL(){}},
+crypto:{randomUUID:()=>'00000000-0000-4000-8000-000000000000'}});
+const validUuid='00000000-0000-4000-8000-000000000001';
+const validCase='00000000-0000-4000-8000-000000000002';
+const validHash='a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
+elements.get('tenant').value=validUuid;elements.get('case').value=validCase;
+elements.get('fileDocTypeId').value='contract';elements.get('fileDocVersion').value='1';
+elements.get('fileDocHash').value=validHash;
+elements.get('fileDirection').value='INCOMING';elements.get('fileDirection').selectedIndex=1;
+elements.get('fileRecipientId').value='00000000-0000-4000-8000-000000000003';
+elements.get('fileRecipientRev').value='1';
+elements.get('fileAuthorId').value='00000000-0000-4000-8000-000000000004';
+elements.get('fileAuthorRev').value='1';elements.get('fileCaseSequence').value='2';
+elements.get('request').value='{}';elements.get('route').value='';
+elements.get('prepareFiling').onclick();
+const body=JSON.parse(elements.get('request').value);
+process.stdout.write(JSON.stringify({calls:calls.length,route:elements.get('route').value,
+operation:body.operation,contract:body.contract,docId:body.data.document_type.id,
+docVersion:body.data.document_type.version,docHash:body.data.document_type.content_hash,
+direction:body.data.direction,seq:body.meta.expected_case_sequence}));
+"""
+        process = subprocess.run([shutil.which("node"), "-e", harness],
+            input=CLIENT.decode(), text=True, capture_output=True, check=True, timeout=10)
+        r = json.loads(process.stdout)
+        self.assertEqual(r["calls"], 0, "prepareFiling must not auto-dispatch via fetch")
+        self.assertEqual(r["route"], "execute_core")
+        self.assertEqual(r["operation"], "AddFiling")
+        self.assertEqual(r["contract"], "urn:lukart:work:CoreRequest:1.0.0")
+        self.assertEqual(r["docId"], "contract")
+        self.assertEqual(r["docVersion"], "1")
+        self.assertEqual(r["docHash"], "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2")
+        self.assertEqual(r["direction"], "INCOMING")
+        self.assertEqual(r["seq"], 2)
 
     def test_guided_case_does_not_weaken_existing_boundaries(self):
         from lukart_work.operator_host import create_server, CLIENT, MAX_BODY

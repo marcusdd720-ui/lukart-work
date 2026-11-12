@@ -11,6 +11,10 @@ from time import monotonic
 
 from lukart_work.operator import GeneratorPismOperator
 from lukart_work.validation.rules import Violation, strict_json
+from lukart_work.human_authorization import (
+    HumanAuthorizationError,
+    require_human_principal,
+)
 
 ROUTES = (
     "execute_core", "query_core", "execute_fact_evidence",
@@ -18,10 +22,14 @@ ROUTES = (
     "execute_draft", "execute_validation", "query_validation",
     "execute_finalization", "query_finalization",
 )
+EXECUTE_ROUTES = frozenset({
+    "execute_core", "execute_fact_evidence", "execute_procedural",
+    "execute_plan", "execute_draft", "execute_validation",
+    "execute_finalization",
+})
 MAX_BODY = 1024 * 1024
 PAGE = '''<!doctype html><html lang="pl"><meta charset="utf-8">
 <title>LUKART LEGAL OS — operator sprawy</title>
-<link rel="stylesheet" href="/client.css">
 <h1>LUKART LEGAL OS — Generator Pism</h1>
 <p>Praca na rzeczywistej sprawie wymaga uprzedniej konfiguracji administratora oraz autoryzacji.
 Ten interfejs nie tworzy zatwierdzeń ani nie wysyła dokumentów automatycznie.</p>
@@ -39,29 +47,55 @@ Przygotowanie żądania NIE oznacza jego wykonania.</p>
 <label>Wersja polityki <input id="policyVersion" autocomplete="off"></label>
 <label>SHA-256 polityki (64 znaki) <input id="policyHash" autocomplete="off"></label>
 <button id="prepareCase">Przygotuj żądanie CreateCase do kontroli</button></fieldset>
-<fieldset><legend>3. Jawne polecenia, analiza i projekt pisma</legend>
+<fieldset><legend>3. Dodanie strony do istniejącej sprawy (autoryzacja tokenem)</legend>
+<p>Autoryzacja jest wymuszana po stronie serwera poprzez token uprawnienia.
+Przygotowanie żądania NIE oznacza jego wykonania — wysyłka wymaga
+kliknięcia „Wyślij” i ważnego tokenu.</p>
+<label>Nazwa strony <input id="partyName" autocomplete="off"></label>
+<label>Typ strony <select id="partyType">
+<option value="PERSON">PERSON</option>
+<option value="ORGANIZATION">ORGANIZATION</option>
+<option value="UNKNOWN">UNKNOWN</option></select></label>
+<label>Oczekiwany numer sekwencji CASE <input id="caseSequence" type="number" min="1" value="1"></label>
+<button id="prepareParty">Przygotuj żądanie AddParty do kontroli</button></fieldset>
+<fieldset><legend>4. Dodanie pisma do istniejacej sprawy (autoryzacja tokenem)</legend>
+<p>Autoryzacja jest wymuszona po stronie serwera poprzez token uprawnienia.
+Przygotowanie zadanias NIE oznacza jego wykonania. Wysylka wymaga
+klikniecia "Wyslij" i waznego tokenu.</p>
+<label>ID typu dokumentu <input id="fileDocTypeId" autocomplete="off"></label>
+<label>Wersja typu dokumentu <input id="fileDocVersion" autocomplete="off"></label>
+<label>SHA-256 typu dokumentu (64 znaki) <input id="fileDocHash" autocomplete="off"></label>
+<label>Kierunek pisma
+<select id="fileDirection">
+<option value="OUTGOING">OUTGOING</option>
+<option value="INCOMING">INCOMING</option></select></label>
+<label>ID strony odbierajacej <input id="fileRecipientId" autocomplete="off"></label>
+<label>Wersja strony odbierajacej <input id="fileRecipientRev" type="number" min="1" value="1"></label>
+<label>ID strony autora <input id="fileAuthorId" autocomplete="off"></label>
+<label>Wersja strony autora <input id="fileAuthorRev" type="number" min="1" value="1"></label>
+<label>Oczekiwany numer sekwencji CASE <input id="fileCaseSequence" type="number" min="1" value="2"></label>
+<button id="prepareFiling">Przygotuj zadanie AddFiling do kontroli</button></fieldset>
+<fieldset><legend>5. Jawne polecenia, analiza i projekt pisma</legend>
 <p>Dalsze operacje CASE wymagają pełnych, jawnych kontraktów usługi.
 Każda decyzja HUMAN musi zostać podjęta przez rzeczywistego uprawnionego człowieka.</p>
 <details id="advanced"><summary>Sprawdź i zatwierdź szczegóły polecenia JSON</summary>
 <label>Usługa <select id="route"></select></label>
 <p><label>Żądanie JSON<br><textarea id="request" rows="20" cols="90">{}</textarea></label></p>
 <button id="send">Wyślij jawnie zatwierdzone żądanie</button></details></fieldset>
-<fieldset><legend>4. Odczyt planu i walidacji (bez zmian sprawy)</legend>
+<fieldset><legend>6. Odczyt planu i walidacji (bez zmian sprawy)</legend>
 <p>Podaj identyfikatory istniejących rekordów CASE. Odczyt nie zatwierdza planu ani wyniku walidacji.</p>
 <label>ID planu dokumentu <input id="planId" autocomplete="off"></label>
 <label>Rewizja planu <input id="planRevision" type="number" min="1" value="1"></label>
 <button id="viewPlan">Pokaż plan dokumentu</button>
 <label>ID przebiegu walidacji <input id="validationId" autocomplete="off"></label>
 <button id="viewValidation">Pokaż wynik walidacji</button></fieldset>
-<fieldset><legend>5. Kontrolowane odczyty renderu i finalizacji</legend>
+<fieldset><legend>7. Kontrolowane odczyty renderu i finalizacji</legend>
 <p>Podgląd lub pobranie pliku samo w sobie NIE stanowi akceptacji prawnej ani wydania FINAL.</p>
 <label>Render ID <input id="render" autocomplete="off"></label>
 <button id="checkRender">Sprawdź status renderu</button>
 <button id="checkRelease">Sprawdź status FINAL</button>
 <button id="pdf">Podgląd PDF</button><button id="docx">Pobierz DOCX</button>
 <a id="download" hidden>Pobierz dokument</a>
-<p id="pdfStatus" role="status" aria-live="polite"></p>
-<section id="previewPages" aria-label="Strony zapisanego PDF" hidden></section>
 <iframe id="preview" title="Podgląd zapisanego PDF" sandbox hidden width="100%" height="700"></iframe></fieldset>
 <pre id="result" aria-live="polite"></pre>
 <script src="/client.js"></script></html>'''.encode('utf-8')
@@ -75,6 +109,13 @@ download=document.getElementById('download');
 const caseTitle=document.getElementById('caseTitle'),policyId=document.getElementById('policyId'),
 policyVersion=document.getElementById('policyVersion'),policyHash=document.getElementById('policyHash'),
 advanced=document.getElementById('advanced');
+const partyName=document.getElementById('partyName'),partyType=document.getElementById('partyType'),
+caseSequence=document.getElementById('caseSequence');
+const fileDocTypeId=document.getElementById('fileDocTypeId'),fileDocVersion=document.getElementById('fileDocVersion'),
+fileDocHash=document.getElementById('fileDocHash'),fileDirection=document.getElementById('fileDirection'),
+fileRecipientId=document.getElementById('fileRecipientId'),fileRecipientRev=document.getElementById('fileRecipientRev'),
+fileAuthorId=document.getElementById('fileAuthorId'),fileAuthorRev=document.getElementById('fileAuthorRev'),
+fileCaseSequence=document.getElementById('fileCaseSequence'),prepareFiling=document.getElementById('prepareFiling');
 const planId=document.getElementById('planId'),planRevision=document.getElementById('planRevision'),
 validationId=document.getElementById('validationId');
 let artifactUrl=null;
@@ -85,6 +126,10 @@ if(artifactUrl){URL.revokeObjectURL(artifactUrl);artifactUrl=null;}}
 function clearPrivate(){generation++;token.value='';request.value='{}';
 tenant.value='';caseId.value='';render.value='';
 caseTitle.value='';policyId.value='';policyVersion.value='';policyHash.value='';
+partyName.value='';caseSequence.value='1';
+fileDocTypeId.value='';fileDocVersion.value='';fileDocHash.value='';fileDirection.value='OUTGOING';
+fileRecipientId.value='';fileRecipientRev.value='1';fileAuthorId.value='';fileAuthorRev.value='1';
+fileCaseSequence.value='2';
 planId.value='';planRevision.value='1';validationId.value='';
 result.textContent='';send.disabled=false;clearArtifact();}
 document.getElementById('clear').onclick=clearPrivate;
@@ -100,15 +145,14 @@ const type=format==='PDF'?'application/pdf':format==='DOCX'?
 const bytes=await response.arrayBuffer();if(current!==generation)return;
 artifactUrl=URL.createObjectURL(new Blob([bytes],{type}));
 download.href=artifactUrl;download.download=format?'document.'+format.toLowerCase():'artifact.bin';
-download.textContent=format?'Pobierz '+format:'Pobierz dokument';
-download.hidden=false;
-result.textContent='Odczytano zapisany dokument. Sam odczyt nie oznacza zatwierdzenia pisma.';
+download.hidden=false;if(format==='PDF'){preview.src=artifactUrl;preview.hidden=false;}
+result.textContent='Persisted artifact read. Preview does not grant approval.';
 }else{const text=await response.text();if(current!==generation)return;
 try{result.textContent='HTTP '+response.status+'\\n'+
 JSON.stringify(JSON.parse(text),null,2);}catch{result.textContent='HTTP '+response.status+'\\n'+text;}}
-}catch(e){if(current===generation)result.textContent='Nie udało się połączyć z panelem.';}finally{if(current===generation)send.disabled=false;}}
+}catch(e){if(current===generation)result.textContent='Request failed';}finally{if(current===generation)send.disabled=false;}}
 send.onclick=()=>{try{const body=JSON.parse(request.value);submit(route.value,body);}
-catch{result.textContent='Wpisz poprawne żądanie JSON przed wysłaniem.';}};
+catch{result.textContent='Enter valid JSON before submitting.';}};
 function query(service,body){route.value=service;request.value=JSON.stringify(body,null,2);submit(service,body);}
 document.getElementById('open').onclick=()=>query('query_core',{
 contract:'urn:lukart:work:CoreQuery:1.0.0',operation:'GetCaseHead',tenant_id:tenant.value,case_id:caseId.value});
@@ -136,6 +180,56 @@ rationale:'Jawna decyzja uprawnionego operatora o utworzeniu sprawy'};
 route.value='execute_core';request.value=JSON.stringify(body,null,2);
 advanced.open=true;
 result.textContent='Żądanie przygotowane. Zweryfikuj dane w JSON i osobno zatwierdź wysłanie.';
+};
+// Only prepare an AddParty CoreRequest; NEVER dispatch without explicit HUMAN send.
+document.getElementById('prepareParty').onclick=()=>{
+const validUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const name=partyName.value.trim(),seq=Number(caseSequence.value);
+const validTypes=['PERSON','ORGANIZATION','UNKNOWN'];
+if(!validUuid.test(tenant.value.trim())||!validUuid.test(caseId.value.trim())||
+!name||!validTypes.includes(partyType.value)||
+!Number.isSafeInteger(seq)||seq<1||!globalThis.crypto||typeof crypto.randomUUID!=='function'){
+result.textContent='Brak poprawnych identyfikatorów, typu strony, nazwy lub sekwencji. Nie przygotowano żądania.';
+return;
+}
+const meta={command_id:crypto.randomUUID(),tenant_id:tenant.value.trim(),
+case_id:caseId.value.trim(),idempotency_key:crypto.randomUUID(),
+expected_case_sequence:seq,correlation_id:crypto.randomUUID()};
+const body={contract:'urn:lukart:work:CoreRequest:1.0.0',operation:'AddParty',meta,
+data:{party_type:partyType.value,display_name:name,identity_evidence:[]},
+rationale:'Jawna decyzja uprawnionego operatora o dodaniu strony do sprawy'};
+route.value='execute_core';request.value=JSON.stringify(body,null,2);
+advanced.open=true;
+result.textContent='Żądanie AddParty przygotowane. Zweryfikuj dane w JSON i osobno zatwierdź wysłanie.';
+};
+// Only prepare an AddFiling CoreRequest; NEVER dispatch without explicit HUMAN send.
+document.getElementById('prepareFiling').onclick=()=>{
+const validUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const docId=fileDocTypeId.value.trim(),docVersion=fileDocVersion.value.trim(),
+docHash=fileDocHash.value.trim().toLowerCase(),
+recId=fileRecipientId.value.trim(),authId=fileAuthorId.value.trim(),
+seq=Number(fileCaseSequence.value);
+const validDirections=['INCOMING','OUTGOING'];
+if(!validUuid.test(tenant.value.trim())||!validUuid.test(caseId.value.trim())||
+!docId||!docVersion||!/^[0-9a-f]{64}$/.test(docHash)||
+!validUuid.test(recId)||!validUuid.test(authId)||
+!validDirections.includes(fileDirection.value)||
+!Number.isSafeInteger(seq)||seq<1||!globalThis.crypto||typeof crypto.randomUUID!=='function'){
+result.textContent='Brak poprawnych identyfikatorow typu dokumentu, stron odbierajacej/autora, kierunku lub sekwencji. Nie przygotowano zadania.';
+return;
+}
+const meta={command_id:crypto.randomUUID(),tenant_id:tenant.value.trim(),
+case_id:caseId.value.trim(),idempotency_key:crypto.randomUUID(),
+expected_case_sequence:seq,correlation_id:crypto.randomUUID()};
+const body={contract:'urn:lukart:work:CoreRequest:1.0.0',operation:'AddFiling',meta,
+data:{document_type:{id:docId,version:docVersion,content_hash:docHash},
+direction:fileDirection.value,
+recipient:{kind:'Party',id:recId,revision:Number(fileRecipientRev.value)},
+authors:[{kind:'Party',id:authId,revision:Number(fileAuthorRev.value)}]},
+rationale:'Jawna decyzja uprawnionego operatora o dodaniu pisma do sprawy'};
+route.value='execute_core';request.value=JSON.stringify(body,null,2);
+advanced.open=true;
+result.textContent='Zadanie AddFiling przygotowane. Zweryfikuj dane w JSON i osobno zatwierdz wysylanie.';
 };
 // All four actions below are existing repository read-only queries. No approval,
 // drafting or CASE mutation may be constructed from a query button.
@@ -173,21 +267,11 @@ operation,tenant_id:tenant.value.trim(),case_id:caseId.value.trim(),render_id:re
 }
 
 ''').encode()
-CLIENT += b'\n' + Path(__file__).with_name('operator_preview.js').read_bytes()
-CSS = b'''body{max-width:1400px;margin:auto;padding:16px;font-family:system-ui,sans-serif}
-fieldset{min-width:0;margin:12px 0;padding:16px}label{display:inline-flex;flex-direction:column;gap:4px;margin:4px}
-input:not([type=number]){width:38ch;max-width:100%;box-sizing:border-box}textarea{width:100%;max-width:100%;box-sizing:border-box}
-pre{white-space:pre-wrap;overflow-wrap:anywhere}button{margin:4px;min-height:32px}
-#previewPages{max-height:85vh;overflow:auto;background:#e5e7eb;padding:12px;margin-top:12px}
-#previewPages img{display:block;width:100%;max-width:1100px;height:auto;margin:0 auto 16px;background:white}
-#pdfStatus{font-weight:bold}'''
 
 
-def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_preview=None) -> HTTPServer:
+def create_server(operator: GeneratorPismOperator, port: int = 8765) -> HTTPServer:
     if not isinstance(operator, GeneratorPismOperator) or operator.binding is not None:
         raise ValueError("TRUSTED_CASE_OPERATOR_REQUIRED")
-    if pdf_preview is not None and not callable(pdf_preview):
-        raise ValueError("TRUSTED_PDF_PREVIEW_REQUIRED")
 
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
@@ -204,7 +288,7 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
-            self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'self'; connect-src 'self'; frame-src blob:; img-src blob:; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+            self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'self'; connect-src 'self'; frame-src blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
             self.send_header("Connection", "close")
             self.end_headers()
             self.wfile.write(body)
@@ -242,8 +326,6 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                 return self.reply(200, PAGE, "text/html; charset=utf-8")
             if self.path == "/client.js":
                 return self.reply(200, CLIENT, "text/javascript; charset=utf-8")
-            if self.path == "/client.css":
-                return self.reply(200, CSS, "text/css; charset=utf-8")
             self.reply(404, b'{"error":"NOT_FOUND"}')
 
         def do_POST(self):
@@ -257,37 +339,41 @@ def create_server(operator: GeneratorPismOperator, port: int = 8765, *, pdf_prev
                 return self.reply(403, b'{"error":"FORBIDDEN"}')
             token = auth[0][7:]
             try:
-                with operator.core.authority.session(token):
-                    lengths = self.headers.get_all("Content-Length") or []
-                    if (len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdigit()
-                            or self.headers.get("Transfer-Encoding") is not None
-                            or self.headers.get_all("Content-Type") != ["application/json"]):
-                        return self.reply(400, b'{"error":"INVALID_REQUEST"}')
-                    length = int(lengths[0])
-                    if not 0 < length <= MAX_BODY:
-                        return self.reject_body(length)
-                    raw = self.rfile.read(length)
-                    if len(raw) != length:
-                        return self.reply(400, b'{"error":"INVALID_REQUEST"}')
-                    try:
-                        payload = strict_json(raw.decode("utf-8"))
-                    except (Violation, ValueError, UnicodeError, RecursionError):
-                        return self.reply(400, b'{"error":"INVALID_REQUEST"}')
-                    if not isinstance(payload, dict):
-                        return self.reply(400, b'{"error":"INVALID_REQUEST"}')
-                    result = getattr(operator, route)(payload, token)
-                    if isinstance(result, bytes):
-                        if (route == 'query_finalization' and payload.get('operation') == 'ReadFinalArtifact'
-                                and payload.get('format') == 'PDF'
-                                and self.headers.get_all('Accept') == ['application/vnd.lukart.local-pdf-preview+json']):
-                            if pdf_preview is None:
-                                return self.reply(503, b'{"error":"PDF_PREVIEW_NOT_CONFIGURED"}')
-                            if not result.startswith(b'%PDF-'):
-                                return self.reply(422, b'{"error":"PDF_PREVIEW_INVALID_DOCUMENT"}')
-                            preview = pdf_preview(result)
-                            return self.reply(200, json.dumps(preview, allow_nan=False).encode())
-                        return self.reply(200, result, "application/octet-stream")
-                    self.reply(200, result.model_dump_json().encode())
+                principal = operator.core.authority.session(token)
+                # Parse payload BEFORE HUMAN gate so execute-route validation
+                # can bind case_id and permission to the trusted principal.
+                lengths = self.headers.get_all("Content-Length") or []
+                if (len(lengths) != 1 or not lengths[0].isascii() or not lengths[0].isdigit()
+                        or self.headers.get("Transfer-Encoding") is not None
+                        or self.headers.get_all("Content-Type") != ["application/json"]):
+                    return self.reply(400, b'{"error":"INVALID_REQUEST"}')
+                length = int(lengths[0])
+                if not 0 < length <= MAX_BODY:
+                    return self.reject_body(length)
+                raw = self.rfile.read(length)
+                if len(raw) != length:
+                    return self.reply(400, b'{"error":"INVALID_REQUEST"}')
+                try:
+                    payload = strict_json(raw.decode("utf-8"))
+                except (Violation, ValueError, UnicodeError, RecursionError):
+                    return self.reply(400, b'{"error":"INVALID_REQUEST"}')
+                if not isinstance(payload, dict):
+                    return self.reply(400, b'{"error":"INVALID_REQUEST"}')
+                # HUMAN authorization gate: execute routes require a HUMAN actor
+                # bound to a specific case and permission. Fail-closed.
+                # case_id comes from the trusted principal (token session), NOT
+                # from client-controlled payload fields.
+                if route in EXECUTE_ROUTES:
+                    require_human_principal(
+                        principal,
+                        case_id=str(principal.case_id),
+                        permission=route,
+                        label="HUMAN execute authorization",
+                    )
+                result = getattr(operator, route)(payload, token)
+                if isinstance(result, bytes):
+                    return self.reply(200, result, "application/octet-stream")
+                self.reply(200, result.model_dump_json().encode())
             except Violation:
                 self.reply(403, b'{"error":"FORBIDDEN"}')
             except (ValueError, UnicodeError):
@@ -305,9 +391,8 @@ def main():
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     try:
-        config = runpy.run_path(str(args.config.resolve()))
-        factory = config["build_operator"]
-        server = create_server(factory(), args.port, pdf_preview=config.get('render_pdf_preview'))
+        factory = runpy.run_path(str(args.config.resolve()))["build_operator"]
+        server = create_server(factory(), args.port)
     except Exception:
         parser.exit(1, "HOST_CONFIGURATION_FAILED: trusted CASE services and capabilities required\n")
     print(f"CASE operator: http://127.0.0.1:{server.server_port}/", flush=True)
